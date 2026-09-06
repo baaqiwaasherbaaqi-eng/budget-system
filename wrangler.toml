@@ -1,0 +1,11 @@
+name = "budget-system"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "budget-db"
+database_id = "4b6e5c8e-a271-4b9a-a87c-e25fe6b0adb0"
+
+[vars]
+JWT_SECRET = "my-secret-key-123"
