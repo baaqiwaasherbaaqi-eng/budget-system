@@ -138,6 +138,22 @@
             background: #218838;
         }
 
+
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+
         .error {
             color: red;
             margin-top: 10px;
@@ -211,9 +227,12 @@
                     <td>${year.is_active ?
                         '<span class="active-badge">فعال</span>' :
                         '<span class="inactive-badge">غیرفعال</span>'}</td>
-                    <td>${!year.is_active ?
-                        `<button class="activate-btn" onclick="activateYear(${year.year})">فعال کردن</button>` :
-                        ''}</td>
+                    <td>
+                        ${!year.is_active ? 
+                            `<button class="activate-btn" onclick="activateYear(${year.year})">فعال کردن</button>
+                             <button class="delete-btn" onclick="deleteYear(${year.year})">حذف</button>` : 
+                            ''}
+                    </td>
                 `;
                 tbody.appendChild(row);
             });
@@ -273,6 +292,24 @@
                 loadFiscalYears();
             }
         }
+
+
+        // حذف سال مالی
+        async function deleteYear(year) {
+            if (!confirm(`مطمئن هستید سال ${year} حذف شود؟`)) return;
+            
+            const response = await fetch(`/api/fiscal-years/${year}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            if (response.ok) {
+                loadFiscalYears();
+            }
+        }
+
 
 
         // تبدیل اعداد انگلیسی به فارسی

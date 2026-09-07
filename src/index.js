@@ -124,8 +124,87 @@ export default {
         return new Response(JSON.stringify({ success: true }), { status: 200, headers });
       }
 
+      // حذف سال مالی
+      if (url.pathname.startsWith('/api/fiscal-years/') && request.method === 'DELETE') {
+        const year = url.pathname.split('/').pop();
+
+        await env.DB.prepare(
+          'DELETE FROM fiscal_years WHERE year = ?'
+        ).bind(year).run();
+
+        return new Response(JSON.stringify({ success: true }), { status: 200, headers });
+      }
+
+
+      // ========== طبقه‌بندی اقتصادی ==========
+
+      // دریافت لیست طبقه‌بندی‌ها
+      if (url.pathname === '/api/economic-classifications' && request.method === 'GET') {
+        const fiscalYearId = url.searchParams.get('fiscal_year_id');
+        const type = url.searchParams.get('type');
+
+        let query = 'SELECT * FROM economic_classifications WHERE 1=1';
+        const params = [];
+
+        if (fiscalYearId) {
+          query += ' AND fiscal_year_id = ?';
+          params.push(fiscalYearId);
+        }
+
+        if (type) {
+          query += ' AND type = ?';
+          params.push(type);
+        }
+
+        query += ' ORDER BY main_code, chapter_code, sub_code';
+
+        const items = await env.DB.prepare(query).bind(...params).all();
+
+        return new Response(JSON.stringify(items.results), { status: 200, headers });
+      }
+
+      // ساخت طبقه‌بندی جدید
+      if (url.pathname === '/api/economic-classifications' && request.method === 'POST') {
+        const { fiscal_year_id, type, category, main_code, chapter_code, sub_code, title, parent_id } = await request.json();
+
+        // اعتبارسنجی
+        if (!fiscal_year_id || !type || !category || !main_code || !chapter_code || !sub_code || !title) {
+          return new Response(JSON.stringify({ error: 'همه فیلدها الزامی است' }), {
+            status: 400, headers
+          });
+        }
+
+        try {
+          const result = await env.DB.prepare(`
+            INSERT INTO economic_classifications 
+            (fiscal_year_id, type, category, main_code, chapter_code, sub_code, title, parent_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(fiscal_year_id, type, category, main_code, chapter_code, sub_code, title, parent_id || null).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            id: result.meta.last_row_id
+          }), { status: 201, headers });
+        } catch (error) {
+          return new Response(JSON.stringify({ error: 'خطا در ثبت' }), {
+            status: 400, headers
+          });
+        }
+      }
+
+      // حذف طبقه‌بندی
+      if (url.pathname.startsWith('/api/economic-classifications/') && request.method === 'DELETE') {
+        const id = url.pathname.split('/').pop();
+
+        await env.DB.prepare(
+          'DELETE FROM economic_classifications WHERE id = ?'
+        ).bind(id).run();
+
+        return new Response(JSON.stringify({ success: true }), { status: 200, headers });
+      }
+
       // Serve static files
-      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html') {
+      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html') {
         return await env.ASSETS.fetch(request);
       }
 

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>طبقه‌بندی اقتصادی</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+        body {
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+        .header a {
+            color: white;
+            text-decoration: none;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+            font-size: 13px;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 13px;
+        }
+        button {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 11px;
+        }
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 طبقه‌بندی اقتصادی</h1>
+        <a href="/dashboard.html">بازگشت به داشبورد</a>
+    </div>
+
+    <div class="container">
+        <h2>افزودن طبقه‌بندی جدید</h2>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>سال مالی:</label>
+                <select id="fiscal_year_id"></select>
+            </div>
+            <div class="form-group">
+                <label>نوع:</label>
+                <select id="type" onchange="updateCategories()">
+                    <option value="resource">منابع (درآمد)</option>
+                    <option value="expense">مصارف (هزینه)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>دسته:</label>
+                <select id="category"></select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>کد سرفصل:</label>
+                <input type="text" id="main_code" placeholder="مثلاً 01">
+            </div>
+            <div class="form-group">
+                <label>کد فصل:</label>
+                <input type="text" id="chapter_code" placeholder="مثلاً 0101">
+            </div>
+            <div class="form-group">
+                <label>کد زیرفصل:</label>
+                <input type="text" id="sub_code" placeholder="مثلاً 010101">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>عنوان:</label>
+            <input type="text" id="title" placeholder="مثلاً درآمد مالیاتی">
+        </div>
+
+        <button onclick="addClassification()">افزودن</button>
+        <div class="error" id="error"></div>
+
+        <h2>لیست طبقه‌بندی‌ها</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>سال مالی</th>
+                    <th>نوع</th>
+                    <th>کد</th>
+                    <th>عنوان</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+        </table>
+    </div>
+
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login.html';
+        }
+
+        const token = localStorage.getItem('token');
+
+        // تعریف دسته‌ها
+        const categories = {
+            resource: [
+                { value: 'income', label: 'درآمدها' },
+                { value: 'asset_sale', label: 'واگذاری دارایی‌های سرمایه‌ای' },
+                { value: 'financial_asset', label: 'واگذاری دارایی‌های مالی' }
+            ],
+            expense: [
+                { value: 'cost', label: 'هزینه‌ها' },
+                { value: 'capital_acquisition', label: 'تملک دارایی‌های سرمایه‌ای' },
+                { value: 'financial_acquisition', label: 'تملک دارایی‌های مالی' }
+            ]
+        };
+
+        function updateCategories() {
+            const type = document.getElementById('type').value;
+            const categorySelect = document.getElementById('category');
+            categorySelect.innerHTML = '';
+            
+            categories[type].forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.value;
+                option.textContent = cat.label;
+                categorySelect.appendChild(option);
+            });
+        }
+
+        // لود سال‌های مالی
+        async function loadFiscalYears() {
+            const response = await fetch('/api/fiscal-years', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const years = await response.json();
+            
+            const select = document.getElementById('fiscal_year_id');
+            select.innerHTML = '<option value="">انتخاب کنید</option>';
+            
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year.id;
+                option.textContent = year.year;
+                select.appendChild(option);
+            });
+        }
+
+        // لود طبقه‌بندی‌ها
+        async function loadClassifications() {
+            const response = await fetch('/api/economic-classifications', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const items = await response.json();
+            
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            
+            items.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.fiscal_year_id}</td>
+                    <td>${item.type === 'resource' ? 'منابع' : 'مصارف'}</td>
+                    <td>${item.main_code}-${item.chapter_code}-${item.sub_code}</td>
+                    <td>${item.title}</td>
+                    <td>
+                        <button class="delete-btn" onclick="deleteClassification(${item.id})">حذف</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // افزودن طبقه‌بندی
+        async function addClassification() {
+            const fiscal_year_id = document.getElementById('fiscal_year_id').value;
+            const type = document.getElementById('type').value;
+            const category = document.getElementById('category').value;
+            const main_code = document.getElementById('main_code').value;
+            const chapter_code = document.getElementById('chapter_code').value;
+            const sub_code = document.getElementById('sub_code').value;
+            const title = document.getElementById('title').value;
+            
+            if (!fiscal_year_id || !type || !category || !main_code || !chapter_code || !sub_code || !title) {
+                document.getElementById('error').textContent = 'همه فیلدها الزامی است';
+                return;
+            }
+            
+            const response = await fetch('/api/economic-classifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    fiscal_year_id: parseInt(fiscal_year_id),
+                    type,
+                    category,
+                    main_code,
+                    chapter_code,
+                    sub_code,
+                    title
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                document.getElementById('error').textContent = '';
+                document.getElementById('main_code').value = '';
+                document.getElementById('chapter_code').value = '';
+                document.getElementById('sub_code').value = '';
+                document.getElementById('title').value = '';
+                loadClassifications();
+            } else {
+                document.getElementById('error').textContent = data.error;
+            }
+        }
+
+        // حذف طبقه‌بندی
+        async function deleteClassification(id) {
+            if (!confirm('مطمئن هستید؟')) return;
+            
+            const response = await fetch(`/api/economic-classifications/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (response.ok) {
+                loadClassifications();
+            }
+        }
+
+        // لود اولیه
+        updateCategories();
+        loadFiscalYears();
+        loadClassifications();
+    </script>
+</body>
+</html>
