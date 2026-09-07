@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>داشبورد - سامانه بودجه شهرداری</title>
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />    
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet"
+        type="text/css" />
     <style>
         body {
             font-family: 'Vazirmatn', Tahoma, sans-serif;
@@ -12,6 +14,7 @@
             margin: 0;
             padding: 20px;
         }
+
         input {
             font-family: 'Vazirmatn', Tahoma, sans-serif;
             width: 100%;
@@ -22,6 +25,7 @@
             box-sizing: border-box;
             font-size: 14px;
         }
+
         button {
             font-family: 'Vazirmatn', Tahoma, sans-serif;
             width: 100%;
@@ -34,6 +38,7 @@
             font-size: 16px;
             margin-top: 20px;
         }
+
         .header {
             background: #667eea;
             color: white;
@@ -43,18 +48,26 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
+
         .header h1 {
             margin: 0;
-            font-size: 24px;
+            font-size: 20px;
         }
+
+        #user-name {
+            font-size: 13px;
+        }
+
         .user-info {
             display: flex;
             align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
+            gap: 10px;
+            white-space: nowrap;
         }
+
         .logout-btn {
             background: #e74c3c;
             color: white;
@@ -63,29 +76,34 @@
             border-radius: 5px;
             cursor: pointer;
         }
+
         .menu {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
             margin-top: 20px;
         }
+
         .menu-card {
             background: white;
             padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             text-align: center;
             cursor: pointer;
             transition: transform 0.3s;
         }
+
         .menu-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
+
         .menu-card h3 {
             margin: 0 0 10px 0;
             color: #333;
         }
+
         .menu-card p {
             margin: 0;
             color: #666;
@@ -93,6 +111,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="header">
         <h1>سامانه بودجه شهرداری</h1>
@@ -133,14 +152,14 @@
         // بررسی لاگین بودن
         const token = localStorage.getItem('token');
         const user = JSON.parse(localStorage.getItem('user') || '{}');
-        
+
         if (!token) {
             window.location.href = '/login.html';
         }
-        
-        document.getElementById('user-name').textContent = 
+
+        document.getElementById('user-name').textContent =
             `${user.full_name} (${user.role})`;
-        
+
         function logout() {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
@@ -148,4 +167,5 @@
         }
     </script>
 </body>
+
 </html>

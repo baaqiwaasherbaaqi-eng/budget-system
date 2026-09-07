@@ -2,31 +2,45 @@
 
 ## تاریخ آخرین آپدیت: امروز
 
-## وضعیت: فاز ۰ تکمیل شد ✅
+## وضعیت: فاز ۱ تکمیل شد ✅
 
 ## کارهای انجام شده:
-- ساخت GitHub Repository
-- نصب Wrangler
-- ساخت D1 Database (budget-db)
-- ساخت فایل wrangler.toml
-- ساخت اولین Worker (src/index.js)
-- تست لوکال با wrangler dev
-- استقرار روی Cloudflare
-- آدرس سایت: https://budget-system.baaqiwaasherbaaqi.workers.dev/
+- [x] فاز ۰: راه‌اندازی زیرساخت
+  - GitHub Repository
+  - Wrangler نصب شد
+  - D1 Database ساخته شد
+  - اولین Worker ساخته شد
+  
+- [x] فاز ۱: احراز هویت
+  - جدول users ساخته شد
+  - سیستم login با JWT
+  - صفحه login.html
+  - صفحه dashboard.html
+  - کاربر admin ساخته شد
+  - فونت Vazirmatn اضافه شد
 
 ## API های موجود:
+- POST /api/login - ورود با username و password
 - GET /api/hello - تست سرور
 - GET /api/test-db - تست دیتابیس
 
+## کاربر پیش‌فرض:
+- username: admin
+- password: Admin123!
+
 ## کار بعدی:
-- فاز ۱: سیستم احراز هویت (login)
-- ساخت جدول users
-- صفحه ورود
+- فاز ۲: مدیریت سال مالی
+- ساخت جدول fiscal_years
+- API برای CRUD سال مالی
+- صفحه مدیریت سال مالی
 
 ## مشکلات:
-- حل شد: مشکل فارسی در Response
-- حل شد: مشکل دسترسی GitHub
+- حل شد: مشکل فونت فارسی
+- حل شد: مشکل jsonwebtoken در Cloudflare Workers
+- حل شد: مشکل serve فایل‌های استاتیک
 
 ## یادداشت‌ها:
 - این فایل حافظه پروژه ماست
 - برای push از Token جدید استفاده کن
+- برای deploy: wrangler deploy
+- برای push: git push origin main
