@@ -135,6 +135,18 @@ export default {
         return new Response(JSON.stringify({ success: true }), { status: 200, headers });
       }
 
+      // ویرایش سال مالی
+      if (url.pathname.startsWith('/api/fiscal-years/edit/') && request.method === 'PUT') {
+        const year = url.pathname.split('/').pop();
+        const { start_date, end_date } = await request.json();
+        
+        await env.DB.prepare(
+          'UPDATE fiscal_years SET start_date = ?, end_date = ? WHERE year = ?'
+        ).bind(start_date, end_date, year).run();
+        
+        return new Response(JSON.stringify({ success: true }), { status: 200, headers });
+      }
+
 
       // ========== طبقه‌بندی اقتصادی ==========
 
