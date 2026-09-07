@@ -13,9 +13,13 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/baaqiwaasherbaaqi-eng/budget-system/issues"
   },
-  "homepage": "https://github.com/baaqiwaasherbaaqi-eng/budget-system#readme"
+  "homepage": "https://github.com/baaqiwaasherbaaqi-eng/budget-system#readme",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "jsonwebtoken": "^9.0.3"
+  }
 }

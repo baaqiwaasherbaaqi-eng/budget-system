@@ -9,3 +9,7 @@ database_id = "4b6e5c8e-a271-4b9a-a87c-e25fe6b0adb0"
 
 [vars]
 JWT_SECRET = "my-secret-key-123"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
