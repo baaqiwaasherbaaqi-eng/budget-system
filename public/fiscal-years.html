@@ -139,22 +139,6 @@
         }
 
 
-        .delete-btn {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-family: 'Vazirmatn', Tahoma, sans-serif;
-            font-size: 12px;
-            margin-right: 5px;
-        }
-
-        .delete-btn:hover {
-            background: #c0392b;
-        }
- 
         .error {
             color: red;
             margin-top: 10px;
@@ -215,53 +199,48 @@
                 }
             });
             const years = await response.json();
-            
+
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = '';
-            
+
             years.forEach(year => {
                 const row = document.createElement('tr');
-                
+
                 const tdYear = document.createElement('td');
                 tdYear.textContent = year.year;
-                
+
                 const tdStart = document.createElement('td');
                 tdStart.textContent = year.start_date;
-                
+
                 const tdEnd = document.createElement('td');
                 tdEnd.textContent = year.end_date;
-                
+
                 const tdStatus = document.createElement('td');
                 if (year.is_active) {
                     tdStatus.innerHTML = '<span class="active-badge">فعال</span>';
                 } else {
                     tdStatus.innerHTML = '<span class="inactive-badge">غیرفعال</span>';
                 }
-                
+
                 const tdActions = document.createElement('td');
-                
+
                 if (!year.is_active) {
                     const activateBtn = document.createElement('button');
                     activateBtn.className = 'activate-btn';
                     activateBtn.textContent = 'فعال کردن';
                     activateBtn.onclick = () => activateYear(year.year);
-                   
 
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'delete-btn';
-                    deleteBtn.textContent = 'حذف';
-                    deleteBtn.onclick = () => deleteYear(year.year);
-                    
+
                     tdActions.appendChild(activateBtn);
-                    tdActions.appendChild(deleteBtn);
+
                 }
-                
+
                 row.appendChild(tdYear);
                 row.appendChild(tdStart);
                 row.appendChild(tdEnd);
                 row.appendChild(tdStatus);
                 row.appendChild(tdActions);
-                
+
                 tbody.appendChild(row);
             });
         }
@@ -291,9 +270,9 @@
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
-                body: JSON.stringify({ 
-                    start_date: englishStartDate, 
-                    end_date: englishEndDate 
+                body: JSON.stringify({
+                    start_date: englishStartDate,
+                    end_date: englishEndDate
                 })
             });
 
@@ -325,24 +304,6 @@
                 loadFiscalYears();
             }
         }
-
-        // حذف سال مالی
-        async function deleteYear(year) {
-            if (!confirm(`مطمئن هستید سال ${year} حذف شود؟`)) return;
-
-            const response = await fetch(`/api/fiscal-years/${year}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-
-            if (response.ok) {
-                loadFiscalYears();
-            }
-        }
-
-
 
         // تبدیل اعداد انگلیسی به فارسی
         function toPersianNumbers(str) {

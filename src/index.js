@@ -215,8 +215,78 @@ export default {
         return new Response(JSON.stringify({ success: true }), { status: 200, headers });
       }
 
+
+      // ========== ساختار سازمانی ==========
+      
+      // دریافت لیست سازمان‌ها
+      if (url.pathname === '/api/organizations' && request.method === 'GET') {
+        const fiscalYearId = url.searchParams.get('fiscal_year_id');
+        
+        let query = 'SELECT * FROM organizations';
+        const params = [];
+        
+        if (fiscalYearId) {
+          query += ' WHERE fiscal_year_id = ?';
+          params.push(fiscalYearId);
+        }
+        
+        query += ' ORDER BY name';
+        
+        const items = await env.DB.prepare(query).bind(...params).all();
+        
+        return new Response(JSON.stringify(items.results), { status: 200, headers });
+      }
+
+      // ساخت سازمان جدید
+      if (url.pathname === '/api/organizations' && request.method === 'POST') {
+        const { fiscal_year_id, name, type, manager_name, finance_manager_name, parent_id, is_cost_center } = await request.json();
+        
+        if (!fiscal_year_id || !name || !type) {
+          return new Response(JSON.stringify({ error: 'همه فیلدهای الزامی را پر کنید' }), {
+            status: 400, headers
+          });
+        }
+        
+        try {
+          const result = await env.DB.prepare(`
+            INSERT INTO organizations 
+            (fiscal_year_id, name, type, manager_name, finance_manager_name, parent_id, is_cost_center)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            fiscal_year_id, 
+            name, 
+            type, 
+            manager_name || null, 
+            finance_manager_name || null, 
+            parent_id || null, 
+            is_cost_center ? 1 : 0
+          ).run();
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            id: result.meta.last_row_id 
+          }), { status: 201, headers });
+        } catch (error) {
+          return new Response(JSON.stringify({ error: 'خطا در ثبت' }), {
+            status: 400, headers
+          });
+        }
+      }
+
+      // حذف سازمان
+      if (url.pathname.startsWith('/api/organizations/') && request.method === 'DELETE') {
+        const id = url.pathname.split('/').pop();
+        
+        await env.DB.prepare(
+          'DELETE FROM organizations WHERE id = ?'
+        ).bind(id).run();
+        
+        return new Response(JSON.stringify({ success: true }), { status: 200, headers });
+      }
+
+      
       // Serve static files
-      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html') {
+      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html' || url.pathname === '/organizations.html') {
         return await env.ASSETS.fetch(request);
       }
 
