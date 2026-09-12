@@ -284,9 +284,99 @@ export default {
         return new Response(JSON.stringify({ success: true }), { status: 200, headers });
       }
 
+
+            // ========== بودجه پیشنهادی ==========
+      
+      // دریافت لیست بودجه‌ها
+      if (url.pathname === '/api/budget-proposals' && request.method === 'GET') {
+        const fiscalYearId = url.searchParams.get('fiscal_year_id');
+        
+        let query = `
+          SELECT bp.*, 
+                 o.name as organization_name,
+                 ec.title as economic_title,
+                 ec.sub_code as economic_sub_code,
+                 u.full_name as proposer_name
+          FROM budget_proposals bp
+          LEFT JOIN organizations o ON bp.organization_id = o.id
+          LEFT JOIN economic_classifications ec ON bp.economic_class_id = ec.id
+          LEFT JOIN users u ON bp.proposed_by = u.id
+        `;
+        const params = [];
+        
+        if (fiscalYearId) {
+          query += ' WHERE bp.fiscal_year_id = ?';
+          params.push(fiscalYearId);
+        }
+        
+        query += ' ORDER BY bp.created_at DESC';
+        
+        const items = await env.DB.prepare(query).bind(...params).all();
+        
+        return new Response(JSON.stringify(items.results), { status: 200, headers });
+      }
+
+      // ثبت بودجه جدید
+      if (url.pathname === '/api/budget-proposals' && request.method === 'POST') {
+        const { fiscal_year_id, organization_id, economic_class_id, title, amount, description } = await request.json();
+        
+        if (!fiscal_year_id || !organization_id || !economic_class_id || !title || !amount) {
+          return new Response(JSON.stringify({ error: 'همه فیلدهای الزامی را پر کنید' }), {
+            status: 400, headers
+          });
+        }
+        
+        // گرفتن userId از توکن
+        const authHeader = request.headers.get('Authorization');
+        const token = authHeader.replace('Bearer ', '');
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        
+        if (!userData) {
+          return new Response(JSON.stringify({ error: 'توکن نامعتبر' }), {
+            status: 401, headers
+          });
+        }
+        
+        try {
+          const result = await env.DB.prepare(`
+            INSERT INTO budget_proposals 
+            (fiscal_year_id, organization_id, economic_class_id, title, amount, description, proposed_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            fiscal_year_id, 
+            organization_id, 
+            economic_class_id, 
+            title, 
+            amount, 
+            description || null,
+            userData.userId
+          ).run();
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            id: result.meta.last_row_id 
+          }), { status: 201, headers });
+        } catch (error) {
+          return new Response(JSON.stringify({ error: 'خطا در ثبت' }), {
+            status: 400, headers
+          });
+        }
+      }
+
+      // حذف بودجه
+      if (url.pathname.startsWith('/api/budget-proposals/') && request.method === 'DELETE') {
+        const id = url.pathname.split('/').pop();
+        
+        await env.DB.prepare(
+          'DELETE FROM budget_proposals WHERE id = ?'
+        ).bind(id).run();
+        
+        return new Response(JSON.stringify({ success: true }), { status: 200, headers });
+      }
+
       
       // Serve static files
-      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html' || url.pathname === '/organizations.html') {
+      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html' || url.pathname === '/organizations.html'|| url.pathname === '/budget-proposals.html') {
         return await env.ASSETS.fetch(request);
       }
 

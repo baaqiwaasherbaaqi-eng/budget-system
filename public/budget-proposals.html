@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بودجه پیشنهادی</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+        body {
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+        .header a {
+            color: white;
+            text-decoration: none;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+            font-size: 13px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 13px;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        button {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 11px;
+        }
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: white;
+        }
+        .status-draft {
+            background: #6c757d;
+        }
+        .status-submitted {
+            background: #17a2b8;
+        }
+        .status-approved {
+            background: #28a745;
+        }
+        .status-rejected {
+            background: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💰 بودجه پیشنهادی</h1>
+        <a href="/dashboard.html">بازگشت به داشبورد</a>
+    </div>
+
+    <div class="container">
+        <h2>ثبت بودجه جدید</h2>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>سال مالی:</label>
+                <select id="fiscal_year_id"></select>
+            </div>
+            <div class="form-group">
+                <label>سازمان:</label>
+                <select id="organization_id"></select>
+            </div>
+            <div class="form-group">
+                <label>طبقه‌بندی اقتصادی:</label>
+                <select id="economic_class_id"></select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>عنوان بودجه:</label>
+                <input type="text" id="title" placeholder="مثلاً درآمد مالیاتی سال ۱۴۰۴">
+            </div>
+            <div class="form-group">
+                <label>مبلغ (ریال):</label>
+                <input type="text" id="amount" placeholder="مثلاً ۱۰۰۰۰۰۰۰۰">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>توضیحات:</label>
+            <textarea id="description" placeholder="توضیحات اختیاری"></textarea>
+        </div>
+
+        <button onclick="addProposal()">ثبت بودجه</button>
+        <div class="error" id="error"></div>
+
+        <h2>لیست بودجه‌های پیشنهادی</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>عنوان</th>
+                    <th>سازمان</th>
+                    <th>طبقه‌بندی</th>
+                    <th>مبلغ (ریال)</th>
+                    <th>وضعیت</th>
+                    <th>ثبت‌کننده</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+        </table>
+    </div>
+
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login.html';
+        }
+
+        const token = localStorage.getItem('token');
+
+        // تبدیل اعداد فارسی به انگلیسی
+        function toEnglishNumbers(str) {
+            return str.toString().replace(/[۰-۹]/g, function(d) { 
+                return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); 
+            });
+        }
+
+        // تبدیل اعداد انگلیسی به فارسی
+        function toPersianNumbers(str) {
+            const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+            return str.toString().replace(/\d/g, function(d) {
+                return persianDigits[parseInt(d)];
+            });
+        }
+
+        // فرمت مبلغ
+        function formatAmount(amount) {
+            return toPersianNumbers(amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+        }
+
+        // لود سال‌های مالی
+        async function loadFiscalYears() {
+            const response = await fetch('/api/fiscal-years', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const years = await response.json();
+            
+            const select = document.getElementById('fiscal_year_id');
+            select.innerHTML = '<option value="">انتخاب کنید</option>';
+            
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year.id;
+                option.textContent = toPersianNumbers(year.year);
+                select.appendChild(option);
+            });
+        }
+
+        // لود سازمان‌ها
+        async function loadOrganizations() {
+            const response = await fetch('/api/organizations', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const items = await response.json();
+            
+            const select = document.getElementById('organization_id');
+            select.innerHTML = '<option value="">انتخاب کنید</option>';
+            
+            items.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = item.name;
+                select.appendChild(option);
+            });
+        }
+
+        // لود طبقه‌بندی‌های اقتصادی
+        async function loadEconomicClassifications() {
+            const response = await fetch('/api/economic-classifications', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const items = await response.json();
+            
+            const select = document.getElementById('economic_class_id');
+            select.innerHTML = '<option value="">انتخاب کنید</option>';
+            
+            items.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = `${item.main_code}-${item.chapter_code}-${item.sub_code} - ${item.title}`;
+                select.appendChild(option);
+            });
+        }
+
+        // لود بودجه‌ها
+        async function loadProposals() {
+            const response = await fetch('/api/budget-proposals', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const items = await response.json();
+            
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            
+            items.forEach(item => {
+                const row = document.createElement('tr');
+                
+                const tdTitle = document.createElement('td');
+                tdTitle.textContent = item.title;
+                
+                const tdOrg = document.createElement('td');
+                tdOrg.textContent = item.organization_name || '-';
+                
+                const tdEconomic = document.createElement('td');
+                tdEconomic.textContent = item.economic_title ? 
+                    `${item.economic_sub_code} - ${item.economic_title}` : '-';
+                
+                const tdAmount = document.createElement('td');
+                tdAmount.textContent = formatAmount(item.amount);
+                
+                const tdStatus = document.createElement('td');
+                const statusMap = {
+                    'draft': { class: 'status-draft', label: 'پیش‌نویس' },
+                    'submitted': { class: 'status-submitted', label: 'ارسال شده' },
+                    'approved': { class: 'status-approved', label: 'تصویب شده' },
+                    'rejected': { class: 'status-rejected', label: 'رد شده' }
+                };
+                const status = statusMap[item.status] || statusMap.draft;
+                tdStatus.innerHTML = `<span class="status-badge ${status.class}">${status.label}</span>`;
+                
+                const tdProposer = document.createElement('td');
+                tdProposer.textContent = item.proposer_name || '-';
+                
+                const tdActions = document.createElement('td');
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = 'حذف';
+                deleteBtn.onclick = () => deleteProposal(item.id);
+                tdActions.appendChild(deleteBtn);
+                
+                row.appendChild(tdTitle);
+                row.appendChild(tdOrg);
+                row.appendChild(tdEconomic);
+                row.appendChild(tdAmount);
+                row.appendChild(tdStatus);
+                row.appendChild(tdProposer);
+                row.appendChild(tdActions);
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        // ثبت بودجه
+        async function addProposal() {
+            const fiscal_year_id = document.getElementById('fiscal_year_id').value;
+            const organization_id = document.getElementById('organization_id').value;
+            const economic_class_id = document.getElementById('economic_class_id').value;
+            const title = document.getElementById('title').value;
+            const amountRaw = document.getElementById('amount').value;
+            const description = document.getElementById('description').value;
+            
+            if (!fiscal_year_id || !organization_id || !economic_class_id || !title || !amountRaw) {
+                document.getElementById('error').textContent = 'همه فیلدهای الزامی را پر کنید';
+                return;
+            }
+            
+            const amount = toEnglishNumbers(amountRaw);
+            
+            const response = await fetch('/api/budget-proposals', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    fiscal_year_id: parseInt(fiscal_year_id),
+                    organization_id: parseInt(organization_id),
+                    economic_class_id: parseInt(economic_class_id),
+                    title,
+                    amount: parseFloat(amount),
+                    description
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                document.getElementById('error').textContent = '';
+                document.getElementById('title').value = '';
+                document.getElementById('amount').value = '';
+                document.getElementById('description').value = '';
+                loadProposals();
+            } else {
+                document.getElementById('error').textContent = data.error;
+            }
+        }
+
+        // حذف بودجه
+        async function deleteProposal(id) {
+            if (!confirm('مطمئن هستید؟')) return;
+            
+            const response = await fetch(`/api/budget-proposals/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (response.ok) {
+                loadProposals();
+            }
+        }
+
+        // لود اولیه
+        loadFiscalYears();
+        loadOrganizations();
+        loadEconomicClassifications();
+        loadProposals();
+    </script>
+</body>
+</html>
