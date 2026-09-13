@@ -1,46 +1,96 @@
-# پروژه: سامانه بودجه شهرداری
 
-## تاریخ آخرین آپدیت: امروز
+پروژه: سامانه بودجه شهرداری
+تاریخ آخرین آپدیت: [امروز]
+وضعیت: فاز ۰ تا ۵ تکمیل شد ✅
+کارهای انجام شده:
+☑ فاز ۰: راه‌اندازی زیرساخت
+☑ فاز ۱: احراز هویت
+☑ فاز ۲: سال مالی
+☑ فاز ۳: طبقه‌بندی اقتصادی
+☑ فاز ۴: ساختار سازمانی
+☑ فاز ۵: بودجه پیشنهادی
+API های موجود:
+POST /api/login
 
-## وضعیت: فاز ۱ تکمیل شد ✅
+GET /api/hello
 
-## کارهای انجام شده:
-- [x] فاز ۰: راه‌اندازی زیرساخت
-  - GitHub Repository
-  - Wrangler نصب شد
-  - D1 Database ساخته شد
-  - اولین Worker ساخته شد
-  
-- [x] فاز ۱: احراز هویت
-  - جدول users ساخته شد
-  - سیستم login با JWT
-  - صفحه login.html
-  - صفحه dashboard.html
-  - کاربر admin ساخته شد
-  - فونت Vazirmatn اضافه شد
+GET /api/test-db
 
-## API های موجود:
-- POST /api/login - ورود با username و password
-- GET /api/hello - تست سرور
-- GET /api/test-db - تست دیتابیس
+GET/POST /api/fiscal-years
 
-## کاربر پیش‌فرض:
-- username: admin
-- password: Admin123!
+PUT /api/fiscal-years/activate
 
-## کار بعدی:
-- فاز ۲: مدیریت سال مالی
-- ساخت جدول fiscal_years
-- API برای CRUD سال مالی
-- صفحه مدیریت سال مالی
+DELETE /api/fiscal-years/:year
 
-## مشکلات:
-- حل شد: مشکل فونت فارسی
-- حل شد: مشکل jsonwebtoken در Cloudflare Workers
-- حل شد: مشکل serve فایل‌های استاتیک
+GET/POST/DELETE /api/economic-classifications
 
-## یادداشت‌ها:
-- این فایل حافظه پروژه ماست
-- برای push از Token جدید استفاده کن
-- برای deploy: wrangler deploy
-- برای push: git push origin main
+GET/POST/DELETE /api/organizations
+
+GET/POST/DELETE /api/budget-proposals
+
+ساختار پروژه:
+budget-system/
+├── src/
+│ ├── index.js
+│ └── auth.js
+├── public/
+│ ├── login.html
+│ ├── dashboard.html
+│ ├── fiscal-years.html
+│ ├── economic-classifications.html
+│ ├── organizations.html
+│ └── budget-proposals.html
+├── migrations/
+│ ├── 001_users.sql
+│ ├── 002_admin.sql
+│ ├── 003_fiscal_years.sql
+│ ├── 004_economic_classifications.sql
+│ ├── 005_organizations.sql
+│ └── 006_budget_proposals.sql
+├── CONTEXT.md
+├── wrangler.toml
+└── package.json
+
+کاربر پیش‌فرض:
+username: admin
+
+password: Admin123!
+
+آدرس سایت:
+https://budget-system.baaqiwaasherbaaqi.workers.dev
+
+کار بعدی:
+فاز ۶: فرآیند تایید و تصویب بودجه
+
+گردش کار تایید
+
+تغییر وضعیت بودجه (draft → submitted → approved/rejected)
+
+ثبت مصوبه شورا
+
+مشکلات و نکات:
+ویرایش سال مالی کار نمیکنه (موقتاً حذف شد)
+
+حذف سال مالی کار نمیکنه (موقتاً حذف شد)
+
+توکن JWT ۲۴ ساعته هست
+
+برای push از Token جدید GitHub استفاده کن
+
+jsonwebtoken با Cloudflare سازگار نبود، از Web Crypto API استفاده کردیم
+
+تصمیمات مهم:
+هوشمندسازی رو در فاز آخر کار میکنیم
+
+فعلاً بدون طبقه‌بندی عملیاتی و راهبردی
+
+سطوح دسترسی استانی/وزارتی در فاز آخر
+
+دستورات مهم:
+wrangler dev = تست لوکال
+
+wrangler deploy = استقرار
+
+wrangler d1 execute budget-db --file=./migrations/xxx.sql --remote = اجرای migration
+
+git add . && git commit -m "..." && git push origin main = ذخیره در GitHub

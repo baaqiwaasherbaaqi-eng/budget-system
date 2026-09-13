@@ -133,6 +133,68 @@
         .status-rejected {
             background: #dc3545;
         }
+        .status-manager-approved {
+            background: #6f42c1;
+        }
+        .status-finance-approved {
+            background: #fd7e14;
+        }
+        .submit-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 11px;
+            margin-left: 3px;
+        }
+        .submit-btn:hover {
+            background: #138496;
+        }
+        .approve-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 11px;
+            margin-left: 3px;
+        }
+        .approve-btn:hover {
+            background: #218838;
+        }
+        .reject-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 11px;
+            margin-left: 3px;
+        }
+        .reject-btn:hover {
+            background: #c0392b;
+        }
+        .history-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 11px;
+            margin-left: 3px;
+        }
+        .history-btn:hover {
+            background: #5a6268;
+        }
     </style>
 </head>
 <body>
@@ -306,21 +368,79 @@
                 const statusMap = {
                     'draft': { class: 'status-draft', label: 'پیش‌نویس' },
                     'submitted': { class: 'status-submitted', label: 'ارسال شده' },
-                    'approved': { class: 'status-approved', label: 'تصویب شده' },
+                    'manager_approved': { class: 'status-manager-approved', label: 'تایید مدیر' },
+                    'finance_approved': { class: 'status-finance-approved', label: 'تایید مالی' },
+                    'approved': { class: 'status-approved', label: 'تصویب نهایی' },
                     'rejected': { class: 'status-rejected', label: 'رد شده' }
                 };
                 const status = statusMap[item.status] || statusMap.draft;
                 tdStatus.innerHTML = `<span class="status-badge ${status.class}">${status.label}</span>`;
                 
                 const tdProposer = document.createElement('td');
-                tdProposer.textContent = item.proposer_name || '-';
-                
+                tdProposer.textContent = item.proposer_name || '-';             
+               
                 const tdActions = document.createElement('td');
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'delete-btn';
-                deleteBtn.textContent = 'حذف';
-                deleteBtn.onclick = () => deleteProposal(item.id);
-                tdActions.appendChild(deleteBtn);
+                
+                // دکمه عملیات بر اساس وضعیت
+                if (item.status === 'draft') {
+                    const submitBtn = document.createElement('button');
+                    submitBtn.className = 'submit-btn';
+                    submitBtn.textContent = 'ارسال';
+                    submitBtn.onclick = () => changeStatus(item.id, 'submitted');
+                    tdActions.appendChild(submitBtn);
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.textContent = 'حذف';
+                    deleteBtn.onclick = () => deleteProposal(item.id);
+                    tdActions.appendChild(deleteBtn);
+                    
+                } else if (item.status === 'submitted') {
+                    const approveBtn = document.createElement('button');
+                    approveBtn.className = 'approve-btn';
+                    approveBtn.textContent = 'تایید مدیر';
+                    approveBtn.onclick = () => changeStatus(item.id, 'manager_approved');
+                    tdActions.appendChild(approveBtn);
+                    
+                    const rejectBtn = document.createElement('button');
+                    rejectBtn.className = 'reject-btn';
+                    rejectBtn.textContent = 'رد';
+                    rejectBtn.onclick = () => changeStatus(item.id, 'rejected');
+                    tdActions.appendChild(rejectBtn);
+                    
+                } else if (item.status === 'manager_approved') {
+                    const financeApproveBtn = document.createElement('button');
+                    financeApproveBtn.className = 'approve-btn';
+                    financeApproveBtn.textContent = 'تایید مالی';
+                    financeApproveBtn.onclick = () => changeStatus(item.id, 'finance_approved');
+                    tdActions.appendChild(financeApproveBtn);
+                    
+                    const rejectBtn2 = document.createElement('button');
+                    rejectBtn2.className = 'reject-btn';
+                    rejectBtn2.textContent = 'رد';
+                    rejectBtn2.onclick = () => changeStatus(item.id, 'rejected');
+                    tdActions.appendChild(rejectBtn2);
+                    
+                } else if (item.status === 'finance_approved') {
+                    const finalApproveBtn = document.createElement('button');
+                    finalApproveBtn.className = 'approve-btn';
+                    finalApproveBtn.textContent = 'تصویب نهایی';
+                    finalApproveBtn.onclick = () => changeStatus(item.id, 'approved');
+                    tdActions.appendChild(finalApproveBtn);
+                    
+                    const rejectBtn3 = document.createElement('button');
+                    rejectBtn3.className = 'reject-btn';
+                    rejectBtn3.textContent = 'رد';
+                    rejectBtn3.onclick = () => changeStatus(item.id, 'rejected');
+                    tdActions.appendChild(rejectBtn3);
+                    
+                } else if (item.status === 'approved' || item.status === 'rejected') {
+                    const historyBtn = document.createElement('button');
+                    historyBtn.className = 'history-btn';
+                    historyBtn.textContent = 'تاریخچه';
+                    historyBtn.onclick = () => showHistory(item.id);
+                    tdActions.appendChild(historyBtn);
+                }
                 
                 row.appendChild(tdTitle);
                 row.appendChild(tdOrg);
@@ -392,6 +512,71 @@
                 loadProposals();
             }
         }
+
+
+
+        // تغییر وضعیت بودجه
+        async function changeStatus(id, newStatus) {
+            const statusLabels = {
+                'submitted': 'ارسال به مدیر',
+                'manager_approved': 'تایید مدیر',
+                'finance_approved': 'تایید مالی',
+                'approved': 'تصویب نهایی',
+                'rejected': 'رد'
+            };
+            
+            const comment = prompt(`توضیحات ${statusLabels[newStatus]} (اختیاری):`);
+            if (comment === null) return;
+            
+            const response = await fetch('/api/budget-proposals/change-status', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    id,
+                    new_status: newStatus,
+                    comment
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                alert('وضعیت با موفقیت تغییر کرد');
+                loadProposals();
+            } else {
+                alert('خطا: ' + data.error);
+            }
+        }
+
+        // نمایش تاریخچه
+        async function showHistory(id) {
+            const response = await fetch(`/api/approval-history/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const history = await response.json();
+            
+            if (history.length === 0) {
+                alert('تاریخچه‌ای ثبت نشده');
+                return;
+            }
+            
+            let message = 'تاریخچه تغییرات:\n\n';
+            history.forEach(item => {
+                message += `از: ${item.from_status} → به: ${item.to_status}\n`;
+                message += `توسط: ${item.action_by_name}\n`;
+                message += `تاریخ: ${item.action_at}\n`;
+                if (item.comment) {
+                    message += `توضیح: ${item.comment}\n`;
+                }
+                message += '---\n';
+            });
+            
+            alert(message);
+        }
+
 
         // لود اولیه
         loadFiscalYears();
