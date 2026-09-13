@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>گزارشات</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+        body {
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+        .header a {
+            color: white;
+            text-decoration: none;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 14px;
+            min-width: 200px;
+        }
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .summary-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-right: 4px solid #667eea;
+        }
+        .summary-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 13px;
+            color: #666;
+        }
+        .summary-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        .summary-card .count {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .section-title {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: white;
+        }
+        .status-draft { background: #6c757d; }
+        .status-submitted { background: #17a2b8; }
+        .status-manager_approved { background: #6f42c1; }
+        .status-finance_approved { background: #fd7e14; }
+        .status-approved { background: #28a745; }
+        .status-rejected { background: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📈 گزارشات بودجه</h1>
+        <a href="/dashboard.html">بازگشت به داشبورد</a>
+    </div>
+
+    <div class="container">
+        <label style="font-weight: bold; margin-left: 10px;">سال مالی:</label>
+        <select id="fiscal_year_id" onchange="loadReport()">
+            <option value="">انتخاب کنید</option>
+        </select>
+    </div>
+
+    <div id="report-content" style="display: none;">
+        <div class="container">
+            <h2 class="section-title">📊 خلاصه کلی</h2>
+            <div class="summary-cards" id="summary-cards"></div>
+        </div>
+
+        <div class="container">
+            <h2 class="section-title">📋 بر اساس وضعیت</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>وضعیت</th>
+                        <th>تعداد</th>
+                        <th>جمع مبلغ (ریال)</th>
+                    </tr>
+                </thead>
+                <tbody id="by-status-body"></tbody>
+            </table>
+        </div>
+
+        <div class="container">
+            <h2 class="section-title">🏢 بر اساس سازمان</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>سازمان</th>
+                        <th>تعداد</th>
+                        <th>جمع مبلغ (ریال)</th>
+                    </tr>
+                </thead>
+                <tbody id="by-organization-body"></tbody>
+            </table>
+        </div>
+
+        <div class="container">
+            <h2 class="section-title">💰 بر اساس نوع (منابع/مصارف)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>نوع</th>
+                        <th>تعداد</th>
+                        <th>جمع مبلغ (ریال)</th>
+                    </tr>
+                </thead>
+                <tbody id="by-type-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login.html';
+        }
+
+        const token = localStorage.getItem('token');
+
+        function toPersianNumbers(str) {
+            const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+            return str.toString().replace(/\d/g, function(d) {
+                return persianDigits[parseInt(d)];
+            });
+        }
+
+        function formatAmount(amount) {
+            if (!amount) return '۰';
+            return toPersianNumbers(amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+        }
+
+        const statusLabels = {
+            'draft': 'پیش‌نویس',
+            'submitted': 'ارسال شده',
+            'manager_approved': 'تایید مدیر',
+            'finance_approved': 'تایید مالی',
+            'approved': 'تصویب نهایی',
+            'rejected': 'رد شده'
+        };
+
+        const typeLabels = {
+            'resource': 'منابع',
+            'expense': 'مصارف'
+        };
+
+        async function loadFiscalYears() {
+            const response = await fetch('/api/fiscal-years', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const years = await response.json();
+            
+            const select = document.getElementById('fiscal_year_id');
+            select.innerHTML = '<option value="">انتخاب کنید</option>';
+            
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year.id;
+                option.textContent = toPersianNumbers(year.year);
+                select.appendChild(option);
+            });
+        }
+
+        async function loadReport() {
+            const fiscalYearId = document.getElementById('fiscal_year_id').value;
+            
+            if (!fiscalYearId) {
+                document.getElementById('report-content').style.display = 'none';
+                return;
+            }
+            
+            const response = await fetch(`/api/reports/summary?fiscal_year_id=${fiscalYearId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            
+            document.getElementById('report-content').style.display = 'block';
+            
+            // خلاصه کلی
+            const summaryCards = document.getElementById('summary-cards');
+            summaryCards.innerHTML = `
+                <div class="summary-card">
+                    <h3>جمع کل مبلغ</h3>
+                    <div class="value">${formatAmount(data.total?.total_amount || 0)}</div>
+                    <div class="count">تعداد: ${toPersianNumbers(data.total?.total_count || 0)}</div>
+                </div>
+            `;
+            
+            // بر اساس وضعیت
+            const statusBody = document.getElementById('by-status-body');
+            statusBody.innerHTML = '';
+            data.byStatus.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><span class="status-badge status-${item.status}">${statusLabels[item.status] || item.status}</span></td>
+                    <td>${toPersianNumbers(item.count)}</td>
+                    <td>${formatAmount(item.total)}</td>
+                `;
+                statusBody.appendChild(row);
+            });
+            
+            // بر اساس سازمان
+            const orgBody = document.getElementById('by-organization-body');
+            orgBody.innerHTML = '';
+            data.byOrganization.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.organization_name || '-'}</td>
+                    <td>${toPersianNumbers(item.count)}</td>
+                    <td>${formatAmount(item.total)}</td>
+                `;
+                orgBody.appendChild(row);
+            });
+            
+            // بر اساس نوع
+            const typeBody = document.getElementById('by-type-body');
+            typeBody.innerHTML = '';
+            data.byType.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${typeLabels[item.type] || item.type || '-'}</td>
+                    <td>${toPersianNumbers(item.count)}</td>
+                    <td>${formatAmount(item.total)}</td>
+                `;
+                typeBody.appendChild(row);
+            });
+        }
+
+        loadFiscalYears();
+    </script>
+</body>
+</html>

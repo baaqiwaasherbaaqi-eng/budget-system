@@ -493,8 +493,92 @@ export default {
         return new Response(JSON.stringify(history.results), { status: 200, headers });
       }
 
+
+      // ========== گزارشات ==========
+      
+      // گزارش خلاصه بودجه
+      if (url.pathname === '/api/reports/summary' && request.method === 'GET') {
+        const fiscalYearId = url.searchParams.get('fiscal_year_id');
+        
+        if (!fiscalYearId) {
+          return new Response(JSON.stringify({ error: 'سال مالی الزامی است' }), {
+            status: 400, headers
+          });
+        }
+        
+        // جمع کل بر اساس وضعیت
+        const byStatus = await env.DB.prepare(`
+          SELECT status, COUNT(*) as count, SUM(amount) as total
+          FROM budget_proposals
+          WHERE fiscal_year_id = ?
+          GROUP BY status
+        `).bind(fiscalYearId).all();
+        
+        // جمع کل بر اساس سازمان
+        const byOrganization = await env.DB.prepare(`
+          SELECT o.name as organization_name, COUNT(*) as count, SUM(bp.amount) as total
+          FROM budget_proposals bp
+          LEFT JOIN organizations o ON bp.organization_id = o.id
+          WHERE bp.fiscal_year_id = ?
+          GROUP BY bp.organization_id
+          ORDER BY total DESC
+        `).bind(fiscalYearId).all();
+        
+        // جمع کل بر اساس نوع (منابع/مصارف)
+        const byType = await env.DB.prepare(`
+          SELECT ec.type, COUNT(*) as count, SUM(bp.amount) as total
+          FROM budget_proposals bp
+          LEFT JOIN economic_classifications ec ON bp.economic_class_id = ec.id
+          WHERE bp.fiscal_year_id = ?
+          GROUP BY ec.type
+        `).bind(fiscalYearId).all();
+        
+        // جمع کل
+        const total = await env.DB.prepare(`
+          SELECT SUM(amount) as total_amount, COUNT(*) as total_count
+          FROM budget_proposals
+          WHERE fiscal_year_id = ?
+        `).bind(fiscalYearId).first();
+        
+        return new Response(JSON.stringify({
+          total: total,
+          byStatus: byStatus.results,
+          byOrganization: byOrganization.results,
+          byType: byType.results
+        }), { status: 200, headers });
+      }
+
+      // گزارش تفصیلی
+      if (url.pathname === '/api/reports/detailed' && request.method === 'GET') {
+        const fiscalYearId = url.searchParams.get('fiscal_year_id');
+        
+        if (!fiscalYearId) {
+          return new Response(JSON.stringify({ error: 'سال مالی الزامی است' }), {
+            status: 400, headers
+          });
+        }
+        
+        const items = await env.DB.prepare(`
+          SELECT bp.*, 
+                 o.name as organization_name,
+                 ec.title as economic_title,
+                 ec.sub_code as economic_sub_code,
+                 ec.type as economic_type,
+                 u.full_name as proposer_name
+          FROM budget_proposals bp
+          LEFT JOIN organizations o ON bp.organization_id = o.id
+          LEFT JOIN economic_classifications ec ON bp.economic_class_id = ec.id
+          LEFT JOIN users u ON bp.proposed_by = u.id
+          WHERE bp.fiscal_year_id = ?
+          ORDER BY bp.created_at DESC
+        `).bind(fiscalYearId).all();
+        
+        return new Response(JSON.stringify(items.results), { status: 200, headers });
+      }
+
+
       // Serve static files
-      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html' || url.pathname === '/organizations.html' || url.pathname === '/budget-proposals.html') {
+      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html' || url.pathname === '/organizations.html' || url.pathname === '/budget-proposals.html'|| url.pathname === '/reports.html') {
         return await env.ASSETS.fetch(request);
       }
 
