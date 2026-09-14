@@ -454,7 +454,30 @@
                     plugins: {
                         legend: {
                             position: 'bottom',
-                            labels: { font: { family: 'Vazirmatn' } }
+                            labels: { 
+                                font: { 
+                                    family: 'Vazirmatn',
+                                    size: 13
+                                },
+                                generateLabels: function(chart) {
+                                    const original = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                                    original.forEach(label => {
+                                        label.text = toPersianNumbers(label.text);
+                                    });
+                                    return original;
+                                }
+                            }
+                        },
+                        tooltip: {
+                            titleFont: { family: 'Vazirmatn', size: 13 },
+                            bodyFont: { family: 'Vazirmatn', size: 13 },
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    return `${label}: ${toPersianNumbers(value)} ردیف`;
+                                }
+                            }
                         }
                     }
                 }
@@ -483,13 +506,38 @@
                 options: {
                     responsive: true,
                     plugins: {
-                        legend: { display: false }
+                        legend: { 
+                            display: false,
+                            labels: {
+                                font: { family: 'Vazirmatn', size: 13 }
+                            }
+                        },
+                        tooltip: {
+                            titleFont: { family: 'Vazirmatn', size: 13 },
+                            bodyFont: { family: 'Vazirmatn', size: 13 },
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].label;
+                                },
+                                label: function(context) {
+                                    const value = context.parsed.y || 0;
+                                    return `مبلغ: ${formatAmount(value)} ریال`;
+                                }
+                            }
+                        }
                     },
                     scales: {
+                        x: {
+                            ticks: {
+                                font: { family: 'Vazirmatn', size: 12 }
+                            }
+                        },
                         y: {
                             ticks: {
+                                font: { family: 'Vazirmatn', size: 12 },
                                 callback: function(value) {
-                                    return (value / 1000000).toFixed(0) + 'M';
+                                    const millions = value / 1000000;
+                                    return toPersianNumbers(millions.toFixed(0)) + ' میلیون';
                                 }
                             }
                         }
