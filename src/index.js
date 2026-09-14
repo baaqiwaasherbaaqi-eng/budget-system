@@ -1,7 +1,33 @@
 import { hashPassword, verifyPassword, generateToken, verifyToken } from './auth';
 
+// ثبت لاگ
+async function logAction(env, request, userData, action, entityType, entityId, details) {
+  try {
+    const ip = request.headers.get('CF-Connecting-IP') || 
+               request.headers.get('X-Forwarded-For') || 
+               'unknown';
+    const userAgent = request.headers.get('User-Agent') || 'unknown';
+    
+    await env.DB.prepare(`
+      INSERT INTO audit_log (user_id, username, action, entity_type, entity_id, details, ip_address, user_agent)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      userData ? userData.userId : null,
+      userData ? userData.username : null,
+      action,
+      entityType || null,
+      entityId || null,
+      details ? JSON.stringify(details) : null,
+      ip,
+      userAgent
+    ).run();
+  } catch (error) {
+    console.error('Audit log error:', error);
+  }
+}
+
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const headers = {
       'Access-Control-Allow-Origin': '*',
@@ -19,29 +45,32 @@ export default {
       // ========== ورود ==========
       if (url.pathname === '/api/login' && request.method === 'POST') {
         const { username, password } = await request.json();
-
-        // پیدا کردن کاربر
+        
         const user = await env.DB.prepare(
           'SELECT * FROM users WHERE username = ? AND is_active = 1'
         ).bind(username).first();
 
-        if (!user) {
-          return new Response(JSON.stringify({
-            error: 'نام کاربری یا رمز عبور اشتباه است'
+        if (!user || !(await verifyPassword(password, user.password_hash))) {
+          // ثبت لاگ ورود ناموفق
+          ctx.waitUntil(logAction(env, request, null, 'login_failed', 'user', null, { 
+            username: username,
+            reason: !user ? 'user_not_found' : 'wrong_password'
+          }));
+          
+          return new Response(JSON.stringify({ 
+            error: 'نام کاربری یا رمز عبور اشتباه است' 
           }), { status: 401, headers });
         }
 
-        // بررسی پسورد
-        const validPassword = await verifyPassword(password, user.password_hash);
-        if (!validPassword) {
-          return new Response(JSON.stringify({
-            error: 'نام کاربری یا رمز عبور اشتباه است'
-          }), { status: 401, headers });
-        }
-
-        // ساخت توکن
         const token = await generateToken(user.id, user.username, user.role, env.JWT_SECRET);
-
+        
+        // ثبت لاگ ورود موفق
+        ctx.waitUntil(logAction(env, request, 
+          { userId: user.id, username: user.username }, 
+          'login', 'user', user.id, 
+          { success: true }
+        ));
+        
         return new Response(JSON.stringify({
           token,
           user: {
@@ -464,17 +493,17 @@ export default {
         }
 
 
-        // آپدیت وضعیت
-        try {
-          await env.DB.prepare(
-            'UPDATE budget_proposals SET status = ? WHERE id = ?'
-          ).bind(new_status, id).run();
-        } catch (updateError) {
-          return new Response(JSON.stringify({
-            error: 'خطا در آپدیت: ' + updateError.message
-          }), { status: 500, headers });
-        }
-
+         // آپدیت وضعیت
+         await env.DB.prepare(
+          'UPDATE budget_proposals SET status = ? WHERE id = ?'
+        ).bind(new_status, id).run();
+        
+        // ثبت لاگ
+        ctx.waitUntil(logAction(env, request, userData, 
+          'budget_status_changed', 'budget_proposal', id, 
+          { from: current.status, to: new_status, comment: comment }
+        ));
+        
         return new Response(JSON.stringify({ success: true }), { status: 200, headers });
       }
 
@@ -660,6 +689,12 @@ export default {
             allocation_date || null
           ).run();
           
+          // ثبت لاگ
+          ctx.waitUntil(logAction(env, request, null, 
+            'allocation_created', 'budget_allocation', result.meta.last_row_id, 
+            { amount: amount, organization_id: organization_id }
+          ));
+
           return new Response(JSON.stringify({ 
             success: true, 
             id: result.meta.last_row_id 
@@ -773,6 +808,12 @@ export default {
             accounting_doc_no || null
           ).run();
           
+          // ثبت لاگ
+          ctx.waitUntil(logAction(env, request, userData, 
+            'execution_created', 'budget_execution', result.meta.last_row_id, 
+            { amount: amount, allocation_id: allocation_id, technical_code: technical_code }
+          ));
+
           return new Response(JSON.stringify({ 
             success: true, 
             id: result.meta.last_row_id 
