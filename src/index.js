@@ -966,8 +966,223 @@ export default {
         return new Response(JSON.stringify({ success: true }), { status: 200, headers });
       }
 
+      // ========== اصلاح بودجه ==========
+      
+      // دریافت لیست اصلاحات
+      if (url.pathname === '/api/revisions' && request.method === 'GET') {
+        const fiscalYearId = url.searchParams.get('fiscal_year_id');
+        
+        let query = `
+          SELECT br.*, 
+                 bp.title as budget_title,
+                 u1.full_name as creator_name,
+                 u2.full_name as approver_name
+          FROM budget_revisions br
+          LEFT JOIN budget_proposals bp ON br.budget_proposal_id = bp.id
+          LEFT JOIN users u1 ON br.created_by = u1.id
+          LEFT JOIN users u2 ON br.approved_by = u2.id
+        `;
+        const params = [];
+        
+        if (fiscalYearId) {
+          query += ' WHERE br.fiscal_year_id = ?';
+          params.push(fiscalYearId);
+        }
+        
+        query += ' ORDER BY br.created_at DESC';
+        
+        const items = await env.DB.prepare(query).bind(...params).all();
+        
+        return new Response(JSON.stringify(items.results), { status: 200, headers });
+      }
+
+      // ثبت اصلاح جدید
+      if (url.pathname === '/api/revisions' && request.method === 'POST') {
+        const authHeader = request.headers.get('Authorization');
+        const token = authHeader.replace('Bearer ', '');
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        
+        if (!userData) {
+          return new Response(JSON.stringify({ error: 'توکن نامعتبر' }), {
+            status: 401, headers
+          });
+        }
+        
+        const { fiscal_year_id, budget_proposal_id, revision_type, new_amount, reason } = await request.json();
+        
+        if (!fiscal_year_id || !revision_type || !reason) {
+          return new Response(JSON.stringify({ error: 'همه فیلدهای الزامی را پر کنید' }), {
+            status: 400, headers
+          });
+        }
+        
+        let old_amount = 0;
+        let difference = 0;
+        
+        // برای increase/decrease/remove باید budget_proposal_id باشه
+        if (revision_type !== 'add') {
+          if (!budget_proposal_id) {
+            return new Response(JSON.stringify({ error: 'بودجه را انتخاب کنید' }), {
+              status: 400, headers
+            });
+          }
+          
+          const budget = await env.DB.prepare(
+            'SELECT amount FROM budget_proposals WHERE id = ?'
+          ).bind(budget_proposal_id).first();
+          
+          if (!budget) {
+            return new Response(JSON.stringify({ error: 'بودجه یافت نشد' }), {
+              status: 404, headers
+            });
+          }
+          
+          old_amount = budget.amount;
+          
+          if (revision_type === 'increase') {
+            if (!new_amount || new_amount <= 0) {
+              return new Response(JSON.stringify({ error: 'مبلغ افزایش الزامی است' }), {
+                status: 400, headers
+              });
+            }
+            difference = parseFloat(new_amount);
+          } else if (revision_type === 'decrease') {
+            if (!new_amount || new_amount <= 0) {
+              return new Response(JSON.stringify({ error: 'مبلغ کاهش الزامی است' }), {
+                status: 400, headers
+              });
+            }
+            difference = -parseFloat(new_amount);
+          } else if (revision_type === 'remove') {
+            difference = -old_amount;
+          } else if (revision_type === 'add') {
+            difference = parseFloat(new_amount);
+          }
+        } else {
+          // add
+          if (!new_amount || new_amount <= 0) {
+            return new Response(JSON.stringify({ error: 'مبلغ الزامی است' }), {
+              status: 400, headers
+            });
+          }
+          difference = parseFloat(new_amount);
+        }
+        
+        try {
+          const result = await env.DB.prepare(`
+            INSERT INTO budget_revisions 
+            (fiscal_year_id, budget_proposal_id, revision_type, old_amount, new_amount, difference, reason, created_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            fiscal_year_id,
+            budget_proposal_id || null,
+            revision_type,
+            old_amount,
+            new_amount || null,
+            difference,
+            reason,
+            userData.userId
+          ).run();
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            id: result.meta.last_row_id 
+          }), { status: 201, headers });
+        } catch (error) {
+          return new Response(JSON.stringify({ error: 'خطا در ثبت: ' + error.message }), {
+            status: 400, headers
+          });
+        }
+      }
+
+      // تایید یا رد اصلاح
+      if (url.pathname === '/api/revisions/approve' && request.method === 'PUT') {
+        const authHeader = request.headers.get('Authorization');
+        const token = authHeader.replace('Bearer ', '');
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        
+        if (!userData || !['admin', 'manager'].includes(userData.role)) {
+          return new Response(JSON.stringify({ error: 'دسترسی غیرمجاز' }), {
+            status: 403, headers
+          });
+        }
+        
+        const { id, status } = await request.json();
+        
+        if (!id || !['approved', 'rejected'].includes(status)) {
+          return new Response(JSON.stringify({ error: 'اطلاعات ناقص' }), {
+            status: 400, headers
+          });
+        }
+        
+        // اگر تایید شد، تغییرات رو اعمال کن
+        if (status === 'approved') {
+          const revision = await env.DB.prepare(
+            'SELECT * FROM budget_revisions WHERE id = ?'
+          ).bind(id).first();
+          
+          if (!revision) {
+            return new Response(JSON.stringify({ error: 'اصلاح یافت نشد' }), {
+              status: 404, headers
+            });
+          }
+          
+          if (revision.status !== 'pending') {
+            return new Response(JSON.stringify({ error: 'این اصلاح قبلاً بررسی شده' }), {
+              status: 400, headers
+            });
+          }
+          
+          // اعمال تغییرات
+          if (revision.revision_type === 'add') {
+            // ردیف جدید اضافه کن
+            await env.DB.prepare(`
+              INSERT INTO budget_proposals 
+              (fiscal_year_id, organization_id, economic_class_id, title, amount, status, proposed_by)
+              VALUES (?, ?, ?, ?, ?, 'approved', ?)
+            `).bind(
+              revision.fiscal_year_id,
+              1, // پیش‌فرض
+              1, // پیش‌فرض
+              'ردیف جدید (اصلاح بودجه)',
+              revision.new_amount,
+              revision.created_by
+            ).run();
+          } else if (revision.revision_type === 'increase') {
+            // مبلغ جدید = مبلغ فعلی بودجه + مبلغ افزایش
+            const currentBudget = await env.DB.prepare(
+              'SELECT amount FROM budget_proposals WHERE id = ?'
+            ).bind(revision.budget_proposal_id).first();
+            
+            const newTotal = currentBudget.amount + revision.new_amount;
+            await env.DB.prepare(`
+              UPDATE budget_proposals SET amount = ? WHERE id = ?
+            `).bind(newTotal, revision.budget_proposal_id).run();
+          } else if (revision.revision_type === 'decrease') {
+            // مبلغ جدید = مبلغ فعلی بودجه - مبلغ کاهش
+            const currentBudget = await env.DB.prepare(
+              'SELECT amount FROM budget_proposals WHERE id = ?'
+            ).bind(revision.budget_proposal_id).first();
+            
+            const newTotal = currentBudget.amount - revision.new_amount;
+            await env.DB.prepare(`
+              UPDATE budget_proposals SET amount = ? WHERE id = ?
+            `).bind(newTotal, revision.budget_proposal_id).run();
+          }
+        }
+        
+        // آپدیت وضعیت
+        await env.DB.prepare(`
+          UPDATE budget_revisions 
+          SET status = ?, approved_by = ?, approved_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).bind(status, userData.userId, id).run();
+        
+        return new Response(JSON.stringify({ success: true }), { status: 200, headers });
+      }
+
       // Serve static files
-      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html' || url.pathname === '/organizations.html' || url.pathname === '/budget-proposals.html'|| url.pathname === '/reports.html'|| url.pathname === '/allocations.html'|| url.pathname === '/executions.html'|| url.pathname === '/users.html') {
+      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html' || url.pathname === '/organizations.html' || url.pathname === '/budget-proposals.html'|| url.pathname === '/reports.html'|| url.pathname === '/allocations.html'|| url.pathname === '/executions.html'|| url.pathname === '/users.html'|| url.pathname === '/revisions.html') {
         return await env.ASSETS.fetch(request);
       }
 

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اصلاح بودجه</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+        body {
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+        .header a {
+            color: white;
+            text-decoration: none;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+            font-size: 13px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 13px;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        button {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .success {
+            color: green;
+            margin-top: 10px;
+        }
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: white;
+        }
+        .status-pending { background: #ffc107; color: #333; }
+        .status-approved { background: #28a745; }
+        .status-rejected { background: #dc3545; }
+        .type-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: white;
+        }
+        .type-add { background: #17a2b8; }
+        .type-increase { background: #28a745; }
+        .type-decrease { background: #fd7e14; }
+        .type-remove { background: #dc3545; }
+        .action-btn {
+            padding: 5px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 11px;
+            border: none;
+            margin-left: 3px;
+        }
+        .approve-btn { background: #28a745; color: white; }
+        .approve-btn:hover { background: #218838; }
+        .reject-btn { background: #dc3545; color: white; }
+        .reject-btn:hover { background: #c82333; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔄 اصلاح بودجه</h1>
+        <a href="/dashboard.html">بازگشت به داشبورد</a>
+    </div>
+
+    <div class="container">
+        <h2>ثبت اصلاح جدید</h2>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>سال مالی:</label>
+                <select id="fiscal_year_id" onchange="loadBudgets()"></select>
+            </div>
+            <div class="form-group">
+                <label>نوع اصلاح:</label>
+                <select id="revision_type" onchange="toggleBudgetSelect()">
+                    <option value="add">افزودن ردیف جدید</option>
+                    <option value="increase">افزایش مبلغ</option>
+                    <option value="decrease">کاهش مبلغ</option>
+                    <option value="remove">حذف ردیف</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>بودجه:</label>
+                <select id="budget_proposal_id"></select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label id="amount-label">مبلغ افزایش (ریال):</label>
+                <input type="text" id="new_amount" placeholder="مبلغ (ریال)">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>دلیل اصلاح:</label>
+            <textarea id="reason" placeholder="دلیل اصلاح بودجه"></textarea>
+        </div>
+
+        <button onclick="addRevision()">ثبت اصلاح</button>
+        <div class="error" id="error"></div>
+        <div class="success" id="success"></div>
+    </div>
+
+    <div class="container">
+        <h2>لیست اصلاحات</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>بودجه</th>
+                    <th>نوع</th>
+                    <th>مبلغ قبلی</th>
+                    <th>مبلغ تغییر</th>
+                    <th>تفاوت</th>
+                    <th>دلیل</th>
+                    <th>وضعیت</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+        </table>
+    </div>
+
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login.html';
+        }
+
+        const token = localStorage.getItem('token');
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+
+        function toEnglishNumbers(str) {
+            return str.toString().replace(/[۰-۹]/g, function(d) { 
+                return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); 
+            });
+        }
+
+        function toPersianNumbers(str) {
+            const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+            return str.toString().replace(/\d/g, function(d) {
+                return persianDigits[parseInt(d)];
+            });
+        }
+
+        function formatAmount(amount) {
+            if (!amount && amount !== 0) return '-';
+            return toPersianNumbers(amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+        }
+
+        const typeLabels = {
+            'add': { class: 'type-add', label: 'افزودن' },
+            'increase': { class: 'type-increase', label: 'افزایش' },
+            'decrease': { class: 'type-decrease', label: 'کاهش' },
+            'remove': { class: 'type-remove', label: 'حذف' }
+        };
+
+        const statusLabels = {
+            'pending': { class: 'status-pending', label: 'در انتظار' },
+            'approved': { class: 'status-approved', label: 'تایید شده' },
+            'rejected': { class: 'status-rejected', label: 'رد شده' }
+        };
+
+        function toggleBudgetSelect() {
+            const type = document.getElementById('revision_type').value;
+            const budgetSelect = document.getElementById('budget_proposal_id');
+            const amountLabel = document.getElementById('amount-label');
+            const amountInput = document.getElementById('new_amount');
+            
+            if (type === 'add') {
+                budgetSelect.disabled = true;
+                budgetSelect.value = '';
+                amountLabel.textContent = 'مبلغ ردیف جدید (ریال):';
+                amountInput.placeholder = 'مبلغ کل ردیف جدید';
+            } else if (type === 'increase') {
+                budgetSelect.disabled = false;
+                amountLabel.textContent = 'مبلغ افزایش (ریال):';
+                amountInput.placeholder = 'مثلاً ۱۰۰,۰۰۰,۰۰۰';
+            } else if (type === 'decrease') {
+                budgetSelect.disabled = false;
+                amountLabel.textContent = 'مبلغ کاهش (ریال):';
+                amountInput.placeholder = 'مثلاً ۵۰,۰۰۰,۰۰۰';
+            } else if (type === 'remove') {
+                budgetSelect.disabled = false;
+                amountLabel.textContent = 'مبلغ (نیازی نیست):';
+                amountInput.placeholder = '-';
+                amountInput.value = '';
+            }
+        }
+
+        async function loadFiscalYears() {
+            const response = await fetch('/api/fiscal-years', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const years = await response.json();
+            
+            const select = document.getElementById('fiscal_year_id');
+            select.innerHTML = '<option value="">انتخاب کنید</option>';
+            
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year.id;
+                option.textContent = toPersianNumbers(year.year);
+                select.appendChild(option);
+            });
+        }
+
+        async function loadBudgets() {
+            const fiscalYearId = document.getElementById('fiscal_year_id').value;
+            if (!fiscalYearId) return;
+            
+            const response = await fetch(`/api/budget-proposals?fiscal_year_id=${fiscalYearId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const items = await response.json();
+            
+            const select = document.getElementById('budget_proposal_id');
+            select.innerHTML = '<option value="">انتخاب کنید</option>';
+            
+            items.filter(i => i.status === 'approved').forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = `${item.title} (${formatAmount(item.amount)} ریال)`;
+                select.appendChild(option);
+            });
+        }
+
+        async function loadRevisions() {
+            const response = await fetch('/api/revisions', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const items = await response.json();
+            
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            
+            items.forEach(item => {
+                const type = typeLabels[item.revision_type] || {};
+                const status = statusLabels[item.status] || {};
+                
+                const row = document.createElement('tr');
+                let actionsHtml = '';
+                
+                if (item.status === 'pending' && ['admin', 'manager'].includes(currentUser.role)) {
+                    actionsHtml = `
+                        <button class="action-btn approve-btn" onclick="approveRevision(${item.id}, 'approved')">تایید</button>
+                        <button class="action-btn reject-btn" onclick="approveRevision(${item.id}, 'rejected')">رد</button>
+                    `;
+                }
+                
+                row.innerHTML = `
+                    <td>${item.budget_title || 'ردیف جدید'}</td>
+                    <td><span class="type-badge ${type.class}">${type.label}</span></td>
+                    <td>${formatAmount(item.old_amount)}</td>
+                    <td>${formatAmount(item.new_amount)}</td>
+                    <td>${item.difference >= 0 ? '+' : ''}${formatAmount(item.difference)}</td>
+                    <td>${item.reason}</td>
+                    <td><span class="status-badge ${status.class}">${status.label}</span></td>
+                    <td>${actionsHtml}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        async function addRevision() {
+            const fiscal_year_id = document.getElementById('fiscal_year_id').value;
+            const budget_proposal_id = document.getElementById('budget_proposal_id').value;
+            const revision_type = document.getElementById('revision_type').value;
+            const new_amountRaw = document.getElementById('new_amount').value;
+            const reason = document.getElementById('reason').value;
+            
+            if (!fiscal_year_id || !revision_type || !reason) {
+                document.getElementById('error').textContent = 'همه فیلدهای الزامی را پر کنید';
+                document.getElementById('success').textContent = '';
+                return;
+            }
+            
+            if (revision_type !== 'add' && !budget_proposal_id) {
+                document.getElementById('error').textContent = 'بودجه را انتخاب کنید';
+                document.getElementById('success').textContent = '';
+                return;
+            }
+            
+            const new_amount = new_amountRaw ? parseFloat(toEnglishNumbers(new_amountRaw)) : null;
+            
+            const response = await fetch('/api/revisions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    fiscal_year_id: parseInt(fiscal_year_id),
+                    budget_proposal_id: budget_proposal_id ? parseInt(budget_proposal_id) : null,
+                    revision_type,
+                    new_amount,
+                    reason
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                document.getElementById('error').textContent = '';
+                document.getElementById('success').textContent = 'اصلاح با موفقیت ثبت شد';
+                document.getElementById('new_amount').value = '';
+                document.getElementById('reason').value = '';
+                loadRevisions();
+            } else {
+                document.getElementById('error').textContent = data.error;
+                document.getElementById('success').textContent = '';
+            }
+        }
+
+        async function approveRevision(id, status) {
+            if (!confirm('مطمئن هستید؟')) return;
+            
+            const response = await fetch('/api/revisions/approve', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ id, status })
+            });
+            
+            if (response.ok) {
+                loadRevisions();
+            }
+        }
+
+        loadFiscalYears();
+        loadRevisions();
+        toggleBudgetSelect();
+    </script>
+</body>
+</html>
