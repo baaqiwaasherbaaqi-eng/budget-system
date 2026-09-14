@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>گزارش پیشرفته</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+        .header a {
+            color: white;
+            text-decoration: none;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: end;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+            font-size: 13px;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 13px;
+        }
+        button {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        .btn-excel {
+            background: #28a745;
+        }
+        .btn-excel:hover {
+            background: #218838;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .section-title {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .summary-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-right: 4px solid #667eea;
+        }
+        .summary-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 13px;
+            color: #666;
+        }
+        .summary-card .value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 10px 20px;
+            background: #e9ecef;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+        }
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .type-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: white;
+        }
+        .type-resource { background: #28a745; }
+        .type-expense { background: #dc3545; }
+        .diff-positive { color: green; }
+        .diff-negative { color: red; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 گزارش پیشرفته</h1>
+        <a href="/dashboard.html">بازگشت به داشبورد</a>
+    </div>
+
+    <div class="container">
+        <div class="form-row">
+            <div>
+                <label>سال مالی:</label>
+                <select id="fiscal_year_id"></select>
+            </div>
+            <div>
+                <button onclick="loadDetailedReport()">نمایش گزارش</button>
+                <button class="btn-excel" onclick="exportToExcel()">📥 خروجی Excel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="report-content" style="display:none;">
+        <div class="container">
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('summary')">خلاصه</button>
+                <button class="tab" onclick="showTab('by-code')">بر اساس کد</button>
+                <button class="tab" onclick="showTab('by-org')">بر اساس سازمان</button>
+                <button class="tab" onclick="showTab('projects')">پروژه‌ها</button>
+                <button class="tab" onclick="showTab('comparison')">مقایسه‌ای</button>
+            </div>
+
+            <!-- تب خلاصه -->
+            <div id="tab-summary" class="tab-content active">
+                <h2 class="section-title">📊 خلاصه کلی</h2>
+                <div class="summary-cards" id="summary-cards"></div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>نوع</th>
+                            <th>جمع مبلغ (ریال)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="by-type-body"></tbody>
+                </table>
+            </div>
+
+            <!-- تب بر اساس کد -->
+            <div id="tab-by-code" class="tab-content">
+                <h2 class="section-title">📋 بر اساس طبقه‌بندی اقتصادی</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>کد</th>
+                            <th>عنوان</th>
+                            <th>نوع</th>
+                            <th>جمع مبلغ (ریال)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="by-code-body"></tbody>
+                </table>
+            </div>
+
+            <!-- تب بر اساس سازمان -->
+            <div id="tab-by-org" class="tab-content">
+                <h2 class="section-title">🏢 بر اساس سازمان</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>سازمان</th>
+                            <th>تعداد</th>
+                            <th>جمع مبلغ (ریال)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="by-org-body"></tbody>
+                </table>
+            </div>
+
+            <!-- تب پروژه‌ها -->
+            <div id="tab-projects" class="tab-content">
+                <h2 class="section-title">📁 لیست پروژه‌ها</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>عنوان</th>
+                            <th>سازمان</th>
+                            <th>طبقه‌بندی</th>
+                            <th>مبلغ (ریال)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="projects-body"></tbody>
+                </table>
+            </div>
+
+            <!-- تب مقایسه‌ای -->
+            <div id="tab-comparison" class="tab-content">
+                <h2 class="section-title">📈 مقایسه دو سال مالی</h2>
+                <div class="form-row">
+                    <div>
+                        <label>سال اول:</label>
+                        <select id="year1"></select>
+                    </div>
+                    <div>
+                        <label>سال دوم:</label>
+                        <select id="year2"></select>
+                    </div>
+                    <div>
+                        <button onclick="loadComparison()">مقایسه</button>
+                    </div>
+                </div>
+                <div id="comparison-result"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login.html';
+        }
+
+        const token = localStorage.getItem('token');
+        let reportData = null;
+
+        function toPersianNumbers(str) {
+            const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+            return str.toString().replace(/\d/g, function(d) {
+                return persianDigits[parseInt(d)];
+            });
+        }
+
+        function formatAmount(amount) {
+            if (!amount && amount !== 0) return '۰';
+            return toPersianNumbers(Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+        }
+
+        const typeLabels = {
+            'resource': 'منابع',
+            'expense': 'مصارف'
+        };
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+            
+            if (tabName === 'projects' && reportData) {
+                loadProjects();
+            }
+            if (tabName === 'comparison') {
+                loadFiscalYearsForComparison();
+            }
+        }
+
+        async function loadFiscalYears() {
+            const response = await fetch('/api/fiscal-years', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const years = await response.json();
+            
+            const select = document.getElementById('fiscal_year_id');
+            select.innerHTML = '<option value="">انتخاب کنید</option>';
+            
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year.id;
+                option.textContent = toPersianNumbers(year.year);
+                select.appendChild(option);
+            });
+        }
+
+        async function loadFiscalYearsForComparison() {
+            const response = await fetch('/api/fiscal-years', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const years = await response.json();
+            
+            ['year1', 'year2'].forEach(id => {
+                const select = document.getElementById(id);
+                if (select.options.length <= 1) {
+                    select.innerHTML = '<option value="">انتخاب کنید</option>';
+                    years.forEach(year => {
+                        const option = document.createElement('option');
+                        option.value = year.id;
+                        option.textContent = toPersianNumbers(year.year);
+                        select.appendChild(option);
+                    });
+                }
+            });
+        }
+
+        async function loadDetailedReport() {
+            const fiscalYearId = document.getElementById('fiscal_year_id').value;
+            if (!fiscalYearId) {
+                alert('سال مالی را انتخاب کنید');
+                return;
+            }
+            
+            const response = await fetch(`/api/reports/detailed-form?fiscal_year_id=${fiscalYearId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            reportData = await response.json();
+            
+            document.getElementById('report-content').style.display = 'block';
+            
+            // خلاصه
+            const summaryCards = document.getElementById('summary-cards');
+            summaryCards.innerHTML = `
+                <div class="summary-card">
+                    <h3>جمع کل بودجه مصوب</h3>
+                    <div class="value">${formatAmount(reportData.grandTotal?.total || 0)}</div>
+                </div>
+                <div class="summary-card">
+                    <h3>تعداد ردیف‌ها</h3>
+                    <div class="value">${toPersianNumbers(reportData.grandTotal?.count || 0)}</div>
+                </div>
+            `;
+            
+            // بر اساس نوع
+            const typeBody = document.getElementById('by-type-body');
+            typeBody.innerHTML = '';
+            reportData.byType.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${typeLabels[item.type] || item.type || '-'}</td>
+                    <td>${formatAmount(item.total)}</td>
+                `;
+                typeBody.appendChild(row);
+            });
+            
+            // بر اساس کد
+            const codeBody = document.getElementById('by-code-body');
+            codeBody.innerHTML = '';
+            reportData.byMainCode.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${toPersianNumbers(item.sub_code)}</td>
+                    <td>${item.title}</td>
+                    <td>${typeLabels[item.type] || '-'}</td>
+                    <td>${formatAmount(item.total)}</td>
+                `;
+                codeBody.appendChild(row);
+            });
+            
+            // بر اساس سازمان
+            const orgBody = document.getElementById('by-org-body');
+            orgBody.innerHTML = '';
+            reportData.byOrganization.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.organization_name || '-'}</td>
+                    <td>${toPersianNumbers(item.count)}</td>
+                    <td>${formatAmount(item.total)}</td>
+                `;
+                orgBody.appendChild(row);
+            });
+        }
+
+        async function loadProjects() {
+            const fiscalYearId = document.getElementById('fiscal_year_id').value;
+            if (!fiscalYearId) return;
+            
+            const response = await fetch(`/api/reports/projects?fiscal_year_id=${fiscalYearId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const items = await response.json();
+            
+            const tbody = document.getElementById('projects-body');
+            tbody.innerHTML = '';
+            
+            items.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.title}</td>
+                    <td>${item.organization_name || '-'}</td>
+                    <td>${item.economic_sub_code ? toPersianNumbers(item.economic_sub_code) + ' - ' + item.economic_title : '-'}</td>
+                    <td>${formatAmount(item.amount)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        async function loadComparison() {
+            const year1 = document.getElementById('year1').value;
+            const year2 = document.getElementById('year2').value;
+            
+            if (!year1 || !year2) {
+                alert('دو سال مالی را انتخاب کنید');
+                return;
+            }
+            
+            const response = await fetch(`/api/reports/comparison?year1=${year1}&year2=${year2}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            
+            const result = document.getElementById('comparison-result');
+            result.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>کد</th>
+                            <th>عنوان</th>
+                            <th>سال اول</th>
+                            <th>سال دوم</th>
+                            <th>تفاوت</th>
+                        </tr>
+                    </thead>
+                    <tbody id="comparison-body"></tbody>
+                </table>
+            `;
+            
+            const tbody = document.getElementById('comparison-body');
+            
+            // جمع همه کدها
+            const allCodes = new Set();
+            data.year1.details.forEach(d => allCodes.add(d.sub_code));
+            data.year2.details.forEach(d => allCodes.add(d.sub_code));
+            
+            allCodes.forEach(code => {
+                const y1 = data.year1.details.find(d => d.sub_code === code);
+                const y2 = data.year2.details.find(d => d.sub_code === code);
+                const amount1 = y1 ? y1.total : 0;
+                const amount2 = y2 ? y2.total : 0;
+                const diff = amount2 - amount1;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${toPersianNumbers(code)}</td>
+                    <td>${(y1 || y2).title}</td>
+                    <td>${formatAmount(amount1)}</td>
+                    <td>${formatAmount(amount2)}</td>
+                    <td class="${diff >= 0 ? 'diff-positive' : 'diff-negative'}">
+                        ${diff >= 0 ? '+' : ''}${formatAmount(diff)}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            // ردیف جمع کل
+            const totalRow = document.createElement('tr');
+            totalRow.style.fontWeight = 'bold';
+            totalRow.style.background = '#f8f9fa';
+            totalRow.innerHTML = `
+                <td colspan="2">جمع کل</td>
+                <td>${formatAmount(data.year1.total.total || 0)}</td>
+                <td>${formatAmount(data.year2.total.total || 0)}</td>
+                <td class="${(data.year2.total.total - data.year1.total.total) >= 0 ? 'diff-positive' : 'diff-negative'}">
+                    ${(data.year2.total.total - data.year1.total.total) >= 0 ? '+' : ''}${formatAmount(data.year2.total.total - data.year1.total.total)}
+                </td>
+            `;
+            tbody.appendChild(totalRow);
+        }
+
+        function exportToExcel() {
+            if (!reportData) {
+                alert('اول گزارش را نمایش دهید');
+                return;
+            }
+            
+            const wb = XLSX.utils.book_new();
+            
+            // شیت خلاصه
+            const summaryData = [
+                ['گزارش بودجه'],
+                ['جمع کل', reportData.grandTotal?.total || 0],
+                ['تعداد ردیف', reportData.grandTotal?.count || 0],
+                [],
+                ['بر اساس نوع'],
+                ['نوع', 'جمع مبلغ'],
+                ...reportData.byType.map(item => [typeLabels[item.type] || item.type, item.total])
+            ];
+            const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, ws1, 'خلاصه');
+            
+            // شیت بر اساس کد
+            const codeData = [
+                ['کد', 'عنوان', 'نوع', 'جمع مبلغ'],
+                ...reportData.byMainCode.map(item => [
+                    item.sub_code,
+                    item.title,
+                    typeLabels[item.type] || item.type,
+                    item.total
+                ])
+            ];
+            const ws2 = XLSX.utils.aoa_to_sheet(codeData);
+            XLSX.utils.book_append_sheet(wb, ws2, 'بر اساس کد');
+            
+            // شیت بر اساس سازمان
+            const orgData = [
+                ['سازمان', 'تعداد', 'جمع مبلغ'],
+                ...reportData.byOrganization.map(item => [
+                    item.organization_name || '-',
+                    item.count,
+                    item.total
+                ])
+            ];
+            const ws3 = XLSX.utils.aoa_to_sheet(orgData);
+            XLSX.utils.book_append_sheet(wb, ws3, 'بر اساس سازمان');
+            
+            // ذخیره
+            XLSX.writeFile(wb, `budget-report-${Date.now()}.xlsx`);
+        }
+
+        loadFiscalYears();
+    </script>
+</body>
+</html>
