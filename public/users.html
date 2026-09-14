@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مدیریت کاربران</title>
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet"
+        type="text/css" />
     <style>
         body {
             font-family: 'Vazirmatn', Tahoma, sans-serif;
@@ -12,6 +14,7 @@
             margin: 0;
             padding: 20px;
         }
+
         .header {
             background: #667eea;
             color: white;
@@ -24,32 +27,38 @@
             flex-wrap: wrap;
             gap: 15px;
         }
+
         .header h1 {
             margin: 0;
             font-size: 20px;
         }
+
         .header a {
             color: white;
             text-decoration: none;
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             padding: 10px 20px;
             border-radius: 5px;
         }
+
         .container {
             background: white;
             padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
+
         .form-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
             margin-bottom: 20px;
         }
+
         .form-group {
             margin-bottom: 15px;
         }
+
         label {
             display: block;
             margin-bottom: 5px;
@@ -57,7 +66,9 @@
             color: #333;
             font-size: 13px;
         }
-        input, select {
+
+        input,
+        select {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
@@ -66,6 +77,7 @@
             font-family: 'Vazirmatn', Tahoma, sans-serif;
             font-size: 13px;
         }
+
         button {
             padding: 12px 30px;
             background: #667eea;
@@ -76,24 +88,30 @@
             font-family: 'Vazirmatn', Tahoma, sans-serif;
             font-size: 14px;
         }
+
         button:hover {
             background: #5a67d8;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
             font-size: 13px;
         }
-        th, td {
+
+        th,
+        td {
             padding: 10px;
             text-align: right;
             border-bottom: 1px solid #ddd;
         }
+
         th {
             background: #f8f9fa;
             font-weight: bold;
         }
+
         .delete-btn {
             background: #e74c3c;
             color: white;
@@ -104,34 +122,73 @@
             font-family: 'Vazirmatn', Tahoma, sans-serif;
             font-size: 11px;
         }
+
         .delete-btn:hover {
             background: #c0392b;
         }
+
+        .activate-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 11px;
+        }
+
+        .activate-btn:hover {
+            background: #218838;
+        }
+
         .error {
             color: red;
             margin-top: 10px;
         }
+
         .success {
             color: green;
             margin-top: 10px;
         }
+
         .role-badge {
             padding: 4px 10px;
             border-radius: 12px;
             font-size: 11px;
             color: white;
         }
-        .role-admin { background: #dc3545; }
-        .role-manager { background: #fd7e14; }
-        .role-expert { background: #17a2b8; }
-        .role-viewer { background: #6c757d; }
-        .role-province { background: #6f42c1; }
-        .role-ministry { background: #28a745; }
+
+        .role-admin {
+            background: #dc3545;
+        }
+
+        .role-manager {
+            background: #fd7e14;
+        }
+
+        .role-expert {
+            background: #17a2b8;
+        }
+
+        .role-viewer {
+            background: #6c757d;
+        }
+
+        .role-province {
+            background: #6f42c1;
+        }
+
+        .role-ministry {
+            background: #28a745;
+        }
+
         .inactive {
             opacity: 0.5;
         }
     </style>
 </head>
+
 <body>
     <div class="header">
         <h1>👥 مدیریت کاربران</h1>
@@ -140,7 +197,7 @@
 
     <div class="container">
         <h2>افزودن کاربر جدید</h2>
-        
+
         <div class="form-row">
             <div class="form-group">
                 <label>نام کاربری:</label>
@@ -217,6 +274,7 @@
             'ministry': { class: 'role-ministry', label: 'وزارت کشور' }
         };
 
+
         // لود کاربران
         async function loadUsers() {
             const response = await fetch('/api/users', {
@@ -238,6 +296,8 @@
                 const row = document.createElement('tr');
                 if (!user.is_active) row.classList.add('inactive');
                 
+                const isSelf = user.id === currentUser.id;
+                
                 row.innerHTML = `
                     <td>${user.username}</td>
                     <td>${user.full_name}</td>
@@ -245,7 +305,10 @@
                     <td>${user.organization || '-'}</td>
                     <td>${user.is_active ? '✅ فعال' : '❌ غیرفعال'}</td>
                     <td>
-                        <button class="delete-btn" onclick="deleteUser(${user.id})">حذف</button>
+                        ${!isSelf ? 
+                            `<button class="delete-btn" onclick="deleteUser(${user.id})">حذف</button>` :
+                            '<span style="color:#999;font-size:11px;">(خودتان)</span>'
+                        }
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -259,13 +322,13 @@
             const full_name = document.getElementById('full_name').value;
             const role = document.getElementById('role').value;
             const organization = document.getElementById('organization').value;
-            
+
             if (!username || !password || !full_name || !role) {
                 document.getElementById('error').textContent = 'همه فیلدهای الزامی را پر کنید';
                 document.getElementById('success').textContent = '';
                 return;
             }
-            
+
             const response = await fetch('/api/users', {
                 method: 'POST',
                 headers: {
@@ -274,9 +337,9 @@
                 },
                 body: JSON.stringify({ username, password, full_name, role, organization })
             });
-            
+
             const data = await response.json();
-            
+
             if (response.ok) {
                 document.getElementById('error').textContent = '';
                 document.getElementById('success').textContent = 'کاربر با موفقیت اضافه شد';
@@ -291,19 +354,22 @@
             }
         }
 
+
         // حذف کاربر
         async function deleteUser(id) {
-            if (!confirm('مطمئن هستید؟')) return;
+            if (!confirm('مطمئن هستید این کاربر حذف شود؟\n\nتوجه: اگر کاربر سابقه داشته باشد، غیرفعال می‌شود.')) return;
             
             const response = await fetch(`/api/users/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             
+            const data = await response.json();
+            
             if (response.ok) {
+                alert(data.message || 'عملیات با موفقیت انجام شد');
                 loadUsers();
             } else {
-                const data = await response.json();
                 alert('خطا: ' + data.error);
             }
         }
@@ -312,4 +378,5 @@
         loadUsers();
     </script>
 </body>
+
 </html>

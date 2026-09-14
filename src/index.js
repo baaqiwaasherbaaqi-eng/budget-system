@@ -836,11 +836,7 @@ export default {
             accounting_doc_no || null
           ).run();
 
-          // ثبت لاگ
-          ctx.waitUntil(logAction(env, request, userData,
-            'execution_created', 'budget_execution', result.meta.last_row_id,
-            { amount: amount, allocation_id: allocation_id, technical_code: technical_code }
-          ));
+
 
           return new Response(JSON.stringify({
             success: true,
@@ -1005,34 +1001,71 @@ export default {
 
       // حذف کاربر
       if (url.pathname.startsWith('/api/users/') && request.method === 'DELETE') {
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader) {
-          return new Response(JSON.stringify({ error: 'احراز هویت لازم است' }), {
-            status: 401, headers
+        try {
+          const authHeader = request.headers.get('Authorization');
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: 'احراز هویت لازم است' }), {
+              status: 401, headers
+            });
+          }
+          
+          const token = authHeader.replace('Bearer ', '');
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || userData.role !== 'admin') {
+            return new Response(JSON.stringify({ error: 'دسترسی غیرمجاز' }), {
+              status: 403, headers
+            });
+          }
+
+          const id = url.pathname.split('/').pop();
+
+          // جلوگیری از حذف خود
+          if (parseInt(id) === userData.userId) {
+            return new Response(JSON.stringify({ error: 'نمی‌توانید خودتان را حذف کنید' }), {
+              status: 400, headers
+            });
+          }
+
+          // بررسی وابستگی‌ها
+          const dependencies = await env.DB.prepare(`
+            SELECT 
+              (SELECT COUNT(*) FROM budget_proposals WHERE proposed_by = ?) as budget_count,
+              (SELECT COUNT(*) FROM approval_history WHERE action_by = ?) as approval_count,
+              (SELECT COUNT(*) FROM budget_revisions WHERE created_by = ?) as revision_count,
+              (SELECT COUNT(*) FROM budget_executions WHERE id IN (
+                SELECT id FROM budget_executions LIMIT 1
+              )) as exec_check,
+              (SELECT COUNT(*) FROM audit_log WHERE user_id = ?) as audit_count
+          `).bind(id, id, id, id).first();
+
+          // اگه وابستگی داره، فقط غیرفعال کن
+          if (dependencies.budget_count > 0 || dependencies.approval_count > 0 || dependencies.revision_count > 0 || dependencies.audit_count > 0) {
+            await env.DB.prepare(
+              'UPDATE users SET is_active = 0 WHERE id = ?'
+            ).bind(id).run();
+            
+            return new Response(JSON.stringify({ 
+              success: true, 
+              message: 'کاربر به دلیل داشتن سوابق، غیرفعال شد',
+              deactivated: true
+            }), { status: 200, headers });
+          }
+
+          // اگه وابستگی نداره، حذف کن
+          await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id).run();
+
+          return new Response(JSON.stringify({ 
+            success: true, 
+            message: 'کاربر حذف شد',
+            deleted: true
+          }), { status: 200, headers });
+        } catch (error) {
+          console.error('Delete user error:', error.message);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500, headers
           });
         }
-
-        const token = authHeader.replace('Bearer ', '');
-        const userData = await verifyToken(token, env.JWT_SECRET);
-
-        if (!userData || userData.role !== 'admin') {
-          return new Response(JSON.stringify({ error: 'دسترسی غیرمجاز' }), {
-            status: 403, headers
-          });
-        }
-
-        const id = url.pathname.split('/').pop();
-
-        // جلوگیری از حذف خود
-        if (parseInt(id) === userData.userId) {
-          return new Response(JSON.stringify({ error: 'نمی‌توانید خودتان را حذف کنید' }), {
-            status: 400, headers
-          });
-        }
-
-        await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id).run();
-
-        return new Response(JSON.stringify({ success: true }), { status: 200, headers });
       }
 
       // ========== اصلاح بودجه ==========
@@ -1525,6 +1558,10 @@ export default {
 
         return new Response(JSON.stringify(logs.results), { status: 200, headers });
       }
+
+
+          
+           
 
       // Serve static files
       if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html' || url.pathname === '/organizations.html' || url.pathname === '/budget-proposals.html' || url.pathname === '/reports.html' || url.pathname === '/allocations.html' || url.pathname === '/executions.html' || url.pathname === '/users.html' || url.pathname === '/revisions.html' || url.pathname === '/advanced-reports.html' || url.pathname === '/tafriq.html' || url.pathname === '/audit-log.html') {
