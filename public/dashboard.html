@@ -183,6 +183,17 @@
             document.getElementById('users-menu').style.display = 'block';
         }
 
+        // محدودیت برای استانداری و وزارت - فقط گزارشات
+        if (user.role === 'province' || user.role === 'ministry') {
+            // پنهان کردن همه منوها غیر از گزارشات
+            document.querySelectorAll('.menu-card').forEach(card => {
+                const href = card.getAttribute('onclick') || '';
+                if (!href.includes('reports.html')) {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
     </script>
 </body>
 

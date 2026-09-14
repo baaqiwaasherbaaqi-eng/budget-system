@@ -89,7 +89,7 @@
                 if (response.ok) {
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('user', JSON.stringify(data.user));
-                    alert('ورود موفق!');
+                    window.location.href = '/dashboard.html';
                 } else {
                     document.getElementById('error-message').textContent = data.error;
                     document.getElementById('error-message').style.display = 'block';
