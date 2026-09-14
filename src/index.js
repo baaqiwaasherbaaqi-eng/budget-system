@@ -1321,8 +1321,113 @@ export default {
         }), { status: 200, headers });
       }
 
+            // ========== تفریغ بودجه ==========
+      
+      // گزارش تفریغ
+      if (url.pathname === '/api/reports/tafriq' && request.method === 'GET') {
+        const fiscalYearId = url.searchParams.get('fiscal_year_id');
+        
+        if (!fiscalYearId) {
+          return new Response(JSON.stringify({ error: 'سال مالی الزامی است' }), {
+            status: 400, headers
+          });
+        }
+        
+        // دریافت همه بودجه‌های مصوب
+        const budgets = await env.DB.prepare(`
+          SELECT bp.id, bp.title, bp.amount as approved_amount,
+                 o.name as organization_name,
+                 ec.sub_code, ec.title as economic_title, ec.type as economic_type
+          FROM budget_proposals bp
+          LEFT JOIN organizations o ON bp.organization_id = o.id
+          LEFT JOIN economic_classifications ec ON bp.economic_class_id = ec.id
+          WHERE bp.fiscal_year_id = ? AND bp.status = 'approved'
+          ORDER BY bp.id
+        `).bind(fiscalYearId).all();
+        
+        // برای هر بودجه، تخصیص و تامین اعتبار رو حساب کن
+        const details = [];
+        let totalApproved = 0;
+        let totalAllocated = 0;
+        let totalExecuted = 0;
+        
+        for (const budget of budgets.results) {
+          // جمع تخصیص‌ها
+          const allocation = await env.DB.prepare(`
+            SELECT SUM(amount) as total FROM budget_allocations
+            WHERE approved_budget_id = ?
+          `).bind(budget.id).first();
+          
+          const allocatedAmount = allocation.total || 0;
+          
+          // جمع تامین اعتبارها (از طریق تخصیص)
+          const execution = await env.DB.prepare(`
+            SELECT SUM(be.amount) as total 
+            FROM budget_executions be
+            LEFT JOIN budget_allocations ba ON be.allocation_id = ba.id
+            WHERE ba.approved_budget_id = ?
+          `).bind(budget.id).first();
+          
+          const executedAmount = execution.total || 0;
+          
+          details.push({
+            id: budget.id,
+            title: budget.title,
+            organization_name: budget.organization_name,
+            economic_sub_code: budget.sub_code,
+            economic_title: budget.economic_title,
+            economic_type: budget.economic_type,
+            approved_amount: budget.approved_amount,
+            allocated_amount: allocatedAmount,
+            executed_amount: executedAmount,
+            remaining_amount: budget.approved_amount - executedAmount,
+            allocation_percentage: budget.approved_amount > 0 ? 
+              ((allocatedAmount / budget.approved_amount) * 100).toFixed(2) : 0,
+            execution_percentage: budget.approved_amount > 0 ? 
+              ((executedAmount / budget.approved_amount) * 100).toFixed(2) : 0
+          });
+          
+          totalApproved += budget.approved_amount;
+          totalAllocated += allocatedAmount;
+          totalExecuted += executedAmount;
+        }
+        
+        return new Response(JSON.stringify({
+          details,
+          summary: {
+            total_approved: totalApproved,
+            total_allocated: totalAllocated,
+            total_executed: totalExecuted,
+            total_remaining: totalApproved - totalExecuted,
+            overall_execution_percentage: totalApproved > 0 ? 
+              ((totalExecuted / totalApproved) * 100).toFixed(2) : 0
+          }
+        }), { status: 200, headers });
+      }
+
+      // بستن سال مالی (تغییر وضعیت)
+      if (url.pathname === '/api/fiscal-years/close' && request.method === 'PUT') {
+        const authHeader = request.headers.get('Authorization');
+        const token = authHeader.replace('Bearer ', '');
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        
+        if (!userData || userData.role !== 'admin') {
+          return new Response(JSON.stringify({ error: 'دسترسی غیرمجاز' }), {
+            status: 403, headers
+          });
+        }
+        
+        const { year } = await request.json();
+        
+        await env.DB.prepare(`
+          UPDATE fiscal_years SET status = 'closed' WHERE year = ?
+        `).bind(year).run();
+        
+        return new Response(JSON.stringify({ success: true }), { status: 200, headers });
+      }
+
       // Serve static files
-      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html' || url.pathname === '/organizations.html' || url.pathname === '/budget-proposals.html'|| url.pathname === '/reports.html'|| url.pathname === '/allocations.html'|| url.pathname === '/executions.html'|| url.pathname === '/users.html'|| url.pathname === '/revisions.html' || url.pathname === '/advanced-reports.html') {
+      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html' || url.pathname === '/organizations.html' || url.pathname === '/budget-proposals.html'|| url.pathname === '/reports.html'|| url.pathname === '/allocations.html'|| url.pathname === '/executions.html'|| url.pathname === '/users.html'|| url.pathname === '/revisions.html' || url.pathname === '/advanced-reports.html'|| url.pathname === '/tafriq.html') {
         return await env.ASSETS.fetch(request);
       }
 

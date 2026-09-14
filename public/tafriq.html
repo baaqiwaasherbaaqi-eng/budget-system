@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفریغ بودجه</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+        .header a {
+            color: white;
+            text-decoration: none;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: end;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+            font-size: 13px;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 13px;
+        }
+        button {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        .btn-excel {
+            background: #28a745;
+        }
+        .btn-excel:hover {
+            background: #218838;
+        }
+        .btn-close {
+            background: #dc3545;
+        }
+        .btn-close:hover {
+            background: #c82333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .summary-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-right: 4px solid #667eea;
+        }
+        .summary-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 13px;
+            color: #666;
+        }
+        .summary-card .value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .progress-bar {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-fill {
+            background: #28a745;
+            height: 100%;
+            transition: width 0.3s;
+        }
+        .progress-fill.warning {
+            background: #ffc107;
+        }
+        .progress-fill.danger {
+            background: #dc3545;
+        }
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #333;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .footer-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📋 تفریغ بودجه</h1>
+        <a href="/dashboard.html">بازگشت به داشبورد</a>
+    </div>
+
+    <div class="container">
+        <div class="form-row">
+            <div>
+                <label>سال مالی:</label>
+                <select id="fiscal_year_id"></select>
+            </div>
+            <div>
+                <button onclick="loadTafriq()">نمایش تفریغ</button>
+                <button class="btn-excel" onclick="exportToExcel()">📥 خروجی Excel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="report-content" style="display:none;">
+        <div class="container">
+            <h2>📊 خلاصه عملکرد</h2>
+            <div class="summary-cards" id="summary-cards"></div>
+        </div>
+
+        <div class="container">
+            <h2>📋 جزئیات تفریغ</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>عنوان</th>
+                        <th>سازمان</th>
+                        <th>بودجه مصوب</th>
+                        <th>تخصیص</th>
+                        <th>تامین اعتبار</th>
+                        <th>مانده</th>
+                        <th>درصد عملکرد</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login.html';
+        }
+
+        const token = localStorage.getItem('token');
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        let tafriqData = null;
+
+        function toPersianNumbers(str) {
+            const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+            return str.toString().replace(/\d/g, function(d) {
+                return persianDigits[parseInt(d)];
+            });
+        }
+
+        function formatAmount(amount) {
+            if (!amount && amount !== 0) return '۰';
+            return toPersianNumbers(Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+        }
+
+        async function loadFiscalYears() {
+            const response = await fetch('/api/fiscal-years', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const years = await response.json();
+            
+            const select = document.getElementById('fiscal_year_id');
+            select.innerHTML = '<option value="">انتخاب کنید</option>';
+            
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year.id;
+                option.textContent = toPersianNumbers(year.year);
+                select.appendChild(option);
+            });
+        }
+
+        async function loadTafriq() {
+            const fiscalYearId = document.getElementById('fiscal_year_id').value;
+            if (!fiscalYearId) {
+                alert('سال مالی را انتخاب کنید');
+                return;
+            }
+            
+            const response = await fetch(`/api/reports/tafriq?fiscal_year_id=${fiscalYearId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            tafriqData = await response.json();
+            
+            document.getElementById('report-content').style.display = 'block';
+            
+            // خلاصه
+            const summaryCards = document.getElementById('summary-cards');
+            const summary = tafriqData.summary;
+            summaryCards.innerHTML = `
+                <div class="summary-card">
+                    <h3>بودجه مصوب</h3>
+                    <div class="value">${formatAmount(summary.total_approved)}</div>
+                </div>
+                <div class="summary-card">
+                    <h3>تخصیص داده شده</h3>
+                    <div class="value">${formatAmount(summary.total_allocated)}</div>
+                </div>
+                <div class="summary-card">
+                    <h3>تامین اعتبار شده</h3>
+                    <div class="value">${formatAmount(summary.total_executed)}</div>
+                </div>
+                <div class="summary-card">
+                    <h3>مانده</h3>
+                    <div class="value">${formatAmount(summary.total_remaining)}</div>
+                </div>
+                <div class="summary-card">
+                    <h3>درصد عملکرد کل</h3>
+                    <div class="value">${toPersianNumbers(summary.overall_execution_percentage)}٪</div>
+                </div>
+            `;
+            
+            // جدول
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            
+            tafriqData.details.forEach(item => {
+                const percent = parseFloat(item.execution_percentage);
+                let progressClass = '';
+                if (percent < 30) progressClass = 'danger';
+                else if (percent < 70) progressClass = 'warning';
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.title}</td>
+                    <td>${item.organization_name || '-'}</td>
+                    <td>${formatAmount(item.approved_amount)}</td>
+                    <td>${formatAmount(item.allocated_amount)}</td>
+                    <td>${formatAmount(item.executed_amount)}</td>
+                    <td>${formatAmount(item.remaining_amount)}</td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill ${progressClass}" style="width: ${percent}%"></div>
+                            <div class="progress-text">${toPersianNumbers(percent.toFixed(1))}٪</div>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            // ردیف جمع کل
+            const totalRow = document.createElement('tr');
+            totalRow.style.fontWeight = 'bold';
+            totalRow.style.background = '#f8f9fa';
+            totalRow.innerHTML = `
+                <td colspan="2">جمع کل</td>
+                <td>${formatAmount(summary.total_approved)}</td>
+                <td>${formatAmount(summary.total_allocated)}</td>
+                <td>${formatAmount(summary.total_executed)}</td>
+                <td>${formatAmount(summary.total_remaining)}</td>
+                <td>${toPersianNumbers(summary.overall_execution_percentage)}٪</td>
+            `;
+            tbody.appendChild(totalRow);
+        }
+
+        function exportToExcel() {
+            if (!tafriqData) {
+                alert('اول تفریغ را نمایش دهید');
+                return;
+            }
+            
+            const wb = XLSX.utils.book_new();
+            
+            // شیت خلاصه
+            const summary = tafriqData.summary;
+            const summaryData = [
+                ['گزارش تفریغ بودجه'],
+                [],
+                ['بودجه مصوب', summary.total_approved],
+                ['تخصیص داده شده', summary.total_allocated],
+                ['تامین اعتبار شده', summary.total_executed],
+                ['مانده', summary.total_remaining],
+                ['درصد عملکرد کل', summary.overall_execution_percentage + '٪']
+            ];
+            const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, ws1, 'خلاصه');
+            
+            // شیت جزئیات
+            const detailData = [
+                ['عنوان', 'سازمان', 'بودجه مصوب', 'تخصیص', 'تامین اعتبار', 'مانده', 'درصد عملکرد'],
+                ...tafriqData.details.map(item => [
+                    item.title,
+                    item.organization_name || '-',
+                    item.approved_amount,
+                    item.allocated_amount,
+                    item.executed_amount,
+                    item.remaining_amount,
+                    item.execution_percentage + '٪'
+                ])
+            ];
+            const ws2 = XLSX.utils.aoa_to_sheet(detailData);
+            XLSX.utils.book_append_sheet(wb, ws2, 'جزئیات');
+            
+            XLSX.writeFile(wb, `tafriq-${Date.now()}.xlsx`);
+        }
+
+        loadFiscalYears();
+    </script>
+</body>
+</html>
