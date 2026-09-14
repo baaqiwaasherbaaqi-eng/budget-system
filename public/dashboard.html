@@ -170,6 +170,10 @@
             <h3>👥 مدیریت کاربران</h3>
             <p>کاربران و سطوح دسترسی</p>
         </div>
+        <div class="menu-card" onclick="window.location.href='/audit-log.html'" id="audit-menu" style="display:none;">
+            <h3>📜 لاگ سیستم</h3>
+            <p>تاریخچه عملیات</p>
+        </div>
     </div>
 
     <script>
@@ -190,9 +194,10 @@
             window.location.href = '/login.html';
         }
 
-        // نمایش منوی کاربران فقط برای admin
+        // نمایش منوی کاربران و لاگ فقط برای admin
         if (user.role === 'admin') {
             document.getElementById('users-menu').style.display = 'block';
+            document.getElementById('audit-menu').style.display = 'block';
         }
 
         // محدودیت برای استانداری و وزارت - فقط گزارشات

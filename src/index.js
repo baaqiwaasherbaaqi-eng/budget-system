@@ -1467,8 +1467,39 @@ export default {
         return new Response(JSON.stringify({ success: true }), { status: 200, headers });
       }
 
+      // ========== لاگ سیستم ==========
+      
+      // دریافت لاگ‌ها
+      if (url.pathname === '/api/audit-log' && request.method === 'GET') {
+        const authHeader = request.headers.get('Authorization');
+        const token = authHeader.replace('Bearer ', '');
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        
+        if (!userData || userData.role !== 'admin') {
+          return new Response(JSON.stringify({ error: 'دسترسی غیرمجاز' }), {
+            status: 403, headers
+          });
+        }
+        
+        const action = url.searchParams.get('action');
+        
+        let query = 'SELECT * FROM audit_log';
+        const params = [];
+        
+        if (action) {
+          query += ' WHERE action = ?';
+          params.push(action);
+        }
+        
+        query += ' ORDER BY created_at DESC LIMIT 500';
+        
+        const logs = await env.DB.prepare(query).bind(...params).all();
+        
+        return new Response(JSON.stringify(logs.results), { status: 200, headers });
+      }
+
       // Serve static files
-      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html' || url.pathname === '/organizations.html' || url.pathname === '/budget-proposals.html'|| url.pathname === '/reports.html'|| url.pathname === '/allocations.html'|| url.pathname === '/executions.html'|| url.pathname === '/users.html'|| url.pathname === '/revisions.html' || url.pathname === '/advanced-reports.html'|| url.pathname === '/tafriq.html') {
+      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html' || url.pathname === '/organizations.html' || url.pathname === '/budget-proposals.html'|| url.pathname === '/reports.html'|| url.pathname === '/allocations.html'|| url.pathname === '/executions.html'|| url.pathname === '/users.html'|| url.pathname === '/revisions.html' || url.pathname === '/advanced-reports.html'|| url.pathname === '/tafriq.html'|| url.pathname === '/audit-log.html') {
         return await env.ASSETS.fetch(request);
       }
 

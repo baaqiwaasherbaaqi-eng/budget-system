@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لاگ سیستم</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+        body {
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+        .header a {
+            color: white;
+            text-decoration: none;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+            font-size: 13px;
+        }
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 13px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 12px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .action-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: white;
+            display: inline-block;
+        }
+        .action-login { background: #28a745; }
+        .action-login_failed { background: #dc3545; }
+        .action-budget_status_changed { background: #6f42c1; }
+        .action-allocation_created { background: #17a2b8; }
+        .action-execution_created { background: #fd7e14; }
+        .action-default { background: #6c757d; }
+        .details-cell {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📜 لاگ سیستم</h1>
+        <a href="/dashboard.html">بازگشت به داشبورد</a>
+    </div>
+
+    <div class="container">
+        <div class="filters">
+            <div>
+                <label>نوع عملیات:</label>
+                <select id="filter_action" onchange="loadLogs()">
+                    <option value="">همه</option>
+                    <option value="login">ورود موفق</option>
+                    <option value="login_failed">ورود ناموفق</option>
+                    <option value="budget_status_changed">تغییر وضعیت بودجه</option>
+                    <option value="allocation_created">تخصیص جدید</option>
+                    <option value="execution_created">تامین اعتبار</option>
+                </select>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>کاربر</th>
+                    <th>عملیات</th>
+                    <th>نوع موجودیت</th>
+                    <th>جزئیات</th>
+                    <th>IP</th>
+                    <th>تاریخ</th>
+                </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+        </table>
+    </div>
+
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login.html';
+        }
+
+        const token = localStorage.getItem('token');
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+
+        if (currentUser.role !== 'admin') {
+            alert('شما دسترسی به این صفحه ندارید');
+            window.location.href = '/dashboard.html';
+        }
+
+        function toPersianNumbers(str) {
+            if (!str) return '';
+            const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+            return str.toString().replace(/\d/g, function(d) {
+                return persianDigits[parseInt(d)];
+            });
+        }
+
+        const actionLabels = {
+            'login': 'ورود موفق',
+            'login_failed': 'ورود ناموفق',
+            'budget_status_changed': 'تغییر وضعیت بودجه',
+            'allocation_created': 'تخصیص جدید',
+            'execution_created': 'تامین اعتبار'
+        };
+
+        const actionClasses = {
+            'login': 'action-login',
+            'login_failed': 'action-login_failed',
+            'budget_status_changed': 'action-budget_status_changed',
+            'allocation_created': 'action-allocation_created',
+            'execution_created': 'action-execution_created'
+        };
+
+        async function loadLogs() {
+            const action = document.getElementById('filter_action').value;
+            const url = action ? `/api/audit-log?action=${action}` : '/api/audit-log';
+            
+            const response = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const logs = await response.json();
+            
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            
+            logs.forEach(log => {
+                const actionClass = actionClasses[log.action] || 'action-default';
+                const actionLabel = actionLabels[log.action] || log.action;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${toPersianNumbers(log.id)}</td>
+                    <td>${log.username || '-'}</td>
+                    <td><span class="action-badge ${actionClass}">${actionLabel}</span></td>
+                    <td>${log.entity_type || '-'}</td>
+                    <td class="details-cell" title="${log.details || ''}">${log.details || '-'}</td>
+                    <td>${log.ip_address || '-'}</td>
+                    <td>${toPersianNumbers(log.created_at)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        loadLogs();
+    </script>
+</body>
+</html>
