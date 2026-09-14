@@ -576,9 +576,115 @@ export default {
         return new Response(JSON.stringify(items.results), { status: 200, headers });
       }
 
+            // ========== تخصیص اعتبار ==========
+      
+      // دریافت لیست تخصیص‌ها
+      if (url.pathname === '/api/allocations' && request.method === 'GET') {
+        const fiscalYearId = url.searchParams.get('fiscal_year_id');
+        const organizationId = url.searchParams.get('organization_id');
+        
+        let query = `
+          SELECT ba.*, 
+                 bp.title as budget_title,
+                 bp.amount as budget_amount,
+                 o.name as organization_name
+          FROM budget_allocations ba
+          LEFT JOIN budget_proposals bp ON ba.approved_budget_id = bp.id
+          LEFT JOIN organizations o ON ba.organization_id = o.id
+        `;
+        const params = [];
+        
+        if (fiscalYearId || organizationId) {
+          query += ' WHERE 1=1';
+          if (fiscalYearId) {
+            query += ' AND bp.fiscal_year_id = ?';
+            params.push(fiscalYearId);
+          }
+          if (organizationId) {
+            query += ' AND ba.organization_id = ?';
+            params.push(organizationId);
+          }
+        }
+        
+        query += ' ORDER BY ba.created_at DESC';
+        
+        const items = await env.DB.prepare(query).bind(...params).all();
+        
+        return new Response(JSON.stringify(items.results), { status: 200, headers });
+      }
+
+      // ثبت تخصیص جدید
+      if (url.pathname === '/api/allocations' && request.method === 'POST') {
+        const { approved_budget_id, organization_id, amount, percentage, allocation_date } = await request.json();
+        
+        if (!approved_budget_id || !organization_id || !amount) {
+          return new Response(JSON.stringify({ error: 'همه فیلدهای الزامی را پر کنید' }), {
+            status: 400, headers
+          });
+        }
+        
+        // بررسی سقف بودجه
+        const budget = await env.DB.prepare(
+          'SELECT amount FROM budget_proposals WHERE id = ?'
+        ).bind(approved_budget_id).first();
+        
+        if (!budget) {
+          return new Response(JSON.stringify({ error: 'بودجه یافت نشد' }), {
+            status: 404, headers
+          });
+        }
+        
+        // جمع تخصیص‌های قبلی
+        const previousAllocations = await env.DB.prepare(
+          'SELECT SUM(amount) as total FROM budget_allocations WHERE approved_budget_id = ?'
+        ).bind(approved_budget_id).first();
+        
+        const totalAllocated = (previousAllocations.total || 0) + parseFloat(amount);
+        
+        if (totalAllocated > budget.amount) {
+          return new Response(JSON.stringify({ 
+            error: `مجموع تخصیص (${totalAllocated}) از سقف بودجه (${budget.amount}) بیشتر است` 
+          }), { status: 400, headers });
+        }
+        
+        try {
+          const result = await env.DB.prepare(`
+            INSERT INTO budget_allocations 
+            (approved_budget_id, organization_id, amount, percentage, allocation_date)
+            VALUES (?, ?, ?, ?, ?)
+          `).bind(
+            approved_budget_id,
+            organization_id,
+            amount,
+            percentage || null,
+            allocation_date || null
+          ).run();
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            id: result.meta.last_row_id 
+          }), { status: 201, headers });
+        } catch (error) {
+          return new Response(JSON.stringify({ error: 'خطا در ثبت: ' + error.message }), {
+            status: 400, headers
+          });
+        }
+      }
+
+      // حذف تخصیص
+      if (url.pathname.startsWith('/api/allocations/') && request.method === 'DELETE') {
+        const id = url.pathname.split('/').pop();
+        
+        await env.DB.prepare(
+          'DELETE FROM budget_allocations WHERE id = ?'
+        ).bind(id).run();
+        
+        return new Response(JSON.stringify({ success: true }), { status: 200, headers });
+      }
+
 
       // Serve static files
-      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html' || url.pathname === '/organizations.html' || url.pathname === '/budget-proposals.html'|| url.pathname === '/reports.html') {
+      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html' || url.pathname === '/organizations.html' || url.pathname === '/budget-proposals.html'|| url.pathname === '/reports.html'|| url.pathname === '/allocations.html') {
         return await env.ASSETS.fetch(request);
       }
 

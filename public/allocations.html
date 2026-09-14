@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تخصیص اعتبار</title>
+
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/persian-date@1.1.0/dist/persian-date.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
+
+
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+        body {
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+        .header a {
+            color: white;
+            text-decoration: none;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+            font-size: 13px;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 13px;
+        }
+        button {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 11px;
+        }
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .success {
+            color: green;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💳 تخصیص اعتبار</h1>
+        <a href="/dashboard.html">بازگشت به داشبورد</a>
+    </div>
+
+    <div class="container">
+        <h2>ثبت تخصیص جدید</h2>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>سال مالی:</label>
+                <select id="fiscal_year_id"></select>
+            </div>
+            <div class="form-group">
+                <label>بودجه مصوب:</label>
+                <select id="approved_budget_id"></select>
+            </div>
+            <div class="form-group">
+                <label>سازمان:</label>
+                <select id="organization_id"></select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>مبلغ تخصیص (ریال):</label>
+                <input type="text" id="amount" placeholder="مثلاً ۱۰۰۰۰۰۰۰۰">
+            </div>
+            <div class="form-group">
+                <label>درصد:</label>
+                <input type="text" id="percentage" placeholder="مثلاً ۵۰">
+            </div>
+            <div class="form-group">
+                <label>تاریخ تخصیص:</label>
+                <input type="text" id="allocation_date" placeholder="مثلاً ۱۴۰۴/۰۱/۰۱">
+            </div>
+        </div>
+
+        <button onclick="addAllocation()">ثبت تخصیص</button>
+        <div class="error" id="error"></div>
+        <div class="success" id="success"></div>
+
+        <h2>لیست تخصیص‌ها</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>بودجه</th>
+                    <th>سازمان</th>
+                    <th>مبلغ (ریال)</th>
+                    <th>درصد</th>
+                    <th>تاریخ</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+        </table>
+    </div>
+
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login.html';
+        }
+
+        const token = localStorage.getItem('token');
+
+        function toEnglishNumbers(str) {
+            return str.toString().replace(/[۰-۹]/g, function(d) { 
+                return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); 
+            });
+        }
+
+        function toPersianNumbers(str) {
+            const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+            return str.toString().replace(/\d/g, function(d) {
+                return persianDigits[parseInt(d)];
+            });
+        }
+
+        function formatAmount(amount) {
+            if (!amount) return '۰';
+            return toPersianNumbers(amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+        }
+
+        // راه‌اندازی date picker شمسی
+        $("#allocation_date").persianDatepicker({
+            format: 'YYYY/MM/DD',
+            autoClose: true,
+            initialValue: false,
+            persianDigit: true
+        });
+
+
+        // لود سال‌های مالی
+        async function loadFiscalYears() {
+            const response = await fetch('/api/fiscal-years', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const years = await response.json();
+            
+            const select = document.getElementById('fiscal_year_id');
+            select.innerHTML = '<option value="">انتخاب کنید</option>';
+            
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year.id;
+                option.textContent = toPersianNumbers(year.year);
+                select.appendChild(option);
+            });
+        }
+
+        // لود بودجه‌های تصویب شده
+        async function loadApprovedBudgets() {
+            const fiscalYearId = document.getElementById('fiscal_year_id').value;
+            if (!fiscalYearId) return;
+            
+            const response = await fetch(`/api/budget-proposals?fiscal_year_id=${fiscalYearId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const items = await response.json();
+            
+            const select = document.getElementById('approved_budget_id');
+            select.innerHTML = '<option value="">انتخاب کنید</option>';
+            
+            // فقط بودجه‌های تصویب شده
+            const approved = items.filter(i => i.status === 'approved');
+            
+            approved.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = `${item.title} (${formatAmount(item.amount)} ریال)`;
+                select.appendChild(option);
+            });
+        }
+
+        // لود سازمان‌ها
+        async function loadOrganizations() {
+            const response = await fetch('/api/organizations', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const items = await response.json();
+            
+            const select = document.getElementById('organization_id');
+            select.innerHTML = '<option value="">انتخاب کنید</option>';
+            
+            items.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = item.name;
+                select.appendChild(option);
+            });
+        }
+
+        // لود تخصیص‌ها
+        async function loadAllocations() {
+            const response = await fetch('/api/allocations', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const items = await response.json();
+            
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            
+            items.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.budget_title || '-'}</td>
+                    <td>${item.organization_name || '-'}</td>
+                    <td>${formatAmount(item.amount)}</td>
+                    <td>${item.percentage ? toPersianNumbers(item.percentage) + '٪' : '-'}</td>
+                    <td>${item.allocation_date ? toPersianNumbers(item.allocation_date) : '-'}</td>
+                    <td><button class="delete-btn" onclick="deleteAllocation(${item.id})">حذف</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // ثبت تخصیص
+        async function addAllocation() {
+            const approved_budget_id = document.getElementById('approved_budget_id').value;
+            const organization_id = document.getElementById('organization_id').value;
+            const amountRaw = document.getElementById('amount').value;
+            const percentageRaw = document.getElementById('percentage').value;
+            const allocation_date = document.getElementById('allocation_date').value;
+            
+            if (!approved_budget_id || !organization_id || !amountRaw) {
+                document.getElementById('error').textContent = 'همه فیلدهای الزامی را پر کنید';
+                document.getElementById('success').textContent = '';
+                return;
+            }
+            
+            const amount = toEnglishNumbers(amountRaw);
+            const percentage = percentageRaw ? toEnglishNumbers(percentageRaw) : null;
+            
+            const response = await fetch('/api/allocations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    approved_budget_id: parseInt(approved_budget_id),
+                    organization_id: parseInt(organization_id),
+                    amount: parseFloat(amount),
+                    percentage: percentage ? parseFloat(percentage) : null,
+                    allocation_date: allocation_date || null
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                document.getElementById('error').textContent = '';
+                document.getElementById('success').textContent = 'تخصیص با موفقیت ثبت شد';
+                document.getElementById('amount').value = '';
+                document.getElementById('percentage').value = '';
+                document.getElementById('allocation_date').value = '';
+                loadAllocations();
+            } else {
+                document.getElementById('error').textContent = data.error;
+                document.getElementById('success').textContent = '';
+            }
+        }
+
+        // حذف تخصیص
+        async function deleteAllocation(id) {
+            if (!confirm('مطمئن هستید؟')) return;
+            
+            const response = await fetch(`/api/allocations/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (response.ok) {
+                loadAllocations();
+            }
+        }
+
+        // ایونت‌ها
+        document.getElementById('fiscal_year_id').addEventListener('change', loadApprovedBudgets);
+
+        // لود اولیه
+        loadFiscalYears();
+        loadOrganizations();
+        loadAllocations();
+    </script>
+</body>
+</html>
