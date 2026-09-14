@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مدیریت کاربران</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+        body {
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+        .header a {
+            color: white;
+            text-decoration: none;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+            font-size: 13px;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 13px;
+        }
+        button {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 11px;
+        }
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .success {
+            color: green;
+            margin-top: 10px;
+        }
+        .role-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: white;
+        }
+        .role-admin { background: #dc3545; }
+        .role-manager { background: #fd7e14; }
+        .role-expert { background: #17a2b8; }
+        .role-viewer { background: #6c757d; }
+        .role-province { background: #6f42c1; }
+        .role-ministry { background: #28a745; }
+        .inactive {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>👥 مدیریت کاربران</h1>
+        <a href="/dashboard.html">بازگشت به داشبورد</a>
+    </div>
+
+    <div class="container">
+        <h2>افزودن کاربر جدید</h2>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>نام کاربری:</label>
+                <input type="text" id="username" placeholder="مثلاً ali_ahmadi">
+            </div>
+            <div class="form-group">
+                <label>رمز عبور:</label>
+                <input type="password" id="password" placeholder="حداقل ۶ کاراکتر">
+            </div>
+            <div class="form-group">
+                <label>نام کامل:</label>
+                <input type="text" id="full_name" placeholder="مثلاً علی احمدی">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>نقش:</label>
+                <select id="role">
+                    <option value="expert">کارشناس</option>
+                    <option value="manager">مدیر</option>
+                    <option value="admin">مدیر سیستم</option>
+                    <option value="viewer">بازدیدکننده</option>
+                    <option value="province">استانداری/فرمانداری</option>
+                    <option value="ministry">وزارت کشور</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>سازمان:</label>
+                <input type="text" id="organization" placeholder="مثلاً معاونت مالی">
+            </div>
+        </div>
+
+        <button onclick="addUser()">افزودن کاربر</button>
+        <div class="error" id="error"></div>
+        <div class="success" id="success"></div>
+
+        <h2>لیست کاربران</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>نام کاربری</th>
+                    <th>نام کامل</th>
+                    <th>نقش</th>
+                    <th>سازمان</th>
+                    <th>وضعیت</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+        </table>
+    </div>
+
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login.html';
+        }
+
+        const token = localStorage.getItem('token');
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+
+        // بررسی دسترسی
+        if (currentUser.role !== 'admin') {
+            alert('شما دسترسی به این صفحه ندارید');
+            window.location.href = '/dashboard.html';
+        }
+
+        const roleLabels = {
+            'admin': { class: 'role-admin', label: 'مدیر سیستم' },
+            'manager': { class: 'role-manager', label: 'مدیر' },
+            'expert': { class: 'role-expert', label: 'کارشناس' },
+            'viewer': { class: 'role-viewer', label: 'بازدیدکننده' },
+            'province': { class: 'role-province', label: 'استانداری' },
+            'ministry': { class: 'role-ministry', label: 'وزارت کشور' }
+        };
+
+        // لود کاربران
+        async function loadUsers() {
+            const response = await fetch('/api/users', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (!response.ok) {
+                alert('خطا در دریافت کاربران');
+                return;
+            }
+            
+            const users = await response.json();
+            
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            
+            users.forEach(user => {
+                const role = roleLabels[user.role] || { class: 'role-viewer', label: user.role };
+                const row = document.createElement('tr');
+                if (!user.is_active) row.classList.add('inactive');
+                
+                row.innerHTML = `
+                    <td>${user.username}</td>
+                    <td>${user.full_name}</td>
+                    <td><span class="role-badge ${role.class}">${role.label}</span></td>
+                    <td>${user.organization || '-'}</td>
+                    <td>${user.is_active ? '✅ فعال' : '❌ غیرفعال'}</td>
+                    <td>
+                        <button class="delete-btn" onclick="deleteUser(${user.id})">حذف</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // افزودن کاربر
+        async function addUser() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const full_name = document.getElementById('full_name').value;
+            const role = document.getElementById('role').value;
+            const organization = document.getElementById('organization').value;
+            
+            if (!username || !password || !full_name || !role) {
+                document.getElementById('error').textContent = 'همه فیلدهای الزامی را پر کنید';
+                document.getElementById('success').textContent = '';
+                return;
+            }
+            
+            const response = await fetch('/api/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ username, password, full_name, role, organization })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                document.getElementById('error').textContent = '';
+                document.getElementById('success').textContent = 'کاربر با موفقیت اضافه شد';
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                document.getElementById('full_name').value = '';
+                document.getElementById('organization').value = '';
+                loadUsers();
+            } else {
+                document.getElementById('error').textContent = data.error;
+                document.getElementById('success').textContent = '';
+            }
+        }
+
+        // حذف کاربر
+        async function deleteUser(id) {
+            if (!confirm('مطمئن هستید؟')) return;
+            
+            const response = await fetch(`/api/users/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (response.ok) {
+                loadUsers();
+            } else {
+                const data = await response.json();
+                alert('خطا: ' + data.error);
+            }
+        }
+
+        // لود اولیه
+        loadUsers();
+    </script>
+</body>
+</html>

@@ -823,8 +823,151 @@ export default {
         }), { status: 200, headers });
       }
 
+
+      // ========== مدیریت کاربران ==========
+      
+      // دریافت لیست کاربران
+      if (url.pathname === '/api/users' && request.method === 'GET') {
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader) {
+          return new Response(JSON.stringify({ error: 'احراز هویت لازم است' }), {
+            status: 401, headers
+          });
+        }
+        
+        const token = authHeader.replace('Bearer ', '');
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        
+        if (!userData || userData.role !== 'admin') {
+          return new Response(JSON.stringify({ error: 'دسترسی غیرمجاز' }), {
+            status: 403, headers
+          });
+        }
+        
+        const users = await env.DB.prepare(
+          'SELECT id, username, full_name, role, organization, is_active, created_at FROM users ORDER BY created_at DESC'
+        ).all();
+        
+        return new Response(JSON.stringify(users.results), { status: 200, headers });
+      }
+
+      // ساخت کاربر جدید
+      if (url.pathname === '/api/users' && request.method === 'POST') {
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader) {
+          return new Response(JSON.stringify({ error: 'احراز هویت لازم است' }), {
+            status: 401, headers
+          });
+        }
+        
+        const token = authHeader.replace('Bearer ', '');
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        
+        if (!userData || userData.role !== 'admin') {
+          return new Response(JSON.stringify({ error: 'دسترسی غیرمجاز' }), {
+            status: 403, headers
+          });
+        }
+        
+        const { username, password, full_name, role, organization } = await request.json();
+        
+        if (!username || !password || !full_name || !role) {
+          return new Response(JSON.stringify({ error: 'همه فیلدهای الزامی را پر کنید' }), {
+            status: 400, headers
+          });
+        }
+        
+        // هش پسورد
+        const password_hash = await hashPassword(password);
+        
+        try {
+          const result = await env.DB.prepare(`
+            INSERT INTO users (username, password_hash, full_name, role, organization)
+            VALUES (?, ?, ?, ?, ?)
+          `).bind(username, password_hash, full_name, role, organization || null).run();
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            id: result.meta.last_row_id 
+          }), { status: 201, headers });
+        } catch (error) {
+          return new Response(JSON.stringify({ error: 'نام کاربری تکراری است' }), {
+            status: 400, headers
+          });
+        }
+      }
+
+      // ویرایش کاربر
+      if (url.pathname.startsWith('/api/users/') && request.method === 'PUT') {
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader) {
+          return new Response(JSON.stringify({ error: 'احراز هویت لازم است' }), {
+            status: 401, headers
+          });
+        }
+        
+        const token = authHeader.replace('Bearer ', '');
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        
+        if (!userData || userData.role !== 'admin') {
+          return new Response(JSON.stringify({ error: 'دسترسی غیرمجاز' }), {
+            status: 403, headers
+          });
+        }
+        
+        const id = url.pathname.split('/').pop();
+        const { full_name, role, organization, is_active, password } = await request.json();
+        
+        if (password) {
+          const password_hash = await hashPassword(password);
+          await env.DB.prepare(`
+            UPDATE users SET full_name = ?, role = ?, organization = ?, is_active = ?, password_hash = ?
+            WHERE id = ?
+          `).bind(full_name, role, organization || null, is_active ? 1 : 0, password_hash, id).run();
+        } else {
+          await env.DB.prepare(`
+            UPDATE users SET full_name = ?, role = ?, organization = ?, is_active = ?
+            WHERE id = ?
+          `).bind(full_name, role, organization || null, is_active ? 1 : 0, id).run();
+        }
+        
+        return new Response(JSON.stringify({ success: true }), { status: 200, headers });
+      }
+
+      // حذف کاربر
+      if (url.pathname.startsWith('/api/users/') && request.method === 'DELETE') {
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader) {
+          return new Response(JSON.stringify({ error: 'احراز هویت لازم است' }), {
+            status: 401, headers
+          });
+        }
+        
+        const token = authHeader.replace('Bearer ', '');
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        
+        if (!userData || userData.role !== 'admin') {
+          return new Response(JSON.stringify({ error: 'دسترسی غیرمجاز' }), {
+            status: 403, headers
+          });
+        }
+        
+        const id = url.pathname.split('/').pop();
+        
+        // جلوگیری از حذف خود
+        if (parseInt(id) === userData.userId) {
+          return new Response(JSON.stringify({ error: 'نمی‌توانید خودتان را حذف کنید' }), {
+            status: 400, headers
+          });
+        }
+        
+        await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id).run();
+        
+        return new Response(JSON.stringify({ success: true }), { status: 200, headers });
+      }
+
       // Serve static files
-      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html' || url.pathname === '/organizations.html' || url.pathname === '/budget-proposals.html'|| url.pathname === '/reports.html'|| url.pathname === '/allocations.html'|| url.pathname === '/executions.html') {
+      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html' || url.pathname === '/organizations.html' || url.pathname === '/budget-proposals.html'|| url.pathname === '/reports.html'|| url.pathname === '/allocations.html'|| url.pathname === '/executions.html'|| url.pathname === '/users.html') {
         return await env.ASSETS.fetch(request);
       }
 
