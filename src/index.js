@@ -3,11 +3,11 @@ import { hashPassword, verifyPassword, generateToken, verifyToken } from './auth
 // ثبت لاگ
 async function logAction(env, request, userData, action, entityType, entityId, details) {
   try {
-    const ip = request.headers.get('CF-Connecting-IP') || 
-               request.headers.get('X-Forwarded-For') || 
-               'unknown';
+    const ip = request.headers.get('CF-Connecting-IP') ||
+      request.headers.get('X-Forwarded-For') ||
+      'unknown';
     const userAgent = request.headers.get('User-Agent') || 'unknown';
-    
+
     await env.DB.prepare(`
       INSERT INTO audit_log (user_id, username, action, entity_type, entity_id, details, ip_address, user_agent)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -25,6 +25,23 @@ async function logAction(env, request, userData, action, entityType, entityId, d
     console.error('Audit log error:', error);
   }
 }
+
+// Rate Limiting ساده
+async function checkRateLimit(env, ip, action, maxRequests = 10, windowSeconds = 60) {
+  try {
+    const windowStart = new Date(Date.now() - windowSeconds * 1000).toISOString();
+
+    const result = await env.DB.prepare(`
+      SELECT COUNT(*) as count FROM audit_log
+      WHERE ip_address = ? AND action = ? AND created_at > ?
+    `).bind(ip, action, windowStart).first();
+
+    return (result.count || 0) < maxRequests;
+  } catch {
+    return true; // در صورت خطا، اجازه بده
+  }
+}
+
 
 export default {
   async fetch(request, env, ctx) {
@@ -44,33 +61,44 @@ export default {
     try {
       // ========== ورود ==========
       if (url.pathname === '/api/login' && request.method === 'POST') {
+        // بررسی Rate Limit
+        const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+        const allowed = await checkRateLimit(env, ip, 'login_attempt', 10, 60);
+
+        if (!allowed) {
+          return new Response(JSON.stringify({
+            error: 'تعداد درخواست‌های شما بیش از حد مجاز است. لطفاً یک دقیقه صبر کنید.'
+          }), { status: 429, headers });
+        }
+
+
         const { username, password } = await request.json();
-        
+
         const user = await env.DB.prepare(
           'SELECT * FROM users WHERE username = ? AND is_active = 1'
         ).bind(username).first();
 
         if (!user || !(await verifyPassword(password, user.password_hash))) {
           // ثبت لاگ ورود ناموفق
-          ctx.waitUntil(logAction(env, request, null, 'login_failed', 'user', null, { 
+          ctx.waitUntil(logAction(env, request, null, 'login_failed', 'user', null, {
             username: username,
             reason: !user ? 'user_not_found' : 'wrong_password'
           }));
-          
-          return new Response(JSON.stringify({ 
-            error: 'نام کاربری یا رمز عبور اشتباه است' 
+
+          return new Response(JSON.stringify({
+            error: 'نام کاربری یا رمز عبور اشتباه است'
           }), { status: 401, headers });
         }
 
         const token = await generateToken(user.id, user.username, user.role, env.JWT_SECRET);
-        
+
         // ثبت لاگ ورود موفق
-        ctx.waitUntil(logAction(env, request, 
-          { userId: user.id, username: user.username }, 
-          'login', 'user', user.id, 
+        ctx.waitUntil(logAction(env, request,
+          { userId: user.id, username: user.username },
+          'login', 'user', user.id,
           { success: true }
         ));
-        
+
         return new Response(JSON.stringify({
           token,
           user: {
@@ -493,17 +521,17 @@ export default {
         }
 
 
-         // آپدیت وضعیت
-         await env.DB.prepare(
+        // آپدیت وضعیت
+        await env.DB.prepare(
           'UPDATE budget_proposals SET status = ? WHERE id = ?'
         ).bind(new_status, id).run();
-        
+
         // ثبت لاگ
-        ctx.waitUntil(logAction(env, request, userData, 
-          'budget_status_changed', 'budget_proposal', id, 
+        ctx.waitUntil(logAction(env, request, userData,
+          'budget_status_changed', 'budget_proposal', id,
           { from: current.status, to: new_status, comment: comment }
         ));
-        
+
         return new Response(JSON.stringify({ success: true }), { status: 200, headers });
       }
 
@@ -524,17 +552,17 @@ export default {
 
 
       // ========== گزارشات ==========
-      
+
       // گزارش خلاصه بودجه
       if (url.pathname === '/api/reports/summary' && request.method === 'GET') {
         const fiscalYearId = url.searchParams.get('fiscal_year_id');
-        
+
         if (!fiscalYearId) {
           return new Response(JSON.stringify({ error: 'سال مالی الزامی است' }), {
             status: 400, headers
           });
         }
-        
+
         // جمع کل بر اساس وضعیت
         const byStatus = await env.DB.prepare(`
           SELECT status, COUNT(*) as count, SUM(amount) as total
@@ -542,7 +570,7 @@ export default {
           WHERE fiscal_year_id = ?
           GROUP BY status
         `).bind(fiscalYearId).all();
-        
+
         // جمع کل بر اساس سازمان
         const byOrganization = await env.DB.prepare(`
           SELECT o.name as organization_name, COUNT(*) as count, SUM(bp.amount) as total
@@ -552,7 +580,7 @@ export default {
           GROUP BY bp.organization_id
           ORDER BY total DESC
         `).bind(fiscalYearId).all();
-        
+
         // جمع کل بر اساس نوع (منابع/مصارف)
         const byType = await env.DB.prepare(`
           SELECT ec.type, COUNT(*) as count, SUM(bp.amount) as total
@@ -561,14 +589,14 @@ export default {
           WHERE bp.fiscal_year_id = ?
           GROUP BY ec.type
         `).bind(fiscalYearId).all();
-        
+
         // جمع کل
         const total = await env.DB.prepare(`
           SELECT SUM(amount) as total_amount, COUNT(*) as total_count
           FROM budget_proposals
           WHERE fiscal_year_id = ?
         `).bind(fiscalYearId).first();
-        
+
         return new Response(JSON.stringify({
           total: total,
           byStatus: byStatus.results,
@@ -580,13 +608,13 @@ export default {
       // گزارش تفصیلی
       if (url.pathname === '/api/reports/detailed' && request.method === 'GET') {
         const fiscalYearId = url.searchParams.get('fiscal_year_id');
-        
+
         if (!fiscalYearId) {
           return new Response(JSON.stringify({ error: 'سال مالی الزامی است' }), {
             status: 400, headers
           });
         }
-        
+
         const items = await env.DB.prepare(`
           SELECT bp.*, 
                  o.name as organization_name,
@@ -601,17 +629,17 @@ export default {
           WHERE bp.fiscal_year_id = ?
           ORDER BY bp.created_at DESC
         `).bind(fiscalYearId).all();
-        
+
         return new Response(JSON.stringify(items.results), { status: 200, headers });
       }
 
-            // ========== تخصیص اعتبار ==========
-      
+      // ========== تخصیص اعتبار ==========
+
       // دریافت لیست تخصیص‌ها
       if (url.pathname === '/api/allocations' && request.method === 'GET') {
         const fiscalYearId = url.searchParams.get('fiscal_year_id');
         const organizationId = url.searchParams.get('organization_id');
-        
+
         let query = `
           SELECT ba.*, 
                  bp.title as budget_title,
@@ -622,7 +650,7 @@ export default {
           LEFT JOIN organizations o ON ba.organization_id = o.id
         `;
         const params = [];
-        
+
         if (fiscalYearId || organizationId) {
           query += ' WHERE 1=1';
           if (fiscalYearId) {
@@ -634,48 +662,48 @@ export default {
             params.push(organizationId);
           }
         }
-        
+
         query += ' ORDER BY ba.created_at DESC';
-        
+
         const items = await env.DB.prepare(query).bind(...params).all();
-        
+
         return new Response(JSON.stringify(items.results), { status: 200, headers });
       }
 
       // ثبت تخصیص جدید
       if (url.pathname === '/api/allocations' && request.method === 'POST') {
         const { approved_budget_id, organization_id, amount, percentage, allocation_date } = await request.json();
-        
+
         if (!approved_budget_id || !organization_id || !amount) {
           return new Response(JSON.stringify({ error: 'همه فیلدهای الزامی را پر کنید' }), {
             status: 400, headers
           });
         }
-        
+
         // بررسی سقف بودجه
         const budget = await env.DB.prepare(
           'SELECT amount FROM budget_proposals WHERE id = ?'
         ).bind(approved_budget_id).first();
-        
+
         if (!budget) {
           return new Response(JSON.stringify({ error: 'بودجه یافت نشد' }), {
             status: 404, headers
           });
         }
-        
+
         // جمع تخصیص‌های قبلی
         const previousAllocations = await env.DB.prepare(
           'SELECT SUM(amount) as total FROM budget_allocations WHERE approved_budget_id = ?'
         ).bind(approved_budget_id).first();
-        
+
         const totalAllocated = (previousAllocations.total || 0) + parseFloat(amount);
-        
+
         if (totalAllocated > budget.amount) {
-          return new Response(JSON.stringify({ 
-            error: `مجموع تخصیص (${totalAllocated}) از سقف بودجه (${budget.amount}) بیشتر است` 
+          return new Response(JSON.stringify({
+            error: `مجموع تخصیص (${totalAllocated}) از سقف بودجه (${budget.amount}) بیشتر است`
           }), { status: 400, headers });
         }
-        
+
         try {
           const result = await env.DB.prepare(`
             INSERT INTO budget_allocations 
@@ -688,16 +716,16 @@ export default {
             percentage || null,
             allocation_date || null
           ).run();
-          
+
           // ثبت لاگ
-          ctx.waitUntil(logAction(env, request, null, 
-            'allocation_created', 'budget_allocation', result.meta.last_row_id, 
+          ctx.waitUntil(logAction(env, request, null,
+            'allocation_created', 'budget_allocation', result.meta.last_row_id,
             { amount: amount, organization_id: organization_id }
           ));
 
-          return new Response(JSON.stringify({ 
-            success: true, 
-            id: result.meta.last_row_id 
+          return new Response(JSON.stringify({
+            success: true,
+            id: result.meta.last_row_id
           }), { status: 201, headers });
         } catch (error) {
           return new Response(JSON.stringify({ error: 'خطا در ثبت: ' + error.message }), {
@@ -709,21 +737,21 @@ export default {
       // حذف تخصیص
       if (url.pathname.startsWith('/api/allocations/') && request.method === 'DELETE') {
         const id = url.pathname.split('/').pop();
-        
+
         await env.DB.prepare(
           'DELETE FROM budget_allocations WHERE id = ?'
         ).bind(id).run();
-        
+
         return new Response(JSON.stringify({ success: true }), { status: 200, headers });
       }
 
 
-            // ========== تامین اعتبار (اجرای بودجه) ==========
-      
+      // ========== تامین اعتبار (اجرای بودجه) ==========
+
       // دریافت لیست اجراها
       if (url.pathname === '/api/executions' && request.method === 'GET') {
         const allocationId = url.searchParams.get('allocation_id');
-        
+
         let query = `
           SELECT be.*, 
                  ba.amount as allocation_amount,
@@ -735,65 +763,65 @@ export default {
           LEFT JOIN organizations o ON ba.organization_id = o.id
         `;
         const params = [];
-        
+
         if (allocationId) {
           query += ' WHERE be.allocation_id = ?';
           params.push(allocationId);
         }
-        
+
         query += ' ORDER BY be.created_at DESC';
-        
+
         const items = await env.DB.prepare(query).bind(...params).all();
-        
+
         return new Response(JSON.stringify(items.results), { status: 200, headers });
       }
 
       // ثبت تامین اعتبار جدید
       if (url.pathname === '/api/executions' && request.method === 'POST') {
         const { allocation_id, technical_code, amount, description, execution_date, accounting_doc_no } = await request.json();
-        
+
         if (!allocation_id || !technical_code || !amount) {
           return new Response(JSON.stringify({ error: 'همه فیلدهای الزامی را پر کنید' }), {
             status: 400, headers
           });
         }
-        
+
         // بررسی سقف تخصیص
         const allocation = await env.DB.prepare(
           'SELECT amount FROM budget_allocations WHERE id = ?'
         ).bind(allocation_id).first();
-        
+
         if (!allocation) {
           return new Response(JSON.stringify({ error: 'تخصیص یافت نشد' }), {
             status: 404, headers
           });
         }
-        
+
         // جمع اجراهای قبلی
         const previousExecutions = await env.DB.prepare(
           'SELECT SUM(amount) as total FROM budget_executions WHERE allocation_id = ?'
         ).bind(allocation_id).first();
-        
+
         const totalExecuted = (previousExecutions.total || 0) + parseFloat(amount);
-        
+
         if (totalExecuted > allocation.amount) {
           const remaining = allocation.amount - (previousExecutions.total || 0);
-          return new Response(JSON.stringify({ 
-            error: `مبلغ درخواستی از مانده تخصیص بیشتر است. مانده: ${remaining} ریال` 
+          return new Response(JSON.stringify({
+            error: `مبلغ درخواستی از مانده تخصیص بیشتر است. مانده: ${remaining} ریال`
           }), { status: 400, headers });
         }
-        
+
         // گرفتن userId
         const authHeader = request.headers.get('Authorization');
         const token = authHeader.replace('Bearer ', '');
         const userData = await verifyToken(token, env.JWT_SECRET);
-        
+
         if (!userData) {
           return new Response(JSON.stringify({ error: 'توکن نامعتبر' }), {
             status: 401, headers
           });
         }
-        
+
         try {
           const result = await env.DB.prepare(`
             INSERT INTO budget_executions 
@@ -807,16 +835,16 @@ export default {
             execution_date || null,
             accounting_doc_no || null
           ).run();
-          
+
           // ثبت لاگ
-          ctx.waitUntil(logAction(env, request, userData, 
-            'execution_created', 'budget_execution', result.meta.last_row_id, 
+          ctx.waitUntil(logAction(env, request, userData,
+            'execution_created', 'budget_execution', result.meta.last_row_id,
             { amount: amount, allocation_id: allocation_id, technical_code: technical_code }
           ));
 
-          return new Response(JSON.stringify({ 
-            success: true, 
-            id: result.meta.last_row_id 
+          return new Response(JSON.stringify({
+            success: true,
+            id: result.meta.last_row_id
           }), { status: 201, headers });
         } catch (error) {
           return new Response(JSON.stringify({ error: 'خطا در ثبت: ' + error.message }), {
@@ -828,35 +856,35 @@ export default {
       // حذف اجرا
       if (url.pathname.startsWith('/api/executions/') && request.method === 'DELETE') {
         const id = url.pathname.split('/').pop();
-        
+
         await env.DB.prepare(
           'DELETE FROM budget_executions WHERE id = ?'
         ).bind(id).run();
-        
+
         return new Response(JSON.stringify({ success: true }), { status: 200, headers });
       }
 
       // دریافت مانده تخصیص
       if (url.pathname.startsWith('/api/allocations/balance/') && request.method === 'GET') {
         const allocationId = url.pathname.split('/').pop();
-        
+
         const allocation = await env.DB.prepare(
           'SELECT amount FROM budget_allocations WHERE id = ?'
         ).bind(allocationId).first();
-        
+
         if (!allocation) {
           return new Response(JSON.stringify({ error: 'تخصیص یافت نشد' }), {
             status: 404, headers
           });
         }
-        
+
         const executed = await env.DB.prepare(
           'SELECT SUM(amount) as total FROM budget_executions WHERE allocation_id = ?'
         ).bind(allocationId).first();
-        
+
         const totalExecuted = executed.total || 0;
         const remaining = allocation.amount - totalExecuted;
-        
+
         return new Response(JSON.stringify({
           total: allocation.amount,
           executed: totalExecuted,
@@ -866,7 +894,7 @@ export default {
 
 
       // ========== مدیریت کاربران ==========
-      
+
       // دریافت لیست کاربران
       if (url.pathname === '/api/users' && request.method === 'GET') {
         const authHeader = request.headers.get('Authorization');
@@ -875,20 +903,20 @@ export default {
             status: 401, headers
           });
         }
-        
+
         const token = authHeader.replace('Bearer ', '');
         const userData = await verifyToken(token, env.JWT_SECRET);
-        
+
         if (!userData || userData.role !== 'admin') {
           return new Response(JSON.stringify({ error: 'دسترسی غیرمجاز' }), {
             status: 403, headers
           });
         }
-        
+
         const users = await env.DB.prepare(
           'SELECT id, username, full_name, role, organization, is_active, created_at FROM users ORDER BY created_at DESC'
         ).all();
-        
+
         return new Response(JSON.stringify(users.results), { status: 200, headers });
       }
 
@@ -900,36 +928,36 @@ export default {
             status: 401, headers
           });
         }
-        
+
         const token = authHeader.replace('Bearer ', '');
         const userData = await verifyToken(token, env.JWT_SECRET);
-        
+
         if (!userData || userData.role !== 'admin') {
           return new Response(JSON.stringify({ error: 'دسترسی غیرمجاز' }), {
             status: 403, headers
           });
         }
-        
+
         const { username, password, full_name, role, organization } = await request.json();
-        
+
         if (!username || !password || !full_name || !role) {
           return new Response(JSON.stringify({ error: 'همه فیلدهای الزامی را پر کنید' }), {
             status: 400, headers
           });
         }
-        
+
         // هش پسورد
         const password_hash = await hashPassword(password);
-        
+
         try {
           const result = await env.DB.prepare(`
             INSERT INTO users (username, password_hash, full_name, role, organization)
             VALUES (?, ?, ?, ?, ?)
           `).bind(username, password_hash, full_name, role, organization || null).run();
-          
-          return new Response(JSON.stringify({ 
-            success: true, 
-            id: result.meta.last_row_id 
+
+          return new Response(JSON.stringify({
+            success: true,
+            id: result.meta.last_row_id
           }), { status: 201, headers });
         } catch (error) {
           return new Response(JSON.stringify({ error: 'نام کاربری تکراری است' }), {
@@ -946,19 +974,19 @@ export default {
             status: 401, headers
           });
         }
-        
+
         const token = authHeader.replace('Bearer ', '');
         const userData = await verifyToken(token, env.JWT_SECRET);
-        
+
         if (!userData || userData.role !== 'admin') {
           return new Response(JSON.stringify({ error: 'دسترسی غیرمجاز' }), {
             status: 403, headers
           });
         }
-        
+
         const id = url.pathname.split('/').pop();
         const { full_name, role, organization, is_active, password } = await request.json();
-        
+
         if (password) {
           const password_hash = await hashPassword(password);
           await env.DB.prepare(`
@@ -971,7 +999,7 @@ export default {
             WHERE id = ?
           `).bind(full_name, role, organization || null, is_active ? 1 : 0, id).run();
         }
-        
+
         return new Response(JSON.stringify({ success: true }), { status: 200, headers });
       }
 
@@ -983,36 +1011,36 @@ export default {
             status: 401, headers
           });
         }
-        
+
         const token = authHeader.replace('Bearer ', '');
         const userData = await verifyToken(token, env.JWT_SECRET);
-        
+
         if (!userData || userData.role !== 'admin') {
           return new Response(JSON.stringify({ error: 'دسترسی غیرمجاز' }), {
             status: 403, headers
           });
         }
-        
+
         const id = url.pathname.split('/').pop();
-        
+
         // جلوگیری از حذف خود
         if (parseInt(id) === userData.userId) {
           return new Response(JSON.stringify({ error: 'نمی‌توانید خودتان را حذف کنید' }), {
             status: 400, headers
           });
         }
-        
+
         await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id).run();
-        
+
         return new Response(JSON.stringify({ success: true }), { status: 200, headers });
       }
 
       // ========== اصلاح بودجه ==========
-      
+
       // دریافت لیست اصلاحات
       if (url.pathname === '/api/revisions' && request.method === 'GET') {
         const fiscalYearId = url.searchParams.get('fiscal_year_id');
-        
+
         let query = `
           SELECT br.*, 
                  bp.title as budget_title,
@@ -1024,16 +1052,16 @@ export default {
           LEFT JOIN users u2 ON br.approved_by = u2.id
         `;
         const params = [];
-        
+
         if (fiscalYearId) {
           query += ' WHERE br.fiscal_year_id = ?';
           params.push(fiscalYearId);
         }
-        
+
         query += ' ORDER BY br.created_at DESC';
-        
+
         const items = await env.DB.prepare(query).bind(...params).all();
-        
+
         return new Response(JSON.stringify(items.results), { status: 200, headers });
       }
 
@@ -1042,24 +1070,24 @@ export default {
         const authHeader = request.headers.get('Authorization');
         const token = authHeader.replace('Bearer ', '');
         const userData = await verifyToken(token, env.JWT_SECRET);
-        
+
         if (!userData) {
           return new Response(JSON.stringify({ error: 'توکن نامعتبر' }), {
             status: 401, headers
           });
         }
-        
+
         const { fiscal_year_id, budget_proposal_id, revision_type, new_amount, reason } = await request.json();
-        
+
         if (!fiscal_year_id || !revision_type || !reason) {
           return new Response(JSON.stringify({ error: 'همه فیلدهای الزامی را پر کنید' }), {
             status: 400, headers
           });
         }
-        
+
         let old_amount = 0;
         let difference = 0;
-        
+
         // برای increase/decrease/remove باید budget_proposal_id باشه
         if (revision_type !== 'add') {
           if (!budget_proposal_id) {
@@ -1067,19 +1095,19 @@ export default {
               status: 400, headers
             });
           }
-          
+
           const budget = await env.DB.prepare(
             'SELECT amount FROM budget_proposals WHERE id = ?'
           ).bind(budget_proposal_id).first();
-          
+
           if (!budget) {
             return new Response(JSON.stringify({ error: 'بودجه یافت نشد' }), {
               status: 404, headers
             });
           }
-          
+
           old_amount = budget.amount;
-          
+
           if (revision_type === 'increase') {
             if (!new_amount || new_amount <= 0) {
               return new Response(JSON.stringify({ error: 'مبلغ افزایش الزامی است' }), {
@@ -1108,7 +1136,7 @@ export default {
           }
           difference = parseFloat(new_amount);
         }
-        
+
         try {
           const result = await env.DB.prepare(`
             INSERT INTO budget_revisions 
@@ -1124,10 +1152,10 @@ export default {
             reason,
             userData.userId
           ).run();
-          
-          return new Response(JSON.stringify({ 
-            success: true, 
-            id: result.meta.last_row_id 
+
+          return new Response(JSON.stringify({
+            success: true,
+            id: result.meta.last_row_id
           }), { status: 201, headers });
         } catch (error) {
           return new Response(JSON.stringify({ error: 'خطا در ثبت: ' + error.message }), {
@@ -1141,39 +1169,39 @@ export default {
         const authHeader = request.headers.get('Authorization');
         const token = authHeader.replace('Bearer ', '');
         const userData = await verifyToken(token, env.JWT_SECRET);
-        
+
         if (!userData || !['admin', 'manager'].includes(userData.role)) {
           return new Response(JSON.stringify({ error: 'دسترسی غیرمجاز' }), {
             status: 403, headers
           });
         }
-        
+
         const { id, status } = await request.json();
-        
+
         if (!id || !['approved', 'rejected'].includes(status)) {
           return new Response(JSON.stringify({ error: 'اطلاعات ناقص' }), {
             status: 400, headers
           });
         }
-        
+
         // اگر تایید شد، تغییرات رو اعمال کن
         if (status === 'approved') {
           const revision = await env.DB.prepare(
             'SELECT * FROM budget_revisions WHERE id = ?'
           ).bind(id).first();
-          
+
           if (!revision) {
             return new Response(JSON.stringify({ error: 'اصلاح یافت نشد' }), {
               status: 404, headers
             });
           }
-          
+
           if (revision.status !== 'pending') {
             return new Response(JSON.stringify({ error: 'این اصلاح قبلاً بررسی شده' }), {
               status: 400, headers
             });
           }
-          
+
           // اعمال تغییرات
           if (revision.revision_type === 'add') {
             // ردیف جدید اضافه کن
@@ -1194,7 +1222,7 @@ export default {
             const currentBudget = await env.DB.prepare(
               'SELECT amount FROM budget_proposals WHERE id = ?'
             ).bind(revision.budget_proposal_id).first();
-            
+
             const newTotal = currentBudget.amount + revision.new_amount;
             await env.DB.prepare(`
               UPDATE budget_proposals SET amount = ? WHERE id = ?
@@ -1204,41 +1232,41 @@ export default {
             const currentBudget = await env.DB.prepare(
               'SELECT amount FROM budget_proposals WHERE id = ?'
             ).bind(revision.budget_proposal_id).first();
-            
+
             const newTotal = currentBudget.amount - revision.new_amount;
             await env.DB.prepare(`
               UPDATE budget_proposals SET amount = ? WHERE id = ?
             `).bind(newTotal, revision.budget_proposal_id).run();
           }
         }
-        
+
         // آپدیت وضعیت
         await env.DB.prepare(`
           UPDATE budget_revisions 
           SET status = ?, approved_by = ?, approved_at = CURRENT_TIMESTAMP
           WHERE id = ?
         `).bind(status, userData.userId, id).run();
-        
+
         return new Response(JSON.stringify({ success: true }), { status: 200, headers });
       }
 
-            // ========== گزارش پیشرفته ==========
-      
+      // ========== گزارش پیشرفته ==========
+
       // گزارش مبسوط
       if (url.pathname === '/api/reports/detailed-form' && request.method === 'GET') {
         const fiscalYearId = url.searchParams.get('fiscal_year_id');
-        
+
         if (!fiscalYearId) {
           return new Response(JSON.stringify({ error: 'سال مالی الزامی است' }), {
             status: 400, headers
           });
         }
-        
+
         // اطلاعات سال مالی
         const fiscalYear = await env.DB.prepare(
           'SELECT * FROM fiscal_years WHERE id = ?'
         ).bind(fiscalYearId).first();
-        
+
         // جمع کل بر اساس نوع
         const byType = await env.DB.prepare(`
           SELECT ec.type, SUM(bp.amount) as total
@@ -1247,7 +1275,7 @@ export default {
           WHERE bp.fiscal_year_id = ? AND bp.status = 'approved'
           GROUP BY ec.type
         `).bind(fiscalYearId).all();
-        
+
         // بر اساس طبقه‌بندی اقتصادی (سرفصل)
         const byMainCode = await env.DB.prepare(`
           SELECT ec.main_code, ec.chapter_code, ec.sub_code, ec.title, 
@@ -1258,7 +1286,7 @@ export default {
           GROUP BY ec.sub_code
           ORDER BY ec.main_code, ec.chapter_code, ec.sub_code
         `).bind(fiscalYearId).all();
-        
+
         // بر اساس سازمان
         const byOrganization = await env.DB.prepare(`
           SELECT o.name as organization_name, 
@@ -1270,14 +1298,14 @@ export default {
           GROUP BY bp.organization_id
           ORDER BY total DESC
         `).bind(fiscalYearId).all();
-        
+
         // جمع کل
         const grandTotal = await env.DB.prepare(`
           SELECT SUM(amount) as total, COUNT(*) as count
           FROM budget_proposals
           WHERE fiscal_year_id = ? AND status = 'approved'
         `).bind(fiscalYearId).first();
-        
+
         return new Response(JSON.stringify({
           fiscalYear,
           byType: byType.results,
@@ -1290,13 +1318,13 @@ export default {
       // گزارش تفصیلی پروژه‌ها
       if (url.pathname === '/api/reports/projects' && request.method === 'GET') {
         const fiscalYearId = url.searchParams.get('fiscal_year_id');
-        
+
         if (!fiscalYearId) {
           return new Response(JSON.stringify({ error: 'سال مالی الزامی است' }), {
             status: 400, headers
           });
         }
-        
+
         const projects = await env.DB.prepare(`
           SELECT bp.*, 
                  o.name as organization_name,
@@ -1309,7 +1337,7 @@ export default {
           WHERE bp.fiscal_year_id = ? AND bp.status = 'approved'
           ORDER BY bp.amount DESC
         `).bind(fiscalYearId).all();
-        
+
         return new Response(JSON.stringify(projects.results), { status: 200, headers });
       }
 
@@ -1317,26 +1345,26 @@ export default {
       if (url.pathname === '/api/reports/comparison' && request.method === 'GET') {
         const fiscalYear1 = url.searchParams.get('year1');
         const fiscalYear2 = url.searchParams.get('year2');
-        
+
         if (!fiscalYear1 || !fiscalYear2) {
           return new Response(JSON.stringify({ error: 'دو سال مالی الزامی است' }), {
             status: 400, headers
           });
         }
-        
+
         // جمع کل هر سال
         const year1Total = await env.DB.prepare(`
           SELECT SUM(amount) as total, COUNT(*) as count
           FROM budget_proposals
           WHERE fiscal_year_id = ? AND status = 'approved'
         `).bind(fiscalYear1).first();
-        
+
         const year2Total = await env.DB.prepare(`
           SELECT SUM(amount) as total, COUNT(*) as count
           FROM budget_proposals
           WHERE fiscal_year_id = ? AND status = 'approved'
         `).bind(fiscalYear2).first();
-        
+
         // جزئیات هر سال
         const year1Details = await env.DB.prepare(`
           SELECT ec.sub_code, ec.title, SUM(bp.amount) as total
@@ -1346,7 +1374,7 @@ export default {
           GROUP BY ec.sub_code
           ORDER BY ec.sub_code
         `).bind(fiscalYear1).all();
-        
+
         const year2Details = await env.DB.prepare(`
           SELECT ec.sub_code, ec.title, SUM(bp.amount) as total
           FROM budget_proposals bp
@@ -1355,25 +1383,25 @@ export default {
           GROUP BY ec.sub_code
           ORDER BY ec.sub_code
         `).bind(fiscalYear2).all();
-        
+
         return new Response(JSON.stringify({
           year1: { total: year1Total, details: year1Details.results },
           year2: { total: year2Total, details: year2Details.results }
         }), { status: 200, headers });
       }
 
-            // ========== تفریغ بودجه ==========
-      
+      // ========== تفریغ بودجه ==========
+
       // گزارش تفریغ
       if (url.pathname === '/api/reports/tafriq' && request.method === 'GET') {
         const fiscalYearId = url.searchParams.get('fiscal_year_id');
-        
+
         if (!fiscalYearId) {
           return new Response(JSON.stringify({ error: 'سال مالی الزامی است' }), {
             status: 400, headers
           });
         }
-        
+
         // دریافت همه بودجه‌های مصوب
         const budgets = await env.DB.prepare(`
           SELECT bp.id, bp.title, bp.amount as approved_amount,
@@ -1385,22 +1413,22 @@ export default {
           WHERE bp.fiscal_year_id = ? AND bp.status = 'approved'
           ORDER BY bp.id
         `).bind(fiscalYearId).all();
-        
+
         // برای هر بودجه، تخصیص و تامین اعتبار رو حساب کن
         const details = [];
         let totalApproved = 0;
         let totalAllocated = 0;
         let totalExecuted = 0;
-        
+
         for (const budget of budgets.results) {
           // جمع تخصیص‌ها
           const allocation = await env.DB.prepare(`
             SELECT SUM(amount) as total FROM budget_allocations
             WHERE approved_budget_id = ?
           `).bind(budget.id).first();
-          
+
           const allocatedAmount = allocation.total || 0;
-          
+
           // جمع تامین اعتبارها (از طریق تخصیص)
           const execution = await env.DB.prepare(`
             SELECT SUM(be.amount) as total 
@@ -1408,9 +1436,9 @@ export default {
             LEFT JOIN budget_allocations ba ON be.allocation_id = ba.id
             WHERE ba.approved_budget_id = ?
           `).bind(budget.id).first();
-          
+
           const executedAmount = execution.total || 0;
-          
+
           details.push({
             id: budget.id,
             title: budget.title,
@@ -1422,17 +1450,17 @@ export default {
             allocated_amount: allocatedAmount,
             executed_amount: executedAmount,
             remaining_amount: budget.approved_amount - executedAmount,
-            allocation_percentage: budget.approved_amount > 0 ? 
+            allocation_percentage: budget.approved_amount > 0 ?
               ((allocatedAmount / budget.approved_amount) * 100).toFixed(2) : 0,
-            execution_percentage: budget.approved_amount > 0 ? 
+            execution_percentage: budget.approved_amount > 0 ?
               ((executedAmount / budget.approved_amount) * 100).toFixed(2) : 0
           });
-          
+
           totalApproved += budget.approved_amount;
           totalAllocated += allocatedAmount;
           totalExecuted += executedAmount;
         }
-        
+
         return new Response(JSON.stringify({
           details,
           summary: {
@@ -1440,7 +1468,7 @@ export default {
             total_allocated: totalAllocated,
             total_executed: totalExecuted,
             total_remaining: totalApproved - totalExecuted,
-            overall_execution_percentage: totalApproved > 0 ? 
+            overall_execution_percentage: totalApproved > 0 ?
               ((totalExecuted / totalApproved) * 100).toFixed(2) : 0
           }
         }), { status: 200, headers });
@@ -1451,55 +1479,55 @@ export default {
         const authHeader = request.headers.get('Authorization');
         const token = authHeader.replace('Bearer ', '');
         const userData = await verifyToken(token, env.JWT_SECRET);
-        
+
         if (!userData || userData.role !== 'admin') {
           return new Response(JSON.stringify({ error: 'دسترسی غیرمجاز' }), {
             status: 403, headers
           });
         }
-        
+
         const { year } = await request.json();
-        
+
         await env.DB.prepare(`
           UPDATE fiscal_years SET status = 'closed' WHERE year = ?
         `).bind(year).run();
-        
+
         return new Response(JSON.stringify({ success: true }), { status: 200, headers });
       }
 
       // ========== لاگ سیستم ==========
-      
+
       // دریافت لاگ‌ها
       if (url.pathname === '/api/audit-log' && request.method === 'GET') {
         const authHeader = request.headers.get('Authorization');
         const token = authHeader.replace('Bearer ', '');
         const userData = await verifyToken(token, env.JWT_SECRET);
-        
+
         if (!userData || userData.role !== 'admin') {
           return new Response(JSON.stringify({ error: 'دسترسی غیرمجاز' }), {
             status: 403, headers
           });
         }
-        
+
         const action = url.searchParams.get('action');
-        
+
         let query = 'SELECT * FROM audit_log';
         const params = [];
-        
+
         if (action) {
           query += ' WHERE action = ?';
           params.push(action);
         }
-        
+
         query += ' ORDER BY created_at DESC LIMIT 500';
-        
+
         const logs = await env.DB.prepare(query).bind(...params).all();
-        
+
         return new Response(JSON.stringify(logs.results), { status: 200, headers });
       }
 
       // Serve static files
-      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html' || url.pathname === '/organizations.html' || url.pathname === '/budget-proposals.html'|| url.pathname === '/reports.html'|| url.pathname === '/allocations.html'|| url.pathname === '/executions.html'|| url.pathname === '/users.html'|| url.pathname === '/revisions.html' || url.pathname === '/advanced-reports.html'|| url.pathname === '/tafriq.html'|| url.pathname === '/audit-log.html') {
+      if (url.pathname === '/login.html' || url.pathname === '/' || url.pathname === '/dashboard.html' || url.pathname === '/fiscal-years.html' || url.pathname === '/economic-classifications.html' || url.pathname === '/organizations.html' || url.pathname === '/budget-proposals.html' || url.pathname === '/reports.html' || url.pathname === '/allocations.html' || url.pathname === '/executions.html' || url.pathname === '/users.html' || url.pathname === '/revisions.html' || url.pathname === '/advanced-reports.html' || url.pathname === '/tafriq.html' || url.pathname === '/audit-log.html') {
         return await env.ASSETS.fetch(request);
       }
 
