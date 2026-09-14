@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تامین اعتبار</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/persian-date@1.1.0/dist/persian-date.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
+    <style>
+        body {
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+        .header a {
+            color: white;
+            text-decoration: none;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+            font-size: 13px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 13px;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        button {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 11px;
+        }
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .success {
+            color: green;
+            margin-top: 10px;
+        }
+        .balance-info {
+            background: #e7f3ff;
+            border-right: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-size: 13px;
+        }
+        .balance-info span {
+            font-weight: bold;
+            color: #333;
+        }
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: white;
+        }
+        .status-pending { background: #ffc107; color: #333; }
+        .status-approved { background: #28a745; }
+        .status-executed { background: #17a2b8; }
+        .status-rejected { background: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💳 تامین اعتبار</h1>
+        <a href="/dashboard.html">بازگشت به داشبورد</a>
+    </div>
+
+    <div class="container">
+        <h2>ثبت تامین اعتبار جدید</h2>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>تخصیص:</label>
+                <select id="allocation_id" onchange="loadBalance()"></select>
+            </div>
+            <div class="form-group">
+                <label>کد فنی ۹ رقمی:</label>
+                <input type="text" id="technical_code" placeholder="مثلاً 010101001">
+            </div>
+            <div class="form-group">
+                <label>مبلغ (ریال):</label>
+                <input type="text" id="amount" placeholder="مثلاً ۱۰۰۰۰۰۰۰">
+            </div>
+        </div>
+
+        <div id="balance-info" class="balance-info" style="display:none;"></div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>تاریخ اجرا:</label>
+                <input type="text" id="execution_date" placeholder="مثلاً ۱۴۰۴/۰۱/۰۱">
+            </div>
+            <div class="form-group">
+                <label>شماره سند حسابداری:</label>
+                <input type="text" id="accounting_doc_no" placeholder="اختیاری">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>شرح:</label>
+            <textarea id="description" placeholder="توضیحات اختیاری"></textarea>
+        </div>
+
+        <button onclick="addExecution()">ثبت تامین اعتبار</button>
+        <div class="error" id="error"></div>
+        <div class="success" id="success"></div>
+
+        <h2>لیست تامین اعتبارها</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>بودجه</th>
+                    <th>سازمان</th>
+                    <th>کد فنی</th>
+                    <th>مبلغ (ریال)</th>
+                    <th>تاریخ</th>
+                    <th>وضعیت</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+        </table>
+    </div>
+
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login.html';
+        }
+
+        const token = localStorage.getItem('token');
+
+        function toEnglishNumbers(str) {
+            return str.toString().replace(/[۰-۹]/g, function(d) { 
+                return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); 
+            });
+        }
+
+        function toPersianNumbers(str) {
+            const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+            return str.toString().replace(/\d/g, function(d) {
+                return persianDigits[parseInt(d)];
+            });
+        }
+
+        function formatAmount(amount) {
+            if (!amount) return '۰';
+            return toPersianNumbers(amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+        }
+
+        const statusLabels = {
+            'pending': { class: 'status-pending', label: 'در انتظار' },
+            'approved': { class: 'status-approved', label: 'تایید شده' },
+            'executed': { class: 'status-executed', label: 'اجرا شده' },
+            'rejected': { class: 'status-rejected', label: 'رد شده' }
+        };
+
+        // لود تخصیص‌ها
+        async function loadAllocations() {
+            const response = await fetch('/api/allocations', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const items = await response.json();
+            
+            const select = document.getElementById('allocation_id');
+            select.innerHTML = '<option value="">انتخاب کنید</option>';
+            
+            items.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = `${item.budget_title || '-'} - ${item.organization_name || '-'} (${formatAmount(item.amount)} ریال)`;
+                select.appendChild(option);
+            });
+        }
+
+        // لود مانده تخصیص
+        async function loadBalance() {
+            const allocationId = document.getElementById('allocation_id').value;
+            const balanceInfo = document.getElementById('balance-info');
+            
+            if (!allocationId) {
+                balanceInfo.style.display = 'none';
+                return;
+            }
+            
+            const response = await fetch(`/api/allocations/balance/${allocationId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            
+            balanceInfo.style.display = 'block';
+            balanceInfo.innerHTML = `
+                <div>جمع تخصیص: <span>${formatAmount(data.total)} ریال</span></div>
+                <div>مصرف شده: <span>${formatAmount(data.executed)} ریال</span></div>
+                <div>مانده: <span style="color: ${data.remaining > 0 ? 'green' : 'red'};">${formatAmount(data.remaining)} ریال</span></div>
+            `;
+        }
+
+        // لود اجراها
+        async function loadExecutions() {
+            const response = await fetch('/api/executions', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const items = await response.json();
+            
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            
+            items.forEach(item => {
+                const status = statusLabels[item.status] || statusLabels.pending;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.budget_title || '-'}</td>
+                    <td>${item.organization_name || '-'}</td>
+                    <td>${toPersianNumbers(item.technical_code)}</td>
+                    <td>${formatAmount(item.amount)}</td>
+                    <td>${item.execution_date ? toPersianNumbers(item.execution_date) : '-'}</td>
+                    <td><span class="status-badge ${status.class}">${status.label}</span></td>
+                    <td><button class="delete-btn" onclick="deleteExecution(${item.id})">حذف</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // ثبت تامین اعتبار
+        async function addExecution() {
+            const allocation_id = document.getElementById('allocation_id').value;
+            const technical_code = document.getElementById('technical_code').value;
+            const amountRaw = document.getElementById('amount').value;
+            const execution_date = document.getElementById('execution_date').value;
+            const accounting_doc_no = document.getElementById('accounting_doc_no').value;
+            const description = document.getElementById('description').value;
+            
+            if (!allocation_id || !technical_code || !amountRaw) {
+                document.getElementById('error').textContent = 'همه فیلدهای الزامی را پر کنید';
+                document.getElementById('success').textContent = '';
+                return;
+            }
+            
+            const amount = toEnglishNumbers(amountRaw);
+            
+            const response = await fetch('/api/executions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    allocation_id: parseInt(allocation_id),
+                    technical_code,
+                    amount: parseFloat(amount),
+                    execution_date: execution_date || null,
+                    accounting_doc_no: accounting_doc_no || null,
+                    description: description || null
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                document.getElementById('error').textContent = '';
+                document.getElementById('success').textContent = 'تامین اعتبار با موفقیت ثبت شد';
+                document.getElementById('technical_code').value = '';
+                document.getElementById('amount').value = '';
+                document.getElementById('execution_date').value = '';
+                document.getElementById('accounting_doc_no').value = '';
+                document.getElementById('description').value = '';
+                loadBalance();
+                loadExecutions();
+            } else {
+                document.getElementById('error').textContent = data.error;
+                document.getElementById('success').textContent = '';
+            }
+        }
+
+        // حذف اجرا
+        async function deleteExecution(id) {
+            if (!confirm('مطمئن هستید؟')) return;
+            
+            const response = await fetch(`/api/executions/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (response.ok) {
+                loadExecutions();
+            }
+        }
+
+        // راه‌اندازی date picker
+        $(document).ready(function() {
+            $("#execution_date").persianDatepicker({
+                format: 'YYYY/MM/DD',
+                autoClose: true,
+                persianDigit: true
+            });
+        });
+
+        // لود اولیه
+        loadAllocations();
+        loadExecutions();
+    </script>
+</body>
+</html>
