@@ -2,15 +2,19 @@
 
 ## تاریخ آخرین آپدیت: [امروز]
 
-## وضعیت: فاز ۱۵ تکمیل شد ✅
+## وضعیت: فاز ۱۶ تکمیل شد ✅
 
 ## کارهای انجام شده:
-- [x] فاز ۰ تا ۱۴ (کامل)
-- [x] فاز ۱۵: امنیت (Audit Log + Rate Limiting)
+- [x] فاز ۰ تا ۱۵ (کامل)
+- [x] فاز ۱۶: UI/UX
+  - داشبورد جدید با آمار
+  - نمودار (Chart.js)
+  - Dark mode
+  - Responsive
 
 ## صفحات موجود:
 - /login.html
-- /dashboard.html
+- /dashboard.html (بازطراحی شده)
 - /fiscal-years.html
 - /economic-classifications.html
 - /organizations.html
@@ -25,7 +29,6 @@
 - /audit-log.html
 
 ## کار بعدی:
-- فاز ۱۶: UI/UX
 - فاز ۱۷: تست
 - فاز ۱۸: مستندسازی
 
@@ -35,4 +38,4 @@
 ## یادداشت‌ها:
 - برای deploy: wrangler deploy
 - برای push: git push origin main
-- Audit Log فقط برای admin قابل مشاهده
+- Dark mode با localStorage ذخیره میشه
