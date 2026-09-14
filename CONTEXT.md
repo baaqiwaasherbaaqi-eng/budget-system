@@ -2,18 +2,19 @@
 
 ## تاریخ آخرین آپدیت: [امروز]
 
-## وضعیت: فاز ۸ تکمیل شد ✅
+## وضعیت: فاز ۹ تکمیل شد ✅
 
 ## کارهای انجام شده:
-- [x] فاز ۰: زیرساخت (GitHub, Wrangler, D1, Workers)
-- [x] فاز ۱: احراز هویت (login, JWT, نقش‌ها)
-- [x] فاز ۲: سال مالی (افزودن، فعال‌سازی)
-- [x] فاز ۳: طبقه‌بندی اقتصادی (منابع/مصارف، سرفصل/فصل/زیرفصل)
-- [x] فاز ۴: ساختار سازمانی (سازمان‌ها، مراکز هزینه)
-- [x] فاز ۵: بودجه پیشنهادی (ثبت، لیست، حذف)
-- [x] فاز ۶: هوشمندسازی (فعلاً کنار گذاشته شد)
-- [x] فاز ۷: تایید و تصویب (۵ مرحله‌ای: draft → submitted → manager_approved → finance_approved → approved/rejected)
-- [x] فاز ۸: گزارشات پایه (خلاصه، بر اساس وضعیت، سازمان، نوع)
+- [x] فاز ۰: زیرساخت
+- [x] فاز ۱: احراز هویت
+- [x] فاز ۲: سال مالی
+- [x] فاز ۳: طبقه‌بندی اقتصادی
+- [x] فاز ۴: ساختار سازمانی
+- [x] فاز ۵: بودجه پیشنهادی
+- [x] فاز ۶: هوشمندسازی (کنار گذاشته شد)
+- [x] فاز ۷: تایید و تصویب (۵ مرحله‌ای)
+- [x] فاز ۸: گزارشات پایه
+- [x] فاز ۹: تخصیص و تامین اعتبار
 
 ## API های موجود:
 - POST /api/login
@@ -28,6 +29,9 @@
 - GET /api/approval-history/:id
 - GET /api/reports/summary
 - GET /api/reports/detailed
+- GET/POST/DELETE /api/allocations
+- GET /api/allocations/balance/:id
+- GET/POST/DELETE /api/executions
 
 ## صفحات موجود:
 - /login.html
@@ -37,18 +41,19 @@
 - /organizations.html
 - /budget-proposals.html
 - /reports.html
+- /allocations.html
+- /executions.html
 
 ## کاربر پیش‌فرض:
 - username: admin
 - password: Admin123!
 
 ## کار بعدی:
-- فاز ۹: اجرای بودجه (تخصیص اعتبار و تامین اعتبار)
-  - جدول budget_allocations
-  - جدول budget_executions
-  - کد فنی ۹ رقمی
-  - زنجیره تایید تامین اعتبار
-  - کنترل سقف اعتبار
+- فاز ۱۰: تناظر کدینگ و بودجه سنواتی
+  - جدول legacy_budget_mappings
+  - ورود بودجه سنواتی
+  - الگوریتم تناظر کدینگ
+  - گزارش‌های مقایسه‌ای
 
 ## مشکلات باقی‌مانده:
 - ویرایش سال مالی کار نمیکنه (موقتاً حذف شد)
@@ -57,5 +62,7 @@
 ## یادداشت‌ها:
 - برای deploy: wrangler deploy
 - برای push: git push origin main
-- برای migration: wrangler d1 execute budget-db --file=... --remote
-- برای migration لوکال: بدون --remote
+- برای migration remote: wrangler d1 execute budget-db --file=... --remote
+- برای migration local: بدون --remote
+- تاریخ شمسی با persian-datepicker
+- اعداد فارسی با توابع toPersianNumbers/toEnglishNumbers
