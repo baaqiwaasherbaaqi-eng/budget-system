@@ -1,331 +1,468 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>مدیریت سال مالی</title>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/persian-date@1.1.0/dist/persian-date.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
-    <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet"
-        type="text/css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css"
+      rel="stylesheet"
+      type="text/css"
+    />
     <style>
-        body {
-            font-family: 'Vazirmatn', Tahoma, sans-serif;
-            background: #f5f5f5;
-            margin: 0;
-            padding: 20px;
-        }
+      body {
+        font-family: "Vazirmatn", Tahoma, sans-serif;
+        background: #f5f5f5;
+        margin: 0;
+        padding: 20px;
+      }
 
-        .header {
-            background: #667eea;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
+      .header {
+        background: #667eea;
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+      }
 
-        .header h1 {
-            margin: 0;
-            font-size: 20px;
-        }
+      .header h1 {
+        margin: 0;
+        font-size: 20px;
+      }
 
-        .header a {
-            color: white;
-            text-decoration: none;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 10px 20px;
-            border-radius: 5px;
-        }
+      .header a {
+        color: white;
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 10px 20px;
+        border-radius: 5px;
+      }
 
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+      .form-group {
+        margin-bottom: 20px;
+      }
 
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #333;
-        }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #333;
+      }
 
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-sizing: border-box;
-            font-family: 'Vazirmatn', Tahoma, sans-serif;
-            font-size: 14px;
-        }
+      input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-sizing: border-box;
+        font-family: "Vazirmatn", Tahoma, sans-serif;
+        font-size: 14px;
+      }
 
-        button {
-            padding: 12px 30px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-family: 'Vazirmatn', Tahoma, sans-serif;
-            font-size: 14px;
-        }
+      button {
+        padding: 12px 30px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: "Vazirmatn", Tahoma, sans-serif;
+        font-size: 14px;
+      }
 
-        button:hover {
-            background: #5a67d8;
-        }
+      button:hover {
+        background: #5a67d8;
+      }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
 
-        th,
-        td {
-            padding: 12px;
-            text-align: right;
-            border-bottom: 1px solid #ddd;
-        }
+      th,
+      td {
+        padding: 12px;
+        text-align: right;
+        border-bottom: 1px solid #ddd;
+      }
 
-        th {
-            background: #f8f9fa;
-            font-weight: bold;
-        }
+      th {
+        background: #f8f9fa;
+        font-weight: bold;
+      }
 
-        .active-badge {
-            background: #28a745;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-        }
+      .active-badge {
+        background: #28a745;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+      }
 
-        .inactive-badge {
-            background: #6c757d;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-        }
+      .inactive-badge {
+        background: #6c757d;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+      }
 
-        .activate-btn {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-family: 'Vazirmatn', Tahoma, sans-serif;
-            font-size: 12px;
-        }
+      .activate-btn {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: "Vazirmatn", Tahoma, sans-serif;
+        font-size: 12px;
+      }
 
-        .activate-btn:hover {
-            background: #218838;
-        }
+      .activate-btn:hover {
+        background: #218838;
+      }
 
+      .edit-btn {
+        background: #ffc107;
+        color: #333;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: "Vazirmatn", Tahoma, sans-serif;
+        font-size: 12px;
+        margin-right: 5px;
+      }
+      .edit-btn:hover {
+        background: #e0a800;
+      }
+      .delete-btn {
+        background: #e74c3c;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: "Vazirmatn", Tahoma, sans-serif;
+        font-size: 12px;
+        margin-right: 5px;
+      }
+      .delete-btn:hover {
+        background: #c0392b;
+      }
 
-        .error {
-            color: red;
-            margin-top: 10px;
-        }
+      .error {
+        color: red;
+        margin-top: 10px;
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <div class="header">
-        <h1>📅 مدیریت سال مالی</h1>
-        <a href="/dashboard.html">بازگشت به داشبورد</a>
+      <h1>📅 مدیریت سال مالی</h1>
+      <a href="/dashboard.html">بازگشت به داشبورد</a>
     </div>
 
     <div class="container">
-        <h2>افزودن سال مالی جدید</h2>
-        <div class="form-group">
-            <label>سال:</label>
-            <input type="text" id="year" placeholder="مثلاً ۱۴۰۴"
-                oninput="this.value = toPersianNumbers(this.value.replace(/[۰-۹]/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); }))">
-        </div>
-        <div class="form-group">
-            <label>تاریخ شروع:</label>
-            <input type="text" id="start_date" placeholder="مثلاً ۱۴۰۴/۰۱/۰۱">
-        </div>
-        <div class="form-group">
-            <label>تاریخ پایان:</label>
-            <input type="text" id="end_date" placeholder="مثلاً ۱۴۰۴/۱۲/۲۹">
-        </div>
-        <button onclick="addFiscalYear()">افزودن</button>
-        <div class="error" id="error"></div>
+      <h2>افزودن سال مالی جدید</h2>
+      <div class="form-group">
+        <label>سال:</label>
+        <input
+          type="text"
+          id="year"
+          placeholder="مثلاً ۱۴۰۴"
+          oninput="this.value = toPersianNumbers(this.value.replace(/[۰-۹]/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); }))"
+        />
+      </div>
+      <div class="form-group">
+        <label>تاریخ شروع:</label>
+        <input type="text" id="start_date" placeholder="مثلاً ۱۴۰۴/۰۱/۰۱" />
+      </div>
+      <div class="form-group">
+        <label>تاریخ پایان:</label>
+        <input type="text" id="end_date" placeholder="مثلاً ۱۴۰۴/۱۲/۲۹" />
+      </div>
+      <button onclick="addFiscalYear()">افزودن</button>
+      <div class="error" id="error"></div>
 
-        <h2>لیست سال‌های مالی</h2>
-        <table id="fiscal-years-table">
-            <thead>
-                <tr>
-                    <th>سال</th>
-                    <th>تاریخ شروع</th>
-                    <th>تاریخ پایان</th>
-                    <th>وضعیت</th>
-                    <th>عملیات</th>
-                </tr>
-            </thead>
-            <tbody id="table-body"></tbody>
-        </table>
+      <h2>لیست سال‌های مالی</h2>
+      <table id="fiscal-years-table">
+        <thead>
+          <tr>
+            <th>سال</th>
+            <th>تاریخ شروع</th>
+            <th>تاریخ پایان</th>
+            <th>وضعیت</th>
+            <th>عملیات</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
     </div>
 
     <script>
-        // بررسی لاگین
-        if (!localStorage.getItem('token')) {
-            window.location.href = '/login.html';
-        }
+      // بررسی لاگین
+      if (!localStorage.getItem("token")) {
+        window.location.href = "/login.html";
+      }
 
-        // لود سال‌های مالی
-        async function loadFiscalYears() {
-            const response = await fetch('/api/fiscal-years', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-            const years = await response.json();
-
-            const tbody = document.getElementById('table-body');
-            tbody.innerHTML = '';
-
-            years.forEach(year => {
-                const row = document.createElement('tr');
-
-                const tdYear = document.createElement('td');
-                tdYear.textContent = year.year;
-
-                const tdStart = document.createElement('td');
-                tdStart.textContent = year.start_date;
-
-                const tdEnd = document.createElement('td');
-                tdEnd.textContent = year.end_date;
-
-                const tdStatus = document.createElement('td');
-                if (year.is_active) {
-                    tdStatus.innerHTML = '<span class="active-badge">فعال</span>';
-                } else {
-                    tdStatus.innerHTML = '<span class="inactive-badge">غیرفعال</span>';
-                }
-
-                const tdActions = document.createElement('td');
-
-                if (!year.is_active) {
-                    const activateBtn = document.createElement('button');
-                    activateBtn.className = 'activate-btn';
-                    activateBtn.textContent = 'فعال کردن';
-                    activateBtn.onclick = () => activateYear(year.year);
-
-
-                    tdActions.appendChild(activateBtn);
-
-                }
-
-                row.appendChild(tdYear);
-                row.appendChild(tdStart);
-                row.appendChild(tdEnd);
-                row.appendChild(tdStatus);
-                row.appendChild(tdActions);
-
-                tbody.appendChild(row);
-            });
-        }
-
-
-
-        // تبدیل اعداد فارسی به انگلیسی برای ذخیره
-        const year = document.getElementById('year').value.replace(/[۰-۹]/g, function (d) {
-            return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d);
+      // لود سال‌های مالی
+      async function loadFiscalYears() {
+        const response = await fetch("/api/fiscal-years", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         });
-        const start_date = document.getElementById('start_date').value.replace(/[۰-۹]/g, function (d) {
-            return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d);
+        const years = await response.json();
+
+        const tbody = document.getElementById("table-body");
+        tbody.innerHTML = "";
+
+        years.forEach((year) => {
+          const row = document.createElement("tr");
+
+          const tdYear = document.createElement("td");
+          tdYear.textContent = toPersianNumbers(year.year);
+
+          const tdStart = document.createElement("td");
+          tdStart.textContent = toPersianNumbers(year.start_date);
+
+          const tdEnd = document.createElement("td");
+          tdEnd.textContent = toPersianNumbers(year.end_date);
+
+          const tdStatus = document.createElement("td");
+          if (year.is_active) {
+            tdStatus.innerHTML = '<span class="active-badge">فعال</span>';
+          } else {
+            tdStatus.innerHTML = '<span class="inactive-badge">غیرفعال</span>';
+          }
+
+          const tdActions = document.createElement("td");
+
+          if (!year.is_active) {
+            const activateBtn = document.createElement("button");
+            activateBtn.className = "activate-btn";
+            activateBtn.textContent = "فعال کردن";
+            activateBtn.onclick = () => activateYear(year.year);
+
+            const editBtn = document.createElement("button");
+            editBtn.className = "edit-btn";
+            editBtn.textContent = "ویرایش";
+            editBtn.onclick = () =>
+              editYear(year.year, year.start_date, year.end_date);
+
+            const deleteBtn = document.createElement("button");
+            deleteBtn.className = "delete-btn";
+            deleteBtn.textContent = "حذف";
+            deleteBtn.onclick = () => deleteYear(year.year);
+
+            tdActions.appendChild(activateBtn);
+            tdActions.appendChild(editBtn);
+            tdActions.appendChild(deleteBtn);
+          }
+
+          row.appendChild(tdYear);
+          row.appendChild(tdStart);
+          row.appendChild(tdEnd);
+          row.appendChild(tdStatus);
+          row.appendChild(tdActions);
+
+          tbody.appendChild(row);
         });
-        const end_date = document.getElementById('end_date').value.replace(/[۰-۹]/g, function (d) {
-            return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d);
+      }
+
+      // تبدیل اعداد فارسی به انگلیسی برای ذخیره
+      const year = document
+        .getElementById("year")
+        .value.replace(/[۰-۹]/g, function (d) {
+          return "۰۱۲۳۴۵۶۷۸۹".indexOf(d);
         });
-
-        // افزودن سال مالی
-        async function addFiscalYear() {
-            const year = document.getElementById('year').value;
-            const start_date = document.getElementById('start_date').value;
-            const end_date = document.getElementById('end_date').value;
-
-            const response = await fetch('/api/fiscal-years', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({
-                    start_date: englishStartDate,
-                    end_date: englishEndDate
-                })
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                document.getElementById('year').value = '';
-                document.getElementById('start_date').value = '';
-                document.getElementById('end_date').value = '';
-                document.getElementById('error').textContent = '';
-                loadFiscalYears();
-            } else {
-                document.getElementById('error').textContent = data.error;
-            }
-        }
-
-        // فعال کردن سال مالی
-        async function activateYear(year) {
-            const response = await fetch('/api/fiscal-years/activate', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({ year })
-            });
-
-            if (response.ok) {
-                loadFiscalYears();
-            }
-        }
-
-        // تبدیل اعداد انگلیسی به فارسی
-        function toPersianNumbers(str) {
-            const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-            return str.toString().replace(/\d/g, function (d) {
-                return persianDigits[parseInt(d)];
-            });
-        }
-
-        // لود اولیه
-        loadFiscalYears();
-        // راه‌اندازی date picker شمسی
-        $("#start_date").persianDatepicker({
-            format: 'YYYY/MM/DD',
-            autoClose: true
+      const start_date = document
+        .getElementById("start_date")
+        .value.replace(/[۰-۹]/g, function (d) {
+          return "۰۱۲۳۴۵۶۷۸۹".indexOf(d);
+        });
+      const end_date = document
+        .getElementById("end_date")
+        .value.replace(/[۰-۹]/g, function (d) {
+          return "۰۱۲۳۴۵۶۷۸۹".indexOf(d);
         });
 
-        $("#end_date").persianDatepicker({
-            format: 'YYYY/MM/DD',
-            autoClose: true
+      function toEnglishNumbers(str) {
+        return str.toString().replace(/[۰-۹]/g, function (d) {
+          return "۰۱۲۳۴۵۶۷۸۹".indexOf(d);
         });
+      }
+
+      // افزودن سال مالی
+      async function addFiscalYear() {
+        const year = toEnglishNumbers(document.getElementById("year").value);
+        const start_date = toEnglishNumbers(
+          document.getElementById("start_date").value
+        );
+        const end_date = toEnglishNumbers(
+          document.getElementById("end_date").value
+        );
+
+        if (!year || !start_date || !end_date) {
+          document.getElementById("error").textContent =
+            "همه فیلدها الزامی است";
+          return;
+        }
+
+        const response = await fetch("/api/fiscal-years", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            year: parseInt(year),
+            start_date,
+            end_date,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          document.getElementById("year").value = "";
+          document.getElementById("start_date").value = "";
+          document.getElementById("end_date").value = "";
+          document.getElementById("error").textContent = "";
+          loadFiscalYears();
+        } else {
+          document.getElementById("error").textContent = data.error;
+        }
+      }
+
+      // فعال کردن سال مالی
+      async function activateYear(year) {
+        const response = await fetch("/api/fiscal-years/activate", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ year }),
+        });
+
+        if (response.ok) {
+          loadFiscalYears();
+        }
+      }
+
+      // تبدیل اعداد انگلیسی به فارسی
+      function toPersianNumbers(str) {
+        const persianDigits = [
+          "۰",
+          "۱",
+          "۲",
+          "۳",
+          "۴",
+          "۵",
+          "۶",
+          "۷",
+          "۸",
+          "۹",
+        ];
+        return str.toString().replace(/\d/g, function (d) {
+          return persianDigits[parseInt(d)];
+        });
+      }
+
+      // ویرایش سال مالی
+      async function editYear(year, start_date, end_date) {
+        // تبدیل اعداد فارسی به انگلیسی
+        const startDateEnglish = toEnglishNumbers(start_date);
+        const endDateEnglish = toEnglishNumbers(end_date);
+
+        const newStartDate = prompt("تاریخ شروع جدید:", startDateEnglish);
+        if (newStartDate === null) return;
+
+        const newEndDate = prompt("تاریخ پایان جدید:", endDateEnglish);
+        if (newEndDate === null) return;
+
+        console.log("Editing year:", year);
+
+        // تبدیل اعداد فارسی به انگلیسی
+        const yearEnglish = toEnglishNumbers(year.toString());
+        console.log("English year:", yearEnglish);
+
+        const response = await fetch(`/api/fiscal-years/edit/${yearEnglish}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            start_date: toEnglishNumbers(newStartDate),
+            end_date: toEnglishNumbers(newEndDate),
+          }),
+        });
+
+        if (response.ok) {
+          alert("با موفقیت ویرایش شد");
+          loadFiscalYears();
+        } else {
+          const data = await response.json();
+          alert("خطا: " + data.error);
+        }
+      }
+
+      // حذف سال مالی
+      async function deleteYear(year) {
+        if (!confirm(`مطمئن هستید سال ${toPersianNumbers(year)} حذف شود؟`))
+          return;
+
+        const response = await fetch(`/api/fiscal-years/${year}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+
+        if (response.ok) {
+          loadFiscalYears();
+        } else {
+          const data = await response.json();
+          alert("خطا: " + data.error);
+        }
+      }
+
+      // لود اولیه
+      loadFiscalYears();
+      // راه‌اندازی date picker شمسی
+      $("#start_date").persianDatepicker({
+        format: "YYYY/MM/DD",
+        autoClose: true,
+      });
+
+      $("#end_date").persianDatepicker({
+        format: "YYYY/MM/DD",
+        autoClose: true,
+      });
     </script>
-</body>
-
+  </body>
 </html>
