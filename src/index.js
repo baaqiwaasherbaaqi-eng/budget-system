@@ -2281,23 +2281,28 @@ export default {
       }
 
       // Serve static files
-      if (
-        url.pathname === "/login.html" ||
-        url.pathname === "/" ||
-        url.pathname === "/dashboard.html" ||
-        url.pathname === "/fiscal-years.html" ||
-        url.pathname === "/economic-classifications.html" ||
-        url.pathname === "/organizations.html" ||
-        url.pathname === "/budget-proposals.html" ||
-        url.pathname === "/reports.html" ||
-        url.pathname === "/allocations.html" ||
-        url.pathname === "/executions.html" ||
-        url.pathname === "/users.html" ||
-        url.pathname === "/revisions.html" ||
-        url.pathname === "/advanced-reports.html" ||
-        url.pathname === "/tafriq.html" ||
-        url.pathname === "/audit-log.html"
-      ) {
+      const staticPaths = [
+        "/",
+        "/login.html",
+        "/dashboard.html",
+        "/fiscal-years.html",
+        "/economic-classifications.html",
+        "/organizations.html",
+        "/budget-proposals.html",
+        "/reports.html",
+        "/allocations.html",
+        "/executions.html",
+        "/users.html",
+        "/revisions.html",
+        "/advanced-reports.html",
+        "/tafriq.html",
+        "/audit-log.html",
+        "/common.js",
+        "/sidebar.js",
+        "/sidebar.css",
+      ];
+
+      if (staticPaths.includes(url.pathname)) {
         return await env.ASSETS.fetch(request);
       }
 

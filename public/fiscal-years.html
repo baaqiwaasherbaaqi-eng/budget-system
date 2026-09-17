@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>مدیریت سال مالی</title>
+    <link rel="stylesheet" href="/sidebar.css">
+<script src="/sidebar.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/persian-date@1.1.0/dist/persian-date.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
@@ -197,11 +199,11 @@
       </div>
       <div class="form-group">
         <label>تاریخ شروع:</label>
-        <input type="text" id="start_date" placeholder="مثلاً ۱۴۰۴/۰۱/۰۱" />
+        <input type="text" id="start_date" placeholder="" />
       </div>
       <div class="form-group">
         <label>تاریخ پایان:</label>
-        <input type="text" id="end_date" placeholder="مثلاً ۱۴۰۴/۱۲/۲۹" />
+        <input type="text" id="end_date" placeholder="" />
       </div>
       <button onclick="addFiscalYear()">افزودن</button>
       <div class="error" id="error"></div>

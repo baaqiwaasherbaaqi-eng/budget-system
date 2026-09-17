@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تامین اعتبار</title>
+    <link rel="stylesheet" href="/sidebar.css">
+<script src="/sidebar.js"></script>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/persian-date@1.1.0/dist/persian-date.min.js"></script>
@@ -163,11 +165,11 @@
             </div>
             <div class="form-group">
                 <label>کد فنی ۹ رقمی:</label>
-                <input type="text" id="technical_code" placeholder="مثلاً 010101001">
+                <input type="text" id="technical_code" placeholder="">
             </div>
             <div class="form-group">
                 <label>مبلغ (ریال):</label>
-                <input type="text" id="amount" placeholder="مثلاً ۱۰۰۰۰۰۰۰">
+                <input type="text" id="amount" placeholder="">
             </div>
         </div>
 
@@ -176,7 +178,7 @@
         <div class="form-row">
             <div class="form-group">
                 <label>تاریخ اجرا:</label>
-                <input type="text" id="execution_date" placeholder="مثلاً ۱۴۰۴/۰۱/۰۱">
+                <input type="text" id="execution_date" placeholder="">
             </div>
             <div class="form-group">
                 <label>شماره سند حسابداری:</label>
@@ -209,7 +211,7 @@
             <tbody id="table-body"></tbody>
         </table>
     </div>
-
+<script src="/common.js"></script>
     <script>
         if (!localStorage.getItem('token')) {
             window.location.href = '/login.html';
@@ -217,23 +219,7 @@
 
         const token = localStorage.getItem('token');
 
-        function toEnglishNumbers(str) {
-            return str.toString().replace(/[۰-۹]/g, function(d) { 
-                return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); 
-            });
-        }
 
-        function toPersianNumbers(str) {
-            const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-            return str.toString().replace(/\d/g, function(d) {
-                return persianDigits[parseInt(d)];
-            });
-        }
-
-        function formatAmount(amount) {
-            if (!amount) return '۰';
-            return toPersianNumbers(amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','));
-        }
 
         const statusLabels = {
             'pending': { class: 'status-pending', label: 'در انتظار' },
@@ -313,18 +299,20 @@
         async function addExecution() {
             const allocation_id = document.getElementById('allocation_id').value;
             const technical_code = document.getElementById('technical_code').value;
-            const amountRaw = document.getElementById('amount').value;
+            //const amountRaw = document.getElementById('amount').value;
             const execution_date = document.getElementById('execution_date').value;
             const accounting_doc_no = document.getElementById('accounting_doc_no').value;
             const description = document.getElementById('description').value;
             
-            if (!allocation_id || !technical_code || !amountRaw) {
+            const amount = getAmountValue('amount');
+            
+            if (!allocation_id || !technical_code || !amount) {
                 document.getElementById('error').textContent = 'همه فیلدهای الزامی را پر کنید';
                 document.getElementById('success').textContent = '';
                 return;
             }
             
-            const amount = toEnglishNumbers(amountRaw);
+
             
             const response = await fetch('/api/executions', {
                 method: 'POST',
@@ -335,7 +323,7 @@
                 body: JSON.stringify({
                     allocation_id: parseInt(allocation_id),
                     technical_code,
-                    amount: parseFloat(amount),
+                    amount: amount,
                     execution_date: execution_date || null,
                     accounting_doc_no: accounting_doc_no || null,
                     description: description || null
@@ -348,13 +336,13 @@
                 document.getElementById('error').textContent = '';
                 document.getElementById('success').textContent = 'تامین اعتبار با موفقیت ثبت شد';
                 document.getElementById('technical_code').value = '';
-                document.getElementById('amount').value = '';
+                clearAmountInput('amount');
                 document.getElementById('execution_date').value = '';
                 document.getElementById('accounting_doc_no').value = '';
                 document.getElementById('description').value = '';
-                loadBalance();
-                loadExecutions();
-            } else {
+                await loadBalance();
+                await loadExecutions();
+            }else {
                 document.getElementById('error').textContent = data.error;
                 document.getElementById('success').textContent = '';
             }
@@ -383,6 +371,9 @@
             });
         });
 
+        // راه‌اندازی فیلد مبلغ
+        setupAmountInput('amount');
+        
         // لود اولیه
         loadAllocations();
         loadExecutions();

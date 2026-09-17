@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>اصلاح بودجه</title>
+    <link rel="stylesheet" href="/sidebar.css">
+<script src="/sidebar.js"></script>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <style>
         body {
@@ -205,7 +207,7 @@
             <tbody id="table-body"></tbody>
         </table>
     </div>
-
+<script src="/common.js"></script>
     <script>
         if (!localStorage.getItem('token')) {
             window.location.href = '/login.html';
@@ -214,23 +216,7 @@
         const token = localStorage.getItem('token');
         const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
-        function toEnglishNumbers(str) {
-            return str.toString().replace(/[۰-۹]/g, function(d) { 
-                return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); 
-            });
-        }
 
-        function toPersianNumbers(str) {
-            const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-            return str.toString().replace(/\d/g, function(d) {
-                return persianDigits[parseInt(d)];
-            });
-        }
-
-        function formatAmount(amount) {
-            if (!amount && amount !== 0) return '-';
-            return toPersianNumbers(amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','));
-        }
 
         const typeLabels = {
             'add': { class: 'type-add', label: 'افزودن' },
@@ -259,11 +245,11 @@
             } else if (type === 'increase') {
                 budgetSelect.disabled = false;
                 amountLabel.textContent = 'مبلغ افزایش (ریال):';
-                amountInput.placeholder = 'مثلاً ۱۰۰,۰۰۰,۰۰۰';
+                amountInput.placeholder = '';
             } else if (type === 'decrease') {
                 budgetSelect.disabled = false;
                 amountLabel.textContent = 'مبلغ کاهش (ریال):';
-                amountInput.placeholder = 'مثلاً ۵۰,۰۰۰,۰۰۰';
+                amountInput.placeholder = '';
             } else if (type === 'remove') {
                 budgetSelect.disabled = false;
                 amountLabel.textContent = 'مبلغ (نیازی نیست):';
@@ -365,7 +351,7 @@
                 return;
             }
             
-            const new_amount = new_amountRaw ? parseFloat(toEnglishNumbers(new_amountRaw)) : null;
+                        const new_amount = new_amountRaw ? getAmountValue('new_amount') : null;
             
             const response = await fetch('/api/revisions', {
                 method: 'POST',
@@ -387,9 +373,9 @@
             if (response.ok) {
                 document.getElementById('error').textContent = '';
                 document.getElementById('success').textContent = 'اصلاح با موفقیت ثبت شد';
-                document.getElementById('new_amount').value = '';
+                clearAmountInput('new_amount');
                 document.getElementById('reason').value = '';
-                loadRevisions();
+                await loadRevisions();
             } else {
                 document.getElementById('error').textContent = data.error;
                 document.getElementById('success').textContent = '';
@@ -413,6 +399,9 @@
             }
         }
 
+        // راه‌اندازی فیلد مبلغ
+        setupAmountInput('new_amount');
+        
         loadFiscalYears();
         loadRevisions();
         toggleBudgetSelect();

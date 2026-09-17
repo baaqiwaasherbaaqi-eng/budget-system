@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تخصیص اعتبار</title>
-
+<link rel="stylesheet" href="/sidebar.css">
+<script src="/sidebar.js"></script>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/persian-date@1.1.0/dist/persian-date.min.js"></script>
@@ -152,15 +153,15 @@
         <div class="form-row">
             <div class="form-group">
                 <label>مبلغ تخصیص (ریال):</label>
-                <input type="text" id="amount" placeholder="مثلاً ۱۰۰۰۰۰۰۰۰">
+                <input type="text" id="amount" placeholder="">
             </div>
             <div class="form-group">
                 <label>درصد:</label>
-                <input type="text" id="percentage" placeholder="مثلاً ۵۰">
+                <input type="text" id="percentage" placeholder="">
             </div>
             <div class="form-group">
                 <label>تاریخ تخصیص:</label>
-                <input type="text" id="allocation_date" placeholder="مثلاً ۱۴۰۴/۰۱/۰۱">
+                <input type="text" id="allocation_date" placeholder="">
             </div>
         </div>
 
@@ -184,6 +185,8 @@
         </table>
     </div>
 
+<script src="/common.js"></script>
+
     <script>
         if (!localStorage.getItem('token')) {
             window.location.href = '/login.html';
@@ -191,23 +194,7 @@
 
         const token = localStorage.getItem('token');
 
-        function toEnglishNumbers(str) {
-            return str.toString().replace(/[۰-۹]/g, function(d) { 
-                return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); 
-            });
-        }
 
-        function toPersianNumbers(str) {
-            const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-            return str.toString().replace(/\d/g, function(d) {
-                return persianDigits[parseInt(d)];
-            });
-        }
-
-        function formatAmount(amount) {
-            if (!amount) return '۰';
-            return toPersianNumbers(amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','));
-        }
 
         // راه‌اندازی date picker شمسی
         $("#allocation_date").persianDatepicker({
@@ -306,18 +293,20 @@
         async function addAllocation() {
             const approved_budget_id = document.getElementById('approved_budget_id').value;
             const organization_id = document.getElementById('organization_id').value;
-            const amountRaw = document.getElementById('amount').value;
+            //const amountRaw = document.getElementById('amount').value;
             const percentageRaw = document.getElementById('percentage').value;
             const allocation_date = document.getElementById('allocation_date').value;
             
-            if (!approved_budget_id || !organization_id || !amountRaw) {
+            const amount = getAmountValue('amount');
+            
+            if (!approved_budget_id || !organization_id || !amount) {
                 document.getElementById('error').textContent = 'همه فیلدهای الزامی را پر کنید';
                 document.getElementById('success').textContent = '';
                 return;
             }
             
-            const amount = toEnglishNumbers(amountRaw);
-            const percentage = percentageRaw ? toEnglishNumbers(percentageRaw) : null;
+            
+            const percentage = percentageRaw ? parseFloat(toEnglishNumbers(percentageRaw)) : null;
             
             const response = await fetch('/api/allocations', {
                 method: 'POST',
@@ -328,7 +317,7 @@
                 body: JSON.stringify({
                     approved_budget_id: parseInt(approved_budget_id),
                     organization_id: parseInt(organization_id),
-                    amount: parseFloat(amount),
+                                        amount: amount,
                     percentage: percentage ? parseFloat(percentage) : null,
                     allocation_date: allocation_date || null
                 })
@@ -339,10 +328,10 @@
             if (response.ok) {
                 document.getElementById('error').textContent = '';
                 document.getElementById('success').textContent = 'تخصیص با موفقیت ثبت شد';
-                document.getElementById('amount').value = '';
+                clearAmountInput('amount');
                 document.getElementById('percentage').value = '';
                 document.getElementById('allocation_date').value = '';
-                loadAllocations();
+                await loadAllocations();
             } else {
                 document.getElementById('error').textContent = data.error;
                 document.getElementById('success').textContent = '';
@@ -366,6 +355,9 @@
         // ایونت‌ها
         document.getElementById('fiscal_year_id').addEventListener('change', loadApprovedBudgets);
 
+        // راه‌اندازی فیلد مبلغ
+        setupAmountInput('amount');
+        
         // لود اولیه
         loadFiscalYears();
         loadOrganizations();
