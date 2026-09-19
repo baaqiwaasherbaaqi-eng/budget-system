@@ -70,6 +70,27 @@ function clearAmountInput(inputId) {
   input.dataset.value = "";
 }
 
+// بررسی اعتبار توکن
+function isTokenValid() {
+  const token = localStorage.getItem('token');
+  if (!token) return false;
+  
+  try {
+      const parts = token.split('.');
+      if (parts.length < 2) return false;
+      
+      const payload = JSON.parse(atob(parts[0]));
+      
+      if (payload.exp && payload.exp < Date.now()) {
+          return false;
+      }
+      
+      return true;
+  } catch {
+      return false;
+  }
+}
+
 // ============================================
 // اتصال توابع به window (برای دسترسی global)
 // ============================================
@@ -79,3 +100,4 @@ window.formatAmount = formatAmount;
 window.setupAmountInput = setupAmountInput;
 window.getAmountValue = getAmountValue;
 window.clearAmountInput = clearAmountInput;
+window.isTokenValid = isTokenValid;

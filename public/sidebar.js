@@ -5,7 +5,13 @@
 function renderSidebar() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const currentPath = window.location.pathname;
-
+  // بررسی اعتبار توکن
+    if (!isTokenValid()) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login.html';
+      return;
+  }
   const allMenus = [
     {
       icon: "🏠",
