@@ -92,18 +92,6 @@ function renderSidebar() {
       roles: ["admin"],
     },
     {
-      icon: "📊",
-      title: "طبقه‌بندی اقتصادی",
-      url: "/economic-classifications.html",
-      roles: ["admin", "manager"],
-    },
-    {
-      icon: "🏢",
-      title: "ساختار سازمانی",
-      url: "/organizations.html",
-      roles: ["admin"],
-    },
-    {
       icon: "👥",
       title: "مدیریت کاربران",
       url: "/users.html",
