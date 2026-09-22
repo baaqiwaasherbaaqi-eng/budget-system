@@ -233,3 +233,78 @@ body.dark .sidebar-footer {
         font-size: 12px;
     }
 }
+
+/* ============================================
+   Breadcrumb (مسیر راهنما)
+   ============================================ */
+
+   .breadcrumb {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 20px;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    font-size: 13px;
+}
+
+.breadcrumb-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #667eea;
+    text-decoration: none;
+    transition: color 0.2s;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.breadcrumb-item:hover {
+    background: #f0f2f5;
+    color: #5a67d8;
+}
+
+.breadcrumb-item.current {
+    color: #333;
+    font-weight: bold;
+    cursor: default;
+}
+
+.breadcrumb-item.current:hover {
+    background: transparent;
+}
+
+.breadcrumb-separator {
+    color: #ccc;
+    font-size: 12px;
+}
+
+body.dark .breadcrumb {
+    background: #2d3748;
+}
+
+body.dark .breadcrumb-item {
+    color: #90cdf4;
+}
+
+body.dark .breadcrumb-item:hover {
+    background: #4a5568;
+}
+
+body.dark .breadcrumb-item.current {
+    color: #e2e8f0;
+}
+
+body.dark .breadcrumb-separator {
+    color: #4a5568;
+}
+
+@media (max-width: 768px) {
+    .breadcrumb {
+        padding: 10px 15px;
+        font-size: 12px;
+    }
+}

@@ -1,16 +1,38 @@
 // ============================================
 // Sidebar مشترک سامانه بودجه
 // ============================================
+// بررسی اعتبار توکن (اگه توی common.js نبود)
+if (typeof isTokenValid === 'undefined') {
+  window.isTokenValid = function () {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+
+    try {
+      const parts = token.split('.');
+      if (parts.length < 2) return false;
+
+      const payload = JSON.parse(atob(parts[0]));
+
+      if (payload.exp && payload.exp < Date.now()) {
+        return false;
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
+  };
+}
 
 function renderSidebar() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const currentPath = window.location.pathname;
   // بررسی اعتبار توکن
-    if (!isTokenValid()) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login.html';
-      return;
+  if (!isTokenValid()) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login.html';
+    return;
   }
   const allMenus = [
     {
@@ -19,6 +41,8 @@ function renderSidebar() {
       url: "/dashboard.html",
       roles: ["admin", "manager", "expert", "viewer", "province", "ministry"],
     },
+    { icon: '📂', title: 'اطلاعات پایه', url: '/base-info.html', roles: ['admin', 'manager', 'expert', 'viewer'] },
+ 
     {
       icon: "💰",
       title: "بودجه پیشنهادی",
@@ -120,17 +144,16 @@ function renderSidebar() {
             </div>
             <nav class="sidebar-nav">
                 ${visibleMenus
-                  .map(
-                    (menu) => `
-                    <a href="${menu.url}" class="sidebar-link ${
-                      currentPath === menu.url ? "active" : ""
-                    }">
+      .map(
+        (menu) => `
+                    <a href="${menu.url}" class="sidebar-link ${currentPath === menu.url ? "active" : ""
+          }">
                         <span class="sidebar-icon">${menu.icon}</span>
                         <span class="sidebar-text">${menu.title}</span>
                     </a>
                 `
-                  )
-                  .join("")}
+      )
+      .join("")}
             </nav>
             <div class="sidebar-footer">
                 <button class="sidebar-logout" onclick="sidebarLogout()">
@@ -186,3 +209,174 @@ if (document.readyState === "loading") {
 } else {
   renderSidebar();
 }
+
+// ============================================
+// Breadcrumb - نمایش مسیر
+// ============================================
+
+function renderBreadcrumb() {
+  const currentPath = window.location.pathname;
+  
+  // نقشه مسیرها
+  const pathMap = {
+      '/dashboard.html': { icon: '🏠', title: 'داشبورد', parent: null },
+      '/base-info.html': { icon: '📂', title: 'اطلاعات پایه', parent: '/dashboard.html' },
+      '/municipality-info.html': { icon: '🏛️', title: 'مشخصات شهرداری', parent: '/base-info.html' },
+      '/fiscal-years.html': { icon: '📅', title: 'سال مالی', parent: '/dashboard.html' },
+      '/economic-classifications.html': { icon: '💰', title: 'طبقه‌بندی اقتصادی', parent: '/base-info.html' },
+      '/organizations.html': { icon: '🏢', title: 'ساختار سازمانی', parent: '/base-info.html' },
+      '/budget-proposals.html': { icon: '💰', title: 'بودجه پیشنهادی', parent: '/dashboard.html' },
+      '/reports.html': { icon: '📈', title: 'گزارشات', parent: '/dashboard.html' },
+      '/allocations.html': { icon: '💳', title: 'تخصیص اعتبار', parent: '/dashboard.html' },
+      '/executions.html': { icon: '💸', title: 'تامین اعتبار', parent: '/dashboard.html' },
+      '/users.html': { icon: '👥', title: 'مدیریت کاربران', parent: '/dashboard.html' },
+      '/revisions.html': { icon: '🔄', title: 'اصلاح بودجه', parent: '/dashboard.html' },
+      '/advanced-reports.html': { icon: '📊', title: 'گزارش پیشرفته', parent: '/dashboard.html' },
+      '/tafriq.html': { icon: '📋', title: 'تفریغ بودجه', parent: '/dashboard.html' },
+      '/audit-log.html': { icon: '📜', title: 'لاگ سیستم', parent: '/dashboard.html' }
+  };
+  
+  const current = pathMap[currentPath];
+  
+  // اگه صفحه داشبورد یا ناشناخته بود، breadcrumb نشون نده
+  if (!current || currentPath === '/dashboard.html') {
+      return;
+  }
+  
+  // ساخت مسیر از ریشه تا صفحه فعلی
+  const breadcrumbs = [];
+  let path = currentPath;
+  
+  while (path) {
+      const item = pathMap[path];
+      if (!item) break;
+      breadcrumbs.unshift({ path, ...item });
+      path = item.parent;
+  }
+  
+  // ساخت HTML
+  const breadcrumbHTML = `
+      <div class="breadcrumb">
+          ${breadcrumbs.map((item, index) => {
+              const isLast = index === breadcrumbs.length - 1;
+              
+              if (isLast) {
+                  return `<span class="breadcrumb-item current">
+                      <span>${item.icon}</span>
+                      <span>${item.title}</span>
+                  </span>`;
+              } else {
+                  return `<a href="${item.path}" class="breadcrumb-item">
+                      <span>${item.icon}</span>
+                      <span>${item.title}</span>
+                  </a>
+                  <span class="breadcrumb-separator">◄</span>`;
+              }
+          }).join('')}
+      </div>
+  `;
+  
+  // اضافه کردن به صفحه
+  const container = document.querySelector('.container');
+  if (container) {
+      // چک کن که قبلاً اضافه نشده باشه
+      const existing = container.querySelector('.breadcrumb');
+      if (existing) existing.remove();
+      
+      container.insertAdjacentHTML('afterbegin', breadcrumbHTML);
+  }
+}
+
+// ============================================
+// Breadcrumb - نمایش مسیر
+// ============================================
+
+function renderBreadcrumb() {
+  let currentPath = window.location.pathname;
+  
+  // اگه بدون .html بود، اضافه کن
+  if (!currentPath.endsWith('.html') && currentPath !== '/') {
+      currentPath = currentPath + '.html';
+  }
+  
+  // نقشه مسیرها
+  const pathMap = {
+      '/dashboard.html': { icon: '🏠', title: 'داشبورد', parent: null },
+      '/base-info.html': { icon: '📂', title: 'اطلاعات پایه', parent: '/dashboard.html' },
+      '/municipality-info.html': { icon: '🏛️', title: 'مشخصات شهرداری', parent: '/base-info.html' },
+      '/fiscal-years.html': { icon: '📅', title: 'سال مالی', parent: '/dashboard.html' },
+      '/economic-classifications.html': { icon: '💰', title: 'طبقه‌بندی اقتصادی', parent: '/base-info.html' },
+      '/organizations.html': { icon: '🏢', title: 'ساختار سازمانی', parent: '/base-info.html' },
+      '/budget-proposals.html': { icon: '💰', title: 'بودجه پیشنهادی', parent: '/dashboard.html' },
+      '/reports.html': { icon: '📈', title: 'گزارشات', parent: '/dashboard.html' },
+      '/allocations.html': { icon: '💳', title: 'تخصیص اعتبار', parent: '/dashboard.html' },
+      '/executions.html': { icon: '💸', title: 'تامین اعتبار', parent: '/dashboard.html' },
+      '/users.html': { icon: '👥', title: 'مدیریت کاربران', parent: '/dashboard.html' },
+      '/revisions.html': { icon: '🔄', title: 'اصلاح بودجه', parent: '/dashboard.html' },
+      '/advanced-reports.html': { icon: '📊', title: 'گزارش پیشرفته', parent: '/dashboard.html' },
+      '/tafriq.html': { icon: '📋', title: 'تفریغ بودجه', parent: '/dashboard.html' },
+      '/audit-log.html': { icon: '📜', title: 'لاگ سیستم', parent: '/dashboard.html' }
+  };
+  
+  const current = pathMap[currentPath];
+  
+  // اگه صفحه داشبورد یا ناشناخته بود، breadcrumb نشون نده
+  if (!current || currentPath === '/dashboard.html') {
+      return;
+  }
+  
+  // ساخت مسیر از ریشه تا صفحه فعلی
+  const breadcrumbs = [];
+  let path = currentPath;
+  
+  while (path) {
+      const item = pathMap[path];
+      if (!item) break;
+      breadcrumbs.unshift({ path, ...item });
+      path = item.parent;
+  }
+  
+  // ساخت HTML
+  const breadcrumbHTML = `
+      <div class="breadcrumb">
+          ${breadcrumbs.map((item, index) => {
+              const isLast = index === breadcrumbs.length - 1;
+              
+              if (isLast) {
+                  return `<span class="breadcrumb-item current">
+                      <span>${item.icon}</span>
+                      <span>${item.title}</span>
+                  </span>`;
+              } else {
+                  return `<a href="${item.path}" class="breadcrumb-item">
+                      <span>${item.icon}</span>
+                      <span>${item.title}</span>
+                  </a>
+                  <span class="breadcrumb-separator">◄</span>`;
+              }
+          }).join('')}
+      </div>
+  `;
+  
+
+    // اضافه کردن به صفحه
+    const header = document.querySelector('.header');
+    const container = document.querySelector('.container');
+    
+    // چک کن که قبلاً اضافه نشده باشه
+    const existing = document.querySelector('.breadcrumb');
+    if (existing) existing.remove();
+    
+    if (header) {
+        // بعد از هدر اضافه کن
+        header.insertAdjacentHTML('afterend', breadcrumbHTML);
+    } else if (container) {
+        // اگه هدر نبود، اول container
+        container.insertAdjacentHTML('afterbegin', breadcrumbHTML);
+    }
+}
+
+// راه‌اندازی breadcrumb بعد از sidebar
+window.addEventListener('load', function() {
+  setTimeout(renderBreadcrumb, 200);
+});

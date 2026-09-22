@@ -2280,26 +2280,125 @@ export default {
         });
       }
 
+            // ========== مشخصات شهرداری ==========
+      
+      // دریافت مشخصات
+      if (url.pathname === '/api/municipality-info' && request.method === 'GET') {
+        const info = await env.DB.prepare(
+          'SELECT * FROM municipality_info ORDER BY id DESC LIMIT 1'
+        ).first();
+        
+        return new Response(JSON.stringify(info || {}), { status: 200, headers });
+      }
+
+      // ذخیره مشخصات (ثبت یا ویرایش)
+      if (url.pathname === '/api/municipality-info' && request.method === 'POST') {
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader) {
+          return new Response(JSON.stringify({ error: 'احراز هویت لازم است' }), {
+            status: 401, headers
+          });
+        }
+        
+        const token = authHeader.replace('Bearer ', '');
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        
+        if (!userData || userData.role !== 'admin') {
+          return new Response(JSON.stringify({ error: 'دسترسی غیرمجاز' }), {
+            status: 403, headers
+          });
+        }
+        
+        const body = await request.json();
+        
+        const {
+          province, county, city,
+          title, grade, address, postal_code, economic_code, national_id,
+          mayor_name, mayor_details,
+          finance_signers, treasury_signers, allocation_signers, execution_signers
+        } = body;
+        
+        if (!title) {
+          return new Response(JSON.stringify({ error: 'عنوان شهرداری الزامی است' }), {
+            status: 400, headers
+          });
+        }
+        
+        // بررسی وجود رکورد
+        const existing = await env.DB.prepare(
+          'SELECT id FROM municipality_info LIMIT 1'
+        ).first();
+        
+        if (existing) {
+          // ویرایش
+          await env.DB.prepare(`
+            UPDATE municipality_info SET
+              province = ?, county = ?, city = ?,
+              title = ?, grade = ?, address = ?, postal_code = ?, 
+              economic_code = ?, national_id = ?,
+              mayor_name = ?, mayor_details = ?,
+              finance_signers = ?, treasury_signers = ?, 
+              allocation_signers = ?, execution_signers = ?,
+              updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+          `).bind(
+            province || null, county || null, city || null,
+            title, grade || null, address || null, postal_code || null,
+            economic_code || null, national_id || null,
+            mayor_name || null, mayor_details || null,
+            finance_signers || null, treasury_signers || null,
+            allocation_signers || null, execution_signers || null,
+            existing.id
+          ).run();
+          
+          // ثبت لاگ
+          ctx.waitUntil(logAction(env, request, userData, 
+            'municipality_info_updated', 'municipality_info', existing.id, 
+            { title }
+          ));
+          
+          return new Response(JSON.stringify({ success: true, id: existing.id, action: 'updated' }), {
+            status: 200, headers
+          });
+        } else {
+          // ثبت جدید
+          const result = await env.DB.prepare(`
+            INSERT INTO municipality_info (
+              province, county, city,
+              title, grade, address, postal_code, economic_code, national_id,
+              mayor_name, mayor_details,
+              finance_signers, treasury_signers, allocation_signers, execution_signers
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            province || null, county || null, city || null,
+            title, grade || null, address || null, postal_code || null,
+            economic_code || null, national_id || null,
+            mayor_name || null, mayor_details || null,
+            finance_signers || null, treasury_signers || null,
+            allocation_signers || null, execution_signers || null
+          ).run();
+          
+          // ثبت لاگ
+          ctx.waitUntil(logAction(env, request, userData, 
+            'municipality_info_created', 'municipality_info', result.meta.last_row_id, 
+            { title }
+          ));
+          
+          return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id, action: 'created' }), {
+            status: 201, headers
+          });
+        }
+      }
+
       // Serve static files
       const staticPaths = [
-        "/",
-        "/login.html",
-        "/dashboard.html",
-        "/fiscal-years.html",
-        "/economic-classifications.html",
-        "/organizations.html",
-        "/budget-proposals.html",
-        "/reports.html",
-        "/allocations.html",
-        "/executions.html",
-        "/users.html",
-        "/revisions.html",
-        "/advanced-reports.html",
-        "/tafriq.html",
-        "/audit-log.html",
-        "/common.js",
-        "/sidebar.js",
-        "/sidebar.css",
+        '/', '/login.html', '/dashboard.html', '/fiscal-years.html',
+        '/economic-classifications.html', '/organizations.html',
+        '/budget-proposals.html', '/reports.html', '/allocations.html',
+        '/executions.html', '/users.html', '/revisions.html',
+        '/advanced-reports.html', '/tafriq.html', '/audit-log.html',
+        '/municipality-info.html','/base-info.html',
+        '/common.js', '/sidebar.js', '/sidebar.css'
       ];
 
       if (staticPaths.includes(url.pathname)) {

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اطلاعات پایه</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="/sidebar.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+        }
+        .header h1 {
+            margin: 0 0 5px 0;
+            font-size: 22px;
+        }
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 13px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .section-title {
+            color: #333;
+            margin: 0 0 20px 0;
+            font-size: 18px;
+            padding: 12px 0;
+            border-bottom: 2px solid #667eea;
+            position: relative;
+        }
+        .section-title::before {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            right: 0;
+            width: 60px;
+            height: 2px;
+            background: #764ba2;
+        }
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .info-card {
+            background: white;
+            padding: 30px 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        .info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 4px;
+            height: 100%;
+            background: #667eea;
+            transition: width 0.3s;
+        }
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+        }
+        .info-card:hover::before {
+            width: 100%;
+            opacity: 0.05;
+        }
+        .info-card .icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: block;
+        }
+        .info-card h3 {
+            margin: 0 0 8px 0;
+            font-size: 16px;
+            color: #333;
+        }
+        .info-card p {
+            margin: 0;
+            font-size: 12px;
+            color: #666;
+            line-height: 1.6;
+        }
+        .info-card .status {
+            margin-top: 12px;
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+        .status-ready {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        /* Dark mode */
+        body.dark {
+            background: #1a202c;
+            color: #e2e8f0;
+        }
+        body.dark .section-title {
+            color: #e2e8f0;
+        }
+        body.dark .info-card {
+            background: #2d3748;
+            color: #e2e8f0;
+        }
+        body.dark .info-card h3 {
+            color: #e2e8f0;
+        }
+        body.dark .info-card p {
+            color: #a0aec0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>📂 اطلاعات پایه</h1>
+            <p>مدیریت اطلاعات پایه سامانه بودجه شهرداری</p>
+        </div>
+
+        <h2 class="section-title">🏗️ ساختارهای پایه</h2>
+        <div class="cards-grid" id="cards-grid"></div>
+    </div>
+
+    <script src="/common.js"></script>
+    <script src="/sidebar.js"></script>
+
+    <script>
+        if (!isTokenValid()) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
+        }
+
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        // لیست همه بخش‌های اطلاعات پایه
+        const allSections = [
+            {
+                icon: '🏛️',
+                title: 'مشخصات شهرداری',
+                desc: 'اطلاعات ثابت سازمان شامل عنوان، آدرس، درجه، شهردار و امضاکنندگان',
+                url: '/municipality-info.html',
+                roles: ['admin', 'manager', 'expert', 'viewer'],
+                status: 'ready'
+            },
+            {
+                icon: '🏢',
+                title: 'طبقه‌بندی سازمانی',
+                desc: 'چارت سازمانی درختی شامل حوزه، معاونت، اداره و واحد با کدینگ تسلسلی',
+                url: '#', // بعداً میسازیم
+                roles: ['admin', 'manager'],
+                status: 'pending'
+            },
+            {
+                icon: '🎯',
+                title: 'برنامه راهبردی',
+                desc: 'چشم‌انداز، راهبردها و سیاست‌های اجرایی سازمان',
+                url: '#',
+                roles: ['admin', 'manager'],
+                status: 'pending'
+            },
+            {
+                icon: '💰',
+                title: 'طبقه‌بندی اقتصادی',
+                desc: 'منابع (درآمدها) و مصارف (هزینه‌ها) با کدینگ استاندارد',
+                url: '/economic-classifications.html',
+                roles: ['admin', 'manager'],
+                status: 'ready'
+            },
+            {
+                icon: '📊',
+                title: 'طبقه‌بندی عملیاتی',
+                desc: 'مأموریت، برنامه، طرح، پروژه، خدمت و فعالیت',
+                url: '#',
+                roles: ['admin', 'manager'],
+                status: 'pending'
+            },
+            {
+                icon: '📒',
+                title: 'حسابداری',
+                desc: 'سرفصل‌های حسابداری شامل دارایی‌ها، بدهی‌ها، سرمایه و عملکرد',
+                url: '#',
+                roles: ['admin', 'manager'],
+                status: 'pending'
+            },
+            {
+                icon: '📦',
+                title: 'کالا و خدمات',
+                desc: 'کدینگ کالا، فهرست بها، جداول استهلاک و احکام حقوقی',
+                url: '#',
+                roles: ['admin', 'manager'],
+                status: 'pending'
+            },
+            {
+                icon: '👥',
+                title: 'اشخاص',
+                desc: 'اشخاص حقیقی و حقوقی، کارکنان و تفصیلی شناور',
+                url: '#',
+                roles: ['admin', 'manager'],
+                status: 'pending'
+            }
+        ];
+
+        const cardsGrid = document.getElementById('cards-grid');
+
+        // فیلتر بر اساس نقش
+        const visibleSections = allSections.filter(s => s.roles.includes(user.role));
+
+        visibleSections.forEach(section => {
+            const card = document.createElement('div');
+            card.className = 'info-card';
+            
+            if (section.status === 'ready') {
+                card.onclick = () => window.location.href = section.url;
+            } else {
+                card.onclick = () => alert('این بخش به زودی اضافه می‌شود');
+                card.style.opacity = '0.7';
+            }
+            
+            const statusHtml = section.status === 'ready' 
+                ? '<span class="status status-ready">✅ آماده</span>'
+                : '<span class="status status-pending">⏳ به زودی</span>';
+            
+            card.innerHTML = `
+                <span class="icon">${section.icon}</span>
+                <h3>${section.title}</h3>
+                <p>${section.desc}</p>
+                ${statusHtml}
+            `;
+            
+            cardsGrid.appendChild(card);
+        });
+    </script>
+</body>
+</html>

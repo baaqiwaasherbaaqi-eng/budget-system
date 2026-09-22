@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لاگ سیستم</title>
+    <script src="https://cdn.jsdelivr.net/npm/persian-date@1.1.0/dist/persian-date.min.js"></script>
+
+
     <link rel="stylesheet" href="/sidebar.css">
 <script src="/sidebar.js"></script>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
@@ -160,6 +163,32 @@
             });
         }
 
+        // تبدیل تاریخ میلادی به شمسی
+        function toPersianDate(dateString) {
+            if (!dateString) return '-';
+            try {
+                // تاریخ از دیتابیس به فرمت "2026-09-19 07:55:49" هست
+                const date = new Date(dateString.replace(' ', 'T') + 'Z');
+                const pd = new window.persianDate(date);
+                
+                const year = pd.year();
+                const month = pd.month();
+                const day = pd.date();
+                const hour = pd.hour();
+                const minute = pd.minute();
+                const second = pd.second();
+                
+                const pad = (n) => n < 10 ? '0' + n : n;
+                
+                const formatted = `${year}/${pad(month)}/${pad(day)} - ${pad(hour)}:${pad(minute)}:${pad(second)}`;
+                
+                return toPersianNumbers(formatted);
+            } catch (error) {
+                console.error('Date conversion error:', error);
+                return dateString;
+            }
+        }
+
         const actionLabels = {
             'login': 'ورود موفق',
             'login_failed': 'ورود ناموفق',
@@ -200,7 +229,7 @@
                     <td>${log.entity_type || '-'}</td>
                     <td class="details-cell" title="${log.details || ''}">${log.details || '-'}</td>
                     <td>${log.ip_address || '-'}</td>
-                    <td>${toPersianNumbers(log.created_at)}</td>
+                    <td>${toPersianDate(log.created_at)}</td>
                 `;
                 tbody.appendChild(row);
             });

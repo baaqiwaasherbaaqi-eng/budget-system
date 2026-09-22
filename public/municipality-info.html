@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مشخصات شهرداری</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="/sidebar.css">
+    <style>
+        body {
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+        .header a {
+            color: white;
+            text-decoration: none;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .section:last-child {
+            border-bottom: none;
+        }
+        .section-title {
+            color: #333;
+            margin: 0 0 20px 0;
+            font-size: 16px;
+            padding: 10px 0;
+            border-bottom: 2px solid #667eea;
+            position: relative;
+        }
+        .section-title::before {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            right: 0;
+            width: 60px;
+            height: 2px;
+            background: #764ba2;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+            font-size: 13px;
+        }
+        label .required {
+            color: #e74c3c;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 13px;
+            transition: border-color 0.2s;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 70px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .alert {
+            padding: 12px 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .hint {
+            font-size: 11px;
+            color: #999;
+            margin-top: 3px;
+        }
+        .last-update {
+            text-align: left;
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>🏛️ مشخصات شهرداری</h1>
+        </div>
+
+        <div id="alert-container"></div>
+        <div class="last-update" id="last-update"></div>
+
+        <!-- بخش ۱: موقعیت مکانی -->
+        <div class="section">
+            <h2 class="section-title">📍 موقعیت شهرداری (بر اساس تقسیمات کشوری)</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>استان:</label>
+                    <input type="text" id="province" placeholder="مثلاً تهران">
+                </div>
+                <div class="form-group">
+                    <label>شهرستان:</label>
+                    <input type="text" id="county" placeholder="مثلاً تهران">
+                </div>
+                <div class="form-group">
+                    <label>شهر:</label>
+                    <input type="text" id="city" placeholder="مثلاً تهران">
+                </div>
+            </div>
+        </div>
+
+        <!-- بخش ۲: مشخصات شهرداری -->
+        <div class="section">
+            <h2 class="section-title">🏢 مشخصات شهرداری</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>عنوان شهرداری: <span class="required">*</span></label>
+                    <input type="text" id="title" placeholder="مثلاً شهرداری تهران" required>
+                </div>
+                <div class="form-group">
+                    <label>درجه شهرداری:</label>
+                    <input type="text" id="grade" placeholder="مثلاً ۱ یا کلان‌شهر">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>کد پستی:</label>
+                    <input type="text" id="postal_code" placeholder="۱۰ رقم" maxlength="10">
+                </div>
+                <div class="form-group">
+                    <label>کد اقتصادی:</label>
+                    <input type="text" id="economic_code" placeholder="کد اقتصادی شهرداری">
+                </div>
+                <div class="form-group">
+                    <label>شناسه ملی:</label>
+                    <input type="text" id="national_id" placeholder="شناسه ملی شهرداری">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>آدرس شهرداری:</label>
+                <textarea id="address" placeholder="آدرس کامل"></textarea>
+            </div>
+        </div>
+
+        <!-- بخش ۳: شهردار -->
+        <div class="section">
+            <h2 class="section-title">👤 مشخصات شهردار</h2>
+            <div class="form-group">
+                <label>نام و نام خانوادگی شهردار:</label>
+                <input type="text" id="mayor_name" placeholder="مثلاً علی احمدی">
+            </div>
+            <div class="form-group">
+                <label>مشخصات کامل شهردار:</label>
+                <textarea id="mayor_details" placeholder="اطلاعات تکمیلی، سوابق، ..."></textarea>
+            </div>
+        </div>
+
+        <!-- بخش ۴: صاحبان امضاء -->
+        <div class="section">
+            <h2 class="section-title">✍️ صاحبان امضاء</h2>
+            
+            <div class="form-group">
+                <label>صاحبان امضاء اسناد مالی:</label>
+                <textarea id="finance_signers" placeholder="نام‌ها (با کاما جدا کنید)"></textarea>
+                <div class="hint">مثال: علی احمدی، رضا رضایی</div>
+            </div>
+
+            <div class="form-group">
+                <label>صاحبان امضاء خزانه‌داری:</label>
+                <textarea id="treasury_signers" placeholder="نام‌ها (با کاما جدا کنید)"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>صاحبان امضاء تخصیص اعتبار:</label>
+                <textarea id="allocation_signers" placeholder="نام‌ها (با کاما جدا کنید)"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>صاحبان امضاء تأمین اعتبار:</label>
+                <textarea id="execution_signers" placeholder="نام‌ها (با کاما جدا کنید)"></textarea>
+            </div>
+        </div>
+
+        <!-- دکمه‌ها -->
+        <div class="btn-group">
+            <button class="btn-success" onclick="saveInfo()" id="save-btn">
+                💾 ذخیره اطلاعات
+            </button>
+            <button onclick="loadInfo()" style="background:#6c757d;">🔄 بازخوانی</button>
+        </div>
+    </div>
+
+    <script src="/common.js"></script>
+    <script src="/sidebar.js"></script>
+
+    <script>
+        if (!isTokenValid()) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
+        }
+
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        // فقط admin میتونه ویرایش کنه
+        const canEdit = user.role === 'admin';
+
+        if (!canEdit) {
+            document.querySelectorAll('input, textarea, select').forEach(el => {
+                el.disabled = true;
+            });
+            document.getElementById('save-btn').style.display = 'none';
+            showAlert('شما فقط می‌توانید اطلاعات را مشاهده کنید', 'info');
+        }
+
+        function showAlert(message, type = 'success') {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    container.innerHTML = '';
+                }, 3000);
+            }
+        }
+
+        async function loadInfo() {
+            try {
+                const response = await fetch('/api/municipality-info', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await response.json();
+                
+                document.getElementById('province').value = data.province || '';
+                document.getElementById('county').value = data.county || '';
+                document.getElementById('city').value = data.city || '';
+                document.getElementById('title').value = data.title || '';
+                document.getElementById('grade').value = data.grade || '';
+                document.getElementById('postal_code').value = data.postal_code || '';
+                document.getElementById('economic_code').value = data.economic_code || '';
+                document.getElementById('national_id').value = data.national_id || '';
+                document.getElementById('address').value = data.address || '';
+                document.getElementById('mayor_name').value = data.mayor_name || '';
+                document.getElementById('mayor_details').value = data.mayor_details || '';
+                document.getElementById('finance_signers').value = data.finance_signers || '';
+                document.getElementById('treasury_signers').value = data.treasury_signers || '';
+                document.getElementById('allocation_signers').value = data.allocation_signers || '';
+                document.getElementById('execution_signers').value = data.execution_signers || '';
+                
+                if (data.updated_at) {
+                    document.getElementById('last-update').textContent = 
+                        `آخرین به‌روزرسانی: ${toPersianDate(data.updated_at)}`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('خطا در دریافت اطلاعات', 'error');
+            }
+        }
+
+        async function saveInfo() {
+            if (!canEdit) return;
+            
+            const title = document.getElementById('title').value.trim();
+            
+            if (!title) {
+                showAlert('عنوان شهرداری الزامی است', 'error');
+                return;
+            }
+            
+            const saveBtn = document.getElementById('save-btn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = '⏳ در حال ذخیره...';
+            
+            const data = {
+                province: document.getElementById('province').value.trim(),
+                county: document.getElementById('county').value.trim(),
+                city: document.getElementById('city').value.trim(),
+                title: title,
+                grade: document.getElementById('grade').value.trim(),
+                address: document.getElementById('address').value.trim(),
+                postal_code: toEnglishNumbers(document.getElementById('postal_code').value.trim()),
+                economic_code: toEnglishNumbers(document.getElementById('economic_code').value.trim()),
+                national_id: toEnglishNumbers(document.getElementById('national_id').value.trim()),
+                mayor_name: document.getElementById('mayor_name').value.trim(),
+                mayor_details: document.getElementById('mayor_details').value.trim(),
+                finance_signers: document.getElementById('finance_signers').value.trim(),
+                treasury_signers: document.getElementById('treasury_signers').value.trim(),
+                allocation_signers: document.getElementById('allocation_signers').value.trim(),
+                execution_signers: document.getElementById('execution_signers').value.trim()
+            };
+            
+            try {
+                const response = await fetch('/api/municipality-info', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert('اطلاعات با موفقیت ذخیره شد', 'success');
+                    loadInfo();
+                } else {
+                    showAlert('خطا: ' + result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('خطا در ارتباط با سرور', 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = '💾 ذخیره اطلاعات';
+            }
+        }
+
+        // تبدیل تاریخ (اگه توی common.js نیست)
+        function toPersianDate(dateString) {
+            if (!dateString) return '-';
+            try {
+                const date = new Date(dateString.replace(' ', 'T') + 'Z');
+                
+                // استفاده از Intl
+                const formatter = new Intl.DateTimeFormat('fa-IR', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                return formatter.format(date);
+            } catch (error) {
+                return dateString;
+            }
+        }
+
+        loadInfo();
+
+        
+        // راه‌اندازی breadcrumb
+        setTimeout(renderBreadcrumb, 200);
+    </script>
+    </script>
+</body>
+</html>
