@@ -1,0 +1,13 @@
+[
+  {
+    "results": [
+      {
+        "sql": "CREATE TABLE council_resolutions (\r\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\r\n    budget_proposal_id INTEGER NOT NULL,\r\n    resolution_number TEXT NOT NULL,\r\n    resolution_date TEXT NOT NULL,\r\n    content TEXT,\r\n    created_by INTEGER,\r\n    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\r\n    FOREIGN KEY (budget_proposal_id) REFERENCES \"budget_proposals_old\"(id) ON DELETE CASCADE,\r\n    FOREIGN KEY (created_by) REFERENCES users(id)\r\n)"
+      }
+    ],
+    "success": true,
+    "meta": {
+      "duration": 0
+    }
+  }
+]

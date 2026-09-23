@@ -1,0 +1,13 @@
+[
+  {
+    "results": [
+      {
+        "sql": "CREATE TABLE budget_approval_logs (\r\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\r\n    budget_proposal_id INTEGER NOT NULL,\r\n    action TEXT NOT NULL,\r\n    from_status TEXT,\r\n    to_status TEXT NOT NULL,\r\n    user_id INTEGER,\r\n    note TEXT,\r\n    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\r\n    FOREIGN KEY (budget_proposal_id) REFERENCES \"budget_proposals_old\"(id) ON DELETE CASCADE,\r\n    FOREIGN KEY (user_id) REFERENCES users(id)\r\n)"
+      }
+    ],
+    "success": true,
+    "meta": {
+      "duration": 1
+    }
+  }
+]

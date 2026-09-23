@@ -344,7 +344,7 @@ export default {
 
       // ========== طبقه‌بندی اقتصادی ==========
 
-      // دریافت لیست طبقه‌بندی‌ها
+      // دریافت لیست طبقه‌بندی‌ها (از base_data)
       if (
         url.pathname === "/api/economic-classifications" &&
         request.method === "GET"
@@ -352,11 +352,11 @@ export default {
         const fiscalYearId = url.searchParams.get("fiscal_year_id");
         const type = url.searchParams.get("type");
 
-        let query = "SELECT * FROM economic_classifications WHERE 1=1";
+        let query = "SELECT * FROM base_data WHERE section = 'economic' AND is_active = 1";
         const params = [];
 
         if (fiscalYearId) {
-          query += " AND fiscal_year_id = ?";
+          query += " AND (fiscal_year_id = ? OR fiscal_year_id IS NULL)";
           params.push(fiscalYearId);
         }
 
@@ -365,7 +365,7 @@ export default {
           params.push(type);
         }
 
-        query += " ORDER BY main_code, chapter_code, sub_code";
+        query += " ORDER BY code";
 
         const items = await env.DB.prepare(query)
           .bind(...params)
@@ -468,19 +468,19 @@ export default {
 
       // ========== ساختار سازمانی ==========
 
-      // دریافت لیست سازمان‌ها
+      // دریافت لیست سازمان‌ها (از base_data)
       if (url.pathname === "/api/organizations" && request.method === "GET") {
         const fiscalYearId = url.searchParams.get("fiscal_year_id");
 
-        let query = "SELECT * FROM organizations";
+        let query = "SELECT * FROM base_data WHERE section = 'organization' AND is_active = 1";
         const params = [];
 
         if (fiscalYearId) {
-          query += " WHERE fiscal_year_id = ?";
+          query += " AND (fiscal_year_id = ? OR fiscal_year_id IS NULL)";
           params.push(fiscalYearId);
         }
 
-        query += " ORDER BY name";
+        query += " ORDER BY code";
 
         const items = await env.DB.prepare(query)
           .bind(...params)
@@ -575,16 +575,17 @@ export default {
         const fiscalYearId = url.searchParams.get("fiscal_year_id");
 
         let query = `
-          SELECT bp.*, 
-                 o.name as organization_name,
-                 ec.title as economic_title,
-                 ec.sub_code as economic_sub_code,
-                 u.full_name as proposer_name
-          FROM budget_proposals bp
-          LEFT JOIN organizations o ON bp.organization_id = o.id
-          LEFT JOIN economic_classifications ec ON bp.economic_class_id = ec.id
-          LEFT JOIN users u ON bp.proposed_by = u.id
-        `;
+              SELECT bp.*, 
+                     org.title as organization_name,
+                     ec.title as economic_title,
+                     ec.code as economic_sub_code,
+                     ec.type as economic_type,
+                     u.full_name as proposer_name
+              FROM budget_proposals bp
+              LEFT JOIN base_data org ON bp.organization_id = org.id
+              LEFT JOIN base_data ec ON bp.economic_class_id = ec.id
+              LEFT JOIN users u ON bp.proposed_by = u.id
+            `;
         const params = [];
 
         if (fiscalYearId) {
@@ -646,13 +647,42 @@ export default {
           });
         }
 
+        // اعتبارسنجی: organization_id و economic_class_id باید توی base_data باشن
+        const org = await env.DB.prepare(
+          "SELECT id FROM base_data WHERE id = ? AND section = 'organization'"
+        )
+          .bind(organization_id)
+          .first();
+
+        if (!org) {
+          return new Response(
+            JSON.stringify({ error: "سازمان انتخاب شده معتبر نیست" }),
+            { status: 400, headers }
+          );
+        }
+
+        const econ = await env.DB.prepare(
+          "SELECT id FROM base_data WHERE id = ? AND section = 'economic'"
+        )
+          .bind(economic_class_id)
+          .first();
+
+        if (!econ) {
+          return new Response(
+            JSON.stringify({ error: "طبقه‌بندی اقتصادی انتخاب شده معتبر نیست" }),
+            { status: 400, headers }
+          );
+        }
+
         try {
+          const nowShamsi = toShamsi(new Date());
+
           const result = await env.DB.prepare(
             `
-            INSERT INTO budget_proposals 
-            (fiscal_year_id, organization_id, economic_class_id, title, amount, description, proposed_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-          `
+                  INSERT INTO budget_proposals 
+                  (fiscal_year_id, organization_id, economic_class_id, title, amount, description, proposed_by, created_at_shamsi)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                `
           )
             .bind(
               fiscal_year_id,
@@ -661,7 +691,8 @@ export default {
               title,
               amount,
               description || null,
-              userData.userId
+              userData.userId,
+              nowShamsi
             )
             .run();
 
@@ -673,10 +704,11 @@ export default {
             { status: 201, headers }
           );
         } catch (error) {
-          return new Response(JSON.stringify({ error: "خطا در ثبت" }), {
-            status: 400,
-            headers,
-          });
+          console.error("Budget proposal POST error:", error);
+          return new Response(
+            JSON.stringify({ error: "خطا در ثبت: " + error.message }),
+            { status: 400, headers }
+          );
         }
       }
 
