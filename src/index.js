@@ -2967,6 +2967,8 @@ export default {
         "/common.js",
         "/sidebar.js",
         "/sidebar.css",
+        "/footer.js",
+        "/Logo.png"
       ];
 
       if (staticPaths.includes(url.pathname)) {

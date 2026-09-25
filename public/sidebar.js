@@ -368,3 +368,16 @@ function renderBreadcrumb() {
 window.addEventListener('load', function() {
   setTimeout(renderBreadcrumb, 200);
 });
+
+
+// ============================================
+// لود footer
+// ============================================
+(function() {
+    if (!document.getElementById('footer-script')) {
+        const script = document.createElement('script');
+        script.id = 'footer-script';
+        script.src = '/footer.js';
+        document.head.appendChild(script);
+    }
+})();
