@@ -207,21 +207,82 @@ function renderBreadcrumb() {
   
   // نقشه مسیرها
   const pathMap = {
-      '/dashboard.html': { icon: '🏠', title: 'داشبورد', parent: null },
-      '/base-info.html': { icon: '📂', title: 'اطلاعات پایه', parent: '/dashboard.html' },
-      '/municipality-info.html': { icon: '🏛️', title: 'مشخصات شهرداری', parent: '/base-info.html' },
-      '/fiscal-years.html': { icon: '📅', title: 'سال مالی', parent: '/dashboard.html' },
-      '/economic-classifications.html': { icon: '💰', title: 'طبقه‌بندی اقتصادی', parent: '/base-info.html' },
-      '/organizations.html': { icon: '🏢', title: 'ساختار سازمانی', parent: '/base-info.html' },
-      '/budget-proposals.html': { icon: '💰', title: 'بودجه پیشنهادی', parent: '/dashboard.html' },
-      '/reports.html': { icon: '📈', title: 'گزارشات', parent: '/dashboard.html' },
-      '/allocations.html': { icon: '💳', title: 'تخصیص اعتبار', parent: '/dashboard.html' },
-      '/executions.html': { icon: '💸', title: 'تامین اعتبار', parent: '/dashboard.html' },
-      '/users.html': { icon: '👥', title: 'مدیریت کاربران', parent: '/dashboard.html' },
-      '/revisions.html': { icon: '🔄', title: 'اصلاح بودجه', parent: '/dashboard.html' },
-      '/advanced-reports.html': { icon: '📊', title: 'گزارش پیشرفته', parent: '/dashboard.html' },
-      '/tafriq.html': { icon: '📋', title: 'تفریغ بودجه', parent: '/dashboard.html' },
-      '/audit-log.html': { icon: '📜', title: 'لاگ سیستم', parent: '/dashboard.html' }
+    "/dashboard.html": { icon: "🏠", title: "داشبورد", parent: null },
+    "/base-info.html": {
+      icon: "📂",
+      title: "اطلاعات پایه",
+      parent: "/dashboard.html",
+    },
+    "/municipality-info.html": {
+      icon: "🏛️",
+      title: "مشخصات شهرداری",
+      parent: "/base-info.html",
+    },
+    "/fiscal-years.html": {
+      icon: "📅",
+      title: "سال مالی",
+      parent: "/dashboard.html",
+    },
+    "/economic-classifications.html": {
+      icon: "💰",
+      title: "طبقه‌بندی اقتصادی",
+      parent: "/base-info.html",
+    },
+    "/organizations.html": {
+      icon: "🏢",
+      title: "ساختار سازمانی",
+      parent: "/base-info.html",
+    },
+    "/strategic-plan.html": {
+      icon: "🎯",
+      title: "برنامه راهبردی",
+      parent: "/base-info.html",
+    },
+    "/budget-proposals.html": {
+      icon: "💰",
+      title: "بودجه پیشنهادی",
+      parent: "/dashboard.html",
+    },
+    "/reports.html": {
+      icon: "📈",
+      title: "گزارشات",
+      parent: "/dashboard.html",
+    },
+    "/allocations.html": {
+      icon: "💳",
+      title: "تخصیص اعتبار",
+      parent: "/dashboard.html",
+    },
+    "/executions.html": {
+      icon: "💸",
+      title: "تامین اعتبار",
+      parent: "/dashboard.html",
+    },
+    "/users.html": {
+      icon: "👥",
+      title: "مدیریت کاربران",
+      parent: "/dashboard.html",
+    },
+    "/revisions.html": {
+      icon: "🔄",
+      title: "اصلاح بودجه",
+      parent: "/dashboard.html",
+    },
+    "/advanced-reports.html": {
+      icon: "📊",
+      title: "گزارش پیشرفته",
+      parent: "/dashboard.html",
+    },
+    "/tafriq.html": {
+      icon: "📋",
+      title: "تفریغ بودجه",
+      parent: "/dashboard.html",
+    },
+    "/audit-log.html": {
+      icon: "📜",
+      title: "لاگ سیستم",
+      parent: "/dashboard.html",
+    },
   };
   
   const current = pathMap[currentPath];
@@ -289,21 +350,82 @@ function renderBreadcrumb() {
   
   // نقشه مسیرها
   const pathMap = {
-      '/dashboard.html': { icon: '🏠', title: 'داشبورد', parent: null },
-      '/base-info.html': { icon: '📂', title: 'اطلاعات پایه', parent: '/dashboard.html' },
-      '/municipality-info.html': { icon: '🏛️', title: 'مشخصات شهرداری', parent: '/base-info.html' },
-      '/fiscal-years.html': { icon: '📅', title: 'سال مالی', parent: '/dashboard.html' },
-      '/economic-classifications.html': { icon: '💰', title: 'طبقه‌بندی اقتصادی', parent: '/base-info.html' },
-      '/organizations.html': { icon: '🏢', title: 'ساختار سازمانی', parent: '/base-info.html' },
-      '/budget-proposals.html': { icon: '💰', title: 'بودجه پیشنهادی', parent: '/dashboard.html' },
-      '/reports.html': { icon: '📈', title: 'گزارشات', parent: '/dashboard.html' },
-      '/allocations.html': { icon: '💳', title: 'تخصیص اعتبار', parent: '/dashboard.html' },
-      '/executions.html': { icon: '💸', title: 'تامین اعتبار', parent: '/dashboard.html' },
-      '/users.html': { icon: '👥', title: 'مدیریت کاربران', parent: '/dashboard.html' },
-      '/revisions.html': { icon: '🔄', title: 'اصلاح بودجه', parent: '/dashboard.html' },
-      '/advanced-reports.html': { icon: '📊', title: 'گزارش پیشرفته', parent: '/dashboard.html' },
-      '/tafriq.html': { icon: '📋', title: 'تفریغ بودجه', parent: '/dashboard.html' },
-      '/audit-log.html': { icon: '📜', title: 'لاگ سیستم', parent: '/dashboard.html' }
+    "/dashboard.html": { icon: "🏠", title: "داشبورد", parent: null },
+    "/base-info.html": {
+      icon: "📂",
+      title: "اطلاعات پایه",
+      parent: "/dashboard.html",
+    },
+    "/municipality-info.html": {
+      icon: "🏛️",
+      title: "مشخصات شهرداری",
+      parent: "/base-info.html",
+    },
+    "/fiscal-years.html": {
+      icon: "📅",
+      title: "سال مالی",
+      parent: "/dashboard.html",
+    },
+    "/economic-classifications.html": {
+      icon: "💰",
+      title: "طبقه‌بندی اقتصادی",
+      parent: "/base-info.html",
+    },
+    "/organizations.html": {
+      icon: "🏢",
+      title: "ساختار سازمانی",
+      parent: "/base-info.html",
+    },
+    "/strategic-plan.html": {
+      icon: "🎯",
+      title: "برنامه راهبردی",
+      parent: "/base-info.html",
+    },
+    "/budget-proposals.html": {
+      icon: "💰",
+      title: "بودجه پیشنهادی",
+      parent: "/dashboard.html",
+    },
+    "/reports.html": {
+      icon: "📈",
+      title: "گزارشات",
+      parent: "/dashboard.html",
+    },
+    "/allocations.html": {
+      icon: "💳",
+      title: "تخصیص اعتبار",
+      parent: "/dashboard.html",
+    },
+    "/executions.html": {
+      icon: "💸",
+      title: "تامین اعتبار",
+      parent: "/dashboard.html",
+    },
+    "/users.html": {
+      icon: "👥",
+      title: "مدیریت کاربران",
+      parent: "/dashboard.html",
+    },
+    "/revisions.html": {
+      icon: "🔄",
+      title: "اصلاح بودجه",
+      parent: "/dashboard.html",
+    },
+    "/advanced-reports.html": {
+      icon: "📊",
+      title: "گزارش پیشرفته",
+      parent: "/dashboard.html",
+    },
+    "/tafriq.html": {
+      icon: "📋",
+      title: "تفریغ بودجه",
+      parent: "/dashboard.html",
+    },
+    "/audit-log.html": {
+      icon: "📜",
+      title: "لاگ سیستم",
+      parent: "/dashboard.html",
+    },
   };
   
   const current = pathMap[currentPath];

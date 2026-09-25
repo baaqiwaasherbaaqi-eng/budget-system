@@ -40,14 +40,11 @@ export async function generateNextCode(
       .bind(parent_id)
       .first();
   } else {
+    // سطح ۰: بالاترین کد توی کل section (نه فقط type)
+    // چون code توی (section, fiscal_year_id) یکتاست
     let query =
       "SELECT code FROM base_data WHERE parent_id IS NULL AND section = ?";
     const params = [section];
-
-    if (type) {
-      query += " AND type = ?";
-      params.push(type);
-    }
 
     query += " ORDER BY code DESC LIMIT 1";
 

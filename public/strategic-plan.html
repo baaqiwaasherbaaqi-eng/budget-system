@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ساختار سازمانی</title>
+    <title>برنامه راهبردی</title>
     <link rel="stylesheet" href="/sidebar.css">
     <script src="/sidebar.js"></script>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
@@ -114,17 +114,10 @@
             cursor: pointer;
             transition: background 0.15s;
             user-select: none;
-            position: relative;
         }
 
-        .tree-node:hover {
-            background: #f8f9fa;
-        }
-
-        .tree-node.selected {
-            background: #eef1ff;
-            outline: 2px solid #667eea;
-        }
+        .tree-node:hover { background: #f8f9fa; }
+        .tree-node.selected { background: #eef1ff; outline: 2px solid #667eea; }
 
         .tree-node .toggle {
             display: inline-flex;
@@ -138,9 +131,7 @@
             flex-shrink: 0;
         }
 
-        .tree-node .toggle.empty {
-            visibility: hidden;
-        }
+        .tree-node .toggle.empty { visibility: hidden; }
 
         .tree-node .icon {
             margin-left: 8px;
@@ -181,9 +172,7 @@
             margin-right: 10px;
         }
 
-        .tree-children.collapsed {
-            display: none;
-        }
+        .tree-children.collapsed { display: none; }
 
         /* ============ جدول ============ */
         .table-container table {
@@ -209,11 +198,8 @@
             text-align: right;
         }
 
-        .table-container tr:hover {
-            background: #fafafa;
-        }
+        .table-container tr:hover { background: #fafafa; }
 
-        /* رنگ سطوح در جدول */
         .level-0 { background: #eef1ff !important; font-weight: bold; }
         .level-1 { background: #f5f7ff !important; }
         .level-2 { background: #fafbff !important; }
@@ -233,10 +219,7 @@
         .level-badge.l2 { background: #17a2b8; color: white; }
         .level-badge.l3 { background: #28a745; color: white; }
 
-        .indent-marker {
-            color: #ccc;
-            margin-left: 6px;
-        }
+        .indent-marker { color: #ccc; margin-left: 6px; }
 
         /* ============ Context Menu ============ */
         .context-menu {
@@ -251,9 +234,7 @@
             animation: fadeIn 0.15s;
         }
 
-        .context-menu.open {
-            display: block;
-        }
+        .context-menu.open { display: block; }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-5px); }
@@ -277,17 +258,9 @@
             gap: 10px;
         }
 
-        .context-menu button:hover {
-            background: #f0f2f5;
-        }
-
-        .context-menu button.danger {
-            color: #e74c3c;
-        }
-
-        .context-menu button.danger:hover {
-            background: #fee;
-        }
+        .context-menu button:hover { background: #f0f2f5; }
+        .context-menu button.danger { color: #e74c3c; }
+        .context-menu button.danger:hover { background: #fee; }
 
         .context-menu .divider {
             height: 1px;
@@ -307,9 +280,7 @@
             padding: 20px;
         }
 
-        .modal-overlay.open {
-            display: flex;
-        }
+        .modal-overlay.open { display: flex; }
 
         .modal {
             background: white;
@@ -319,6 +290,8 @@
             width: 100%;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             animation: slideUp 0.2s;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         @keyframes slideUp {
@@ -335,9 +308,7 @@
             gap: 8px;
         }
 
-        .modal .form-group {
-            margin-bottom: 15px;
-        }
+        .modal .form-group { margin-bottom: 15px; }
 
         .modal label {
             display: block;
@@ -348,7 +319,8 @@
         }
 
         .modal input,
-        .modal textarea {
+        .modal textarea,
+        .modal select {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
@@ -359,7 +331,8 @@
         }
 
         .modal input:focus,
-        .modal textarea:focus {
+        .modal textarea:focus,
+        .modal select:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -381,9 +354,7 @@
             flex-wrap: wrap;
         }
 
-        .modal .info-row span b {
-            color: #333;
-        }
+        .modal .info-row span b { color: #333; }
 
         .modal-actions {
             display: flex;
@@ -402,28 +373,12 @@
             transition: all 0.2s;
         }
 
-        .btn-cancel {
-            background: #e9ecef;
-            color: #333;
-        }
+        .btn-cancel { background: #e9ecef; color: #333; }
+        .btn-cancel:hover { background: #dee2e6; }
 
-        .btn-cancel:hover {
-            background: #dee2e6;
-        }
-
-        .btn-save {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-save:hover {
-            background: #5a67d8;
-        }
-
-        .btn-save:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
+        .btn-save { background: #667eea; color: white; }
+        .btn-save:hover { background: #5a67d8; }
+        .btn-save:disabled { background: #ccc; cursor: not-allowed; }
 
         /* ============ Toast ============ */
         .toast {
@@ -442,10 +397,7 @@
             font-family: 'Vazirmatn', Tahoma, sans-serif;
         }
 
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
-        }
-
+        .toast.show { transform: translateX(-50%) translateY(0); }
         .toast.success { background: #28a745; }
         .toast.error { background: #dc3545; }
 
@@ -468,15 +420,10 @@
             margin-bottom: 15px;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         /* ============ Dark Mode ============ */
-        body.dark {
-            background: #1a202c;
-            color: #e2e8f0;
-        }
+        body.dark { background: #1a202c; color: #e2e8f0; }
 
         body.dark .toolbar,
         body.dark .tree-container,
@@ -497,7 +444,8 @@
         body.dark .level-0 { background: #3b4a6b !important; }
         body.dark .level-1 { background: #37415b !important; }
         body.dark .modal input,
-        body.dark .modal textarea {
+        body.dark .modal textarea,
+        body.dark .modal select {
             background: #1a202c;
             border-color: #4a5568;
             color: #e2e8f0;
@@ -526,7 +474,7 @@
 
     <div class="container">
         <div class="header">
-            <h1>🏢 ساختار سازمانی</h1>
+            <h1>🎯 برنامه راهبردی</h1>
         </div>
 
         <div class="toolbar">
@@ -535,7 +483,7 @@
                 <button id="btn-table" onclick="switchView('table')">📋 جدولی</button>
             </div>
             <button class="add-root-btn" onclick="openAddModal(null)">
-                ➕ افزودن ریشه
+                ➕ افزودن چشم‌انداز
             </button>
         </div>
 
@@ -550,8 +498,9 @@
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 60%;">عنوان</th>
-                        <th style="width: 20%;">سطح</th>
+                        <th style="width: 15%;">کد</th>
+                        <th style="width: 50%;">عنوان</th>
+                        <th style="width: 15%;">سطح</th>
                         <th style="width: 20%;">وضعیت</th>
                     </tr>
                 </thead>
@@ -590,6 +539,11 @@
                 <textarea id="input-description" placeholder="توضیحات (اختیاری)"></textarea>
             </div>
 
+            <div class="form-group">
+                <label>اطلاعات تکمیلی (اختیاری)</label>
+                <textarea id="input-extra" placeholder="اطلاعات اضافی..."></textarea>
+            </div>
+
             <div class="form-group" id="group-digit-count">
                 <label>تعداد ارقام کد</label>
                 <input type="number" id="input-digit-count" value="3" min="2" max="20" />
@@ -619,16 +573,18 @@
 
         const token = localStorage.getItem('token');
         const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-        const SECTION = 'organization';
-        const PREFIX = 'س';
-        const LEVEL_NAMES = ['حوزه', 'معاونت', 'اداره', 'واحد'];
+        const SECTION = 'strategic';
+        const TYPE = 'strategic';
+        const PREFIX = 'ر';
+        const LEVEL_NAMES = ['چشم‌انداز', 'راهبرد', 'سیاست اجرایی', 'زیرسیاست'];
 
         let treeData = [];
         let flatData = [];
-        let currentView = localStorage.getItem('org-view') || 'tree';
-let selectedNode = null;
-let editingNode = null;
-let currentParentId = null;  // ✅ اضافه شد
+        let currentView = localStorage.getItem('strategic-view') || 'tree';
+        let selectedNode = null;
+        let editingNode = null;
+        let ctxNodeId = null;
+        let currentParentId = null;  // ✅ اضافه شد
 
         // ============================================
         // توابع کمکی
@@ -683,9 +639,9 @@ let currentParentId = null;  // ✅ اضافه شد
                 container.innerHTML = `
                     <div class="empty-state">
                         <div style="font-size: 40px; margin-bottom: 15px;">📭</div>
-                        <div>هنوز سازمانی ثبت نشده</div>
+                        <div>هنوز چشم‌اندازی ثبت نشده</div>
                         <div style="margin-top: 15px;">
-                            <button class="add-root-btn" onclick="openAddModal(null)">➕ افزودن اولین سازمان</button>
+                            <button class="add-root-btn" onclick="openAddModal(null)">➕ افزودن اولین چشم‌انداز</button>
                         </div>
                     </div>`;
                 return;
@@ -707,7 +663,8 @@ let currentParentId = null;  // ✅ اضافه شد
             if (!node.is_active) nodeEl.style.opacity = '0.5';
 
             const hasChildren = node.children && node.children.length > 0;
-            const isCollapsed = localStorage.getItem(`org-collapsed-${node.id}`) === '1';
+            const collapsedKey = `strategic-collapsed-${node.id}`;
+            const isCollapsed = localStorage.getItem(collapsedKey) === '1';
 
             nodeEl.innerHTML = `
                 <span class="toggle ${hasChildren ? '' : 'empty'}">${isCollapsed ? '◀' : '▼'}</span>
@@ -716,27 +673,24 @@ let currentParentId = null;  // ✅ اضافه شد
                 <button class="menu-btn" onclick="event.stopPropagation(); openContextMenu(event, ${node.id})">⋮</button>
             `;
 
-            // کلیک روی toggle
             const toggleEl = nodeEl.querySelector('.toggle');
             if (hasChildren) {
                 toggleEl.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (isCollapsed) {
-                        localStorage.removeItem(`org-collapsed-${node.id}`);
+                        localStorage.removeItem(collapsedKey);
                     } else {
-                        localStorage.setItem(`org-collapsed-${node.id}`, '1');
+                        localStorage.setItem(collapsedKey, '1');
                     }
                     renderTree();
                 });
             }
 
-            // کلیک روی node
             nodeEl.addEventListener('click', () => {
                 selectedNode = node;
                 renderTree();
             });
 
-            // راست‌کلیک
             nodeEl.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 selectedNode = node;
@@ -746,7 +700,6 @@ let currentParentId = null;  // ✅ اضافه شد
 
             wrapper.appendChild(nodeEl);
 
-            // فرزندان
             if (hasChildren && !isCollapsed) {
                 const childrenEl = document.createElement('div');
                 childrenEl.className = 'tree-children';
@@ -766,11 +719,10 @@ let currentParentId = null;  // ✅ اضافه شد
             const tbody = document.getElementById('table-body');
 
             if (!flatData || flatData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:40px; color:#999;">هنوز سازمانی ثبت نشده</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:40px; color:#999;">موردی ثبت نشده</td></tr>`;
                 return;
             }
 
-            // مرتب‌سازی بر اساس code
             const sorted = [...flatData].sort((a, b) => a.code.localeCompare(b.code));
 
             tbody.innerHTML = '';
@@ -780,9 +732,10 @@ let currentParentId = null;  // ✅ اضافه شد
                 tr.style.cursor = 'pointer';
                 if (!item.is_active) tr.style.opacity = '0.5';
 
-                const indent = '　'.repeat(item.level); // indent با فضای تمام‌عرض
+                const indent = '　'.repeat(item.level);
 
                 tr.innerHTML = `
+                    <td><span style="font-family: monospace; font-size: 12px; color: #667eea;">${item.code}</span></td>
                     <td>
                         <span class="indent-marker">${indent}</span>
                         <span style="margin-left: 6px;">📄</span>
@@ -792,13 +745,11 @@ let currentParentId = null;  // ✅ اضافه شد
                     <td>${item.is_active ? '✅ فعال' : '❌ غیرفعال'}</td>
                 `;
 
-                // کلیک روی ردیف → انتخاب
                 tr.addEventListener('click', () => {
                     selectedNode = item;
                     renderTable();
                 });
 
-                // راست‌کلیک
                 tr.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
                     selectedNode = item;
@@ -815,7 +766,7 @@ let currentParentId = null;  // ✅ اضافه شد
         // ============================================
         function switchView(view) {
             currentView = view;
-            localStorage.setItem('org-view', view);
+            localStorage.setItem('strategic-view', view);
 
             document.getElementById('btn-tree').classList.toggle('active', view === 'tree');
             document.getElementById('btn-table').classList.toggle('active', view === 'table');
@@ -826,32 +777,23 @@ let currentParentId = null;  // ✅ اضافه شد
         // ============================================
         // Context Menu
         // ============================================
-        let ctxNodeId = null;
-
         function openContextMenu(event, nodeId) {
             ctxNodeId = nodeId;
             const menu = document.getElementById('context-menu');
             const node = flatData.find(n => n.id === nodeId);
 
-            // دکمه toggle
             const toggleBtn = document.getElementById('ctx-toggle');
             toggleBtn.textContent = node && node.is_active ? '🔄 غیرفعال کردن' : '🔄 فعال کردن';
 
             menu.classList.add('open');
 
-            // موقعیت
             const menuWidth = 200;
             const menuHeight = 200;
             let x = event.clientX;
             let y = event.clientY;
 
-            // اگه از لبه راست گذشت، بذار سمت راست باز بشه
-            if (x + menuWidth > window.innerWidth) {
-                x = window.innerWidth - menuWidth - 10;
-            }
-            if (y + menuHeight > window.innerHeight) {
-                y = window.innerHeight - menuHeight - 10;
-            }
+            if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
+            if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
 
             menu.style.left = x + 'px';
             menu.style.top = y + 'px';
@@ -881,24 +823,25 @@ let currentParentId = null;  // ✅ اضافه شد
         // ============================================
         // Modal: افزودن
         // ============================================
-async function openAddModal(parent) {
-    editingNode = null;
-    currentParentId = parent ? parent.id : null;  // ✅ اضافه شد
-    document.getElementById('modal-title').textContent = '➕ افزودن ' + (parent ? 'زیرشاخه' : 'ریشه');
+        async function openAddModal(parent) {
+            editingNode = null;
+            currentParentId = parent ? parent.id : null;  // ✅ از parent استفاده می‌کنیم، نه selectedNode
+            document.getElementById('modal-title').textContent = parent ? '➕ افزودن زیرشاخه' : '➕ افزودن چشم‌انداز';
             document.getElementById('input-title').value = '';
             document.getElementById('input-description').value = '';
+            document.getElementById('input-extra').value = '';
             document.getElementById('input-digit-count').value = '3';
-            document.getElementById('input-digit-count').parentElement.style.display = 'block';
+            document.getElementById('group-digit-count').style.display = 'block';
 
             if (parent) {
                 document.getElementById('modal-info').style.display = 'flex';
                 document.getElementById('info-parent').textContent = parent.title;
-                document.getElementById('info-level').textContent = getLevelName(parent.level + 1);
+                const nextLevel = parent.level + 1;
+                document.getElementById('info-level').textContent = getLevelName(nextLevel);
 
-                // گرفتن کد بعدی
                 try {
                     const res = await fetch(
-                        `/api/base-data/next-code?section=${SECTION}&parent_id=${parent.id}&digit_count=${parent.digit_count}&prefix=${PREFIX}`,
+                        `/api/base-data/next-code?section=${SECTION}&type=${TYPE}&parent_id=${parent.id}&digit_count=${parent.digit_count || 3}&prefix=`,
                         { headers: { 'Authorization': `Bearer ${token}` } }
                     );
                     const data = await res.json();
@@ -917,13 +860,15 @@ async function openAddModal(parent) {
         // ============================================
         // Modal: ویرایش
         // ============================================
-function openEditModal(node) {
-    editingNode = node;
-    currentParentId = null;  // ✅ اضافه شد
-    document.getElementById('modal-title').textContent = '✏️ ویرایش';
+        function openEditModal(node) {
+            editingNode = node;
+            currentParentId = null;  // ✅ توی ویرایش، والد لازم نیست
+            document.getElementById('modal-title').textContent = '✏️ ویرایش';
             document.getElementById('input-title').value = node.title;
             document.getElementById('input-description').value = node.description || '';
+            document.getElementById('input-extra').value = node.extra_data || '';
             document.getElementById('group-digit-count').style.display = 'none';
+
             document.getElementById('modal-info').style.display = 'flex';
             document.getElementById('info-parent').textContent = node.code;
             document.getElementById('info-level').textContent = node.level_name || getLevelName(node.level);
@@ -933,11 +878,11 @@ function openEditModal(node) {
             setTimeout(() => document.getElementById('input-title').focus(), 100);
         }
 
-function closeModal() {
-    document.getElementById('modal-overlay').classList.remove('open');
-    editingNode = null;
-    currentParentId = null;  // ✅ اضافه شد
-}
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.remove('open');
+            editingNode = null;
+            currentParentId = null;  // ✅ ریست
+        }
 
         // ============================================
         // ذخیره Modal
@@ -945,6 +890,7 @@ function closeModal() {
         async function saveModal() {
             const title = document.getElementById('input-title').value.trim();
             const description = document.getElementById('input-description').value.trim();
+            const extra = document.getElementById('input-extra').value.trim();
 
             if (!title) {
                 showToast('عنوان الزامی است', 'error');
@@ -957,39 +903,43 @@ function closeModal() {
 
             try {
                 if (editingNode) {
-                    // ویرایش
                     const res = await fetch(`/api/base-data/${editingNode.id}`, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${token}`
                         },
-                        body: JSON.stringify({ title, description, is_active: editingNode.is_active })
+                        body: JSON.stringify({
+                            title,
+                            description,
+                            extra_data: extra,
+                            is_active: editingNode.is_active
+                        })
                     });
 
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.error || 'خطا');
 
                     showToast('با موفقیت ویرایش شد');
-} else {
-    // افزودن
-    const digitCount = parseInt(document.getElementById('input-digit-count').value) || 3;
-    const parentId = currentParentId;  // ✅ از currentParentId
-    const parentLevel = parentId 
-        ? (flatData.find(n => n.id === parentId)?.level ?? -1) 
-        : -1;
-    const nextLevel = parentLevel + 1;
+                } else {
+                    const digitCount = parseInt(document.getElementById('input-digit-count').value) || 3;
+                    const parentId = currentParentId;  // ✅ از currentParentId
+                    const parentLevel = parentId 
+                        ? (flatData.find(n => n.id === parentId)?.level ?? -1) 
+                        : -1;
+                    const nextLevel = parentLevel + 1;
 
-    const body = {
-        section: SECTION,
-        type: 'general',
-        prefix: PREFIX,
-        title,
-        description,
-        digit_count: digitCount,
-        parent_id: parentId,
-        level_name: getLevelName(nextLevel)
-    };
+                    const body = {
+                        section: SECTION,
+                        type: TYPE,
+                        prefix: PREFIX,
+                        title,
+                        description,
+                        extra_data: extra || null,
+                        digit_count: digitCount,
+                        parent_id: parentId,
+                        level_name: getLevelName(nextLevel)
+                    };
 
                     const res = await fetch('/api/base-data', {
                         method: 'POST',
@@ -1052,6 +1002,7 @@ function closeModal() {
                     body: JSON.stringify({
                         title: node.title,
                         description: node.description,
+                        extra_data: node.extra_data,
                         is_active: !node.is_active
                     })
                 });
@@ -1081,7 +1032,6 @@ function closeModal() {
             }
         });
 
-        // بستن modal با Escape
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeModal();
