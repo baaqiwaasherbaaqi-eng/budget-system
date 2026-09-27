@@ -11,6 +11,12 @@ export async function generateNextCode(
   env,
   { section, type, parent_id, digit_count = 3, prefix = null }
 ) {
+  // اگه operational بود، منطق خاص
+  if (section === "operational") {
+    return generateOperationalCode(env, { type, parent_id });
+  }
+
+  // برای بقیه بخش‌ها، منطق معمولی
   let parentCode = "";
 
   if (parent_id) {
@@ -40,8 +46,6 @@ export async function generateNextCode(
       .bind(parent_id)
       .first();
   } else {
-    // سطح ۰: بالاترین کد توی کل section (نه فقط type)
-    // چون code توی (section, fiscal_year_id) یکتاست
     let query =
       "SELECT code FROM base_data WHERE parent_id IS NULL AND section = ?";
     const params = [section];
@@ -59,7 +63,6 @@ export async function generateNextCode(
     const parentCodeLength = parentCode.length;
     let lastChildSuffix = lastChild.code.substring(parentCodeLength);
 
-    // اگه پیشوند داشت (مثل 'س-')، حذفش کن
     if (lastChildSuffix.includes("-")) {
       lastChildSuffix = lastChildSuffix.split("-").pop();
     }
@@ -69,17 +72,158 @@ export async function generateNextCode(
 
   const paddedNumber = nextNumber.toString().padStart(digit_count, "0");
 
-  // ✅ اصلاح: پیشوند فقط اگه parentCode خالی باشه (سطح ۰)
   let newCode;
   if (parentCode) {
-    // زیرشاخه: کد والد (که از قبل پیشوند داره) + عدد جدید
     newCode = parentCode + paddedNumber;
   } else {
-    // سطح ۰: پیشوند + عدد
     newCode = prefix ? `${prefix}-${paddedNumber}` : paddedNumber;
   }
 
   return newCode;
+}
+
+/**
+ * کد خودکار برای بخش عملیاتی (operational)
+ * قوانین:
+ *   - مأموریت (سطح ۰): 001, 002, ...
+ *   - برنامه (سطح ۱، زیر مأموریت): والد + 001, 002, ...
+ *   - خدمت (سطح ۲، زیر برنامه): والد + 00001, 00002, ... (تا 49999)
+ *   - طرح (سطح ۲، زیر برنامه): والد + 50000, 50001, ... (تا 99999)
+ *   - فعالیت (سطح ۳، زیر خدمت): والد + 001, 002, ...
+ *   - پروژه (سطح ۳، زیر طرح): والد + 001, 002, ...
+ */
+async function generateOperationalCode(env, { type, parent_id }) {
+  // ۱. سطح ۰: مأموریت (بدون والد)
+  if (!parent_id) {
+    const last = await env.DB.prepare(
+      `SELECT code FROM base_data 
+             WHERE section = 'operational' AND parent_id IS NULL AND type = 'mission'
+             ORDER BY code DESC LIMIT 1`
+    ).first();
+
+    const nextNum = last
+      ? parseInt(last.code.substring(last.code.length - 3), 10) + 1
+      : 1;
+
+    return nextNum.toString().padStart(3, "0");
+  }
+
+  // ۲. والد رو بگیر
+  const parent = await env.DB.prepare(
+    "SELECT code, type FROM base_data WHERE id = ?"
+  )
+    .bind(parent_id)
+    .first();
+
+  if (!parent) {
+    throw new Error("والد یافت نشد");
+  }
+
+  const parentCode = parent.code;
+
+  // ۳. زیر برنامه: خدمت یا طرح
+  if (parent.type === "program") {
+    if (type === "service") {
+      // خدمت: از 00001
+      const last = await env.DB.prepare(
+        `SELECT code FROM base_data 
+                 WHERE parent_id = ? AND type = 'service'
+                 ORDER BY code DESC LIMIT 1`
+      )
+        .bind(parent_id)
+        .first();
+
+      const nextNum = last
+        ? parseInt(last.code.substring(parentCode.length), 10) + 1
+        : 1;
+
+      return parentCode + nextNum.toString().padStart(5, "0");
+    }
+
+    if (type === "plan") {
+      // طرح: از 50000
+      const last = await env.DB.prepare(
+        `SELECT code FROM base_data 
+                 WHERE parent_id = ? AND type = 'plan'
+                 ORDER BY code DESC LIMIT 1`
+      )
+        .bind(parent_id)
+        .first();
+
+      const nextNum = last
+        ? parseInt(last.code.substring(parentCode.length), 10) + 1
+        : 50000;
+
+      return parentCode + nextNum.toString().padStart(5, "0");
+    }
+
+    throw new Error("زیر برنامه فقط خدمت یا طرح مجاز است");
+  }
+
+  // ۴. زیر خدمت: فعالیت
+  if (parent.type === "service") {
+    if (type !== "activity") {
+      throw new Error("زیر خدمت فقط فعالیت مجاز است");
+    }
+
+    const last = await env.DB.prepare(
+      `SELECT code FROM base_data 
+             WHERE parent_id = ? AND type = 'activity'
+             ORDER BY code DESC LIMIT 1`
+    )
+      .bind(parent_id)
+      .first();
+
+    const nextNum = last
+      ? parseInt(last.code.substring(parentCode.length), 10) + 1
+      : 1;
+
+    return parentCode + nextNum.toString().padStart(3, "0");
+  }
+
+  // ۵. زیر طرح: پروژه
+  if (parent.type === "plan") {
+    if (type !== "project") {
+      throw new Error("زیر طرح فقط پروژه مجاز است");
+    }
+
+    const last = await env.DB.prepare(
+      `SELECT code FROM base_data 
+             WHERE parent_id = ? AND type = 'project'
+             ORDER BY code DESC LIMIT 1`
+    )
+      .bind(parent_id)
+      .first();
+
+    const nextNum = last
+      ? parseInt(last.code.substring(parentCode.length), 10) + 1
+      : 1;
+
+    return parentCode + nextNum.toString().padStart(3, "0");
+  }
+
+  // ۶. زیر مأموریت: برنامه
+  if (parent.type === "mission") {
+    if (type !== "program") {
+      throw new Error("زیر مأموریت فقط برنامه مجاز است");
+    }
+
+    const last = await env.DB.prepare(
+      `SELECT code FROM base_data 
+             WHERE parent_id = ? AND type = 'program'
+             ORDER BY code DESC LIMIT 1`
+    )
+      .bind(parent_id)
+      .first();
+
+    const nextNum = last
+      ? parseInt(last.code.substring(parentCode.length), 10) + 1
+      : 1;
+
+    return parentCode + nextNum.toString().padStart(3, "0");
+  }
+
+  throw new Error("نوع والد نامعتبر برای عملیاتی");
 }
 
 /**

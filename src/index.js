@@ -2969,7 +2969,8 @@ export default {
         "/sidebar.css",
         "/footer.js",
         "/Logo.png",
-        "/strategic-plan.html"
+        "/strategic-plan.html",
+        "/operational-classifications.html"
       ];
 
       if (staticPaths.includes(url.pathname)) {
