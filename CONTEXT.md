@@ -2,7 +2,7 @@
 
 ## تاریخ آخرین آپدیت: 1405/06/31
 
-## وضعیت: بخش ۵ (حسابداری) تکمیل شد ✅
+## وضعیت: بخش ۴ (نوع اعتبار و مصرف) تکمیل شد ✅
 
 ## کارهای انجام شده:
 - [x] فاز ۰ تا ۱۷
@@ -10,22 +10,25 @@
 - [x] بازطراحی بخش ۲ (طبقه‌بندی سازمانی)
 - [x] بازطراحی بخش ۴ (طبقه‌بندی اقتصادی)
 - [x] بخش ۳: برنامه راهبردی
-- [x] بخش ۴: طبقه‌بندی عملیاتی (مأموریت → برنامه → خدمت/طرح → فعالیت/پروژه)
-- [x] **بخش ۵: حسابداری (دارایی‌ها، بدهی‌ها، سرمایه، عملکرد، انبارداری)**
+- [x] بخش ۴: طبقه‌بندی عملیاتی
+- [x] بخش ۴: نوع اعتبار + نوع مصرف (صفحه `budget-types.html`)
+- [x] بخش ۵: حسابداری
 - [x] جدول `base_data` + API کامل + UI درختی/جدولی
 - [x] آپدیت `budget_proposals` با FK به `base_data`
 - [x] Footer مشترک
 - [x] باگ‌فیکس `currentParentId`
+- [x] **اصلاح ایندکس یکتا برای احتساب `type` (migration 018)**
 
 ## صفحات موجود:
 - /login.html
 - /dashboard.html
 - /fiscal-years.html
-- /economic-classifications.html (درختی + تب)
-- /organizations.html (درختی)
-- /strategic-plan.html (درختی)
-- /operational-classifications.html (درختی)
-- /accounting.html (درختی)
+- /economic-classifications.html
+- /organizations.html
+- /strategic-plan.html
+- /operational-classifications.html
+- /accounting.html
+- /budget-types.html
 - /budget-proposals.html
 - /reports.html
 - /allocations.html
@@ -45,15 +48,17 @@
 - admin, manager, expert, viewer, province, ministry
 
 ## کارهای بعدی:
-- [ ] بخش ۴ (ادامه): تعریف نوع اعتبار
-- [ ] بخش ۴ (ادامه): تعریف نوع مصرف
-- [ ] بخش ۶: کالا و خدمات
-- [ ] بخش ۷: اشخاص
+- [ ] بخش ۶: کالا و خدمات (کدینگ کالا، فهرست بها، استهلاک، احکام حقوقی)
+- [ ] بخش ۷: اشخاص (کارکنان، حقیقی، حقوقی، تفصیلی شناور)
+- [ ] اتصال نوع اعتبار و نوع مصرف به `budget-proposals.html`
+- [ ] تدوین و تصویب بودجه
+- [ ] تدوین و تصویب اصلاح/متمم بودجه
+- [ ] تدوین و تصویب تفریغ بودجه
 
 ## ساختار `base_data`:
-- `section`: 'organization', 'economic', 'strategic', 'operational', 'accounting', 'goods', 'persons'
-- `type`: 'resource', 'expense', 'strategic', 'mission', 'program', 'service', 'plan', 'activity', 'project', 'asset', 'liability', 'equity', 'performance', 'warehouse', 'accounting', 'general', ...
-- `prefix`: 'س' سازمانی، 'ر' راهبردی، 'ح' حسابداری، NULL برای اقتصادی و عملیاتی
+- `section`: 'organization', 'economic', 'strategic', 'operational', 'accounting', 'budget_type', 'goods', 'persons'
+- `type`: 'resource', 'expense', 'strategic', 'mission', 'program', 'service', 'plan', 'activity', 'project', 'asset', 'liability', 'equity', 'performance', 'warehouse', 'accounting', 'credit', 'usage', 'general', ...
+- `prefix`: 'س' سازمانی، 'ر' راهبردی، 'ح' حسابداری، NULL برای اقتصادی، عملیاتی، بودجه‌ای
 - `code`: کد کامل
 - `digit_count`: 2 تا 20 (پیش‌فرض 3)
 - `level`, `level_name`, `parent_id`
@@ -63,51 +68,17 @@
 ## قوانین کدینگ:
 - هر بخش یک سرکد دارد؛ زیرکدها به کد مادر اضافه می‌شن
 - حرف پیشوند برای همه بخش‌ها (به‌جز بخش ۴):
-  - `س` سازمانی
-  - `ر` راهبردی
-  - `ح` حسابداری
+  - `س` سازمانی، `ر` راهبردی، `ح` حسابداری
 - **بخش ۴ (بودجه):**
   - **اقتصادی:** منابع از `1`، مصارف از `2`
   - **عملیاتی:**
-    - مأموریت: `001`
-    - برنامه: `001001`
-    - خدمت: والد + `00001` (تا `49999`)
-    - طرح: والد + `50000` (تا `99999`)
-    - فعالیت: والد + `001`
-    - پروژه: والد + `001`
-    - **سلسله‌مراتب:** مأموریت ← برنامه ← (خدمت/طرح) ← (فعالیت/پروژه)
-    - **محدودیت:** فعالیت فقط زیر خدمت، پروژه فقط زیر طرح
-- **حسابداری:** `ح-001`, `ح-001001`, `ح-001001001`, ...
-  - سطوح: `گروه`, `سرفصل`, `کل`, `معین`, `تفصیلی`
+    - مأموریت: `001` → برنامه: `001001` → خدمت: `00100100001` (تا `49999`) یا طرح: `00100150000` (تا `99999`) → فعالیت/پروژه: والد + `001`
+    - محدودیت: فعالیت فقط زیر خدمت، پروژه فقط زیر طرح
+  - **نوع اعتبار:** `credit` → `001`, `002`, `003`
+  - **نوع مصرف:** `usage` → `001`, `002`
+  - **نکته:** چون هر دو `credit` و `usage` از `001` شروع می‌شن، ایندکس یکتا `type` رو هم حساب می‌کنه
 
-## مشکلات حل شده:
-- ✅ ویرایش سال مالی
-- ✅ حذف/غیرفعال کاربر
-- ✅ فونت و اعداد نمودارها
-- ✅ اعداد فارسی در URL
-- ✅ ریدایرکت بعد از لاگین
-- ✅ باگ پیشوند تکراری در `generateNextCode`
-- ✅ اتصال `budget_proposals` به `base_data`
-- ✅ Footer مشترک
-- ✅ `currentParentId`
-- ✅ کدینگ اختصاصی عملیاتی
-
-## یادداشت‌ها:
-- Deploy: `wrangler deploy`
-- Push: `git push origin main`
-- Migration remote: `wrangler d1 execute budget-db --file=... --remote`
-- Migration local: بدون `--remote`
-- Tail: `wrangler tail`
-- جداول قدیمی با `_old` suffix
-- `toShamsi()` در `src/date.js`
-- `generateNextCode()` + `generateOperationalCode()` در `src/base-data.js`
-- Footer: `public/footer.js` + `public/Logo.png`
-- Breadcrumb: `pathMap` در `sidebar.js`
-- Context menu در `operational-classifications.html` داینامیکه
-- **Migrations مهم:**
-  - `014a_create_base_data.sql` (ساخت جدول)
-  - `014b_seed_base_data.sql` (seed اقتصادی)
-  - `014c_seed_organization.sql` (seed سازمانی)
-  - `015_budget_refactor.sql` (budget tables refactor)
-  - `015b_related_tables.sql` (budget_approval_logs + council_resolutions)
-  - `016_accounting_seed.sql` (seed حسابداری)
+## ایندکس یکتا:
+```sql
+CREATE UNIQUE INDEX idx_base_data_unique_code 
+ON base_data(section, COALESCE(fiscal_year_id, 0), COALESCE(type, ''), code);
