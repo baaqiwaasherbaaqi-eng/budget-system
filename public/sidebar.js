@@ -428,6 +428,7 @@ function renderBreadcrumb() {
     },
     '/accounting.html': { icon: '📒', title: 'حسابداری', parent: '/base-info.html' },
     '/operational-classifications.html': { icon: '📊', title: 'طبقه‌بندی عملیاتی', parent: '/base-info.html' },
+    '/budget-types.html': { icon: '🏷️', title: 'نوع اعتبار و مصرف', parent: '/base-info.html' },
   };
   
   const current = pathMap[currentPath];

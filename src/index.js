@@ -2970,7 +2970,7 @@ export default {
         "/footer.js",
         "/Logo.png",
         "/strategic-plan.html",
-        "/operational-classifications.html", '/accounting.html'
+        "/operational-classifications.html", '/accounting.html', '/budget-types.html'
       ];
 
       if (staticPaths.includes(url.pathname)) {
