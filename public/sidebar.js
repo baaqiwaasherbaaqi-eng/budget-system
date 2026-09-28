@@ -426,6 +426,8 @@ function renderBreadcrumb() {
       title: "لاگ سیستم",
       parent: "/dashboard.html",
     },
+    '/accounting.html': { icon: '📒', title: 'حسابداری', parent: '/base-info.html' },
+    '/operational-classifications.html': { icon: '📊', title: 'طبقه‌بندی عملیاتی', parent: '/base-info.html' },
   };
   
   const current = pathMap[currentPath];
