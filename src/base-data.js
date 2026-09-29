@@ -16,6 +16,11 @@ export async function generateNextCode(
     return generateOperationalCode(env, { type, parent_id });
   }
 
+  // ✅ بخش کالا و خدمات (goods)
+  if (section === "goods") {
+    return generateGoodsCode(env, { parent_id, digit_count });
+  }
+
   // برای بقیه بخش‌ها، منطق معمولی
   let parentCode = "";
 
@@ -297,4 +302,51 @@ export async function logBaseDataAction(
   } catch (error) {
     console.error("Audit log error:", error);
   }
+}
+
+/**
+ * کد خودکار برای بخش کالا و خدمات (goods)
+ * قوانین:
+ *   - سطح ۱ (گروه اصلی): 1, 2, 3, ... (بدون پیشوند)
+ *   - سطح ۲+ (گروه فرعی و پایین‌تر): کد والد + 3 رقم جدید
+ */
+async function generateGoodsCode(env, { parent_id, digit_count = 3 }) {
+  // سطح ۱
+  if (!parent_id) {
+    const last = await env.DB.prepare(
+      `SELECT code FROM base_data 
+       WHERE section = 'goods' AND parent_id IS NULL
+       ORDER BY CAST(code AS INTEGER) DESC LIMIT 1`
+    ).first();
+    const nextNum = last ? parseInt(last.code, 10) + 1 : 1;
+    return nextNum.toString();
+  }
+
+  // سطح ۲+
+  const parent = await env.DB.prepare(
+    "SELECT code, level FROM base_data WHERE id = ?"
+  ).bind(parent_id).first();
+
+  if (!parent) throw new Error("والد یافت نشد");
+
+  const parentCode = parent.code;
+  const parentLevel = parent.level;
+
+  // تعداد رقم برای سطح جدید = سطح + 1
+  // سطح ۱: 1 رقم، سطح ۲: 2 رقم، سطح ۳: 3 رقم
+  const childDigitCount = parentLevel + 1;
+
+  const last = await env.DB.prepare(
+    `SELECT code FROM base_data 
+     WHERE parent_id = ? 
+     ORDER BY code DESC LIMIT 1`
+  ).bind(parent_id).first();
+
+  let nextNum = 1;
+  if (last) {
+    const suffix = last.code.substring(parentCode.length);
+    nextNum = parseInt(suffix, 10) + 1;
+  }
+
+  return parentCode + nextNum.toString().padStart(childDigitCount, "0");
 }

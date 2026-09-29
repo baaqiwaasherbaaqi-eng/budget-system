@@ -278,11 +278,12 @@ function renderBreadcrumb() {
       title: "تفریغ بودجه",
       parent: "/dashboard.html",
     },
-    "/audit-log.html": {
-      icon: "📜",
-      title: "لاگ سیستم",
-      parent: "/dashboard.html",
-    },
+"/goods.html": {
+  icon: "📦",
+  title: "کالا و خدمات",
+  parent: "/base-info.html",
+},
+  
   };
   
   const current = pathMap[currentPath];
@@ -429,6 +430,7 @@ function renderBreadcrumb() {
     '/accounting.html': { icon: '📒', title: 'حسابداری', parent: '/base-info.html' },
     '/operational-classifications.html': { icon: '📊', title: 'طبقه‌بندی عملیاتی', parent: '/base-info.html' },
     '/budget-types.html': { icon: '🏷️', title: 'نوع اعتبار و مصرف', parent: '/base-info.html' },
+    '/goods.html': { icon: '📦', title: 'کالا و خدمات', parent: '/base-info.html' },
   };
   
   const current = pathMap[currentPath];
