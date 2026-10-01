@@ -2716,7 +2716,7 @@ export default {
         const token = authHeader.replace("Bearer ", "");
         const userData = await verifyToken(token, env.JWT_SECRET);
 
-        if (!userData || userData.role !== "admin") {
+        if (!userData || !["admin", "manager"].includes(userData.role)) {
           return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
             status: 403,
             headers,
