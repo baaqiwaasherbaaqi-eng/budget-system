@@ -325,7 +325,9 @@ async function generateGoodsCode(env, { parent_id, digit_count = 3 }) {
   // سطح ۲+
   const parent = await env.DB.prepare(
     "SELECT code, level FROM base_data WHERE id = ?"
-  ).bind(parent_id).first();
+  )
+    .bind(parent_id)
+    .first();
 
   if (!parent) throw new Error("والد یافت نشد");
 
@@ -340,7 +342,9 @@ async function generateGoodsCode(env, { parent_id, digit_count = 3 }) {
     `SELECT code FROM base_data 
      WHERE parent_id = ? 
      ORDER BY code DESC LIMIT 1`
-  ).bind(parent_id).first();
+  )
+    .bind(parent_id)
+    .first();
 
   let nextNum = 1;
   if (last) {
@@ -349,4 +353,106 @@ async function generateGoodsCode(env, { parent_id, digit_count = 3 }) {
   }
 
   return parentCode + nextNum.toString().padStart(childDigitCount, "0");
+}
+
+
+
+/**
+ * کد خودکار برای اشخاص (persons)
+ * ساختار ۱۰ رقمی: [۱ رقم گروه][۳ رقم زیرگروه][۳ رقم دسته][۳ رقم شخص]
+ * 
+ * مثال:
+ *   1000000000  ← کارکنان (گروه اصلی)
+ *   1001000000  ← رسمی (زیرگروه)
+ *   1001001000  ← دسته (سطح ۳)
+ *   1001001001  ← شخص (سطح ۴)
+ */
+export async function generatePersonCode(env, { person_type, parent_id }) {
+  // ============================================
+  // سطح ۱: بدون والد
+  // ============================================
+  if (!parent_id) {
+    const last = await env.DB.prepare(
+      `SELECT code FROM persons 
+       WHERE parent_id IS NULL 
+       ORDER BY CAST(code AS INTEGER) DESC LIMIT 1`
+    ).first();
+
+    const nextNum = last ? parseInt(last.code.substring(0, 1), 10) + 1 : 1;
+    if (nextNum > 9) {
+      throw new Error("حداکثر ۹ گروه اصلی مجاز است");
+    }
+    return nextNum.toString() + "000000000";
+  }
+
+  // ============================================
+  // سطح ۲+
+  // ============================================
+  const parent = await env.DB.prepare(
+    "SELECT code, level FROM persons WHERE id = ?"
+  ).bind(parent_id).first();
+
+  if (!parent) {
+    throw new Error("والد یافت نشد");
+  }
+
+  const parentCode = parent.code;
+  const level = parent.level;
+
+  // آخرین فرزند والد
+  const last = await env.DB.prepare(
+    `SELECT code FROM persons 
+     WHERE parent_id = ? 
+     ORDER BY code DESC LIMIT 1`
+  ).bind(parent_id).first();
+
+  // ============================================
+  // سطح ۲: 1 001 000 000 → X YYY 000 000
+  // ============================================
+  if (level === 1) {
+    const prefix = parentCode.substring(0, 1); // X
+    const lastSuffix = last ? parseInt(last.code.substring(1, 4), 10) : 0;
+    const nextNum = lastSuffix + 1;
+
+    if (nextNum > 999) {
+      throw new Error("حداکثر ۹۹۹ زیرگروه برای هر گروه اصلی مجاز است");
+    }
+
+    return prefix + nextNum.toString().padStart(3, "0") + "000000";
+  }
+
+  // ============================================
+  // سطح ۳: X YYY ZZZ 000 (۳ رقم جدید در موقعیت ۴-۶)
+  // ============================================
+  if (level === 2) {
+    // parentCode: 1 001 000 000
+    const prefix = parentCode.substring(0, 4); // 1 001
+    const lastSuffix = last ? parseInt(last.code.substring(4, 7), 10) : 0;
+    const nextNum = lastSuffix + 1;
+
+    if (nextNum > 999) {
+      throw new Error("حداکثر ۹۹۹ دسته برای هر زیرگروه مجاز است");
+    }
+
+    return prefix + nextNum.toString().padStart(3, "0") + "000";
+  }
+
+  // ============================================
+  // سطح ۴+: X YYY ZZZ WWW (۳ رقم آخر)
+  // ============================================
+  if (level === 3) {
+    // parentCode: 1 001 001 000
+    const prefix = parentCode.substring(0, 7); // 1 001 001
+    const lastSuffix = last ? parseInt(last.code.substring(7, 10), 10) : 0;
+    const nextNum = lastSuffix + 1;
+
+    if (nextNum > 999) {
+      throw new Error("حداکثر ۹۹۹ شخص برای هر دسته مجاز است");
+    }
+
+    return prefix + nextNum.toString().padStart(3, "0");
+  }
+
+  // سطح ۵+ پشتیبانی نمی‌شود
+  throw new Error("حداکثر عمق مجاز ۴ سطح است");
 }

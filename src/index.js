@@ -7,6 +7,7 @@ import {
 
 import { toShamsi } from "./date.js";
 import { generateNextCode, buildTree, logBaseDataAction } from "./base-data.js";
+import { generatePersonCode } from "./base-data.js";
 
 // تبدیل اعداد فارسی به انگلیسی
 function toEnglishNumbers(str) {
@@ -342,6 +343,431 @@ export default {
         }
       }
 
+      // ========== اشخاص (Persons) ==========
+
+      // GET: لیست اشخاص
+      if (url.pathname === "/api/persons" && request.method === "GET") {
+        const personType = url.searchParams.get("person_type");
+        const parentId = url.searchParams.get("parent_id");
+        const isActive = url.searchParams.get("is_active");
+
+        let query = "SELECT * FROM persons WHERE 1=1";
+        const params = [];
+
+        if (personType) {
+          query += " AND person_type = ?";
+          params.push(personType);
+        }
+        if (parentId === "null") {
+          query += " AND parent_id IS NULL";
+        } else if (parentId) {
+          query += " AND parent_id = ?";
+          params.push(parentId);
+        }
+        if (isActive !== null && isActive !== undefined && isActive !== "") {
+          query += " AND is_active = ?";
+          params.push(isActive === "1" || isActive === "true" ? 1 : 0);
+        }
+
+        query += " ORDER BY code";
+
+        const items = await env.DB.prepare(query)
+          .bind(...params)
+          .all();
+
+        return new Response(JSON.stringify(items.results), {
+          status: 200,
+          headers,
+        });
+      }
+
+      // GET: درخت اشخاص
+      if (url.pathname === "/api/persons/tree" && request.method === "GET") {
+        const personType = url.searchParams.get("person_type");
+
+        let query = "SELECT * FROM persons WHERE is_active = 1";
+        const params = [];
+
+        if (personType) {
+          query += " AND person_type = ?";
+          params.push(personType);
+        }
+
+        query += " ORDER BY code";
+
+        const items = await env.DB.prepare(query)
+          .bind(...params)
+          .all();
+        const tree = buildTree(items.results);
+
+        return new Response(JSON.stringify(tree), {
+          status: 200,
+          headers,
+        });
+      }
+
+      // GET: کد بعدی
+      if (
+        url.pathname === "/api/persons/next-code" &&
+        request.method === "GET"
+      ) {
+        try {
+          const personType = url.searchParams.get("person_type");
+          const parentId = url.searchParams.get("parent_id");
+
+          const nextCode = await generatePersonCode(env, {
+            person_type: personType,
+            parent_id: parentId ? parseInt(parentId) : null,
+          });
+
+          return new Response(JSON.stringify({ next_code: nextCode }), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 400,
+            headers,
+          });
+        }
+      }
+
+      // POST: افزودن شخص
+      if (url.pathname === "/api/persons" && request.method === "POST") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const body = await request.json();
+          const {
+            person_type,
+            full_name,
+            national_id,
+            economic_code,
+            registration_number,
+            father_name,
+            id_number,
+            birth_date_shamsi,
+            phone,
+            mobile,
+            address,
+            postal_code,
+            email,
+            employee_code,
+            employment_type,
+            position,
+            hire_date_shamsi,
+            end_date_shamsi,
+            bank_name,
+            bank_account,
+            iban,
+            parent_id,
+            level_name,
+            notes,
+            extra_data,
+          } = body;
+
+          if (!person_type || !full_name) {
+            return new Response(
+              JSON.stringify({ error: "نوع شخص و نام کامل الزامی است" }),
+              { status: 400, headers }
+            );
+          }
+
+          const code = await generatePersonCode(env, {
+            person_type,
+            parent_id: parent_id || null,
+          });
+
+          let level = 1;
+          if (parent_id) {
+            const parent = await env.DB.prepare(
+              "SELECT level FROM persons WHERE id = ?"
+            )
+              .bind(parent_id)
+              .first();
+            if (parent) level = parent.level + 1;
+          }
+
+          const nowShamsi = toShamsi(new Date());
+
+          const result = await env.DB.prepare(
+            `INSERT INTO persons 
+            (person_type, code, parent_id, level, level_name, full_name, 
+             national_id, economic_code, registration_number, father_name, id_number, birth_date_shamsi,
+             phone, mobile, address, postal_code, email,
+             employee_code, employment_type, position, hire_date_shamsi, end_date_shamsi,
+             bank_name, bank_account, iban,
+             notes, extra_data, created_at_shamsi, updated_at_shamsi)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          )
+            .bind(
+              person_type,
+              code,
+              parent_id || null,
+              level,
+              level_name || null,
+              full_name,
+              national_id || null,
+              economic_code || null,
+              registration_number || null,
+              father_name || null,
+              id_number || null,
+              birth_date_shamsi || null,
+              phone || null,
+              mobile || null,
+              address || null,
+              postal_code || null,
+              email || null,
+              employee_code || null,
+              employment_type || null,
+              position || null,
+              hire_date_shamsi || null,
+              end_date_shamsi || null,
+              bank_name || null,
+              bank_account || null,
+              iban || null,
+              notes || null,
+              extra_data ? JSON.stringify(extra_data) : null,
+              nowShamsi,
+              nowShamsi
+            )
+            .run();
+
+          return new Response(
+            JSON.stringify({
+              success: true,
+              id: result.meta.last_row_id,
+              code: code,
+            }),
+            { status: 201, headers }
+          );
+        } catch (error) {
+          console.error("Person POST error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // PUT: ویرایش شخص
+      if (
+        url.pathname.match(/^\/api\/persons\/\d+$/) &&
+        request.method === "PUT"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const id = url.pathname.split("/").pop();
+          const body = await request.json();
+
+          const {
+            full_name,
+            national_id,
+            economic_code,
+            registration_number,
+            father_name,
+            id_number,
+            birth_date_shamsi,
+            phone,
+            mobile,
+            address,
+            postal_code,
+            email,
+            employee_code,
+            employment_type,
+            position,
+            hire_date_shamsi,
+            end_date_shamsi,
+            bank_name,
+            bank_account,
+            iban,
+            notes,
+            extra_data,
+            is_active,
+            level_name,
+          } = body;
+
+          if (!full_name) {
+            return new Response(
+              JSON.stringify({ error: "نام کامل الزامی است" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          const nowShamsi = toShamsi(new Date());
+
+          const result = await env.DB.prepare(
+            `UPDATE persons SET
+              full_name = ?, national_id = ?, economic_code = ?, registration_number = ?,
+              father_name = ?, id_number = ?, birth_date_shamsi = ?,
+              phone = ?, mobile = ?, address = ?, postal_code = ?, email = ?,
+              employee_code = ?, employment_type = ?, position = ?, hire_date_shamsi = ?, end_date_shamsi = ?,
+              bank_name = ?, bank_account = ?, iban = ?,
+              notes = ?, extra_data = ?, is_active = ?, level_name = ?,
+              updated_at = CURRENT_TIMESTAMP, updated_at_shamsi = ?
+            WHERE id = ?`
+          )
+            .bind(
+              full_name,
+              national_id || null,
+              economic_code || null,
+              registration_number || null,
+              father_name || null,
+              id_number || null,
+              birth_date_shamsi || null,
+              phone || null,
+              mobile || null,
+              address || null,
+              postal_code || null,
+              email || null,
+              employee_code || null,
+              employment_type || null,
+              position || null,
+              hire_date_shamsi || null,
+              end_date_shamsi || null,
+              bank_name || null,
+              bank_account || null,
+              iban || null,
+              notes || null,
+              extra_data ? JSON.stringify(extra_data) : null,
+              is_active !== undefined ? (is_active ? 1 : 0) : 1,
+              level_name || null,
+              nowShamsi,
+              id
+            )
+            .run();
+
+          if (result.meta.changes === 0) {
+            return new Response(JSON.stringify({ error: "شخص یافت نشد" }), {
+              status: 404,
+              headers,
+            });
+          }
+
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // DELETE: حذف شخص
+      if (
+        url.pathname.match(/^\/api\/persons\/\d+$/) &&
+        request.method === "DELETE"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const id = url.pathname.split("/").pop();
+
+          // چک فرزندان
+          const children = await env.DB.prepare(
+            "SELECT COUNT(*) as count FROM persons WHERE parent_id = ?"
+          )
+            .bind(id)
+            .first();
+
+          if (children.count > 0) {
+            return new Response(
+              JSON.stringify({
+                error: `این شخص ${children.count} زیرمجموعه دارد. ابتدا آن‌ها را حذف کنید.`,
+              }),
+              { status: 400, headers }
+            );
+          }
+
+          const result = await env.DB.prepare(
+            "DELETE FROM persons WHERE id = ?"
+          )
+            .bind(id)
+            .run();
+
+          if (result.meta.changes === 0) {
+            return new Response(JSON.stringify({ error: "شخص یافت نشد" }), {
+              status: 404,
+              headers,
+            });
+          }
+
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
       // ========== طبقه‌بندی اقتصادی ==========
 
       // دریافت لیست طبقه‌بندی‌ها (از base_data)
@@ -352,7 +778,8 @@ export default {
         const fiscalYearId = url.searchParams.get("fiscal_year_id");
         const type = url.searchParams.get("type");
 
-        let query = "SELECT * FROM base_data WHERE section = 'economic' AND is_active = 1";
+        let query =
+          "SELECT * FROM base_data WHERE section = 'economic' AND is_active = 1";
         const params = [];
 
         if (fiscalYearId) {
@@ -472,7 +899,8 @@ export default {
       if (url.pathname === "/api/organizations" && request.method === "GET") {
         const fiscalYearId = url.searchParams.get("fiscal_year_id");
 
-        let query = "SELECT * FROM base_data WHERE section = 'organization' AND is_active = 1";
+        let query =
+          "SELECT * FROM base_data WHERE section = 'organization' AND is_active = 1";
         const params = [];
 
         if (fiscalYearId) {
@@ -669,7 +1097,9 @@ export default {
 
         if (!econ) {
           return new Response(
-            JSON.stringify({ error: "طبقه‌بندی اقتصادی انتخاب شده معتبر نیست" }),
+            JSON.stringify({
+              error: "طبقه‌بندی اقتصادی انتخاب شده معتبر نیست",
+            }),
             { status: 400, headers }
           );
         }
@@ -2970,7 +3400,11 @@ export default {
         "/footer.js",
         "/Logo.png",
         "/strategic-plan.html",
-        "/operational-classifications.html", '/accounting.html', '/budget-types.html', '/goods.html'
+        "/operational-classifications.html",
+        "/accounting.html",
+        "/budget-types.html",
+        "/goods.html",
+        "/persons.html",
       ];
 
       if (staticPaths.includes(url.pathname)) {

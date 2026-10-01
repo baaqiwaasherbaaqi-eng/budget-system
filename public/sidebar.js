@@ -278,12 +278,16 @@ function renderBreadcrumb() {
       title: "تفریغ بودجه",
       parent: "/dashboard.html",
     },
-"/goods.html": {
-  icon: "📦",
-  title: "کالا و خدمات",
-  parent: "/base-info.html",
-},
-  
+    "/goods.html": {
+      icon: "📦",
+      title: "کالا و خدمات",
+      parent: "/base-info.html",
+    },
+    "/persons.html": {
+      icon: "👥",
+      title: "اشخاص",
+      parent: "/base-info.html",
+    },
   };
   
   const current = pathMap[currentPath];
@@ -427,10 +431,31 @@ function renderBreadcrumb() {
       title: "لاگ سیستم",
       parent: "/dashboard.html",
     },
-    '/accounting.html': { icon: '📒', title: 'حسابداری', parent: '/base-info.html' },
-    '/operational-classifications.html': { icon: '📊', title: 'طبقه‌بندی عملیاتی', parent: '/base-info.html' },
-    '/budget-types.html': { icon: '🏷️', title: 'نوع اعتبار و مصرف', parent: '/base-info.html' },
-    '/goods.html': { icon: '📦', title: 'کالا و خدمات', parent: '/base-info.html' },
+    "/accounting.html": {
+      icon: "📒",
+      title: "حسابداری",
+      parent: "/base-info.html",
+    },
+    "/operational-classifications.html": {
+      icon: "📊",
+      title: "طبقه‌بندی عملیاتی",
+      parent: "/base-info.html",
+    },
+    "/budget-types.html": {
+      icon: "🏷️",
+      title: "نوع اعتبار و مصرف",
+      parent: "/base-info.html",
+    },
+    "/goods.html": {
+      icon: "📦",
+      title: "کالا و خدمات",
+      parent: "/base-info.html",
+    },
+    "/persons.html": {
+      icon: "👥",
+      title: "اشخاص",
+      parent: "/base-info.html",
+    },
   };
   
   const current = pathMap[currentPath];
@@ -507,4 +532,17 @@ window.addEventListener('load', function() {
         script.src = '/footer.js';
         document.head.appendChild(script);
     }
+})();
+
+// ============================================
+// tree styler
+// ============================================
+(function () {
+  if (!document.getElementById("tree-styles")) {
+    const link = document.createElement("link");
+    link.id = "tree-styles";
+    link.rel = "stylesheet";
+    link.href = "/tree.css";
+    document.head.appendChild(link);
+  }
 })();

@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اشخاص</title>
+    <link rel="stylesheet" href="/sidebar.css">
+    <script src="/sidebar.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/persian-date@1.1.0/dist/persian-date.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 { margin: 0; font-size: 20px; }
+
+        /* ============ Tabs ============ */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: white;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            color: #666;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab:hover { background: #f8f9fa; }
+
+        .tab.active.tab-employee {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .tab.active.tab-natural {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .tab.active.tab-legal {
+            background: linear-gradient(135deg, #6f42c1 0%, #a855f7 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
+        }
+
+        .tab.active.tab-floating {
+            background: linear-gradient(135deg, #fd7e14 0%, #ffc107 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(253, 126, 20, 0.3);
+        }
+
+        /* ============ Toolbar ============ */
+        .toolbar {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .view-switch {
+            display: flex;
+            background: #f0f2f5;
+            border-radius: 8px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .view-switch button {
+            background: transparent;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 13px;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .view-switch button.active {
+            background: white;
+            color: #667eea;
+            font-weight: bold;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .add-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+
+        .add-btn:hover { background: #218838; }
+
+        /* ============ Tree / Table ============ */
+        .tree-container, .table-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            min-height: 400px;
+        }
+
+        .tree-node {
+            padding: 10px 14px;
+            margin: 3px 0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.15s;
+            user-select: none;
+            background: #f8f9fa;
+            border-right: 4px solid #667eea;
+        }
+
+        .tree-node:hover { background: #eef1ff; }
+        .tree-node.selected { background: #eef1ff; outline: 2px solid #667eea; }
+
+        .tree-node .toggle {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #666;
+            flex-shrink: 0;
+        }
+
+        .tree-node .toggle.empty { visibility: hidden; }
+
+        .tree-node .icon { margin-left: 8px; font-size: 16px; flex-shrink: 0; }
+
+        .tree-node .title { flex: 1; font-size: 14px; color: #333; font-weight: bold; }
+
+        .tree-node .code {
+            font-family: monospace;
+            font-size: 12px;
+            color: #667eea;
+            background: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            margin-left: 10px;
+        }
+
+        .tree-node .menu-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: #999;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+
+        .tree-node .menu-btn:hover { background: #e9ecef; color: #333; }
+
+        .tree-children {
+            margin-right: 20px;
+            border-right: 2px dashed #e0e0e0;
+            padding-right: 10px;
+        }
+
+        .table-container table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .table-container th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: right;
+            font-weight: bold;
+            border-bottom: 2px solid #e0e0e0;
+            color: #333;
+        }
+
+        .table-container td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            text-align: right;
+        }
+
+        .table-container tr:hover { background: #fafafa; }
+
+        .code-cell {
+            font-family: monospace;
+            font-size: 12px;
+            color: #667eea;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            background: #e9ecef;
+            color: #555;
+        }
+
+        /* ============ Context Menu ============ */
+        .context-menu {
+            position: fixed;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 6px;
+            z-index: 10000;
+            min-width: 200px;
+            display: none;
+            animation: fadeIn 0.15s;
+        }
+
+        .context-menu.open { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .context-menu button {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 10px 14px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 13px;
+            color: #333;
+            text-align: right;
+            transition: background 0.15s;
+            gap: 10px;
+        }
+
+        .context-menu button:hover { background: #f0f2f5; }
+        .context-menu button.danger { color: #e74c3c; }
+        .context-menu button.danger:hover { background: #fee; }
+
+        .context-menu .divider { height: 1px; background: #e9ecef; margin: 5px 0; }
+
+        /* ============ Modal ============ */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10001;
+            padding: 20px;
+        }
+
+        .modal-overlay.open { display: flex; }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            animation: slideUp 0.2s;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal h3 {
+            margin: 0 0 20px 0;
+            font-size: 17px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal .form-group { margin-bottom: 15px; }
+        .modal .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .modal label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+            color: #444;
+            font-size: 13px;
+        }
+
+        .modal label .required { color: #e74c3c; }
+
+        .modal input,
+        .modal textarea,
+        .modal select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 13px;
+            transition: border-color 0.2s;
+            background: white;
+        }
+
+        .modal input:focus,
+        .modal textarea:focus,
+        .modal select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .modal textarea { resize: vertical; min-height: 70px; }
+
+        .modal .info-row {
+            padding: 10px 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .modal .info-row span b { color: #333; }
+
+        .modal .section-divider {
+            margin: 20px 0 15px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 13px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .modal-actions button {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel { background: #e9ecef; color: #333; }
+        .btn-cancel:hover { background: #dee2e6; }
+
+        .btn-save { background: #667eea; color: white; }
+        .btn-save:hover { background: #5a67d8; }
+        .btn-save:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* ============ Toast ============ */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 10002;
+            transition: transform 0.3s;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+        }
+
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast.success { background: #28a745; }
+        .toast.error { background: #dc3545; }
+
+        /* ============ Loading / Empty ============ */
+        .loading, .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+            font-size: 14px;
+        }
+
+        .loading .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #e9ecef;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ============ Dark Mode ============ */
+        body.dark { background: #1a202c; color: #e2e8f0; }
+
+        body.dark .toolbar,
+        body.dark .tree-container,
+        body.dark .table-container,
+        body.dark .modal,
+        body.dark .context-menu {
+            background: #2d3748;
+            color: #e2e8f0;
+        }
+
+        body.dark .tree-node { background: #374151; }
+        body.dark .tree-node:hover { background: #4a5568; }
+        body.dark .tree-node.selected { background: #4a5568; }
+        body.dark .tree-node .title { color: #e2e8f0; }
+        body.dark .tree-node .code { background: #1a202c; }
+        body.dark .table-container th { background: #1a202c; color: #e2e8f0; }
+        body.dark .table-container td { border-bottom-color: #4a5568; }
+        body.dark .table-container tr:hover { background: #374151; }
+        body.dark .modal input,
+        body.dark .modal textarea,
+        body.dark .modal select {
+            background: #1a202c;
+            border-color: #4a5568;
+            color: #e2e8f0;
+        }
+        body.dark .modal .info-row { background: #1a202c; }
+        body.dark .modal h3 { color: #e2e8f0; }
+        body.dark .modal label { color: #cbd5e0; }
+        body.dark .modal .section-divider { border-bottom-color: #4a5568; }
+        body.dark .view-switch { background: #1a202c; }
+        body.dark .view-switch button.active { background: #4a5568; }
+        body.dark .btn-cancel { background: #4a5568; color: #e2e8f0; }
+        body.dark .tab { background: #2d3748; color: #a0aec0; }
+        body.dark .tab.active { color: white; }
+
+        /* ============ Responsive ============ */
+        @media (max-width: 768px) {
+            .header { padding: 15px 20px; }
+            .header h1 { font-size: 17px; }
+            .toolbar { padding: 12px 15px; }
+            .tab { padding: 10px 16px; font-size: 13px; }
+            .table-container { overflow-x: auto; }
+            .table-container table { min-width: 600px; }
+            .modal .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>👥 اشخاص</h1>
+        </div>
+
+        <!-- تب‌ها -->
+        <div class="tabs">
+            <button class="tab tab-employee active" id="tab-employee" onclick="switchTab('employee')">
+                👷 کارکنان
+            </button>
+            <button class="tab tab-natural" id="tab-natural" onclick="switchTab('natural')">
+                👤 اشخاص حقیقی
+            </button>
+            <button class="tab tab-legal" id="tab-legal" onclick="switchTab('legal')">
+                🏢 اشخاص حقوقی
+            </button>
+            <button class="tab tab-floating" id="tab-floating" onclick="switchTab('floating')">
+                📊 تفصیلی شناور
+            </button>
+        </div>
+
+        <div class="toolbar">
+            <div class="view-switch">
+                <button id="btn-tree" class="active" onclick="switchView('tree')">🌳 درختی</button>
+                <button id="btn-table" onclick="switchView('table')">📋 جدولی</button>
+            </div>
+            <button class="add-btn" onclick="openAddModal(null)">
+                ➕ افزودن گروه اصلی
+            </button>
+        </div>
+
+        <div id="tree-view" class="tree-container">
+            <div class="loading">
+                <div class="spinner"></div>
+                <div>در حال بارگذاری...</div>
+            </div>
+        </div>
+
+        <div id="table-view" class="table-container" style="display:none;">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">کد</th>
+                        <th style="width: 35%;">نام</th>
+                        <th style="width: 15%;">سطح</th>
+                        <th style="width: 20%;">اطلاعات</th>
+                        <th style="width: 15%;">وضعیت</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div class="context-menu" id="context-menu">
+        <!-- دکمه‌ها داینامیک اضافه می‌شن -->
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal" id="modal">
+            <h3 id="modal-title">افزودن</h3>
+
+            <div class="info-row" id="modal-info" style="display:none;">
+                <span>کد بعدی: <b id="info-code"></b></span>
+                <span id="info-parent" style="display:none;">والد: <b id="info-parent-title"></b></span>
+            </div>
+
+            <!-- فیلدهای عمومی -->
+            <div class="form-group">
+                <label>نام کامل / عنوان <span class="required">*</span></label>
+                <input type="text" id="input-full-name" placeholder="نام را وارد کنید" />
+            </div>
+
+            <div class="form-group" id="group-description">
+                <label>توضیحات</label>
+                <textarea id="input-description" placeholder="توضیحات (اختیاری)"></textarea>
+            </div>
+
+            <!-- فیلدهای ویژه سطح ۴ (شخص واقعی) -->
+            <div id="person-fields" style="display:none;">
+
+                <!-- اطلاعات هویتی -->
+                <div class="section-divider">📋 اطلاعات هویتی</div>
+
+                <div class="form-row" id="row-natural-fields">
+                    <div class="form-group">
+                        <label>نام پدر</label>
+                        <input type="text" id="input-father-name" />
+                    </div>
+                    <div class="form-group">
+                        <label>شماره شناسنامه</label>
+                        <input type="text" id="input-id-number" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>کد ملی</label>
+                        <input type="text" id="input-national-id" maxlength="10" />
+                    </div>
+                    <div class="form-group" id="group-birth-date">
+                        <label>تاریخ تولد</label>
+                        <input type="text" id="input-birth-date" placeholder="۱۳۷۰/۰۱/۰۱" />
+                    </div>
+                </div>
+
+                <div class="form-row" id="row-legal-fields" style="display:none;">
+                    <div class="form-group">
+                        <label>کد اقتصادی</label>
+                        <input type="text" id="input-economic-code" />
+                    </div>
+                    <div class="form-group">
+                        <label>شماره ثبت</label>
+                        <input type="text" id="input-registration-number" />
+                    </div>
+                </div>
+
+                <!-- اطلاعات تماس -->
+                <div class="section-divider">📞 اطلاعات تماس</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>تلفن ثابت</label>
+                        <input type="text" id="input-phone" />
+                    </div>
+                    <div class="form-group">
+                        <label>موبایل</label>
+                        <input type="text" id="input-mobile" maxlength="11" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>آدرس</label>
+                    <textarea id="input-address"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>کد پستی</label>
+                        <input type="text" id="input-postal-code" maxlength="10" />
+                    </div>
+                    <div class="form-group">
+                        <label>ایمیل</label>
+                        <input type="email" id="input-email" dir="ltr" />
+                    </div>
+                </div>
+
+                <!-- اطلاعات کارکنان -->
+                <div id="employee-fields" style="display:none;">
+                    <div class="section-divider">💼 اطلاعات استخدامی</div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>کد پرسنلی</label>
+                            <input type="text" id="input-employee-code" />
+                        </div>
+                        <div class="form-group">
+                            <label>نوع استخدام</label>
+                            <select id="input-employment-type">
+                                <option value="">— انتخاب کنید —</option>
+                                <option value="رسمی">رسمی</option>
+                                <option value="پیمانی">پیمانی</option>
+                                <option value="قراردادی">قراردادی</option>
+                                <option value="روزمزد">روزمزد</option>
+                                <option value="سایر">سایر</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>سمت</label>
+                            <input type="text" id="input-position" />
+                        </div>
+                        <div class="form-group">
+                            <label>تاریخ استخدام</label>
+                            <input type="text" id="input-hire-date" placeholder="۱۴۰۰/۰۱/۰۱" />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>تاریخ پایان همکاری</label>
+                            <input type="text" id="input-end-date" placeholder="اختیاری" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- اطلاعات بانکی -->
+                <div class="section-divider">🏦 اطلاعات بانکی</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>نام بانک</label>
+                        <input type="text" id="input-bank-name" />
+                    </div>
+                    <div class="form-group">
+                        <label>شماره حساب</label>
+                        <input type="text" id="input-bank-account" dir="ltr" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>شبا (IR)</label>
+                    <input type="text" id="input-iban" dir="ltr" placeholder="IR..." />
+                </div>
+
+                <!-- یادداشت -->
+                <div class="form-group">
+                    <label>یادداشت</label>
+                    <textarea id="input-notes"></textarea>
+                </div>
+
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal()">انصراف</button>
+                <button class="btn-save" id="btn-save" onclick="saveModal()">ذخیره</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="/common.js"></script>
+
+    <script>
+        // ============================================
+        // وضعیت
+        // ============================================
+        if (!isTokenValid()) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
+        }
+
+        const token = localStorage.getItem('token');
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+
+        let currentType = localStorage.getItem('persons-type') || 'employee';
+        let currentView = localStorage.getItem('persons-view') || 'tree';
+
+        let flatData = [];
+        let selectedNode = null;
+        let editingNode = null;
+        let addingParent = null;
+        let ctxNodeId = null;
+        let expandedNodes = new Set();
+
+        // ============================================
+        // برچسب‌ها
+        // ============================================
+        const TYPE_LABELS = {
+            employee: 'کارکنان',
+            natural: 'اشخاص حقیقی',
+            legal: 'اشخاص حقوقی',
+            floating: 'تفصیلی شناور'
+        };
+
+        const LEVEL_LABELS = {
+            1: 'گروه اصلی',
+            2: 'گروه فرعی',
+            3: 'دسته',
+            4: 'شخص'
+        };
+
+        function getLevelName(level) {
+            return LEVEL_LABELS[level] || `سطح ${level}`;
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // ============================================
+        // لود دیتا
+        // ============================================
+        async function loadData() {
+            try {
+                const res = await fetch(`/api/persons?person_type=${currentType}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                flatData = await res.json();
+
+                // باز کردن نودهای سطح ۱ به صورت پیش‌فرض
+                if (expandedNodes.size === 0) {
+                    flatData.filter(n => n.level === 1).forEach(n => expandedNodes.add(n.id));
+                }
+
+                renderTree();
+                renderTable();
+            } catch (error) {
+                console.error('Load error:', error);
+                showToast('خطا در بارگذاری', 'error');
+            }
+        }
+
+        // ============================================
+        // رندر درخت
+        // ============================================
+        function renderTree() {
+            const container = document.getElementById('tree-view');
+
+            if (!flatData || flatData.length === 0) {
+                const label = TYPE_LABELS[currentType];
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 40px; margin-bottom: 15px;">📭</div>
+                        <div>هنوز ${label}ی ثبت نشده</div>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+
+            const tree = buildTree(flatData);
+
+            const renderNode = (node, parentEl) => {
+                const hasChildren = node.children && node.children.length > 0;
+                const isExpanded = expandedNodes.has(node.id);
+
+                const nodeEl = document.createElement('div');
+                nodeEl.className = 'tree-node';
+                nodeEl.dataset.id = node.id;
+                if (selectedNode && selectedNode.id === node.id) nodeEl.classList.add('selected');
+                if (!node.is_active) nodeEl.style.opacity = '0.5';
+
+                const icons = { 1: '📁', 2: '📂', 3: '🏷️', 4: '👤' };
+                if (currentType === 'legal') icons[4] = '🏢';
+                const icon = icons[node.level] || '📄';
+
+                nodeEl.innerHTML = `
+                    <span class="toggle ${hasChildren ? '' : 'empty'}" onclick="event.stopPropagation(); toggleExpand(${node.id})">
+                        ${hasChildren ? (isExpanded ? '▼' : '◀') : '•'}
+                    </span>
+                    <span class="icon">${icon}</span>
+                    <span class="title">${node.full_name}${!node.is_active ? ' (غیرفعال)' : ''}</span>
+                    <span class="code">${node.code}</span>
+                    <button class="menu-btn" onclick="event.stopPropagation(); openContextMenu(event, ${node.id})">⋮</button>
+                `;
+
+                nodeEl.addEventListener('click', () => {
+                    selectedNode = node;
+                    renderTree();
+                });
+
+                nodeEl.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    selectedNode = node;
+                    renderTree();
+                    openContextMenu(e, node.id);
+                });
+
+                parentEl.appendChild(nodeEl);
+
+                if (hasChildren && isExpanded) {
+                    const childrenContainer = document.createElement('div');
+                    childrenContainer.className = 'tree-children';
+                    node.children.forEach(child => renderNode(child, childrenContainer));
+                    parentEl.appendChild(childrenContainer);
+                }
+            };
+
+            tree.forEach(root => renderNode(root, container));
+        }
+        // ============================================
+        // ساخت درخت از لیست تخت
+        // ============================================
+        function buildTree(items) {
+            const map = {};
+            const roots = [];
+
+            items.forEach(item => {
+                map[item.id] = { ...item, children: [] };
+            });
+
+            items.forEach(item => {
+                if (item.parent_id && map[item.parent_id]) {
+                    map[item.parent_id].children.push(map[item.id]);
+                } else {
+                    roots.push(map[item.id]);
+                }
+            });
+
+            const sortFn = (a, b) => a.code.localeCompare(b.code);
+            const sortRecursive = (nodes) => {
+                nodes.sort(sortFn);
+                nodes.forEach(n => sortRecursive(n.children));
+            };
+            sortRecursive(roots);
+            return roots;
+        }
+
+        function toggleExpand(id) {
+            if (expandedNodes.has(id)) {
+                expandedNodes.delete(id);
+            } else {
+                expandedNodes.add(id);
+            }
+            renderTree();
+        }
+
+        // ============================================
+        // رندر جدول
+        // ============================================
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+
+            if (!flatData || flatData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:#999;">موردی ثبت نشده</td></tr>`;
+                return;
+            }
+
+            const sorted = [...flatData].sort((a, b) => a.code.localeCompare(b.code));
+
+            tbody.innerHTML = '';
+            sorted.forEach(item => {
+                let info = '-';
+                if (item.level === 4) {
+                    if (currentType === 'employee' && item.employee_code) info = `کد پرسنلی: ${item.employee_code}`;
+                    else if (currentType === 'natural' && item.national_id) info = `کد ملی: ${item.national_id}`;
+                    else if (currentType === 'legal' && item.economic_code) info = `کد اقتصادی: ${item.economic_code}`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.style.cursor = 'pointer';
+                if (!item.is_active) tr.style.opacity = '0.5';
+
+                tr.innerHTML = `
+                    <td class="code-cell">${item.code}</td>
+                    <td>${item.full_name}</td>
+                    <td><span class="badge">${getLevelName(item.level)}</span></td>
+                    <td style="font-size:12px; color:#666;">${info}</td>
+                    <td>${item.is_active ? '✅ فعال' : '❌ غیرفعال'}</td>
+                `;
+
+                tr.addEventListener('click', () => {
+                    selectedNode = item;
+                    renderTable();
+                });
+
+                tr.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    selectedNode = item;
+                    renderTable();
+                    openContextMenu(e, item.id);
+                });
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ============================================
+        // سوئیچ تب
+        // ============================================
+        function switchTab(type) {
+            currentType = type;
+            localStorage.setItem('persons-type', type);
+            selectedNode = null;
+            expandedNodes.clear();
+
+            ['employee', 'natural', 'legal', 'floating'].forEach(t => {
+                document.getElementById('tab-' + t).classList.toggle('active', t === type);
+            });
+
+            loadData();
+        }
+
+        // ============================================
+        // سوئیچ نما
+        // ============================================
+        function switchView(view) {
+            currentView = view;
+            localStorage.setItem('persons-view', view);
+
+            document.getElementById('btn-tree').classList.toggle('active', view === 'tree');
+            document.getElementById('btn-table').classList.toggle('active', view === 'table');
+            document.getElementById('tree-view').style.display = view === 'tree' ? 'block' : 'none';
+            document.getElementById('table-view').style.display = view === 'table' ? 'block' : 'none';
+        }
+
+        // ============================================
+        // Context Menu
+        // ============================================
+        function openContextMenu(event, nodeId) {
+            ctxNodeId = nodeId;
+            const menu = document.getElementById('context-menu');
+            const node = flatData.find(n => n.id === nodeId);
+
+            if (!node) return;
+
+            let html = '';
+
+            // فقط اگه سطح < 4 باشه، دکمه افزودن زیرشاخه
+            if (node.level < 4) {
+                html += `<button onclick="ctxAction('add-child')">➕ افزودن زیرشاخه</button>`;
+                html += '<div class="divider"></div>';
+            }
+
+            html += `<button onclick="ctxAction('edit')">✏️ ویرایش</button>`;
+            html += `<button onclick="ctxAction('toggle')">${node.is_active ? '🔄 غیرفعال کردن' : '🔄 فعال کردن'}</button>`;
+            html += '<div class="divider"></div>';
+            html += `<button class="danger" onclick="ctxAction('delete')">🗑️ حذف</button>`;
+
+            menu.innerHTML = html;
+            menu.classList.add('open');
+
+            const menuWidth = 220;
+            const menuHeight = menu.offsetHeight || 200;
+            let x = event.clientX;
+            let y = event.clientY;
+
+            if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
+            if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
+
+            menu.style.left = x + 'px';
+            menu.style.top = y + 'px';
+        }
+
+        function closeContextMenu() {
+            document.getElementById('context-menu').classList.remove('open');
+        }
+
+        async function ctxAction(action) {
+            const node = flatData.find(n => n.id === ctxNodeId);
+            closeContextMenu();
+
+            if (!node) return;
+
+            if (action === 'add-child') {
+                openAddModal(node);
+            } else if (action === 'edit') {
+                openEditModal(node);
+            } else if (action === 'delete') {
+                await deleteNode(node);
+            } else if (action === 'toggle') {
+                await toggleNode(node);
+            }
+        }
+
+        // ============================================
+        // Modal: افزودن
+        // ============================================
+        async function openAddModal(parent) {
+            editingNode = null;
+            addingParent = parent;
+
+            const parentLevel = parent ? parent.level : 0;
+            const newLevel = parentLevel + 1;
+            const isPerson = newLevel === 4;
+
+            // عنوان
+            let title = '➕ افزودن ';
+            if (!parent) title += 'گروه اصلی';
+            else if (newLevel === 2) title += 'گروه فرعی';
+            else if (newLevel === 3) title += 'دسته';
+            else if (newLevel === 4) title += 'شخص';
+
+            document.getElementById('modal-title').textContent = title;
+
+            // ریست فرم
+            resetForm();
+
+            // نمایش/مخفی کردن فیلدها
+            document.getElementById('group-description').style.display = isPerson ? 'none' : 'block';
+            document.getElementById('person-fields').style.display = isPerson ? 'block' : 'none';
+
+            // فیلدهای ویژه
+            if (isPerson) {
+                // فیلدهای کارکنان
+                document.getElementById('employee-fields').style.display =
+                    currentType === 'employee' ? 'block' : 'none';
+
+                // فیلدهای حقیقی
+                document.getElementById('row-natural-fields').style.display =
+                    (currentType === 'natural' || currentType === 'employee') ? 'grid' : 'none';
+
+                // فیلدهای حقوقی
+                document.getElementById('row-legal-fields').style.display =
+                    currentType === 'legal' ? 'grid' : 'none';
+            }
+
+            // info
+            document.getElementById('modal-info').style.display = 'flex';
+            if (parent) {
+                document.getElementById('info-parent').style.display = 'inline';
+                document.getElementById('info-parent-title').textContent = parent.full_name;
+            } else {
+                document.getElementById('info-parent').style.display = 'none';
+            }
+
+            // کد بعدی
+            try {
+                const url = parent
+                    ? `/api/persons/next-code?person_type=${currentType}&parent_id=${parent.id}`
+                    : `/api/persons/next-code?person_type=${currentType}`;
+
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                document.getElementById('info-code').textContent = data.next_code || '...';
+            } catch {
+                document.getElementById('info-code').textContent = '...';
+            }
+
+            document.getElementById('modal-overlay').classList.add('open');
+            setTimeout(() => document.getElementById('input-full-name').focus(), 100);
+        }
+
+        // ============================================
+        // Modal: ویرایش
+        // ============================================
+        function openEditModal(node) {
+            editingNode = node;
+            addingParent = null;
+
+            const isPerson = node.level === 4;
+
+            document.getElementById('modal-title').textContent = '✏️ ویرایش';
+            resetForm();
+
+            // پر کردن فیلدها
+            document.getElementById('input-full-name').value = node.full_name || '';
+            document.getElementById('input-description').value = node.notes || '';
+
+            document.getElementById('group-description').style.display = isPerson ? 'none' : 'block';
+            document.getElementById('person-fields').style.display = isPerson ? 'block' : 'none';
+
+            if (isPerson) {
+                // اطلاعات هویتی
+                document.getElementById('input-father-name').value = node.father_name || '';
+                document.getElementById('input-id-number').value = node.id_number || '';
+                document.getElementById('input-national-id').value = node.national_id || '';
+                document.getElementById('input-birth-date').value = node.birth_date_shamsi || '';
+                document.getElementById('input-economic-code').value = node.economic_code || '';
+                document.getElementById('input-registration-number').value = node.registration_number || '';
+
+                // تماس
+                document.getElementById('input-phone').value = node.phone || '';
+                document.getElementById('input-mobile').value = node.mobile || '';
+                document.getElementById('input-address').value = node.address || '';
+                document.getElementById('input-postal-code').value = node.postal_code || '';
+                document.getElementById('input-email').value = node.email || '';
+
+                // کارکنان
+                document.getElementById('input-employee-code').value = node.employee_code || '';
+                document.getElementById('input-employment-type').value = node.employment_type || '';
+                document.getElementById('input-position').value = node.position || '';
+                document.getElementById('input-hire-date').value = node.hire_date_shamsi || '';
+                document.getElementById('input-end-date').value = node.end_date_shamsi || '';
+
+                // بانکی
+                document.getElementById('input-bank-name').value = node.bank_name || '';
+                document.getElementById('input-bank-account').value = node.bank_account || '';
+                document.getElementById('input-iban').value = node.iban || '';
+
+                document.getElementById('input-notes').value = node.notes || '';
+
+                // فیلدهای ویژه
+                document.getElementById('employee-fields').style.display =
+                    currentType === 'employee' ? 'block' : 'none';
+                document.getElementById('row-natural-fields').style.display =
+                    (currentType === 'natural' || currentType === 'employee') ? 'grid' : 'none';
+                document.getElementById('row-legal-fields').style.display =
+                    currentType === 'legal' ? 'grid' : 'none';
+            }
+
+            document.getElementById('modal-info').style.display = 'flex';
+            document.getElementById('info-parent').style.display = 'none';
+            document.getElementById('info-code').textContent = node.code;
+
+            document.getElementById('modal-overlay').classList.add('open');
+        }
+
+        function resetForm() {
+            const fields = [
+                'input-full-name', 'input-description',
+                'input-father-name', 'input-id-number', 'input-national-id', 'input-birth-date',
+                'input-economic-code', 'input-registration-number',
+                'input-phone', 'input-mobile', 'input-address', 'input-postal-code', 'input-email',
+                'input-employee-code', 'input-employment-type', 'input-position',
+                'input-hire-date', 'input-end-date',
+                'input-bank-name', 'input-bank-account', 'input-iban', 'input-notes'
+            ];
+            fields.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.remove('open');
+            editingNode = null;
+            addingParent = null;
+        }
+
+        // ============================================
+        // ذخیره Modal
+        // ============================================
+        async function saveModal() {
+            const fullName = document.getElementById('input-full-name').value.trim();
+
+            if (!fullName) {
+                showToast('نام الزامی است', 'error');
+                return;
+            }
+
+            const isPerson = editingNode
+                ? editingNode.level === 4
+                : (addingParent ? addingParent.level + 1 === 4 : false);
+
+            const btn = document.getElementById('btn-save');
+            btn.disabled = true;
+            btn.textContent = 'در حال ذخیره...';
+
+            try {
+                // داده‌های پایه
+                const data = {
+                    person_type: currentType,
+                    full_name: fullName,
+                    parent_id: addingParent ? addingParent.id : (editingNode ? editingNode.parent_id : null),
+                    notes: document.getElementById('input-description').value.trim() || null,
+                };
+
+                // داده‌های شخص (فقط سطح ۴)
+                if (isPerson) {
+                    Object.assign(data, {
+                        father_name: document.getElementById('input-father-name').value.trim() || null,
+                        id_number: document.getElementById('input-id-number').value.trim() || null,
+                        national_id: document.getElementById('input-national-id').value.trim() || null,
+                        birth_date_shamsi: document.getElementById('input-birth-date').value.trim() || null,
+                        economic_code: document.getElementById('input-economic-code').value.trim() || null,
+                        registration_number: document.getElementById('input-registration-number').value.trim() || null,
+                        phone: document.getElementById('input-phone').value.trim() || null,
+                        mobile: document.getElementById('input-mobile').value.trim() || null,
+                        address: document.getElementById('input-address').value.trim() || null,
+                        postal_code: document.getElementById('input-postal-code').value.trim() || null,
+                        email: document.getElementById('input-email').value.trim() || null,
+                        employee_code: document.getElementById('input-employee-code').value.trim() || null,
+                        employment_type: document.getElementById('input-employment-type').value || null,
+                        position: document.getElementById('input-position').value.trim() || null,
+                        hire_date_shamsi: document.getElementById('input-hire-date').value.trim() || null,
+                        end_date_shamsi: document.getElementById('input-end-date').value.trim() || null,
+                        bank_name: document.getElementById('input-bank-name').value.trim() || null,
+                        bank_account: document.getElementById('input-bank-account').value.trim() || null,
+                        iban: document.getElementById('input-iban').value.trim() || null,
+                    });
+                }
+
+                let res;
+                if (editingNode) {
+                    // ویرایش
+                    res = await fetch(`/api/persons/${editingNode.id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            ...data,
+                            is_active: editingNode.is_active
+                        })
+                    });
+                } else {
+                    // افزودن
+                    res = await fetch('/api/persons', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(data)
+                    });
+                }
+
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.error || 'خطا');
+
+                showToast(editingNode ? 'با موفقیت ویرایش شد' : `با موفقیت ثبت شد (کد: ${result.code})`);
+
+                // باز کردن والد
+                if (addingParent) {
+                    expandedNodes.add(addingParent.id);
+                }
+
+                closeModal();
+                await loadData();
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'ذخیره';
+            }
+        }
+
+        // ============================================
+        // حذف
+        // ============================================
+        async function deleteNode(node) {
+            if (!confirm(`مطمئن هستید "${node.full_name}" حذف شود؟`)) return;
+
+            try {
+                const res = await fetch(`/api/persons/${node.id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'خطا');
+
+                showToast('با موفقیت حذف شد');
+                await loadData();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        // ============================================
+        // تغییر وضعیت
+        // ============================================
+        async function toggleNode(node) {
+            try {
+                const res = await fetch(`/api/persons/${node.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        full_name: node.full_name,
+                        is_active: !node.is_active
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'خطا');
+
+                showToast('وضعیت تغییر کرد');
+                await loadData();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        // ============================================
+        // Event Listeners
+        // ============================================
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.context-menu') && !e.target.closest('.menu-btn')) {
+                closeContextMenu();
+            }
+        });
+
+        document.addEventListener('contextmenu', (e) => {
+            if (!e.target.closest('.tree-node') && !e.target.closest('tr')) {
+                closeContextMenu();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                closeContextMenu();
+            }
+        });
+
+        // ============================================
+        // شروع
+        // ============================================
+        switchView(currentView);
+
+        ['employee', 'natural', 'legal', 'floating'].forEach(t => {
+            document.getElementById('tab-' + t).classList.toggle('active', t === currentType);
+        });
+
+// راه‌اندازی date picker شمسی
+$(document).ready(function() {
+    $("#input-birth-date").persianDatepicker({
+        format: 'YYYY/MM/DD',
+        autoClose: true,
+        initialValue: false,
+        persianDigit: true
+    });
+
+    $("#input-hire-date").persianDatepicker({
+        format: 'YYYY/MM/DD',
+        autoClose: true,
+        initialValue: false,
+        persianDigit: true
+    });
+
+    $("#input-end-date").persianDatepicker({
+        format: 'YYYY/MM/DD',
+        autoClose: true,
+        initialValue: false,
+        persianDigit: true
+    });
+});
+
+        loadData();
+    </script>
+</body>
+</html>
