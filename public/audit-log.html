@@ -150,7 +150,7 @@
         const token = localStorage.getItem('token');
         const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
-        if (currentUser.role !== 'admin') {
+        if (!['admin', 'manager'].includes(currentUser.role)) {
             alert('شما دسترسی به این صفحه ندارید');
             window.location.href = '/dashboard.html';
         }
