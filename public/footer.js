@@ -46,13 +46,13 @@
     textDiv.style.cssText = "text-align: right; line-height: 1.5;";
 
     const copyLine = document.createElement("div");
-    copyLine.style.cssText = "font-size: 12px; color: #666;";
+    copyLine.style.cssText = "font-size: 12px; color: #999;";
     copyLine.innerHTML =
       '© ۱۴۰۵ - تمامی حقوق برای <strong style="color:#667eea;">«داده کاوان هوشمند»</strong> محفوظ است.';
 
     const latinLine = document.createElement("div");
-    latinLine.style.cssText =
-      "font-size: 10px; color: #999; letter-spacing: 1.5px; margin-top: 2px;";
+ latinLine.style.cssText =
+   "font-size: 10px; color: #bbb; letter-spacing: 1.5px; margin-top: 2px;";
     latinLine.textContent = "SmartDadehKavan";
 
     textDiv.appendChild(copyLine);

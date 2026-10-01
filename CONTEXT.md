@@ -12,16 +12,18 @@
 - [x] بخش ۴: طبقه‌بندی عملیاتی
 - [x] بخش ۴: نوع اعتبار + نوع مصرف
 - [x] بخش ۵: حسابداری
-- [x] بخش ۶: کدینگ کالا و خدمات (درختی چندسطحی + واحد + مشخصات فنی)
+- [x] بخش ۶: کدینگ کالا و خدمات
 - [x] **بخش ۷: اشخاص (کارکنان، حقیقی، حقوقی، تفصیلی شناور)**
 - [x] جدول `base_data` + API کامل + UI درختی/جدولی
-- [x] جدول `persons` + API کامل + UI درختی/جدولی + فرم هوشمند
-- [x] **`tree.css` مشترک برای یکدست‌سازی ظاهر درخت‌ها**
-- [x] **`person_organizations` و `entity_relations` (آماده برای استفاده در آینده)**
+- [x] جدول `persons` + API کامل + UI + فرم هوشمند
+- [x] `tree.css` مشترک برای یکدست‌سازی درخت‌ها
+- [x] `person_organizations` و `entity_relations` (آماده برای آینده)
 - [x] Footer مشترک
 - [x] Breadcrumb مشترک
-- [x] صفحه `goods.html` با پشتیبانی از `extra_data` (JSON)
-- [x] صفحه `persons.html` با ۴ تب + فرم شرطی + DatePicker شمسی
+- [x] صفحه `goods.html` با `extra_data`
+- [x] صفحه `persons.html` با ۴ تب + DatePicker شمسی
+- [x] دسترسی `manager` به «سال مالی» و «لاگ سیستم»
+- [x] بهبود ظاهر صفحه لاگین (روشن‌تر + فوتر واضح)
 
 ## صفحات موجود:
 ### احراز هویت
@@ -69,7 +71,7 @@
 - [ ] بخش ۷: اتصال اشخاص به بودجه پیشنهادی
 - [ ] بخش ۷: استعلام کد ملی
 - [ ] بخش ۷: گزارش‌گیری از اشخاص
-- [ ] بخش ۶: فهرست بهای کالا و خدمات (قیمت‌گذاری سالانه)
+- [ ] بخش ۶: فهرست بهای کالا و خدمات
 - [ ] بخش ۶: استهلاک دارایی‌های ثابت
 - [ ] بخش ۶: احکام حقوقی
 - [ ] اتصال کالا/خدمات به `budget-proposals.html`
@@ -77,14 +79,14 @@
 
 ## ساختار `base_data`:
 - `section`: 'organization', 'economic', 'strategic', 'operational', 'accounting', 'budget_type', 'goods'
-- `type`: 'resource', 'expense', 'strategic', 'mission', 'program', 'service', 'plan', 'activity', 'project', 'asset', 'liability', 'equity', 'performance', 'warehouse', 'accounting', 'credit', 'usage', 'goods', 'general', ...
-- `extra_data`: JSON string (unit, unit_custom, specs, notes)
+- `type`: انواع مختلف
+- `extra_data`: JSON string
 
 ## قوانین کدینگ بخش ۷ (اشخاص):
 - **کدینگ ۱۰ رقمی:** `[۱ رقم گروه][۳ رقم زیرگروه][۳ رقم دسته][۳ رقم شخص]`
-- **سطح ۱** (گروه اصلی): `X000000000` (X = ۱ تا ۹)
-- **سطح ۲** (گروه فرعی): `XYYY000000`
-- **سطح ۳** (دسته): `XYYYZZZ000`
-- **سطح ۴** (شخص): `XYYYZZZWWW`
+- **سطح ۱:** `X000000000`
+- **سطح ۲:** `XYYY000000`
+- **سطح ۳:** `XYYYZZZ000`
+- **سطح ۴:** `XYYYZZZWWW`
 
 ### مثال:

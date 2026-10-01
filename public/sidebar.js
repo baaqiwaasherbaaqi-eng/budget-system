@@ -41,8 +41,13 @@ function renderSidebar() {
       url: "/dashboard.html",
       roles: ["admin", "manager", "expert", "viewer", "province", "ministry"],
     },
-    { icon: '📂', title: 'اطلاعات پایه', url: '/base-info.html', roles: ['admin', 'manager', 'expert', 'viewer'] },
- 
+    {
+      icon: "📂",
+      title: "اطلاعات پایه",
+      url: "/base-info.html",
+      roles: ["admin", "manager", "expert", "viewer"],
+    },
+
     {
       icon: "💰",
       title: "بودجه پیشنهادی",
@@ -89,7 +94,7 @@ function renderSidebar() {
       icon: "📅",
       title: "سال مالی",
       url: "/fiscal-years.html",
-      roles: ["admin"],
+      roles: ["admin", "manager"],
     },
     {
       icon: "👥",
@@ -101,7 +106,7 @@ function renderSidebar() {
       icon: "📜",
       title: "لاگ سیستم",
       url: "/audit-log.html",
-      roles: ["admin"],
+      roles: ["admin", "manager"],
     },
   ];
 

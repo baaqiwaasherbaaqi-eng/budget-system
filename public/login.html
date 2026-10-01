@@ -4,63 +4,89 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ورود به سامانه بودجه شهرداری</title>
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />    
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <style>
-body {
-    font-family: 'Vazirmatn', Tahoma, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 0;
-    flex-direction: column;
-    padding: 20px 0;
-    box-sizing: border-box;
-}
+        body {
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            background: linear-gradient(135deg, #eef1ff 0%, #f5f3ff 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            flex-direction: column;
+            padding: 20px 0;
+            box-sizing: border-box;
+        }
+
         .login-container {
             background: white;
             padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.15), 0 2px 8px rgba(0, 0, 0, 0.05);
             width: 100%;
             max-width: 400px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
         }
+
         h2 {
             text-align: center;
             color: #333;
             margin-bottom: 30px;
+            font-size: 20px;
         }
+
         input {
             font-family: 'Vazirmatn', Tahoma, sans-serif;
             width: 100%;
             padding: 12px;
             margin: 10px 0;
             border: 1px solid #ddd;
-            border-radius: 5px;
+            border-radius: 8px;
             box-sizing: border-box;
             font-size: 14px;
+            transition: all 0.2s;
+            background: #fafafa;
         }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
         button {
             font-family: 'Vazirmatn', Tahoma, sans-serif;
             width: 100%;
             padding: 12px;
-            background: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
             margin-top: 20px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
+
         button:hover {
-            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
         }
+
         .error {
-            color: red;
+            color: #e74c3c;
             text-align: center;
             display: none;
             margin-top: 10px;
+            font-size: 13px;
+        }
+
+        /* Footer مخصوص صفحه لاگین */
+        #site-footer {
+            border-top-color: rgba(102, 126, 234, 0.15) !important;
         }
     </style>
 </head>
@@ -104,6 +130,6 @@ body {
             }
         }
     </script>
-        <script src="/footer.js"></script>
+    <script src="/footer.js"></script>
 </body>
 </html>
