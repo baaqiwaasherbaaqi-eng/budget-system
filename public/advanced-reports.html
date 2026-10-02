@@ -199,7 +199,7 @@
             <div id="tab-summary" class="tab-content active">
                 <h2 class="section-title">📊 خلاصه کلی</h2>
                 <div class="summary-cards" id="summary-cards"></div>
-                <table>
+                <table class="table-standard">
                     <thead>
                         <tr>
                             <th>نوع</th>
@@ -213,7 +213,7 @@
             <!-- تب بر اساس کد -->
             <div id="tab-by-code" class="tab-content">
                 <h2 class="section-title">📋 بر اساس طبقه‌بندی اقتصادی</h2>
-                <table>
+                <table class="table-standard">
                     <thead>
                         <tr>
                             <th>کد</th>
@@ -229,7 +229,7 @@
             <!-- تب بر اساس سازمان -->
             <div id="tab-by-org" class="tab-content">
                 <h2 class="section-title">🏢 بر اساس سازمان</h2>
-                <table>
+                <table class="table-standard">
                     <thead>
                         <tr>
                             <th>سازمان</th>
@@ -244,7 +244,7 @@
             <!-- تب پروژه‌ها -->
             <div id="tab-projects" class="tab-content">
                 <h2 class="section-title">📁 لیست پروژه‌ها</h2>
-                <table>
+                <table class="table-standard">
                     <thead>
                         <tr>
                             <th>عنوان</th>
@@ -462,7 +462,7 @@
             
             const result = document.getElementById('comparison-result');
             result.innerHTML = `
-                <table>
+                <table class="table-standard">
                     <thead>
                         <tr>
                             <th>کد</th>

@@ -551,3 +551,16 @@ window.addEventListener('load', function() {
     document.head.appendChild(link);
   }
 })();
+
+// ============================================
+// لود CSS مشترک جدول
+// ============================================
+(function() {
+    if (!document.getElementById('table-styles')) {
+        const link = document.createElement('link');
+        link.id = 'table-styles';
+        link.rel = 'stylesheet';
+        link.href = '/table.css';
+        document.head.appendChild(link);
+    }
+})();

@@ -145,93 +145,6 @@
         background: #218838;
       }
 
-      .tree-container,
-      .table-container {
-        background: white;
-        border-radius: 10px;
-        padding: 20px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-        min-height: 400px;
-      }
-
-
-
-      /* ============ جدول ============ */
-      .table-container table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-      }
-
-      .table-container th {
-        background: #f8f9fa;
-        padding: 12px;
-        text-align: right;
-        font-weight: bold;
-        border-bottom: 2px solid #e0e0e0;
-        color: #333;
-        position: sticky;
-        top: 0;
-      }
-
-      .table-container td {
-        padding: 10px 12px;
-        border-bottom: 1px solid #f0f0f0;
-        text-align: right;
-      }
-
-      .table-container tr:hover {
-        background: #fafafa;
-      }
-
-      .level-0 {
-        background: #eef1ff !important;
-        font-weight: bold;
-      }
-      .level-1 {
-        background: #f5f7ff !important;
-      }
-      .level-2 {
-        background: #fafbff !important;
-      }
-      .level-3 {
-        background: #fdfdfd !important;
-      }
-
-      .level-badge {
-        display: inline-block;
-        padding: 3px 10px;
-        border-radius: 12px;
-        font-size: 11px;
-        background: #e9ecef;
-        color: #555;
-      }
-
-      .level-badge.l0 {
-        background: #667eea;
-        color: white;
-      }
-      .level-badge.l1 {
-        background: #764ba2;
-        color: white;
-      }
-      .level-badge.l2 {
-        background: #17a2b8;
-        color: white;
-      }
-      .level-badge.l3 {
-        background: #28a745;
-        color: white;
-      }
-      .level-badge.l4 {
-        background: #fd7e14;
-        color: white;
-      }
-
-      .indent-marker {
-        color: #ccc;
-        margin-left: 6px;
-      }
 
       /* ============ Context Menu ============ */
       .context-menu {
@@ -492,7 +405,6 @@
 
       body.dark .toolbar,
       body.dark .tree-container,
-      body.dark .table-container,
       body.dark .modal,
       body.dark .context-menu {
         background: #2d3748;
@@ -517,16 +429,6 @@
       }
       body.dark .tree-children {
         border-right-color: #4a5568;
-      }
-      body.dark .table-container th {
-        background: #1a202c;
-        color: #e2e8f0;
-      }
-      body.dark .table-container td {
-        border-bottom-color: #4a5568;
-      }
-      body.dark .table-container tr:hover {
-        background: #374151;
       }
       body.dark .level-0 {
         background: #3b4a6b !important;
@@ -581,12 +483,6 @@
         .tree-children {
           padding-right: 15px;
           margin-right: 6px;
-        }
-        .table-container {
-          overflow-x: auto;
-        }
-        .table-container table {
-          min-width: 600px;
         }
         .tab {
           padding: 10px 16px;
