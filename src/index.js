@@ -84,6 +84,46 @@ async function checkRateLimit(
   }
 }
 
+
+// چک Permission
+async function checkPermission(env, userId, permissionKey) {
+  try {
+    // گرفتن نقش کاربر
+    const user = await env.DB.prepare("SELECT role FROM users WHERE id = ?")
+      .bind(userId).first();
+
+    if (!user) return false;
+
+    // admin همیشه دسترسی داره
+    if (user.role === "admin") return true;
+
+    // چک user_permissions (override)
+    const userPerm = await env.DB.prepare(
+      "SELECT granted FROM user_permissions WHERE user_id = ? AND permission_key = ?"
+    ).bind(userId, permissionKey).first();
+
+    if (userPerm) {
+      return userPerm.granted === 1;
+    }
+
+    // چک role_permissions
+    const rolePerm = await env.DB.prepare(
+      "SELECT granted FROM role_permissions WHERE role = ? AND permission_key = ?"
+    ).bind(user.role, permissionKey).first();
+
+    if (rolePerm) {
+      return rolePerm.granted === 1;
+    }
+
+    return false;
+  } catch (error) {
+    console.error("checkPermission error:", error);
+    return false;
+  }
+}
+
+
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -1800,6 +1840,332 @@ export default {
         );
       }
 
+      // ========== Permissions ==========
+
+      // GET: لیست کلیدهای دسترسی
+      if (
+        url.pathname === "/api/permissions/keys" &&
+        request.method === "GET"
+      ) {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) {
+          return new Response(
+            JSON.stringify({ error: "احراز هویت لازم است" }),
+            {
+              status: 401,
+              headers,
+            }
+          );
+        }
+
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+
+        if (!userData) {
+          return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+            status: 401,
+            headers,
+          });
+        }
+
+        // دسته‌بندی کلیدها
+        const groups = [
+          {
+            title: "اطلاعات پایه",
+            icon: "📂",
+            keys: [
+              { key: "base_info.view", label: "مشاهده اطلاعات پایه" },
+              { key: "base_info.edit", label: "ویرایش اطلاعات پایه" },
+            ],
+          },
+
+          {
+            title: "بودجه",
+            icon: "💰",
+            keys: [
+              { key: "budget.view", label: "مشاهده بودجه" },
+              { key: "budget.add", label: "افزودن بودجه" },
+              { key: "budget.submit", label: "ارسال بودجه" },
+              { key: "budget.approve_manager", label: "تایید مدیر" },
+              { key: "budget.approve_finance", label: "تایید مالی" },
+              { key: "budget.approve_final", label: "تصویب نهایی" },
+            ],
+          },
+          {
+            title: "تخصیص و تامین اعتبار",
+            icon: "💳",
+            keys: [
+              { key: "allocations.view", label: "مشاهده تخصیص" },
+              { key: "allocations.add", label: "افزودن تخصیص" },
+              { key: "executions.view", label: "مشاهده تامین اعتبار" },
+              { key: "executions.add", label: "افزودن تامین اعتبار" },
+            ],
+          },
+          {
+            title: "گزارشات",
+            icon: "📈",
+            keys: [
+              { key: "reports.view", label: "مشاهده گزارشات ساده" },
+              { key: "reports.advanced", label: "مشاهده گزارشات پیشرفته" },
+              { key: "reports.tafriq", label: "مشاهده تفریغ بودجه" },
+              { key: "reports.export", label: "خروجی Excel" },
+            ],
+          },
+          {
+            title: "مدیریت کاربران",
+            icon: "👤",
+            keys: [
+              { key: "users.view", label: "مشاهده کاربران" },
+              { key: "users.add", label: "افزودن کاربر" },
+              { key: "users.edit", label: "ویرایش کاربر" },
+              { key: "users.delete", label: "حذف کاربر" },
+              { key: "users.permissions", label: "مدیریت دسترسی‌ها" },
+            ],
+          },
+          {
+            title: "سیستم",
+            icon: "⚙️",
+            keys: [
+              { key: "fiscal_years.view", label: "مشاهده سال مالی" },
+              { key: "fiscal_years.manage", label: "مدیریت سال مالی" },
+              { key: "audit_log.view", label: "مشاهده لاگ سیستم" },
+              { key: "municipality_info.view", label: "مشاهده مشخصات شهرداری" },
+              { key: "municipality_info.edit", label: "ویرایش مشخصات شهرداری" },
+            ],
+          },
+        ];
+
+        return new Response(JSON.stringify(groups), { status: 200, headers });
+      }
+
+      // GET: Permission های یک کاربر
+      if (
+        url.pathname.match(/^\/api\/users\/\d+\/permissions$/) &&
+        request.method === "GET"
+      ) {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) {
+          return new Response(
+            JSON.stringify({ error: "احراز هویت لازم است" }),
+            {
+              status: 401,
+              headers,
+            }
+          );
+        }
+
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+
+        if (!userData || !["admin", "manager"].includes(userData.role)) {
+          return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+            status: 403,
+            headers,
+          });
+        }
+
+        const userId = url.pathname.split("/")[3];
+
+        // گرفتن کاربر
+        const user = await env.DB.prepare(
+          "SELECT id, username, full_name, role FROM users WHERE id = ?"
+        )
+          .bind(userId)
+          .first();
+
+        if (!user) {
+          return new Response(JSON.stringify({ error: "کاربر یافت نشد" }), {
+            status: 404,
+            headers,
+          });
+        }
+
+        // Permission های نقش
+        const rolePerms = await env.DB.prepare(
+          "SELECT permission_key, granted FROM role_permissions WHERE role = ?"
+        )
+          .bind(user.role)
+          .all();
+
+        // Permission های اختصاصی
+        const userPerms = await env.DB.prepare(
+          "SELECT permission_key, granted FROM user_permissions WHERE user_id = ?"
+        )
+          .bind(userId)
+          .all();
+
+        return new Response(
+          JSON.stringify({
+            user: user,
+            role_permissions: rolePerms.results,
+            user_permissions: userPerms.results,
+          }),
+          { status: 200, headers }
+        );
+      }
+
+      // POST: ذخیره Permission های یک کاربر
+      if (
+        url.pathname.match(/^\/api\/users\/\d+\/permissions$/) &&
+        request.method === "POST"
+      ) {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) {
+          return new Response(
+            JSON.stringify({ error: "احراز هویت لازم است" }),
+            {
+              status: 401,
+              headers,
+            }
+          );
+        }
+
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+
+        if (!userData || userData.role !== "admin") {
+          return new Response(
+            JSON.stringify({
+              error: "فقط مدیر سیستم می‌تواند دسترسی‌ها را تغییر دهد",
+            }),
+            {
+              status: 403,
+              headers,
+            }
+          );
+        }
+
+        const userId = url.pathname.split("/")[3];
+        const { permissions } = await request.json();
+
+        // چک کاربر
+        const user = await env.DB.prepare("SELECT id FROM users WHERE id = ?")
+          .bind(userId)
+          .first();
+
+        if (!user) {
+          return new Response(JSON.stringify({ error: "کاربر یافت نشد" }), {
+            status: 404,
+            headers,
+          });
+        }
+
+        // پاک کردن permission های قبلی
+        await env.DB.prepare("DELETE FROM user_permissions WHERE user_id = ?")
+          .bind(userId)
+          .run();
+
+        // درج permission های جدید
+        for (const perm of permissions) {
+          // اگه granted === null، یعنی کاربر می‌خواد به «پیش‌فرض» برگرده → حذف از user_permissions
+          if (perm.granted === null || perm.granted === undefined) {
+            // حذف از user_permissions (به پیش‌فرض برمی‌گرده)
+            await env.DB.prepare(
+              `DELETE FROM user_permissions WHERE user_id = ? AND permission_key = ?`
+            )
+              .bind(userId, perm.permission_key)
+              .run();
+          } else {
+            // درج/آپدیت
+            await env.DB.prepare(
+              `INSERT OR REPLACE INTO user_permissions (user_id, permission_key, granted, granted_by)
+               VALUES (?, ?, ?, ?)`
+            )
+              .bind(
+                userId,
+                perm.permission_key,
+                perm.granted ? 1 : 0,
+                userData.userId
+              )
+              .run();
+          }
+        }
+
+        // ثبت لاگ
+        ctx.waitUntil(
+          logAction(
+            env,
+            request,
+            userData,
+            "permissions_changed",
+            "user",
+            parseInt(userId),
+            {
+              count: permissions.length,
+            }
+          )
+        );
+
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers,
+        });
+      }
+
+      // GET: چک کردن permission کاربر فعلی
+      if (url.pathname === "/api/me/permissions" && request.method === "GET") {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) {
+          return new Response(
+            JSON.stringify({ error: "احراز هویت لازم است" }),
+            {
+              status: 401,
+              headers,
+            }
+          );
+        }
+
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+
+        if (!userData) {
+          return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+            status: 401,
+            headers,
+          });
+        }
+
+        // گرفتن نقش کاربر
+        const user = await env.DB.prepare("SELECT role FROM users WHERE id = ?")
+          .bind(userData.userId)
+          .first();
+
+        if (!user) {
+          return new Response(JSON.stringify({ error: "کاربر یافت نشد" }), {
+            status: 404,
+            headers,
+          });
+        }
+
+        // Permission های نقش
+        const rolePerms = await env.DB.prepare(
+          "SELECT permission_key, granted FROM role_permissions WHERE role = ? AND granted = 1"
+        )
+          .bind(user.role)
+          .all();
+
+        // Permission های اختصاصی کاربر
+        const userPerms = await env.DB.prepare(
+          "SELECT permission_key, granted FROM user_permissions WHERE user_id = ?"
+        )
+          .bind(userData.userId)
+          .all();
+
+        // ترکیب (user_permissions روی role_permissions override می‌کنه)
+        const permissions = {};
+        rolePerms.results.forEach(
+          (p) => (permissions[p.permission_key] = true)
+        );
+        userPerms.results.forEach(
+          (p) => (permissions[p.permission_key] = p.granted === 1)
+        );
+
+        return new Response(JSON.stringify({ permissions }), {
+          status: 200,
+          headers,
+        });
+      }
+
       // ========== مدیریت کاربران ==========
 
       // دریافت لیست کاربران
@@ -1818,7 +2184,20 @@ export default {
         const token = authHeader.replace("Bearer ", "");
         const userData = await verifyToken(token, env.JWT_SECRET);
 
-        if (!userData || userData.role !== "admin") {
+        if (!userData) {
+          return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+            status: 401,
+            headers,
+          });
+        }
+
+        // چک Permission
+        const hasAccess = await checkPermission(
+          env,
+          userData.userId,
+          "users.view"
+        );
+        if (!hasAccess) {
           return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
             status: 403,
             headers,
@@ -3405,6 +3784,7 @@ export default {
         "/budget-types.html",
         "/goods.html",
         "/persons.html",
+        "/permissions.html",
       ];
 
       if (staticPaths.includes(url.pathname)) {

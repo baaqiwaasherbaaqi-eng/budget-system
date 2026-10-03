@@ -188,6 +188,22 @@
         .inactive {
             opacity: 0.5;
         }
+        .permissions-btn {
+            background: #6f42c1;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 11px;
+            margin-left: 3px;
+        }
+
+        .permissions-btn:hover {
+            background: #5a32a3;
+        }
+
     </style>
 </head>
 
@@ -261,11 +277,33 @@
         const token = localStorage.getItem('token');
         const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
-        // بررسی دسترسی
-        if (currentUser.role !== 'admin') {
-            alert('شما دسترسی به این صفحه ندارید');
-            window.location.href = '/dashboard.html';
-        }
+        // بررسی دسترسی - از Permission API استفاده می‌کنیم
+        (async function checkAccess() {
+            try {
+                const res = await fetch('/api/me/permissions', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!res.ok) {
+                    throw new Error('خطا در بررسی دسترسی');
+                }
+                
+                const data = await res.json();
+                
+                if (!data.permissions || !data.permissions['users.view']) {
+                    alert('شما دسترسی به این صفحه ندارید');
+                    window.location.href = '/dashboard.html';
+                    return;
+                }
+                
+                // دسترسی داره → لود کن
+                loadUsers();
+            } catch (error) {
+                console.error('Access check error:', error);
+                alert('خطا در بررسی دسترسی');
+                window.location.href = '/dashboard.html';
+            }
+        })();
 
         const roleLabels = {
             'admin': { class: 'role-admin', label: 'مدیر سیستم' },
@@ -300,13 +338,16 @@
                 
                 const isSelf = user.id === currentUser.id;
                 
-                row.innerHTML = `
+                            row.innerHTML = `
                     <td>${user.username}</td>
                     <td>${user.full_name}</td>
                     <td><span class="role-badge ${role.class}">${role.label}</span></td>
                     <td>${user.organization || '-'}</td>
                     <td>${user.is_active ? '✅ فعال' : '❌ غیرفعال'}</td>
                     <td>
+                        <button class="permissions-btn" onclick="window.location.href='/permissions.html?user_id=${user.id}'">
+                            🔐 دسترسی‌ها
+                        </button>
                         ${!isSelf ? 
                             `<button class="delete-btn" onclick="deleteUser(${user.id})">حذف</button>` :
                             '<span style="color:#999;font-size:11px;">(خودتان)</span>'
@@ -376,8 +417,7 @@
             }
         }
 
-        // لود اولیه
-        loadUsers();
+   
     </script>
 </body>
 

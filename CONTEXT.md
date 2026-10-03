@@ -1,8 +1,8 @@
 # پروژه: سامانه بودجه شهرداری
 
-## تاریخ آخرین آپدیت: 1405/07/XX
+## تاریخ آخرین آپدیت: 1405/07/08
 
-## وضعیت: بخش ۷ (اشخاص) — تکمیل شد ✅
+## وضعیت: بخش ۸ (سیستم Permission) — تکمیل شد ✅
 
 ## کارهای انجام شده:
 - [x] فاز ۰ تا ۱۸
@@ -14,20 +14,30 @@
 - [x] بخش ۵: حسابداری
 - [x] بخش ۶: کدینگ کالا و خدمات
 - [x] **بخش ۷: اشخاص (کارکنان، حقیقی، حقوقی، تفصیلی شناور)**
+- [x] **بخش ۸: سیستم Permission سفارشی**
 - [x] جدول `base_data` + API کامل + UI درختی/جدولی
 - [x] جدول `persons` + API کامل + UI + فرم هوشمند
+- [x] جدول `role_permissions` و `user_permissions` (Migration 022)
+- [x] APIهای Permission (`/api/permissions/keys`, `/api/users/:id/permissions`, `/api/me/permissions`)
+- [x] صفحه `permissions.html` با UI پیشرفته (پیش‌فرض/اجازه/عدم اجازه)
+- [x] اتصال `sidebar.js` به Permission (فیلتر منو)
+- [x] اتصال `dashboard.html` به Permission (فیلتر کارت‌ها)
+- [x] اتصال `users.html` به Permission
+- [x] **Top Bar مشترک** (کاربر + عنوان صفحه + بازگشت + تم + خروج)
+- [x] **Dark Mode مشترک** (`dark.css`)
+- [x] **یکدست‌سازی عرض صفحات** (`max-width: 1400px`)
 - [x] `tree.css` مشترک برای یکدست‌سازی درخت‌ها
+- [x] `table.css` مشترک برای یکدست‌سازی جدول‌ها
 - [x] `person_organizations` و `entity_relations` (آماده برای آینده)
 - [x] Footer مشترک
 - [x] Breadcrumb مشترک
 - [x] صفحه `goods.html` با `extra_data`
 - [x] صفحه `persons.html` با ۴ تب + DatePicker شمسی
-- [x] دسترسی `manager` به «سال مالی» و «لاگ سیستم»
-- [x] بهبود ظاهر صفحه لاگین (روشن‌تر + فوتر واضح)
 - [x] دسترسی `manager` به «سال مالی» و «لاگ سیستم» (کامل: صفحه + API)
-- [x] `table.css` مشترک برای یکدست‌سازی جدول‌ها
+- [x] بهبود ظاهر صفحه لاگین (روشن‌تر + فوتر واضح)
 - [x] حذف `status` از کارت‌های `base-info.html` (هاید شده)
 - [x] تمیزکاری CSSهای تکراری از صفحات
+- [x] دکمه بازگشت در top-bar
 
 ## صفحات موجود:
 ### احراز هویت
@@ -47,7 +57,7 @@
 - /accounting.html
 - /budget-types.html
 - /goods.html
-- **/persons.html** ← جدید
+- /persons.html
 
 ### بودجه
 - /budget-proposals.html
@@ -62,6 +72,7 @@
 
 ### مدیریت
 - /users.html
+- /permissions.html  ← جدید
 - /audit-log.html
 
 ## کاربران پیش‌فرض:
@@ -71,6 +82,8 @@
 - admin, manager, expert, viewer, province, ministry
 
 ## کارهای بعدی:
+- [ ] بخش ۸: تکمیل Permission در بقیه APIها (`users` POST/PUT/DELETE)
+- [ ] بخش ۸: چک دسترسی در بقیه صفحات
 - [ ] بخش ۷: اتصال اشخاص به سازمان (`person_organizations`)
 - [ ] بخش ۷: اتصال اشخاص به بودجه پیشنهادی
 - [ ] بخش ۷: استعلام کد ملی
@@ -85,6 +98,28 @@
 - `section`: 'organization', 'economic', 'strategic', 'operational', 'accounting', 'budget_type', 'goods'
 - `type`: انواع مختلف
 - `extra_data`: JSON string
+
+## ساختار `persons`:
+- `person_type`: 'employee', 'natural', 'legal', 'floating'
+- `code`, `parent_id`, `level`, `level_name`
+- اطلاعات هویتی، تماس، استخدامی، بانکی
+- `national_id_verified`, `notes`, `extra_data`, `is_active`
+
+## ساختار `permissions`:
+- `role_permissions`: (role, permission_key, granted)
+- `user_permissions`: (user_id, permission_key, granted, granted_by)
+
+### کلیدهای Permission:
+- `base_info.view`, `base_info.edit`
+- `persons.view`, `persons.add`, `persons.edit`, `persons.delete`
+- `budget.view`, `budget.add`, `budget.submit`, `budget.approve_manager`, `budget.approve_finance`, `budget.approve_final`
+- `allocations.view`, `allocations.add`
+- `executions.view`, `executions.add`
+- `reports.view`, `reports.export`
+- `users.view`, `users.add`, `users.edit`, `users.delete`, `users.permissions`
+- `fiscal_years.view`, `fiscal_years.manage`
+- `audit_log.view`
+- `municipality_info.view`, `municipality_info.edit`
 
 ## قوانین کدینگ بخش ۷ (اشخاص):
 - **کدینگ ۱۰ رقمی:** `[۱ رقم گروه][۳ رقم زیرگروه][۳ رقم دسته][۳ رقم شخص]`

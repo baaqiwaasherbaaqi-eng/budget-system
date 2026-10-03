@@ -24,104 +24,145 @@ if (typeof isTokenValid === 'undefined') {
   };
 }
 
-function renderSidebar() {
+// ============================================
+// لود Permission های کاربر
+// ============================================
+let userPermissions = null;
+
+async function loadUserPermissions() {
+    if (userPermissions !== null) return userPermissions;
+    
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/me/permissions', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!res.ok) {
+            userPermissions = {};
+            return {};
+        }
+        
+        const data = await res.json();
+        userPermissions = data.permissions || {};
+        return userPermissions;
+    } catch (error) {
+        console.error('Permission load error:', error);
+        userPermissions = {};
+        return {};
+    }
+}
+
+function hasPermission(key) {
+    if (!userPermissions) return false;
+    return userPermissions[key] === true;
+}
+
+
+
+async function renderSidebar() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const currentPath = window.location.pathname;
+
   // بررسی اعتبار توکن
   if (!isTokenValid()) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/login.html';
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = "/login.html";
     return;
   }
+
+  // لود permission ها
+  await loadUserPermissions();
   const allMenus = [
     {
       icon: "🏠",
       title: "داشبورد",
       url: "/dashboard.html",
-      roles: ["admin", "manager", "expert", "viewer", "province", "ministry"],
+      permission: null, // همه
     },
     {
       icon: "📂",
       title: "اطلاعات پایه",
       url: "/base-info.html",
-      roles: ["admin", "manager", "expert", "viewer"],
+      permission: "base_info.view",
     },
-
+    {
+      icon: "👥",
+      title: "اشخاص",
+      url: "/persons.html",
+      permission: "persons.view",
+    },
     {
       icon: "💰",
       title: "بودجه پیشنهادی",
       url: "/budget-proposals.html",
-      roles: ["admin", "manager", "expert", "viewer"],
+      permission: "budget.view",
     },
     {
       icon: "💳",
       title: "تخصیص اعتبار",
       url: "/allocations.html",
-      roles: ["admin", "manager"],
+      permission: "allocations.view",
     },
     {
       icon: "💸",
       title: "تامین اعتبار",
       url: "/executions.html",
-      roles: ["admin", "manager", "expert"],
+      permission: "executions.view",
     },
     {
       icon: "🔄",
       title: "اصلاح بودجه",
       url: "/revisions.html",
-      roles: ["admin", "manager"],
+      permission: "budget.view",
     },
     {
       icon: "📈",
       title: "گزارشات",
       url: "/reports.html",
-      roles: ["admin", "manager", "expert", "viewer", "province", "ministry"],
+      permission: "reports.view",
     },
     {
       icon: "📊",
       title: "گزارش پیشرفته",
       url: "/advanced-reports.html",
-      roles: ["admin", "manager", "viewer", "province", "ministry"],
+      permission: "reports.view",
     },
     {
       icon: "📋",
       title: "تفریغ بودجه",
       url: "/tafriq.html",
-      roles: ["admin", "manager", "viewer"],
+      permission: "reports.view",
     },
     {
       icon: "📅",
       title: "سال مالی",
       url: "/fiscal-years.html",
-      roles: ["admin", "manager"],
+      permission: "fiscal_years.view",
     },
     {
       icon: "👥",
       title: "مدیریت کاربران",
       url: "/users.html",
-      roles: ["admin"],
+      permission: "users.view",
     },
     {
       icon: "📜",
       title: "لاگ سیستم",
       url: "/audit-log.html",
-      roles: ["admin", "manager"],
+      permission: "audit_log.view",
     },
   ];
 
-  // فیلتر بر اساس نقش
-  let visibleMenus = allMenus.filter((m) => m.roles.includes(user.role));
+  // فیلتر بر اساس Permission
+  let visibleMenus = allMenus.filter((m) => {
+    // اگه permission نداره، برای همه نمایش بده
+    if (!m.permission) return true;
 
-  // برای province و ministry فقط گزارشات
-  if (user.role === "province" || user.role === "ministry") {
-    visibleMenus = allMenus.filter(
-      (m) =>
-        m.url === "/reports.html" ||
-        m.url === "/advanced-reports.html" ||
-        m.url === "/dashboard.html"
-    );
-  }
+    // چک Permission
+    return hasPermission(m.permission);
+  });
 
   // ساخت HTML
   const sidebarHTML = `
@@ -137,16 +178,17 @@ function renderSidebar() {
             </div>
             <nav class="sidebar-nav">
                 ${visibleMenus
-      .map(
-        (menu) => `
-                    <a href="${menu.url}" class="sidebar-link ${currentPath === menu.url ? "active" : ""
-          }">
+                  .map(
+                    (menu) => `
+                    <a href="${menu.url}" class="sidebar-link ${
+                      currentPath === menu.url ? "active" : ""
+                    }">
                         <span class="sidebar-icon">${menu.icon}</span>
                         <span class="sidebar-text">${menu.title}</span>
                     </a>
                 `
-      )
-      .join("")}
+                  )
+                  .join("")}
             </nav>
             <div class="sidebar-footer">
                 <button class="sidebar-logout" onclick="sidebarLogout()">
@@ -196,11 +238,31 @@ function sidebarLogout() {
   }
 }
 
+// ============================================
+// تغییر تم (Dark Mode)
+// ============================================
+function toggleDarkMode() {
+    document.body.classList.toggle("dark");
+    const isDark = document.body.classList.contains("dark");
+    localStorage.setItem("theme", isDark ? "dark" : "light");
+    
+    const themeBtn = document.getElementById("theme-btn");
+    if (themeBtn) {
+        themeBtn.textContent = isDark ? "☀️" : "🌙";
+    }
+}
+
 // راه‌اندازی موقع لود
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", renderSidebar);
+  document.addEventListener("DOMContentLoaded", async () => {
+    await renderSidebar();
+    renderTopBar();
+  });
 } else {
-  renderSidebar();
+  (async () => {
+    await renderSidebar();
+    renderTopBar();
+  })();
 }
 
 // ============================================
@@ -540,16 +602,26 @@ window.addEventListener('load', function() {
 })();
 
 // ============================================
-// tree styler
+// لود CSS مشترک
 // ============================================
-(function () {
-  if (!document.getElementById("tree-styles")) {
-    const link = document.createElement("link");
-    link.id = "tree-styles";
-    link.rel = "stylesheet";
-    link.href = "/tree.css";
-    document.head.appendChild(link);
-  }
+(function() {
+    // Tree CSS
+    if (!document.getElementById('tree-styles')) {
+        const link = document.createElement('link');
+        link.id = 'tree-styles';
+        link.rel = 'stylesheet';
+        link.href = '/tree.css';
+        document.head.appendChild(link);
+    }
+    
+    // Dark Mode CSS
+    if (!document.getElementById('dark-styles')) {
+        const link = document.createElement('link');
+        link.id = 'dark-styles';
+        link.rel = 'stylesheet';
+        link.href = '/dark.css';
+        document.head.appendChild(link);
+    }
 })();
 
 // ============================================
@@ -564,3 +636,102 @@ window.addEventListener('load', function() {
         document.head.appendChild(link);
     }
 })();
+
+// ============================================
+// Top Bar مشترک
+// ============================================
+function renderTopBar() {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const currentPath = window.location.pathname;
+
+  // توی صفحه لاگین نمایش نده
+  if (currentPath === "/login.html" || currentPath === "/") return;
+
+  const initial = user.full_name ? user.full_name.charAt(0) : "?";
+
+  // عنوان صفحه بر اساس مسیر
+  const pageTitles = {
+    "/dashboard.html": { icon: "🏠", title: "داشبورد" },
+    "/base-info.html": { icon: "📂", title: "اطلاعات پایه" },
+    "/persons.html": { icon: "👥", title: "اشخاص" },
+    "/budget-proposals.html": { icon: "💰", title: "بودجه پیشنهادی" },
+    "/allocations.html": { icon: "💳", title: "تخصیص اعتبار" },
+    "/executions.html": { icon: "💸", title: "تامین اعتبار" },
+    "/revisions.html": { icon: "🔄", title: "اصلاح بودجه" },
+    "/reports.html": { icon: "📈", title: "گزارشات" },
+    "/advanced-reports.html": { icon: "📊", title: "گزارش پیشرفته" },
+    "/tafriq.html": { icon: "📋", title: "تفریغ بودجه" },
+    "/fiscal-years.html": { icon: "📅", title: "سال مالی" },
+    "/users.html": { icon: "👥", title: "مدیریت کاربران" },
+    "/permissions.html": { icon: "🔐", title: "مدیریت دسترسی‌ها" },
+    "/audit-log.html": { icon: "📜", title: "لاگ سیستم" },
+    "/municipality-info.html": { icon: "🏛️", title: "مشخصات شهرداری" },
+    "/organizations.html": { icon: "🏢", title: "ساختار سازمانی" },
+    "/economic-classifications.html": {
+      icon: "💰",
+      title: "طبقه‌بندی اقتصادی",
+    },
+    "/strategic-plan.html": { icon: "🎯", title: "برنامه راهبردی" },
+    "/operational-classifications.html": {
+      icon: "📊",
+      title: "طبقه‌بندی عملیاتی",
+    },
+    "/accounting.html": { icon: "📒", title: "حسابداری" },
+    "/budget-types.html": { icon: "🏷️", title: "نوع اعتبار و مصرف" },
+    "/goods.html": { icon: "📦", title: "کالا و خدمات" },
+  };
+
+  const pageInfo = pageTitles[currentPath] || {
+    icon: "📄",
+    title: "سامانه بودجه",
+  };
+
+  const topBarHTML = `
+        <div class="top-bar" id="top-bar">
+            <div class="top-bar-user">
+                <div class="top-bar-avatar">${initial}</div>
+                <div class="top-bar-info">
+                    <div class="top-bar-name">${user.full_name || "کاربر"}</div>
+                    <div class="top-bar-role">${getRoleLabel(user.role)}</div>
+                </div>
+            </div>
+            
+            <div class="top-bar-title">
+                <span class="top-bar-title-icon">${pageInfo.icon}</span>
+                <span class="top-bar-title-text">${pageInfo.title}</span>
+            </div>
+            
+            <div class="top-bar-actions">
+                ${
+                  currentPath !== "/dashboard.html"
+                    ? `
+                    <button class="top-bar-back" onclick="history.back()" title="بازگشت">
+                        ↩️
+                    </button>
+                `
+                    : ""
+                }
+                <button class="top-bar-theme" onclick="toggleDarkMode()" id="theme-btn" title="تغییر تم">
+                    ${localStorage.getItem("theme") === "dark" ? "☀️" : "🌙"}
+                </button>
+                <button class="top-bar-logout" onclick="sidebarLogout()">
+                    🚪 خروج
+                </button>
+            </div>
+        </div>
+    `;
+
+  // لود تم ذخیره‌شده
+  if (localStorage.getItem("theme") === "dark") {
+    document.body.classList.add("dark");
+  }
+
+  // اضافه کردن به بالای body
+  document.body.insertAdjacentHTML("afterbegin", topBarHTML);
+
+  // مخفی کردن header قدیمی
+  const oldHeader = document.querySelector(".header");
+  if (oldHeader) {
+    oldHeader.style.display = "none";
+  }
+}

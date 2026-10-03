@@ -10,6 +10,8 @@
       type="text/css"
     />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/sidebar.css">
+    <script src="/sidebar.js"></script>
     <script src="/footer.js"></script>
     <style>
       * {
@@ -22,43 +24,8 @@
         padding: 0;
         transition: background 0.3s, color 0.3s;
       }
-      .header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 20px 30px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 15px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      }
-      .header h1 {
-        margin: 0;
-        font-size: 22px;
-      }
-      .user-info {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-      }
-      .user-info span {
-        font-size: 14px;
-      }
-      .logout-btn {
-        background: rgba(255, 255, 255, 0.2);
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        padding: 8px 16px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-family: "Vazirmatn", Tahoma, sans-serif;
-        font-size: 13px;
-        transition: background 0.2s;
-      }
-      .logout-btn:hover {
-        background: rgba(255, 255, 255, 0.3);
-      }
+
+
       .container {
         max-width: 1400px;
         margin: 0 auto;
@@ -211,33 +178,14 @@
         font-size: 15px;
         color: #333;
       }
-      .theme-toggle {
-        position: fixed;
-        bottom: 20px;
-        left: 20px;
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        background: #667eea;
-        color: white;
-        border: none;
-        cursor: pointer;
-        font-size: 20px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        z-index: 1000;
-      }
-      .theme-toggle:hover {
-        background: #5a67d8;
-      }
+
 
       /* Dark mode */
       body.dark {
         background: #1a202c;
         color: #e2e8f0;
       }
-      body.dark .header {
-        background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
-      }
+
       body.dark .welcome,
       body.dark .stat-card,
       body.dark .menu-card,
@@ -289,13 +237,7 @@
     
   </head>
   <body>
-    <div class="header">
-      <h1>💰 سامانه بودجه شهرداری</h1>
-      <div class="user-info">
-        <span id="user-name"></span>
-        <button class="logout-btn" onclick="logout()">خروج</button>
-      </div>
-    </div>
+
 
     <div class="container">
       <h2 class="section-title">📋 دسترسی سریع</h2>
@@ -322,9 +264,7 @@
       </div>
     </div>
 
-    <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">
-      🌙
-    </button>
+
 
     <script>
       if (!localStorage.getItem("token")) {
@@ -362,104 +302,118 @@
         );
       }
 
-    // نمایش نام کاربر
-      const userNameEl = document.getElementById("user-name");
-      if (userNameEl) {
-        userNameEl.textContent = `${user.full_name} (${user.role})`;
-      }
 
       // منوها
-      const allMenus = [
-      { icon: "📂", title: "اطلاعات پایه", desc: "مدیریت اطلاعات پایه", url: "/base-info.html", roles: ["admin", "manager", "expert", "viewer"] },
-            { icon: "💰", title: "بودجه پیشنهادی", desc: "ثبت و مدیریت بودجه", url: "/budget-proposals.html", roles: ["admin", "manager", "expert", "viewer"] },
+            const allMenus = [
+        {
+          icon: "📂",
+          title: "اطلاعات پایه",
+          desc: "مدیریت اطلاعات پایه",
+          url: "/base-info.html",
+          permission: "base_info.view",
+        },
+        {
+          icon: "💰",
+          title: "بودجه پیشنهادی",
+          desc: "ثبت و مدیریت بودجه",
+          url: "/budget-proposals.html",
+          permission: "budget.view",
+        },
         {
           icon: "💳",
           title: "تخصیص اعتبار",
           desc: "تخصیص به سازمان‌ها",
           url: "/allocations.html",
-          roles: ["admin", "manager"],
+          permission: "allocations.view",
         },
         {
           icon: "💸",
           title: "تامین اعتبار",
           desc: "ثبت هزینه‌ها",
           url: "/executions.html",
-          roles: ["admin", "manager", "expert"],
+          permission: "executions.view",
         },
         {
           icon: "🔄",
           title: "اصلاح بودجه",
           desc: "اصلاحات و متمم",
           url: "/revisions.html",
-          roles: ["admin", "manager"],
+          permission: "budget.view",
         },
         {
           icon: "📈",
           title: "گزارشات",
           desc: "گزارش‌های مالی",
           url: "/reports.html",
-          roles: [
-            "admin",
-            "manager",
-            "expert",
-            "viewer",
-            "province",
-            "ministry",
-          ],
+          permission: "reports.view",
         },
         {
           icon: "📊",
           title: "گزارش پیشرفته",
           desc: "گزارشات جامع",
           url: "/advanced-reports.html",
-          roles: ["admin", "manager", "viewer", "province", "ministry"],
+          permission: "reports.view",
         },
         {
           icon: "📋",
           title: "تفریغ بودجه",
           desc: "مقایسه مصوب و عملکرد",
           url: "/tafriq.html",
-          roles: ["admin", "manager", "viewer"],
+          permission: "reports.view",
         },
         {
           icon: "📅",
           title: "سال مالی",
           desc: "مدیریت سال مالی",
           url: "/fiscal-years.html",
-          roles: ["admin", "manager"],
+          permission: "fiscal_years.view",
         },
-
         {
           icon: "👥",
           title: "مدیریت کاربران",
           desc: "کاربران",
           url: "/users.html",
-          roles: ["admin"],
+          permission: "users.view",
         },
         {
           icon: "📜",
           title: "لاگ سیستم",
           desc: "تاریخچه عملیات",
           url: "/audit-log.html",
-          roles: ["admin", "manager"],
+          permission: "audit_log.view",
         },
       ];
 
       const menuGrid = document.getElementById("menu-grid");
 
-      if (user.role === "province" || user.role === "ministry") {
-        // فقط گزارشات
-        const reportMenus = allMenus.filter(
-          (m) => m.url === "/reports.html" || m.url === "/advanced-reports.html"
-        );
-        reportMenus.forEach((menu) => createMenuCard(menu));
-      } else {
-        allMenus.forEach((menu) => {
-          if (menu.roles.includes(user.role)) {
-            createMenuCard(menu);
+      // لود Permission ها
+      async function initDashboard() {
+        try {
+          const res = await fetch('/api/me/permissions', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (!res.ok) {
+            throw new Error('خطا در بررسی دسترسی');
           }
-        });
+          
+          const data = await res.json();
+          const permissions = data.permissions || {};
+
+          // فیلتر منوها بر اساس Permission
+          allMenus.forEach((menu) => {
+            if (menu.permission === null || menu.permission === undefined || permissions[menu.permission]) {
+              createMenuCard(menu);
+            }
+          });
+        } catch (error) {
+          console.error('Error loading permissions:', error);
+          // اگه خطا داد، همه منوها رو نشون بده
+          allMenus.forEach((menu) => createMenuCard(menu));
+        }
       }
+
+      initDashboard();
 
       function createMenuCard(menu) {
         const card = document.createElement("div");
@@ -714,25 +668,9 @@
         });
       }
 
-      // Dark mode
-      function toggleTheme() {
-        document.body.classList.toggle("dark");
-        const isDark = document.body.classList.contains("dark");
-        localStorage.setItem("theme", isDark ? "dark" : "light");
-        document.getElementById("theme-btn").textContent = isDark ? "☀️" : "🌙";
-      }
 
-      // لود تم ذخیره شده
-      if (localStorage.getItem("theme") === "dark") {
-        document.body.classList.add("dark");
-        document.getElementById("theme-btn").textContent = "☀️";
-      }
 
-      function logout() {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.location.href = "/login.html";
-      }
+
 
       loadStats();
     </script>

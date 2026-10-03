@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مدیریت دسترسی‌ها</title>
+    <link rel="stylesheet" href="/sidebar.css">
+    <script src="/sidebar.js"></script>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 { margin: 0; font-size: 20px; }
+
+        .user-info-card {
+            background: white;
+            padding: 20px 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .user-details h2 {
+            margin: 0 0 5px 0;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .user-details .meta {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .user-details .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: white;
+            margin-right: 8px;
+        }
+
+        .role-admin { background: #dc3545; }
+        .role-manager { background: #fd7e14; }
+        .role-expert { background: #17a2b8; }
+        .role-viewer { background: #6c757d; }
+        .role-province { background: #6f42c1; }
+        .role-ministry { background: #28a745; }
+
+        .permissions-container {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .info-banner {
+            background: #e7f3ff;
+            border-right: 4px solid #17a2b8;
+            padding: 12px 18px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #0c5460;
+            line-height: 1.7;
+        }
+
+        .group-section {
+            margin-bottom: 25px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .group-header {
+            padding: 12px 18px;
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .group-header .icon { font-size: 18px; }
+
+        .permission-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 18px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.15s;
+        }
+
+        .permission-item:last-child {
+            border-bottom: none;
+        }
+
+        .permission-item:hover {
+            background: #fafafa;
+        }
+
+        .permission-label {
+            font-size: 13px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .permission-status {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        /* Radio-style buttons */
+        .perm-btn {
+            padding: 6px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 12px;
+            color: #666;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .perm-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .perm-btn.active-allow {
+            background: #28a745;
+            border-color: #28a745;
+            color: white;
+            box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
+        }
+
+        .perm-btn.active-deny {
+            background: #dc3545;
+            border-color: #dc3545;
+            color: white;
+            box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3);
+        }
+
+        .perm-btn.active-default {
+            background: #6c757d;
+            border-color: #6c757d;
+            color: white;
+            box-shadow: 0 2px 6px rgba(108, 117, 125, 0.3);
+        }
+
+        .actions-bar {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-save:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-cancel {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .btn-cancel:hover {
+            background: #dee2e6;
+        }
+
+        .loading, .error-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .loading .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #e9ecef;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 10002;
+            transition: transform 0.3s;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+        }
+
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast.success { background: #28a745; }
+        .toast.error { background: #dc3545; }
+
+        /* Dark Mode */
+        body.dark { background: #1a202c; color: #e2e8f0; }
+        body.dark .user-info-card,
+        body.dark .permissions-container {
+            background: #2d3748;
+        }
+        body.dark .user-details h2 { color: #e2e8f0; }
+        body.dark .group-section { border-color: #4a5568; }
+        body.dark .group-header { background: #1a202c; color: #e2e8f0; border-bottom-color: #4a5568; }
+        body.dark .permission-item { border-bottom-color: #4a5568; }
+        body.dark .permission-item:hover { background: #374151; }
+        body.dark .permission-label { color: #e2e8f0; }
+        body.dark .perm-btn { background: #1a202c; border-color: #4a5568; color: #a0aec0; }
+        body.dark .info-banner { background: #1a202c; border-right-color: #17a2b8; color: #90cdf4; }
+        body.dark .actions-bar { border-top-color: #4a5568; }
+        body.dark .btn-cancel { background: #4a5568; color: #e2e8f0; }
+
+        @media (max-width: 768px) {
+            .header { padding: 15px 20px; }
+            .header h1 { font-size: 17px; }
+            .permission-item { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .permission-status { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 مدیریت دسترسی‌ها</h1>
+            <a href="/users.html" style="color:white;text-decoration:none;background:rgba(255,255,255,0.2);padding:10px 20px;border-radius:5px;">بازگشت به کاربران</a>
+        </div>
+
+        <div id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <div>در حال بارگذاری...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="/common.js"></script>
+
+    <script>
+        // ============================================
+        // بررسی احراز هویت
+        // ============================================
+        if (!isTokenValid()) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
+        }
+
+        const token = localStorage.getItem('token');
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+
+        if (currentUser.role !== 'admin') {
+            alert('شما دسترسی به این صفحه ندارید');
+            window.location.href = '/dashboard.html';
+        }
+
+        // ============================================
+        // وضعیت
+        // ============================================
+        let targetUserId = null;
+        let targetUser = null;
+        let permissionGroups = [];
+
+        let originalPermissions = {};  // برای تشخیص تغییرات
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // ============================================
+        // گرفتن user_id از URL
+        // ============================================
+        function getUserIdFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('user_id');
+        }
+
+        // ============================================
+        // لود دیتا
+        // ============================================
+        async function loadData() {
+            targetUserId = getUserIdFromUrl();
+
+            if (!targetUserId) {
+                document.getElementById('content').innerHTML = `
+                    <div class="error-state">
+                        <div style="font-size: 40px; margin-bottom: 15px;">⚠️</div>
+                        <div>کاربری انتخاب نشده است</div>
+                        <div style="margin-top: 15px;">
+                            <a href="/users.html" style="color: #667eea;">بازگشت به لیست کاربران</a>
+                        </div>
+                    </div>`;
+                return;
+            }
+
+            try {
+                // لود کلیدها و permission های کاربر
+                const [keysRes, permsRes] = await Promise.all([
+                    fetch('/api/permissions/keys', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }),
+                    fetch(`/api/users/${targetUserId}/permissions`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                ]);
+
+                if (!keysRes.ok || !permsRes.ok) {
+                    throw new Error('خطا در دریافت اطلاعات');
+                }
+
+                permissionGroups = await keysRes.json();
+                const permsData = await permsRes.json();
+
+                targetUser = permsData.user;
+
+                // ✅ ساخت userOverrides:
+                // اول همه keyها رو null (پیش‌فرض)
+                userOverrides = {};
+                permissionGroups.forEach(group => {
+                    group.keys.forEach(perm => {
+                        userOverrides[perm.key] = null;
+                    });
+                });
+
+                // بعد override ها رو اعمال کن (از user_permissions)
+                permsData.user_permissions.forEach(p => {
+                    userOverrides[p.permission_key] = p.granted === 1;
+                });
+
+                // ذخیره برای تشخیص تغییرات
+                originalPermissions = { ...userOverrides };
+
+                renderUI();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('content').innerHTML = `
+                    <div class="error-state">
+                        <div style="font-size: 40px; margin-bottom: 15px;">❌</div>
+                        <div>${error.message}</div>
+                    </div>`;
+            }
+        }
+        // ============================================
+        // رندر UI
+        // ============================================
+        function renderUI() {
+            const roleLabels = {
+                'admin': { class: 'role-admin', label: 'مدیر سیستم' },
+                'manager': { class: 'role-manager', label: 'مدیر' },
+                'expert': { class: 'role-expert', label: 'کارشناس' },
+                'viewer': { class: 'role-viewer', label: 'بازدیدکننده' },
+                'province': { class: 'role-province', label: 'استانداری' },
+                'ministry': { class: 'role-ministry', label: 'وزارت کشور' }
+            };
+
+            const role = roleLabels[targetUser.role] || { class: 'role-viewer', label: targetUser.role };
+            const initial = targetUser.full_name ? targetUser.full_name.charAt(0) : '?';
+
+            let html = `
+                <div class="user-info-card">
+                    <div class="user-avatar">${initial}</div>
+                    <div class="user-details">
+                        <h2>${targetUser.full_name}</h2>
+                        <div class="meta">
+                            <span class="role-badge ${role.class}">${role.label}</span>
+                            نام کاربری: ${targetUser.username}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="permissions-container">
+                    <div class="info-banner">
+                        💡 <b>راهنما:</b> برای هر دسترسی یکی از این گزینه‌ها را انتخاب کنید:
+                        <br>
+                        • <b>پیش‌فرض</b> = بر اساس نقش (${role.label}) — اگر نقشی تغییر کند، این هم تغییر می‌کند
+                        • <b>اجازه</b> = دسترسی داده می‌شود (حتی اگر نقش نداشته باشد)
+                        • <b>عدم اجازه</b> = دسترسی داده نمی‌شود (حتی اگر نقش داشته باشد)
+                    </div>
+            `;
+
+            permissionGroups.forEach(group => {
+                html += `
+                    <div class="group-section">
+                        <div class="group-header">
+                            <span class="icon">${group.icon}</span>
+                            <span>${group.title}</span>
+                        </div>
+                `;
+
+                group.keys.forEach(perm => {
+                    const key = perm.key;
+
+                    // ✅ فقط از userOverrides بخون (نه currentPermissions)
+                    const userOverride = userOverrides[key];
+
+                    let allowClass = '';
+                    let denyClass = '';
+                    let defaultClass = '';
+
+                    if (userOverride === true) {
+                        allowClass = 'active-allow';
+                    } else if (userOverride === false) {
+                        denyClass = 'active-deny';
+                    } else {
+                        defaultClass = 'active-default';
+                    }
+
+                    html += `
+                        <div class="permission-item">
+                            <div class="permission-label">
+                                ${perm.label}
+                            </div>
+                            <div class="permission-status">
+                                <button class="perm-btn ${defaultClass}" onclick="setPermission('${key}', null)">
+                                    🔄 پیش‌فرض
+                                </button>
+                                <button class="perm-btn ${allowClass}" onclick="setPermission('${key}', true)">
+                                    ✅ اجازه
+                                </button>
+                                <button class="perm-btn ${denyClass}" onclick="setPermission('${key}', false)">
+                                    🚫 عدم اجازه
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+            });
+
+            html += `
+                    <div class="actions-bar">
+                        <button class="btn btn-cancel" onclick="cancelChanges()">انصراف</button>
+                        <button class="btn btn-save" id="btn-save" onclick="savePermissions()">
+                            💾 ذخیره تغییرات
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('content').innerHTML = html;
+        }
+        // ============================================
+        // مدیریت وضعیت override کاربر
+        // ============================================
+        let userOverrides = {};  // { key: true/false/null }
+
+
+
+        function setPermission(key, value) {
+            // value: null (default), true (allow), false (deny)
+            userOverrides[key] = value;
+
+            // آپدیت UI فقط برای همون ردیف
+            renderUI();
+        }
+
+        // ============================================
+        // ذخیره تغییرات
+        // ============================================
+           async function savePermissions() {
+            const btn = document.getElementById('btn-save');
+            btn.disabled = true;
+            btn.textContent = '⏳ در حال ذخیره...';
+
+            try {
+                // ✅ همه keyها رو بفرست (حتی null برای پیش‌فرض)
+                const permissions = [];
+
+                permissionGroups.forEach(group => {
+                    group.keys.forEach(perm => {
+                        const override = userOverrides[perm.key];
+                        
+                        // همه keyها رو بفرست (null = پیش‌فرض، true/false = override)
+                        permissions.push({
+                            permission_key: perm.key,
+                            granted: override
+                        });
+                    });
+                });
+
+                console.log('Sending permissions:', permissions);
+
+                const res = await fetch(`/api/users/${targetUserId}/permissions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ permissions })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.error || 'خطا در ذخیره');
+                }
+
+                showToast('دسترسی‌ها با موفقیت ذخیره شد');
+
+                // ✅ آپدیت original (نه پاک کردن userOverrides)
+                originalPermissions = { ...userOverrides };
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '💾 ذخیره تغییرات';
+            }
+        }
+
+        // ============================================
+        // انصراف
+        // ============================================
+        function cancelChanges() {
+            if (Object.keys(userOverrides).length > 0) {
+                if (!confirm('تغییرات ذخیره نشده‌اند. مطمئن هستید؟')) {
+                    return;
+                }
+            }
+
+            userOverrides = {};
+            window.location.href = '/users.html';
+        }
+
+        // ============================================
+        // شروع
+        // ============================================
+        loadData();
+    </script>
+</body>
+</html>

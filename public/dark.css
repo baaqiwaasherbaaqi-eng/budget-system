@@ -1,0 +1,252 @@
+/* ============================================
+   Dark Mode مشترک
+   ============================================ */
+
+body.dark {
+    background: #1a202c !important;
+    color: #e2e8f0 !important;
+}
+
+/* کانتینرها */
+body.dark .container,
+body.dark .container > div,
+body.dark .main-container {
+    background: transparent;
+}
+
+body.dark .header,
+body.dark .toolbar,
+body.dark .tree-container,
+body.dark .table-container,
+body.dark .permissions-container,
+body.dark .user-info-card,
+body.dark .modal,
+body.dark .context-menu,
+body.dark .info-card,
+body.dark .stat-card,
+body.dark .menu-card,
+body.dark .chart-card,
+body.dark .welcome,
+body.dark .summary-card,
+body.dark .chart-container,
+body.dark .form-container,
+body.dark .filters,
+body.dark .breadcrumb,
+body.dark .card {
+    background: #2d3748 !important;
+    color: #e2e8f0 !important;
+    border-color: #4a5568 !important;
+}
+
+/* هدرها */
+body.dark h1,
+body.dark h2,
+body.dark h3,
+body.dark h4,
+body.dark h5,
+body.dark h6,
+body.dark .section-title,
+body.dark .title,
+body.dark .card-title {
+    color: #e2e8f0 !important;
+    border-color: #4a5568 !important;
+}
+
+body.dark h2.section-title {
+    border-bottom-color: #667eea !important;
+}
+
+body.dark p,
+body.dark span,
+body.dark label,
+body.dark .subtitle,
+body.dark .description,
+body.dark .stat-label,
+body.dark .card-subtitle {
+    color: #a0aec0 !important;
+}
+
+body.dark .stat-card .value,
+body.dark .menu-card h3,
+body.dark .value {
+    color: #e2e8f0 !important;
+}
+
+/* فرم‌ها */
+body.dark input,
+body.dark select,
+body.dark textarea {
+    background: #1a202c !important;
+    border-color: #4a5568 !important;
+    color: #e2e8f0 !important;
+}
+
+body.dark input::placeholder,
+body.dark textarea::placeholder {
+    color: #718096 !important;
+}
+
+body.dark input:focus,
+body.dark select:focus,
+body.dark textarea:focus {
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2) !important;
+}
+
+body.dark select option {
+    background: #1a202c;
+    color: #e2e8f0;
+}
+
+/* جدول‌ها */
+body.dark table {
+    background: #2d3748 !important;
+}
+
+body.dark th {
+    background: #1a202c !important;
+    color: #e2e8f0 !important;
+    border-bottom-color: #4a5568 !important;
+}
+
+body.dark td {
+    color: #e2e8f0 !important;
+    border-bottom-color: #4a5568 !important;
+}
+
+body.dark tr:hover {
+    background: #374151 !important;
+}
+
+body.dark .code-cell {
+    color: #90cdf4 !important;
+}
+
+/* دکمه‌ها */
+body.dark button {
+    color: #e2e8f0;
+}
+
+body.dark .btn-cancel {
+    background: #4a5568 !important;
+    color: #e2e8f0 !important;
+}
+
+body.dark .btn-cancel:hover {
+    background: #718096 !important;
+}
+
+/* استایل‌های صفحه‌بندی */
+body.dark .tab {
+    background: #2d3748 !important;
+    color: #a0aec0 !important;
+    border-color: transparent !important;
+}
+
+body.dark .tab:hover {
+    background: #4a5568 !important;
+}
+
+body.dark .tab.active {
+    color: white !important;
+}
+
+body.dark .view-switch {
+    background: #1a202c !important;
+}
+
+body.dark .view-switch button {
+    color: #a0aec0 !important;
+}
+
+body.dark .view-switch button.active {
+    background: #4a5568 !important;
+    color: #90cdf4 !important;
+}
+
+/* Badge ها */
+body.dark .badge,
+body.dark .level-badge,
+body.dark .role-badge {
+    background: #4a5568 !important;
+    color: #e2e8f0 !important;
+}
+
+/* لینک‌ها */
+body.dark a {
+    color: #90cdf4;
+}
+
+/* Modal */
+body.dark .modal-overlay {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+body.dark .modal h3 {
+    color: #e2e8f0 !important;
+}
+
+body.dark .modal .info-row {
+    background: #1a202c !important;
+    color: #a0aec0 !important;
+}
+
+/* Context Menu */
+body.dark .context-menu button {
+    color: #e2e8f0;
+}
+
+body.dark .context-menu button:hover {
+    background: #4a5568 !important;
+}
+
+body.dark .context-menu .divider {
+    background: #4a5568 !important;
+}
+
+/* Toast */
+body.dark .toast {
+    background: #4a5568;
+    color: #e2e8f0;
+}
+
+/* empty state */
+body.dark .empty-state,
+body.dark .loading {
+    color: #718096 !important;
+}
+
+/* breadcrumb */
+body.dark .breadcrumb-item {
+    color: #90cdf4 !important;
+}
+
+body.dark .breadcrumb-item.current {
+    color: #e2e8f0 !important;
+}
+
+body.dark .breadcrumb-separator {
+    color: #4a5568 !important;
+}
+
+/* info-banner */
+body.dark .info-banner {
+    background: #1a202c !important;
+    color: #90cdf4 !important;
+}
+
+/* Button styles */
+body.dark .btn-save {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+}
+
+body.dark .add-btn,
+body.dark .add-root-btn {
+    color: white !important;
+}
+
+/* Select دراپ‌دان */
+body.dark select {
+    background-color: #1a202c !important;
+}
