@@ -487,14 +487,14 @@
             <button class="tab tab-employee active" id="tab-employee" onclick="switchTab('employee')">
                 👷 کارکنان
             </button>
-            <button class="tab tab-natural" id="tab-natural" onclick="switchTab('natural')">
-                👤 اشخاص حقیقی
+            <button class="tab tab-citizen" id="tab-citizen" onclick="switchTab('citizen')">
+                👤 شهروندان
             </button>
             <button class="tab tab-legal" id="tab-legal" onclick="switchTab('legal')">
                 🏢 اشخاص حقوقی
             </button>
-            <button class="tab tab-floating" id="tab-floating" onclick="switchTab('floating')">
-                📊 تفصیلی شناور
+            <button class="tab tab-foreigner" id="tab-foreigner" onclick="switchTab('foreigner')">
+                🌍 خارج شهروندان
             </button>
         </div>
 
@@ -733,9 +733,9 @@
         // ============================================
         const TYPE_LABELS = {
             employee: 'کارکنان',
-            natural: 'اشخاص حقیقی',
+            citizen: 'شهروندان',
             legal: 'اشخاص حقوقی',
-            floating: 'تفصیلی شناور'
+            foreigner: 'خارج شهروندان'
         };
 
         const LEVEL_LABELS = {
@@ -903,9 +903,11 @@
                 let info = '-';
                 if (item.level === 4) {
                     if (currentType === 'employee' && item.employee_code) info = `کد پرسنلی: ${item.employee_code}`;
-                    else if (currentType === 'natural' && item.national_id) info = `کد ملی: ${item.national_id}`;
+                    else if (currentType === 'citizen' && item.national_id) info = `کد ملی: ${item.national_id}`;
                     else if (currentType === 'legal' && item.economic_code) info = `کد اقتصادی: ${item.economic_code}`;
                 }
+
+                const indent = '　'.repeat(Math.max(0, item.level - 1));
 
                 const tr = document.createElement('tr');
                 tr.style.cursor = 'pointer';
@@ -913,7 +915,10 @@
 
                 tr.innerHTML = `
                     <td class="code-cell">${item.code}</td>
-                    <td>${item.full_name}</td>
+                    <td>
+                        <span>${indent}</span>
+                        <span>${item.full_name}</span>
+                    </td>
                     <td><span class="badge">${getLevelName(item.level)}</span></td>
                     <td style="font-size:12px; color:#666;">${info}</td>
                     <td>${item.is_active ? '✅ فعال' : '❌ غیرفعال'}</td>
@@ -934,7 +939,6 @@
                 tbody.appendChild(tr);
             });
         }
-
         // ============================================
         // سوئیچ تب
         // ============================================
@@ -944,9 +948,9 @@
             selectedNode = null;
             expandedNodes.clear();
 
-            ['employee', 'natural', 'legal', 'floating'].forEach(t => {
-                document.getElementById('tab-' + t).classList.toggle('active', t === type);
-            });
+        ['employee', 'citizen', 'legal', 'foreigner'].forEach(t => {
+            document.getElementById('tab-' + t).classList.toggle('active', t === currentType);
+        });
 
             loadData();
         }
@@ -1057,8 +1061,8 @@
                     currentType === 'employee' ? 'block' : 'none';
 
                 // فیلدهای حقیقی
-                document.getElementById('row-natural-fields').style.display =
-                    (currentType === 'natural' || currentType === 'employee') ? 'grid' : 'none';
+document.getElementById('row-natural-fields').style.display =
+    (currentType === 'citizen' || currentType === 'employee' || currentType === 'foreigner') ? 'grid' : 'none';
 
                 // فیلدهای حقوقی
                 document.getElementById('row-legal-fields').style.display =
@@ -1145,8 +1149,8 @@
                 // فیلدهای ویژه
                 document.getElementById('employee-fields').style.display =
                     currentType === 'employee' ? 'block' : 'none';
-                document.getElementById('row-natural-fields').style.display =
-                    (currentType === 'natural' || currentType === 'employee') ? 'grid' : 'none';
+document.getElementById('row-natural-fields').style.display =
+    (currentType === 'citizen' || currentType === 'employee' || currentType === 'foreigner') ? 'grid' : 'none';
                 document.getElementById('row-legal-fields').style.display =
                     currentType === 'legal' ? 'grid' : 'none';
             }
@@ -1355,7 +1359,7 @@
         // ============================================
         switchView(currentView);
 
-        ['employee', 'natural', 'legal', 'floating'].forEach(t => {
+        ['employee', 'citizen', 'legal', 'foreigner'].forEach(t => {
             document.getElementById('tab-' + t).classList.toggle('active', t === currentType);
         });
 

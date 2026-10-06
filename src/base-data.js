@@ -369,28 +369,47 @@ async function generateGoodsCode(env, { parent_id, digit_count = 3 }) {
  */
 export async function generatePersonCode(env, { person_type, parent_id }) {
   // ============================================
-  // سطح ۱: بدون والد
+  // سطح ۱: بدون والد (گروه اصلی)
   // ============================================
   if (!parent_id) {
-    const last = await env.DB.prepare(
-      `SELECT code FROM persons 
-       WHERE parent_id IS NULL 
-       ORDER BY CAST(code AS INTEGER) DESC LIMIT 1`
-    ).first();
+    // بر اساس person_type، prefix رو تعیین کن
+    const typePrefix = {
+      employee: "1",
+      citizen: "2",
+      legal: "3",
+      foreigner: "4",
+    };
 
-    const nextNum = last ? parseInt(last.code.substring(0, 1), 10) + 1 : 1;
-    if (nextNum > 9) {
-      throw new Error("حداکثر ۹ گروه اصلی مجاز است");
+    const prefix = typePrefix[person_type];
+    if (!prefix) {
+      throw new Error("نوع شخص نامعتبر");
     }
-    return nextNum.toString() + "000000000";
+
+    // چک کن اگه گروه اصلی با این prefix وجود داره
+    const exists = await env.DB.prepare(
+      `SELECT id FROM persons 
+       WHERE parent_id IS NULL AND code LIKE ?`
+    )
+      .bind(prefix + "%")
+      .first();
+
+    if (exists) {
+      throw new Error(
+        "گروه اصلی این نوع شخص از قبل وجود دارد. لطفاً زیرگروه بسازید."
+      );
+    }
+
+    return prefix + "000000000";
   }
 
   // ============================================
-  // سطح ۲+
+  // سطح ۲+ (زیرگروه)
   // ============================================
   const parent = await env.DB.prepare(
     "SELECT code, level FROM persons WHERE id = ?"
-  ).bind(parent_id).first();
+  )
+    .bind(parent_id)
+    .first();
 
   if (!parent) {
     throw new Error("والد یافت نشد");
@@ -404,10 +423,12 @@ export async function generatePersonCode(env, { person_type, parent_id }) {
     `SELECT code FROM persons 
      WHERE parent_id = ? 
      ORDER BY code DESC LIMIT 1`
-  ).bind(parent_id).first();
+  )
+    .bind(parent_id)
+    .first();
 
   // ============================================
-  // سطح ۲: 1 001 000 000 → X YYY 000 000
+  // سطح ۲: X YYY 000 000
   // ============================================
   if (level === 1) {
     const prefix = parentCode.substring(0, 1); // X
@@ -422,11 +443,10 @@ export async function generatePersonCode(env, { person_type, parent_id }) {
   }
 
   // ============================================
-  // سطح ۳: X YYY ZZZ 000 (۳ رقم جدید در موقعیت ۴-۶)
+  // سطح ۳: X YYY ZZZ 000
   // ============================================
   if (level === 2) {
-    // parentCode: 1 001 000 000
-    const prefix = parentCode.substring(0, 4); // 1 001
+    const prefix = parentCode.substring(0, 4); // X YYY
     const lastSuffix = last ? parseInt(last.code.substring(4, 7), 10) : 0;
     const nextNum = lastSuffix + 1;
 
@@ -438,11 +458,10 @@ export async function generatePersonCode(env, { person_type, parent_id }) {
   }
 
   // ============================================
-  // سطح ۴+: X YYY ZZZ WWW (۳ رقم آخر)
+  // سطح ۴: X YYY ZZZ WWW
   // ============================================
   if (level === 3) {
-    // parentCode: 1 001 001 000
-    const prefix = parentCode.substring(0, 7); // 1 001 001
+    const prefix = parentCode.substring(0, 7); // X YYY ZZZ
     const lastSuffix = last ? parseInt(last.code.substring(7, 10), 10) : 0;
     const nextNum = lastSuffix + 1;
 
@@ -453,6 +472,5 @@ export async function generatePersonCode(env, { person_type, parent_id }) {
     return prefix + nextNum.toString().padStart(3, "0");
   }
 
-  // سطح ۵+ پشتیبانی نمی‌شود
   throw new Error("حداکثر عمق مجاز ۴ سطح است");
 }

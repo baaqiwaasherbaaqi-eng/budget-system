@@ -2,12 +2,15 @@
 -- Migration 019: Seed گروه‌های اصلی کالا و خدمات
 -- ============================================
 
--- ۱. حذف ایندکس یکتا (موقت)
+-- پاک‌سازی
+-- حذف ایندکس یکتا (موقت)
 DROP INDEX IF EXISTS idx_base_data_unique_code;
 
--- ۲. پاک‌سازی کامل
+-- پاک‌سازی
 DELETE FROM base_data WHERE section = 'goods';
-DELETE FROM base_data WHERE type = 'goods';
+
+-- بازسازی ایندکس یکتا (بعد از درج)
+-- در انتهای فایل
 
 -- ============================================
 -- سطح ۱: گروه‌های اصلی
@@ -58,9 +61,6 @@ VALUES
   ('goods', 'goods', NULL, '305', 'زمین', 3, 2, 'گروه فرعی', (SELECT id FROM base_data WHERE section='goods' AND code='3'), NULL),
   ('goods', 'goods', NULL, '306', 'دارایی‌های نامشهود', 3, 2, 'گروه فرعی', (SELECT id FROM base_data WHERE section='goods' AND code='3'), NULL);
 
--- ============================================
--- ۳. بازسازی ایندکس یکتا
--- ============================================
-
+  -- بازسازی ایندکس یکتا
 CREATE UNIQUE INDEX IF NOT EXISTS idx_base_data_unique_code 
 ON base_data(section, COALESCE(fiscal_year_id, 0), COALESCE(type, ''), code);

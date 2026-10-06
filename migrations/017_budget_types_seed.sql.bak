@@ -2,15 +2,15 @@
 -- Migration 017: Seed نوع اعتبار و نوع مصرف
 -- ============================================
 
--- حذف ایندکس یکتا (موقت)
-DROP INDEX IF EXISTS idx_base_data_unique_code;
-
--- پاک‌سازی
+-- پاک‌سازی (اگه قبلاً چیزی هست)
 DELETE FROM base_data WHERE section='budget_type';
 
 -- ============================================
 -- نوع اعتبار (credit)
 -- ============================================
+
+-- حذف ایندکس یکتا (موقت)
+DROP INDEX IF EXISTS idx_base_data_unique_code;
 
 INSERT INTO base_data (section, type, code, digit_count, level, level_name, title, parent_id, sort_order, created_at_shamsi)
 VALUES ('budget_type', 'credit', '001', 3, 0, 'نوع', 'اعتبارات هزینه‌ای', NULL, 1, '1405/06/31');

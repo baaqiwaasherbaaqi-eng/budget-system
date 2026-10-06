@@ -283,6 +283,9 @@
     <script src="/common.js"></script>
     <script src="/sidebar.js"></script>
 
+    <script src="/common.js"></script>
+    <script src="/sidebar.js"></script>
+
     <script>
         if (!isTokenValid()) {
             localStorage.removeItem('token');
@@ -293,16 +296,10 @@
         const token = localStorage.getItem('token');
         const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-        // فقط admin میتونه ویرایش کنه
-        const canEdit = user.role === 'admin';
-
-        if (!canEdit) {
-            document.querySelectorAll('input, textarea, select').forEach(el => {
-                el.disabled = true;
-            });
-            document.getElementById('save-btn').style.display = 'none';
-            showAlert('شما فقط می‌توانید اطلاعات را مشاهده کنید', 'info');
-        }
+        // ============================================
+        // وضعیت دسترسی
+        // ============================================
+        let canEdit = false;
 
         function showAlert(message, type = 'success') {
             const container = document.getElementById('alert-container');
@@ -315,6 +312,42 @@
             }
         }
 
+        // ============================================
+        // چک دسترسی
+        // ============================================
+        async function checkEditPermission() {
+            try {
+                const res = await fetch('/api/me/permissions', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                canEdit = data.permissions && data.permissions['municipality_info.edit'] === true;
+            } catch (e) {
+                console.error('Permission check error:', e);
+                canEdit = false;
+            }
+
+            console.log('canEdit:', canEdit);
+
+            if (!canEdit) {
+                // غیرفعال کردن همه فیلدها
+                document.querySelectorAll('input, textarea, select').forEach(el => {
+                    el.disabled = true;
+                });
+                document.getElementById('save-btn').style.display = 'none';
+                showAlert('شما فقط می‌توانید اطلاعات را مشاهده کنید', 'info');
+            } else {
+                // اطمینان از فعال بودن
+                document.querySelectorAll('input, textarea, select').forEach(el => {
+                    el.disabled = false;
+                });
+                document.getElementById('save-btn').style.display = 'inline-block';
+            }
+        }
+
+        // ============================================
+        // لود اطلاعات
+        // ============================================
         async function loadInfo() {
             try {
                 const response = await fetch('/api/municipality-info', {
@@ -349,8 +382,14 @@
             }
         }
 
+        // ============================================
+        // ذخیره
+        // ============================================
         async function saveInfo() {
-            if (!canEdit) return;
+            if (!canEdit) {
+                showAlert('شما دسترسی ویرایش ندارید', 'error');
+                return;
+            }
             
             const title = document.getElementById('title').value.trim();
             
@@ -408,13 +447,13 @@
             }
         }
 
-        // تبدیل تاریخ (اگه توی common.js نیست)
+        // ============================================
+        // تبدیل تاریخ
+        // ============================================
         function toPersianDate(dateString) {
             if (!dateString) return '-';
             try {
                 const date = new Date(dateString.replace(' ', 'T') + 'Z');
-                
-                // استفاده از Intl
                 const formatter = new Intl.DateTimeFormat('fa-IR', {
                     year: 'numeric',
                     month: '2-digit',
@@ -422,19 +461,23 @@
                     hour: '2-digit',
                     minute: '2-digit'
                 });
-                
                 return formatter.format(date);
             } catch (error) {
                 return dateString;
             }
         }
 
-        loadInfo();
+        // ============================================
+        // شروع
+        // ============================================
+        (async function init() {
+            await checkEditPermission();  // اول چک دسترسی
+            await loadInfo();             // بعد لود اطلاعات
+        })();
 
-        
         // راه‌اندازی breadcrumb
         setTimeout(renderBreadcrumb, 200);
     </script>
-    </script>
+ 
 </body>
 </html>
