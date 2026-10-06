@@ -496,34 +496,35 @@ export default {
             });
           }
 
-          const body = await request.json();
-          const {
-            person_type,
-            full_name,
-            national_id,
-            economic_code,
-            registration_number,
-            father_name,
-            id_number,
-            birth_date_shamsi,
-            phone,
-            mobile,
-            address,
-            postal_code,
-            email,
-            employee_code,
-            employment_type,
-            position,
-            hire_date_shamsi,
-            end_date_shamsi,
-            bank_name,
-            bank_account,
-            iban,
-            parent_id,
-            level_name,
-            notes,
-            extra_data,
-          } = body;
+                    const body = await request.json();
+                    const {
+                      person_type,
+                      full_name,
+                      first_name,
+                      last_name,
+                      national_id,
+                      economic_code,
+                      registration_number,
+                      father_name,
+                      mother_name,
+                      id_number,
+                      birth_date_shamsi,
+                      birth_place,
+                      gender,
+                      nationality,
+                      phone,
+                      mobile,
+                      address,
+                      postal_code,
+                      email,
+                      bank_name,
+                      bank_account,
+                      iban,
+                      parent_id,
+                      level_name,
+                      notes,
+                      extra_data,
+                    } = body;
 
           if (!person_type || !full_name) {
             return new Response(
@@ -562,42 +563,51 @@ export default {
 
           const nowShamsi = toShamsi(new Date());
 
-                    const result = await env.DB.prepare(
-                      `INSERT INTO persons 
+                              const result = await env.DB.prepare(
+                                `INSERT INTO persons 
             (person_type, code, parent_id, level, level_name, full_name, 
-             national_id, economic_code, registration_number, father_name, id_number, birth_date_shamsi,
+             first_name, last_name, national_id, economic_code, registration_number, 
+             father_name, mother_name, id_number, birth_date_shamsi, birth_place, gender, nationality,
              phone, mobile, address, postal_code, email,
              bank_name, bank_account, iban,
              notes, extra_data, created_at_shamsi, updated_at_shamsi)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-                    )
-                      .bind(
-                        person_type,
-                        code,
-                        parent_id || null,
-                        level,
-                        level_name || null,
-                        full_name,
-                        national_id || null,
-                        economic_code || null,
-                        registration_number || null,
-                        father_name || null,
-                        id_number || null,
-                        birth_date_shamsi || null,
-                        phone || null,
-                        mobile || null,
-                        address || null,
-                        postal_code || null,
-                        email || null,
-                        bank_name || null,
-                        bank_account || null,
-                        iban || null,
-                        notes || null,
-                        extra_data ? JSON.stringify(extra_data) : null,
-                        nowShamsi,
-                        nowShamsi
-                      )
-                      .run();
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                              )
+                                .bind(
+                                  person_type,
+                                  code,
+                                  parent_id || null,
+                                  level,
+                                  level_name || null,
+                                  full_name,
+                                  first_name || null,
+                                  last_name || null,
+                                  national_id || null,
+                                  economic_code || null,
+                                  registration_number || null,
+                                  father_name || null,
+                                  mother_name || null,
+                                  id_number || null,
+                                  birth_date_shamsi || null,
+                                  birth_place || null,
+                                  gender || null,
+                                  nationality || "ایرانی",
+                                  phone || null,
+                                  mobile || null,
+                                  address || null,
+                                  postal_code || null,
+                                  email || null,
+                                  bank_name || null,
+                                  bank_account || null,
+                                  iban || null,
+                                  notes || null,
+                                  extra_data
+                                    ? JSON.stringify(extra_data)
+                                    : null,
+                                  nowShamsi,
+                                  nowShamsi
+                                )
+                                .run();
 
           return new Response(
             JSON.stringify({
@@ -644,34 +654,35 @@ export default {
           }
 
           const id = url.pathname.split("/").pop();
-          const body = await request.json();
+                   const body = await request.json();
 
-          const {
-            full_name,
-            national_id,
-            economic_code,
-            registration_number,
-            father_name,
-            id_number,
-            birth_date_shamsi,
-            phone,
-            mobile,
-            address,
-            postal_code,
-            email,
-            employee_code,
-            employment_type,
-            position,
-            hire_date_shamsi,
-            end_date_shamsi,
-            bank_name,
-            bank_account,
-            iban,
-            notes,
-            extra_data,
-            is_active,
-            level_name,
-          } = body;
+                   const {
+                     full_name,
+                     first_name,
+                     last_name,
+                     national_id,
+                     economic_code,
+                     registration_number,
+                     father_name,
+                     mother_name,
+                     id_number,
+                     birth_date_shamsi,
+                     birth_place,
+                     gender,
+                     nationality,
+                     phone,
+                     mobile,
+                     address,
+                     postal_code,
+                     email,
+                     bank_name,
+                     bank_account,
+                     iban,
+                     notes,
+                     extra_data,
+                     is_active,
+                     level_name,
+                   } = body;
 
           if (!full_name) {
             return new Response(
@@ -685,40 +696,46 @@ export default {
 
           const nowShamsi = toShamsi(new Date());
 
-              const result = await env.DB.prepare(
-                `UPDATE persons SET
-              full_name = ?, national_id = ?, economic_code = ?, registration_number = ?,
-              father_name = ?, id_number = ?, birth_date_shamsi = ?,
+                        const result = await env.DB.prepare(
+                          `UPDATE persons SET
+              full_name = ?, first_name = ?, last_name = ?, national_id = ?, economic_code = ?, registration_number = ?,
+              father_name = ?, mother_name = ?, id_number = ?, birth_date_shamsi = ?, birth_place = ?, gender = ?, nationality = ?,
               phone = ?, mobile = ?, address = ?, postal_code = ?, email = ?,
               bank_name = ?, bank_account = ?, iban = ?,
               notes = ?, extra_data = ?, is_active = ?, level_name = ?,
               updated_at = CURRENT_TIMESTAMP, updated_at_shamsi = ?
             WHERE id = ?`
-              )
-                .bind(
-                  full_name,
-                  national_id || null,
-                  economic_code || null,
-                  registration_number || null,
-                  father_name || null,
-                  id_number || null,
-                  birth_date_shamsi || null,
-                  phone || null,
-                  mobile || null,
-                  address || null,
-                  postal_code || null,
-                  email || null,
-                  bank_name || null,
-                  bank_account || null,
-                  iban || null,
-                  notes || null,
-                  extra_data ? JSON.stringify(extra_data) : null,
-                  is_active !== undefined ? (is_active ? 1 : 0) : 1,
-                  level_name || null,
-                  nowShamsi,
-                  id
-                )
-                .run();
+                        )
+                          .bind(
+                            full_name,
+                            first_name || null,
+                            last_name || null,
+                            national_id || null,
+                            economic_code || null,
+                            registration_number || null,
+                            father_name || null,
+                            mother_name || null,
+                            id_number || null,
+                            birth_date_shamsi || null,
+                            birth_place || null,
+                            gender || null,
+                            nationality || "ایرانی",
+                            phone || null,
+                            mobile || null,
+                            address || null,
+                            postal_code || null,
+                            email || null,
+                            bank_name || null,
+                            bank_account || null,
+                            iban || null,
+                            notes || null,
+                            extra_data ? JSON.stringify(extra_data) : null,
+                            is_active !== undefined ? (is_active ? 1 : 0) : 1,
+                            level_name || null,
+                            nowShamsi,
+                            id
+                          )
+                          .run();
 
           if (result.meta.changes === 0) {
             return new Response(JSON.stringify({ error: "شخص یافت نشد" }), {
