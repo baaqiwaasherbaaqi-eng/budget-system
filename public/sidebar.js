@@ -355,6 +355,11 @@ function renderBreadcrumb() {
       title: "اشخاص",
       parent: "/base-info.html",
     },
+    "/employee-profile.html": {
+      icon: "📁",
+      title: "پرونده پرسنلی",
+      parent: "/persons.html",
+    },
   };
   
   const current = pathMap[currentPath];
@@ -522,6 +527,11 @@ function renderBreadcrumb() {
       icon: "👥",
       title: "اشخاص",
       parent: "/base-info.html",
+    },
+    "/employee-profile.html": {
+      icon: "📁",
+      title: "پرونده پرسنلی",
+      parent: "/persons.html",
     },
   };
   

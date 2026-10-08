@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>پرونده پرسنلی</title>
+    <link rel="stylesheet" href="/sidebar.css" />
+    <script src="/sidebar.js"></script>
+    <link
+      href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+
+    <!-- Persian DatePicker -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/persian-date@1.1.0/dist/persian-date.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css"
+    />
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Vazirmatn", Tahoma, sans-serif;
+        background: #f0f2f5;
+        margin: 0;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      /* ============ Person Header ============ */
+      .person-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 25px 30px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+
+      .person-avatar {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        font-weight: bold;
+        flex-shrink: 0;
+      }
+
+      .person-info {
+        flex: 1;
+      }
+
+      .person-info h1 {
+        margin: 0 0 8px 0;
+        font-size: 22px;
+      }
+
+      .person-info .meta {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        font-size: 13px;
+        opacity: 0.9;
+      }
+
+      .person-info .meta span {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 4px 12px;
+        border-radius: 12px;
+      }
+
+      .back-btn {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: "Vazirmatn", Tahoma, sans-serif;
+        font-size: 13px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s;
+      }
+
+      .back-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      /* ============ Tabs ============ */
+      .tabs-nav {
+        display: flex;
+        gap: 5px;
+        background: white;
+        padding: 8px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        overflow-x: auto;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      }
+
+      .tab-item {
+        padding: 10px 18px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: "Vazirmatn", Tahoma, sans-serif;
+        font-size: 13px;
+        color: #666;
+        white-space: nowrap;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border: none;
+        background: transparent;
+      }
+
+      .tab-item:hover {
+        background: #f0f2f5;
+        color: #667eea;
+      }
+
+      .tab-item.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-weight: bold;
+      }
+
+      /* ============ Tab Content ============ */
+      .tab-content {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        min-height: 400px;
+      }
+
+      .tab-panel {
+        display: none;
+      }
+      .tab-panel.active {
+        display: block;
+      }
+
+      /* ============ Form ============ */
+      .section-divider {
+        margin: 25px 0 15px 0;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #e9ecef;
+        font-size: 14px;
+        font-weight: bold;
+        color: #667eea;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .section-divider:first-child {
+        margin-top: 0;
+      }
+
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 15px;
+      }
+
+      .form-row-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 15px;
+      }
+
+      .form-group {
+        margin-bottom: 15px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: bold;
+        color: #444;
+        font-size: 13px;
+      }
+
+      .form-group label .required {
+        color: #e74c3c;
+      }
+
+      .form-group input,
+      .form-group textarea,
+      .form-group select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-family: "Vazirmatn", Tahoma, sans-serif;
+        font-size: 13px;
+        background: white;
+        transition: border-color 0.2s;
+      }
+
+      .form-group input:focus,
+      .form-group textarea:focus,
+      .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .form-group textarea {
+        resize: vertical;
+        min-height: 70px;
+      }
+
+      /* ============ Actions ============ */
+      .actions-bar {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid #e9ecef;
+      }
+
+      .btn {
+        padding: 12px 30px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-family: "Vazirmatn", Tahoma, sans-serif;
+        font-size: 14px;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-save {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      }
+
+      .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-save:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      /* ============ Placeholder ============ */
+      .placeholder {
+        text-align: center;
+        padding: 80px 20px;
+        color: #999;
+      }
+
+      .placeholder .icon {
+        font-size: 60px;
+        margin-bottom: 15px;
+        opacity: 0.5;
+      }
+
+      .placeholder h3 {
+        margin: 0 0 8px 0;
+        color: #666;
+        font-size: 16px;
+      }
+
+      .placeholder p {
+        margin: 0;
+        font-size: 13px;
+      }
+
+      /* ============ Loading ============ */
+      .loading {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+      }
+
+      .loading .spinner {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        border: 3px solid #e9ecef;
+        border-top-color: #667eea;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-bottom: 15px;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ============ Toast ============ */
+      .toast {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: #333;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        z-index: 10002;
+        transition: transform 0.3s;
+        font-family: "Vazirmatn", Tahoma, sans-serif;
+      }
+
+      .toast.show {
+        transform: translateX(-50%) translateY(0);
+      }
+      .toast.success {
+        background: #28a745;
+      }
+      .toast.error {
+        background: #dc3545;
+      }
+
+      /* ============ Dark Mode ============ */
+      body.dark {
+        background: #1a202c;
+        color: #e2e8f0;
+      }
+      body.dark .tabs-nav,
+      body.dark .tab-content {
+        background: #2d3748;
+      }
+      body.dark .tab-item {
+        color: #a0aec0;
+      }
+      body.dark .tab-item:hover {
+        background: #4a5568;
+      }
+      body.dark .tab-item.active {
+        color: white;
+      }
+      body.dark .section-divider {
+        border-bottom-color: #4a5568;
+      }
+      body.dark .form-group label {
+        color: #cbd5e0;
+      }
+      body.dark .form-group input,
+      body.dark .form-group textarea,
+      body.dark .form-group select {
+        background: #1a202c;
+        border-color: #4a5568;
+        color: #e2e8f0;
+      }
+      body.dark .actions-bar {
+        border-top-color: #4a5568;
+      }
+
+      /* ============ Responsive ============ */
+      @media (max-width: 768px) {
+        .person-header {
+          padding: 15px 20px;
+        }
+        .person-info h1 {
+          font-size: 18px;
+        }
+        .form-row,
+        .form-row-3 {
+          grid-template-columns: 1fr;
+        }
+        .tabs-nav {
+          padding: 5px;
+        }
+        .tab-item {
+          padding: 8px 12px;
+          font-size: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container" id="main-container">
+      <div class="loading">
+        <div class="spinner"></div>
+        <div>در حال بارگذاری...</div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="/common.js"></script>
+
+    <script>
+      // ============================================
+      // بررسی احراز هویت
+      // ============================================
+      if (!isTokenValid()) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login.html";
+      }
+
+      const token = localStorage.getItem("token");
+      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+      // ============================================
+      // وضعیت
+      // ============================================
+      let personId = null;
+      let person = null;
+      let employee = null;
+      let decreeTypes = [];
+
+      // ============================================
+      // توابع کمکی
+      // ============================================
+      function showToast(message, type = "success") {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.className = `toast ${type} show`;
+        setTimeout(() => toast.classList.remove("show"), 3000);
+      }
+
+      function getPersonIdFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("id");
+      }
+
+      // ============================================
+      // لود دیتا
+      // ============================================
+      async function loadData() {
+        personId = getPersonIdFromUrl();
+
+        if (!personId) {
+          document.getElementById("main-container").innerHTML = `
+                    <div class="placeholder">
+                        <div class="icon">⚠️</div>
+                        <h3>شناسه شخص مشخص نشده</h3>
+                        <p>لطفاً از صفحه اشخاص یک شخص انتخاب کنید</p>
+                    </div>`;
+          return;
+        }
+
+        try {
+          const res = await fetch(`/api/employees/${personId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (!res.ok) {
+            throw new Error("خطا در دریافت اطلاعات");
+          }
+
+          const data = await res.json();
+          person = data.person;
+          employee = data.employee;
+
+          // لود ۸ نوع حکم
+          const decreeRes = await fetch("/api/base-data?section=decree_type", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          decreeTypes = await decreeRes.json();
+
+          renderPage();
+        } catch (error) {
+          console.error("Load error:", error);
+          document.getElementById("main-container").innerHTML = `
+                    <div class="placeholder">
+                        <div class="icon">❌</div>
+                        <h3>${error.message}</h3>
+                        <p><a href="/persons.html" style="color: #667eea;">بازگشت به اشخاص</a></p>
+                    </div>`;
+        }
+      }
+
+      // ============================================
+      // رندر صفحه
+      // ============================================
+      function renderPage() {
+        const typeLabels = {
+          employee: "کارکنان",
+          citizen: "شهروندان",
+          legal: "اشخاص حقوقی",
+          foreigner: "خارج شهروندان",
+        };
+
+        const initial = person.full_name ? person.full_name.charAt(0) : "?";
+
+        const html = `
+                <div class="person-header">
+                    <div class="person-avatar">${initial}</div>
+                    <div class="person-info">
+                        <h1>${person.full_name}</h1>
+                        <div class="meta">
+                            <span>🆔 کد ملی: ${person.national_id || "—"}</span>
+                            <span>📋 کد: ${person.code}</span>
+                            <span>👥 ${
+                              typeLabels[person.person_type] ||
+                              person.person_type
+                            }</span>
+                        </div>
+                    </div>
+                    <a href="/persons.html" class="back-btn">
+                        ↩️ بازگشت به اشخاص
+                    </a>
+                </div>
+
+                <div class="tabs-nav">
+                    <button class="tab-item active" onclick="switchTab('basic', this)">
+                        📋 اطلاعات پایه
+                    </button>
+                    <button class="tab-item" onclick="switchTab('employment', this)">
+                        💼 اطلاعات استخدامی
+                    </button>
+                    <button class="tab-item" onclick="switchTab('contract', this)">
+                        📄 قرارداد + امضا
+                    </button>
+                    <button class="tab-item" onclick="switchTab('decrees', this)">
+                        📋 احکام کارگزینی
+                    </button>
+                    <button class="tab-item" onclick="switchTab('dependents', this)">
+                        👨‍👩‍👧 افراد تحت تکفل
+                    </button>
+                    <button class="tab-item" onclick="switchTab('calculations', this)">
+                        💰 محاسبات
+                    </button>
+                    <button class="tab-item" onclick="switchTab('deductions', this)">
+                        💳 کسورات
+                    </button>
+                    <button class="tab-item" onclick="switchTab('attendance', this)">
+                        📅 حضور و غیاب
+                    </button>
+                    <button class="tab-item" onclick="switchTab('organization', this)">
+                        🏢 واحد سازمانی
+                    </button>
+                    <button class="tab-item" onclick="switchTab('tasks', this)">
+                        🎯 وظایف
+                    </button>
+                    <button class="tab-item" onclick="switchTab('education', this)">
+                        🎓 مدرک تحصیلی
+                    </button>
+                </div>
+
+                <div class="tab-content">
+                    <!-- تب ۱: اطلاعات پایه -->
+                    <div class="tab-panel active" id="panel-basic">
+                        ${renderBasicTab()}
+                    </div>
+
+                    <!-- تب ۲: اطلاعات استخدامی -->
+                    <div class="tab-panel" id="panel-employment">
+                        ${renderEmploymentTab()}
+                    </div>
+
+                    <!-- بقیه تب‌ها (placeholder) -->
+                    <div class="tab-panel" id="panel-contract">
+                        <div class="placeholder">
+                            <div class="icon">📄</div>
+                            <h3>متن قرارداد + امضای دیجیتال</h3>
+                            <p>این بخش به زودی اضافه می‌شود</p>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="panel-decrees">
+                        <div class="placeholder">
+                            <div class="icon">📋</div>
+                            <h3>احکام کارگزینی</h3>
+                            <p>این بخش به زودی اضافه می‌شود</p>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="panel-dependents">
+                        <div class="placeholder">
+                            <div class="icon">👨‍👩‍👧</div>
+                            <h3>افراد تحت تکفل</h3>
+                            <p>این بخش به زودی اضافه می‌شود</p>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="panel-calculations">
+                        <div class="placeholder">
+                            <div class="icon">💰</div>
+                            <h3>محاسبات بیمه و مالیات</h3>
+                            <p>این بخش به زودی اضافه می‌شود</p>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="panel-deductions">
+                        <div class="placeholder">
+                            <div class="icon">💳</div>
+                            <h3>کسورات حقوق</h3>
+                            <p>این بخش به زودی اضافه می‌شود</p>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="panel-attendance">
+                        <div class="placeholder">
+                            <div class="icon">📅</div>
+                            <h3>حضور و غیاب</h3>
+                            <p>این بخش به زودی اضافه می‌شود</p>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="panel-organization">
+                        <div class="placeholder">
+                            <div class="icon">🏢</div>
+                            <h3>واحد سازمانی</h3>
+                            <p>این بخش به زودی اضافه می‌شود</p>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="panel-tasks">
+                        <div class="placeholder">
+                            <div class="icon">🎯</div>
+                            <h3>وظایف (طبقه‌بندی عملیاتی)</h3>
+                            <p>این بخش به زودی اضافه می‌شود</p>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="panel-education">
+                        <div class="placeholder">
+                            <div class="icon">🎓</div>
+                            <h3>مدرک تحصیلی</h3>
+                            <p>این بخش به زودی اضافه می‌شود</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('main-container').innerHTML = html;
+
+            // اضافه کردن breadcrumb
+            const breadcrumbHTML = `
+                <div class="breadcrumb">
+                    <a href="/dashboard.html" class="breadcrumb-item">
+                        <span>🏠</span>
+                        <span>داشبورد</span>
+                    </a>
+                    <span class="breadcrumb-separator">◄</span>
+                    <a href="/base-info.html" class="breadcrumb-item">
+                        <span>📂</span>
+                        <span>اطلاعات پایه</span>
+                    </a>
+                    <span class="breadcrumb-separator">◄</span>
+                    <a href="/persons.html" class="breadcrumb-item">
+                        <span>👥</span>
+                        <span>اشخاص</span>
+                    </a>
+                    <span class="breadcrumb-separator">◄</span>
+                    <span class="breadcrumb-item current">
+                        <span>📁</span>
+                        <span>پرونده پرسنلی</span>
+                    </span>
+                </div>
+            `;
+
+            document.querySelector('.person-header').insertAdjacentHTML('beforebegin', breadcrumbHTML);
+
+            // راه‌اندازی date picker
+            setTimeout(initDatePickers, 200);
+        }
+
+      // ============================================
+      // تب اطلاعات پایه
+      // ============================================
+      function renderBasicTab() {
+        return `
+                <div class="section-divider">📋 اطلاعات سجلی</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>نام</label>
+                        <input type="text" value="${
+                          person.first_name || ""
+                        }" disabled />
+                    </div>
+                    <div class="form-group">
+                        <label>نام خانوادگی</label>
+                        <input type="text" value="${
+                          person.last_name || ""
+                        }" disabled />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>نام پدر</label>
+                        <input type="text" value="${
+                          person.father_name || ""
+                        }" disabled />
+                    </div>
+                    <div class="form-group">
+                        <label>نام مادر</label>
+                        <input type="text" value="${
+                          person.mother_name || ""
+                        }" disabled />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>کد ملی</label>
+                        <input type="text" value="${
+                          person.national_id || ""
+                        }" dir="ltr" disabled />
+                    </div>
+                    <div class="form-group">
+                        <label>شماره شناسنامه</label>
+                        <input type="text" value="${
+                          person.id_number || ""
+                        }" disabled />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>تاریخ تولد</label>
+                        <input type="text" value="${
+                          person.birth_date_shamsi || ""
+                        }" disabled />
+                    </div>
+                    <div class="form-group">
+                        <label>محل تولد</label>
+                        <input type="text" value="${
+                          person.birth_place || ""
+                        }" disabled />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>جنسیت</label>
+                        <input type="text" value="${
+                          person.gender === "male"
+                            ? "مرد"
+                            : person.gender === "female"
+                            ? "زن"
+                            : "—"
+                        }" disabled />
+                    </div>
+                    <div class="form-group">
+                        <label>تابعیت</label>
+                        <input type="text" value="${
+                          person.nationality || "ایرانی"
+                        }" disabled />
+                    </div>
+                </div>
+
+                <div class="section-divider">📞 اطلاعات تماس</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>موبایل</label>
+                        <input type="text" value="${
+                          person.mobile || ""
+                        }" dir="ltr" disabled />
+                    </div>
+                    <div class="form-group">
+                        <label>تلفن ثابت</label>
+                        <input type="text" value="${
+                          person.phone || ""
+                        }" disabled />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>آدرس</label>
+                    <textarea disabled>${person.address || ""}</textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>کد پستی</label>
+                        <input type="text" value="${
+                          person.postal_code || ""
+                        }" disabled />
+                    </div>
+                    <div class="form-group">
+                        <label>ایمیل</label>
+                        <input type="text" value="${
+                          person.email || ""
+                        }" dir="ltr" disabled />
+                    </div>
+                </div>
+
+                <div class="section-divider">🏦 اطلاعات بانکی</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>نام بانک</label>
+                        <input type="text" value="${
+                          person.bank_name || ""
+                        }" disabled />
+                    </div>
+                    <div class="form-group">
+                        <label>شماره حساب</label>
+                        <input type="text" value="${
+                          person.bank_account || ""
+                        }" dir="ltr" disabled />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>شبا</label>
+                    <input type="text" value="${
+                      person.iban || ""
+                    }" dir="ltr" disabled />
+                </div>
+
+                <div class="actions-bar">
+                    <a href="/persons.html" class="btn btn-save" style="text-decoration:none;">
+                        ✏️ ویرایش اطلاعات در صفحه اشخاص
+                    </a>
+                </div>
+            `;
+      }
+
+      // ============================================
+      // تب اطلاعات استخدامی
+      // ============================================
+      function renderEmploymentTab() {
+        const e = employee || {};
+
+        // گزینه‌های نوع حکم
+        let decreeOptions = '<option value="">— انتخاب کنید —</option>';
+        decreeTypes.forEach((d) => {
+          const selected = e.decree_type === d.code ? "selected" : "";
+          decreeOptions += `<option value="${d.code}" ${selected}>${d.title}</option>`;
+        });
+
+        return `
+                <div class="section-divider">💼 اطلاعات قرارداد</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>نوع قرارداد <span class="required">*</span></label>
+                        <select id="input-contract-type">
+                            <option value="">— انتخاب کنید —</option>
+                            <option value="worker" ${
+                              e.contract_type === "worker" ? "selected" : ""
+                            }>کارگر</option>
+                            <option value="employee" ${
+                              e.contract_type === "employee" ? "selected" : ""
+                            }>کارمند</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>تاریخ استخدام</label>
+                        <input type="text" id="input-hire-date" value="${
+                          e.hire_date_shamsi || ""
+                        }" placeholder="۱۴۰۰/۰۱/۰۱" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>تاریخ شروع قرارداد</label>
+                        <input type="text" id="input-contract-start" value="${
+                          e.contract_start_shamsi || ""
+                        }" placeholder="۱۴۰۰/۰۱/۰۱" />
+                    </div>
+                    <div class="form-group">
+                        <label>تاریخ پایان قرارداد</label>
+                        <input type="text" id="input-contract-end" value="${
+                          e.contract_end_shamsi || ""
+                        }" placeholder="اختیاری" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>نوع حکم</label>
+                        <select id="input-decree-type">
+                            ${decreeOptions}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>نوع استخدام</label>
+                        <input type="text" id="input-employment-type" value="${
+                          e.employment_type || ""
+                        }" placeholder="مثلاً رسمی" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>سمت</label>
+                        <input type="text" id="input-position" value="${
+                          e.position || ""
+                        }" />
+                    </div>
+                    <div class="form-group">
+                        <label>واحد سازمانی</label>
+                        <input type="text" id="input-department" value="${
+                          e.department || ""
+                        }" />
+                    </div>
+                </div>
+
+                <div class="section-divider">📊 سابقه</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>سابقه سنوات (سال)</label>
+                        <input type="number" id="input-years-service" value="${
+                          e.years_of_service || 0
+                        }" min="0" />
+                    </div>
+                    <div class="form-group">
+                        <label>سابقه بیمه (ماه)</label>
+                        <input type="number" id="input-insurance-months" value="${
+                          e.insurance_history_months || 0
+                        }" min="0" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>شماره بیمه</label>
+                    <input type="text" id="input-insurance-number" value="${
+                      e.insurance_number || ""
+                    }" dir="ltr" />
+                </div>
+
+                <div class="section-divider">🎓 مدرک تحصیلی</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>مقطع</label>
+                        <select id="input-education-level">
+                            <option value="">— انتخاب کنید —</option>
+                            <option value="زیر دیپلم" ${
+                              e.education_level === "زیر دیپلم"
+                                ? "selected"
+                                : ""
+                            }>زیر دیپلم</option>
+                            <option value="دیپلم" ${
+                              e.education_level === "دیپلم" ? "selected" : ""
+                            }>دیپلم</option>
+                            <option value="کاردانی" ${
+                              e.education_level === "کاردانی" ? "selected" : ""
+                            }>کاردانی</option>
+                            <option value="کارشناسی" ${
+                              e.education_level === "کارشناسی" ? "selected" : ""
+                            }>کارشناسی</option>
+                            <option value="کارشناسی ارشد" ${
+                              e.education_level === "کارشناسی ارشد"
+                                ? "selected"
+                                : ""
+                            }>کارشناسی ارشد</option>
+                            <option value="دکتری" ${
+                              e.education_level === "دکتری" ? "selected" : ""
+                            }>دکتری</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>رشته تحصیلی</label>
+                        <input type="text" id="input-education-field" value="${
+                          e.education_field || ""
+                        }" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>دانشگاه</label>
+                        <input type="text" id="input-education-university" value="${
+                          e.education_university || ""
+                        }" />
+                    </div>
+                    <div class="form-group">
+                        <label>سال فارغ‌التحصیلی</label>
+                        <input type="text" id="input-education-year" value="${
+                          e.education_year_shamsi || ""
+                        }" />
+                    </div>
+                </div>
+
+                <div class="section-divider">🎯 تخصص و تجربه</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>سال‌های تجربه</label>
+                        <input type="number" id="input-experience-years" value="${
+                          e.experience_years || 0
+                        }" min="0" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>شرح تجربه</label>
+                    <textarea id="input-experience-description">${
+                      e.experience_description || ""
+                    }</textarea>
+                </div>
+
+                <div class="section-divider">🎂 روز مناسبتی</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>تاریخ تولد (شمسی)</label>
+                        <input type="text" id="input-birthday" value="${
+                          e.birthday_shamsi || person.birth_date_shamsi || ""
+                        }" placeholder="۱۳۷۰/۰۱/۰۱" />
+                    </div>
+                    <div class="form-group">
+                        <label>سایر مناسبت‌ها (تاریخ)</label>
+                        <input type="text" id="input-other-occasion-date" value="${
+                          e.other_occasion_shamsi || ""
+                        }" placeholder="اختیاری" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>عنوان سایر مناسبت</label>
+                    <input type="text" id="input-other-occasion-title" value="${
+                      e.other_occasion_title || ""
+                    }" />
+                </div>
+
+                <div class="section-divider">📝 یادداشت</div>
+
+                <div class="form-group">
+                    <label>یادداشت</label>
+                    <textarea id="input-notes">${e.notes || ""}</textarea>
+                </div>
+
+                <div class="actions-bar">
+                    <button class="btn btn-save" id="btn-save-employment" onclick="saveEmployment()">
+                        💾 ذخیره اطلاعات استخدامی
+                    </button>
+                </div>
+            `;
+      }
+
+      // ============================================
+      // سوئیچ تب
+      // ============================================
+      function switchTab(tabName, btn) {
+        // حذف active از همه
+        document
+          .querySelectorAll(".tab-item")
+          .forEach((t) => t.classList.remove("active"));
+        document
+          .querySelectorAll(".tab-panel")
+          .forEach((p) => p.classList.remove("active"));
+
+        // اضافه به تب فعلی
+        btn.classList.add("active");
+        document.getElementById("panel-" + tabName).classList.add("active");
+
+        // راه‌اندازی date picker اگه تب استخدامی بود
+        if (tabName === "employment") {
+          setTimeout(initDatePickers, 100);
+        }
+      }
+
+      // ============================================
+      // ذخیره اطلاعات استخدامی
+      // ============================================
+      async function saveEmployment() {
+        const btn = document.getElementById("btn-save-employment");
+        btn.disabled = true;
+        btn.textContent = "⏳ در حال ذخیره...";
+
+        try {
+          const data = {
+            contract_type:
+              document.getElementById("input-contract-type").value || null,
+            contract_start_shamsi:
+              document.getElementById("input-contract-start").value.trim() ||
+              null,
+            contract_end_shamsi:
+              document.getElementById("input-contract-end").value.trim() ||
+              null,
+            hire_date_shamsi:
+              document.getElementById("input-hire-date").value.trim() || null,
+            decree_type:
+              document.getElementById("input-decree-type").value || null,
+            employment_type:
+              document.getElementById("input-employment-type").value.trim() ||
+              null,
+            position:
+              document.getElementById("input-position").value.trim() || null,
+            department:
+              document.getElementById("input-department").value.trim() || null,
+            years_of_service:
+              parseInt(document.getElementById("input-years-service").value) ||
+              0,
+            insurance_history_months:
+              parseInt(
+                document.getElementById("input-insurance-months").value
+              ) || 0,
+            insurance_number:
+              document.getElementById("input-insurance-number").value.trim() ||
+              null,
+            education_level:
+              document.getElementById("input-education-level").value || null,
+            education_field:
+              document.getElementById("input-education-field").value.trim() ||
+              null,
+            education_university:
+              document
+                .getElementById("input-education-university")
+                .value.trim() || null,
+            education_year_shamsi:
+              document.getElementById("input-education-year").value.trim() ||
+              null,
+            experience_years:
+              parseInt(
+                document.getElementById("input-experience-years").value
+              ) || 0,
+            experience_description:
+              document
+                .getElementById("input-experience-description")
+                .value.trim() || null,
+            birthday_shamsi:
+              document.getElementById("input-birthday").value.trim() || null,
+            other_occasion_shamsi:
+              document
+                .getElementById("input-other-occasion-date")
+                .value.trim() || null,
+            other_occasion_title:
+              document
+                .getElementById("input-other-occasion-title")
+                .value.trim() || null,
+            notes: document.getElementById("input-notes").value.trim() || null,
+          };
+
+          const res = await fetch(`/api/employees/${personId}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(data),
+          });
+
+          const result = await res.json();
+          if (!res.ok) throw new Error(result.error || "خطا");
+
+          showToast("اطلاعات استخدامی با موفقیت ذخیره شد");
+        } catch (error) {
+          showToast(error.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "💾 ذخیره اطلاعات استخدامی";
+        }
+      }
+
+      // ============================================
+      // Date Picker
+      // ============================================
+      function initDatePickers() {
+        const dateFields = [
+          "input-hire-date",
+          "input-contract-start",
+          "input-contract-end",
+          "input-birthday",
+          "input-other-occasion-date",
+        ];
+
+        dateFields.forEach((id) => {
+          const el = document.getElementById(id);
+          if (!el || el.disabled) return;
+
+          try {
+            $("#" + id).persianDatepicker("destroy");
+          } catch (e) {}
+
+          $("#" + id).persianDatepicker({
+            format: "YYYY/MM/DD",
+            autoClose: true,
+            persianDigit: true,
+            initialValue: false,
+          });
+        });
+      }
+
+      // ============================================
+      // شروع
+      // ============================================
+      loadData();
+
+      // راه‌اندازی breadcrumb بعد از لود
+      setTimeout(() => {
+        if (typeof renderBreadcrumb === "function") {
+          renderBreadcrumb();
+        }
+      }, 300);
+    </script>
+  </body>
+</html>

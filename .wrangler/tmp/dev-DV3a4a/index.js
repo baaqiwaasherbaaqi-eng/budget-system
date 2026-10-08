@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// .wrangler/tmp/bundle-HTRQaK/checked-fetch.js
+// .wrangler/tmp/bundle-q0UYGW/checked-fetch.js
 var urls = /* @__PURE__ */ new Set();
 function checkURL(request, init) {
   const url = request instanceof URL ? request : new URL(
@@ -2038,6 +2038,212 @@ var src_default = {
           });
         }
       }
+      if (url.pathname.match(/^\/api\/employees\/\d+$/) && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
+              {
+                status: 401,
+                headers
+              }
+            );
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "\u062A\u0648\u06A9\u0646 \u0646\u0627\u0645\u0639\u062A\u0628\u0631" }), {
+              status: 401,
+              headers
+            });
+          }
+          const personId = url.pathname.split("/").pop();
+          const employee = await env.DB.prepare(
+            `SELECT * FROM employees WHERE person_id = ?`
+          ).bind(personId).first();
+          const person = await env.DB.prepare(
+            `SELECT * FROM persons WHERE id = ?`
+          ).bind(personId).first();
+          if (!person) {
+            return new Response(JSON.stringify({ error: "\u0634\u062E\u0635 \u06CC\u0627\u0641\u062A \u0646\u0634\u062F" }), {
+              status: 404,
+              headers
+            });
+          }
+          return new Response(
+            JSON.stringify({
+              person,
+              employee: employee || null
+            }),
+            {
+              status: 200,
+              headers
+            }
+          );
+        } catch (error) {
+          console.error("Employee GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname.match(/^\/api\/employees\/\d+$/) && (request.method === "POST" || request.method === "PUT")) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
+              {
+                status: 401,
+                headers
+              }
+            );
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "\u062F\u0633\u062A\u0631\u0633\u06CC \u063A\u06CC\u0631\u0645\u062C\u0627\u0632" }), {
+              status: 403,
+              headers
+            });
+          }
+          const personId = url.pathname.split("/").pop();
+          const body = await request.json();
+          const {
+            contract_type,
+            contract_start_shamsi,
+            contract_end_shamsi,
+            hire_date_shamsi,
+            decree_type,
+            employment_type,
+            position,
+            department,
+            years_of_service,
+            insurance_history_months,
+            insurance_number,
+            education_level,
+            education_field,
+            education_university,
+            education_year_shamsi,
+            specialties,
+            experience_years,
+            experience_description,
+            birthday_shamsi,
+            other_occasion_shamsi,
+            other_occasion_title,
+            notes
+          } = body;
+          const nowShamsi = toShamsi(/* @__PURE__ */ new Date());
+          const existing = await env.DB.prepare(
+            `SELECT id FROM employees WHERE person_id = ?`
+          ).bind(personId).first();
+          if (existing) {
+            await env.DB.prepare(
+              `UPDATE employees SET
+                contract_type = ?,
+                contract_start_shamsi = ?,
+                contract_end_shamsi = ?,
+                hire_date_shamsi = ?,
+                decree_type = ?,
+                employment_type = ?,
+                position = ?,
+                department = ?,
+                years_of_service = ?,
+                insurance_history_months = ?,
+                insurance_number = ?,
+                education_level = ?,
+                education_field = ?,
+                education_university = ?,
+                education_year_shamsi = ?,
+                specialties = ?,
+                experience_years = ?,
+                experience_description = ?,
+                birthday_shamsi = ?,
+                other_occasion_shamsi = ?,
+                other_occasion_title = ?,
+                notes = ?,
+                updated_at = CURRENT_TIMESTAMP,
+                updated_at_shamsi = ?
+              WHERE person_id = ?`
+            ).bind(
+              contract_type || null,
+              contract_start_shamsi || null,
+              contract_end_shamsi || null,
+              hire_date_shamsi || null,
+              decree_type || null,
+              employment_type || null,
+              position || null,
+              department || null,
+              years_of_service || 0,
+              insurance_history_months || 0,
+              insurance_number || null,
+              education_level || null,
+              education_field || null,
+              education_university || null,
+              education_year_shamsi || null,
+              specialties ? JSON.stringify(specialties) : null,
+              experience_years || 0,
+              experience_description || null,
+              birthday_shamsi || null,
+              other_occasion_shamsi || null,
+              other_occasion_title || null,
+              notes || null,
+              nowShamsi,
+              personId
+            ).run();
+          } else {
+            await env.DB.prepare(
+              `INSERT INTO employees (
+                person_id, contract_type, contract_start_shamsi, contract_end_shamsi,
+                hire_date_shamsi, decree_type, employment_type, position, department,
+                years_of_service, insurance_history_months, insurance_number,
+                education_level, education_field, education_university, education_year_shamsi,
+                specialties, experience_years, experience_description,
+                birthday_shamsi, other_occasion_shamsi, other_occasion_title,
+                notes, created_at_shamsi, updated_at_shamsi
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            ).bind(
+              personId,
+              contract_type || null,
+              contract_start_shamsi || null,
+              contract_end_shamsi || null,
+              hire_date_shamsi || null,
+              decree_type || null,
+              employment_type || null,
+              position || null,
+              department || null,
+              years_of_service || 0,
+              insurance_history_months || 0,
+              insurance_number || null,
+              education_level || null,
+              education_field || null,
+              education_university || null,
+              education_year_shamsi || null,
+              specialties ? JSON.stringify(specialties) : null,
+              experience_years || 0,
+              experience_description || null,
+              birthday_shamsi || null,
+              other_occasion_shamsi || null,
+              other_occasion_title || null,
+              notes || null,
+              nowShamsi,
+              nowShamsi
+            ).run();
+          }
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers
+          });
+        } catch (error) {
+          console.error("Employee POST error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
       if (url.pathname === "/api/users" && request.method === "GET") {
         const authHeader = request.headers.get("Authorization");
         if (!authHeader) {
@@ -3302,7 +3508,8 @@ var src_default = {
         "/budget-types.html",
         "/goods.html",
         "/persons.html",
-        "/permissions.html"
+        "/permissions.html",
+        "/employee-profile.html"
       ];
       if (staticPaths.includes(url.pathname)) {
         return await env.ASSETS.fetch(request);
@@ -3368,7 +3575,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-HTRQaK/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-q0UYGW/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -3400,7 +3607,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-HTRQaK/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-q0UYGW/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
