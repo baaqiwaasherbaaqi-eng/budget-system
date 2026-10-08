@@ -446,6 +446,157 @@
             .table-container table { min-width: 600px; }
             .modal .form-row { grid-template-columns: 1fr; }
         }
+
+
+
+        /* ============ Search Box ============ */
+        .search-box {
+            background: white;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .search-box-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 5px 15px;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .search-box-input:focus-within {
+            border-color: #667eea;
+            background: white;
+        }
+
+        .search-icon {
+            font-size: 18px;
+            color: #667eea;
+        }
+
+        .search-box-input input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 10px 0;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 14px;
+            outline: none;
+            direction: ltr;
+            text-align: right;
+        }
+
+        .search-box-input input::placeholder {
+            direction: rtl;
+            text-align: right;
+        }
+
+        .search-box-input button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .search-box-input button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e7f3ff;
+            border-radius: 8px;
+            border-right: 4px solid #17a2b8;
+            font-size: 13px;
+            animation: slideDown 0.3s;
+        }
+
+        .search-result.error {
+            background: #f8d7da;
+            border-right-color: #dc3545;
+            color: #721c24;
+        }
+
+        .search-result.success {
+            background: #d4edda;
+            border-right-color: #28a745;
+            color: #155724;
+        }
+
+        .search-result .person-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .search-result .person-name {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .search-result .person-code {
+            font-family: monospace;
+            font-size: 12px;
+            color: #667eea;
+            background: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+        }
+
+        .search-result .person-type {
+            font-size: 12px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            background: #667eea;
+            color: white;
+        }
+
+        .search-result button {
+            margin-right: auto;
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 12px;
+        }
+
+        .search-result button:hover {
+            background: #218838;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        body.dark .search-box {
+            background: #2d3748;
+        }
+
+        body.dark .search-box-input {
+            background: #1a202c;
+        }
+
+        body.dark .search-box-input input {
+            color: #e2e8f0;
+        }
+
     </style>
 </head>
 <body>
@@ -453,6 +604,22 @@
     <div class="container">
         <div class="header">
             <h1>👥 اشخاص</h1>
+        </div>
+
+        <!-- Search Box -->
+        <div class="search-box">
+            <div class="search-box-input">
+                <span class="search-icon">🔍</span>
+                <input 
+                    type="text" 
+                    id="search-national-id" 
+                    placeholder="جستجو بر اساس کد ملی..."
+                    maxlength="10"
+                    onkeydown="if(event.key === 'Enter') searchByNationalId()"
+                />
+                <button onclick="searchByNationalId()">جستجو</button>
+            </div>
+            <div class="search-result" id="search-result" style="display: none;"></div>
         </div>
 
         <!-- تب‌ها -->
@@ -725,6 +892,107 @@
             toast.className = `toast ${type} show`;
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
+
+
+        // ============================================
+        // جستجوی کد ملی
+        // ============================================
+        async function searchByNationalId() {
+            const input = document.getElementById('search-national-id');
+            const resultBox = document.getElementById('search-result');
+            
+            let nationalId = input.value.trim();
+            nationalId = toEnglishNumbers(nationalId);
+            
+            if (!nationalId) {
+                resultBox.style.display = 'none';
+                return;
+            }
+            
+            if (nationalId.length !== 10) {
+                resultBox.className = 'search-result error';
+                resultBox.textContent = 'کد ملی باید ۱۰ رقم باشد';
+                resultBox.style.display = 'block';
+                return;
+            }
+            
+            try {
+                const res = await fetch(`/api/persons/search?national_id=${nationalId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok || !data.found) {
+                    resultBox.className = 'search-result error';
+                    resultBox.textContent = '❌ ' + (data.error || 'شخصی با این کد ملی یافت نشد');
+                    resultBox.style.display = 'block';
+                    return;
+                }
+                
+                const person = data.person;
+                
+                const typeLabels = {
+                    employee: 'کارکنان',
+                    citizen: 'شهروندان',
+                    legal: 'اشخاص حقوقی',
+                    foreigner: 'خارج شهروندان'
+                };
+                
+                resultBox.className = 'search-result success';
+                resultBox.innerHTML = `
+                    <div class="person-info">
+                        <span>✅ یافت شد:</span>
+                        <span class="person-name">${person.full_name}</span>
+                        <span class="person-code">${person.code}</span>
+                        <span class="person-type">${typeLabels[person.person_type] || person.person_type}</span>
+                        <button onclick="goToPerson(${person.id}, '${person.person_type}')">
+                            مشاهده پرونده →
+                        </button>
+                    </div>
+                `;
+                resultBox.style.display = 'block';
+                
+            } catch (error) {
+                console.error('Search error:', error);
+                resultBox.className = 'search-result error';
+                resultBox.textContent = 'خطا در جستجو';
+                resultBox.style.display = 'block';
+            }
+        }
+
+        // ============================================
+        // رفتن به پرونده شخص
+        // ============================================
+        function goToPerson(personId, personType) {
+            // فعلاً برو به تب مربوطه توی persons.html
+            switchTab(personType);
+            
+            // بعد از لود، نود رو انتخاب کن
+            setTimeout(() => {
+                const person = flatData.find(n => n.id === personId);
+                if (!person) return;
+                
+                // باز کردن همه والدها
+                let parentId = person.parent_id;
+                while (parentId) {
+                    expandedNodes.add(parentId);
+                    const parent = flatData.find(n => n.id === parentId);
+                    parentId = parent ? parent.parent_id : null;
+                }
+                
+                selectedNode = person;
+                renderTree();
+                renderTable();
+                
+                // اسکرول به نود
+                setTimeout(() => {
+                    const nodeEl = document.querySelector(`.tree-node[data-id="${personId}"]`);
+                    if (nodeEl) nodeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 200);
+            }, 500);
+        }
+
 
         // ============================================
         // لود دیتا
