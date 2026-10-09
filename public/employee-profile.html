@@ -435,10 +435,11 @@
       // ============================================
       // وضعیت
       // ============================================
-      let personId = null;
-      let person = null;
-      let employee = null;
-      let decreeTypes = [];
+        let personId = null;
+        let person = null;
+        let employee = null;
+        let decreeTypes = [];
+        let organizations = [];
 
       // ============================================
       // توابع کمکی
@@ -484,13 +485,19 @@
           person = data.person;
           employee = data.employee;
 
-          // لود ۸ نوع حکم
-          const decreeRes = await fetch("/api/base-data?section=decree_type", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          decreeTypes = await decreeRes.json();
+                // لود ۸ نوع حکم
+                const decreeRes = await fetch('/api/base-data?section=decree_type', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                decreeTypes = await decreeRes.json();
 
-          renderPage();
+                // لود واحدهای سازمانی
+                const orgRes = await fetch('/api/base-data?section=organization', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                organizations = await orgRes.json();
+
+                renderPage();
         } catch (error) {
           console.error("Load error:", error);
           document.getElementById("main-container").innerHTML = `
@@ -847,17 +854,24 @@
       // ============================================
       // تب اطلاعات استخدامی
       // ============================================
-      function renderEmploymentTab() {
-        const e = employee || {};
+        function renderEmploymentTab() {
+            const e = employee || {};
 
-        // گزینه‌های نوع حکم
-        let decreeOptions = '<option value="">— انتخاب کنید —</option>';
-        decreeTypes.forEach((d) => {
-          const selected = e.decree_type === d.code ? "selected" : "";
-          decreeOptions += `<option value="${d.code}" ${selected}>${d.title}</option>`;
-        });
+            // گزینه‌های نوع حکم
+            let decreeOptions = '<option value="">— انتخاب کنید —</option>';
+            decreeTypes.forEach(d => {
+                const selected = e.decree_type === d.code ? 'selected' : '';
+                decreeOptions += `<option value="${d.code}" ${selected}>${d.title}</option>`;
+            });
 
-        return `
+            // گزینه‌های واحد سازمانی
+            let organizationOptions = '';
+            organizations.forEach(org => {
+                const selected = e.department === org.title ? 'selected' : '';
+                organizationOptions += `<option value="${org.title}" ${selected}>${org.title}</option>`;
+            });
+
+            return `
                 <div class="section-divider">💼 اطلاعات قرارداد</div>
 
                 <div class="form-row">
@@ -911,18 +925,17 @@
                     </div>
                 </div>
 
-                <div class="form-row">
+                                <div class="form-row">
                     <div class="form-group">
                         <label>سمت</label>
-                        <input type="text" id="input-position" value="${
-                          e.position || ""
-                        }" />
+                        <input type="text" id="input-position" value="${e.position || ''}" />
                     </div>
                     <div class="form-group">
                         <label>واحد سازمانی</label>
-                        <input type="text" id="input-department" value="${
-                          e.department || ""
-                        }" />
+                        <select id="input-department">
+                            <option value="">— انتخاب کنید —</option>
+                            ${organizationOptions}
+                        </select>
                     </div>
                 </div>
 
