@@ -2368,6 +2368,8 @@ export default {
             employment_type,
             position,
             department,
+            unit_start_shamsi,
+            personnel_code,
             years_of_service,
             insurance_history_months,
             insurance_number,
@@ -2405,6 +2407,8 @@ export default {
                 employment_type = ?,
                 position = ?,
                 department = ?,
+                                unit_start_shamsi = ?,
+                personnel_code = ?,
                 years_of_service = ?,
                 insurance_history_months = ?,
                 insurance_number = ?,
@@ -2432,6 +2436,8 @@ export default {
                 employment_type || null,
                 position || null,
                 department || null,
+                unit_start_shamsi || null,
+                personnel_code || null,
                 years_of_service || 0,
                 insurance_history_months || 0,
                 insurance_number || null,
@@ -2456,12 +2462,13 @@ export default {
               `INSERT INTO employees (
                 person_id, contract_type, contract_start_shamsi, contract_end_shamsi,
                 hire_date_shamsi, decree_type, employment_type, position, department,
+                unit_start_shamsi, personnel_code,
                 years_of_service, insurance_history_months, insurance_number,
                 education_level, education_field, education_university, education_year_shamsi,
                 specialties, experience_years, experience_description,
                 birthday_shamsi, other_occasion_shamsi, other_occasion_title,
                 notes, created_at_shamsi, updated_at_shamsi
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
             )
               .bind(
                 personId,
@@ -2473,6 +2480,8 @@ export default {
                 employment_type || null,
                 position || null,
                 department || null,
+                unit_start_shamsi || null,
+                personnel_code || null,
                 years_of_service || 0,
                 insurance_history_months || 0,
                 insurance_number || null,
