@@ -810,6 +810,206 @@
       border-top-color: #4a5568;
     }
 
+    /* ============ Decrees ============ */
+    .decrees-container {
+      margin-bottom: 20px;
+    }
+
+    .decree-item {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 12px;
+      border-right: 4px solid #667eea;
+      transition: all 0.2s;
+    }
+
+    .decree-item:hover {
+      background: #eef1ff;
+    }
+
+    .decree-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .decree-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .decree-icon {
+      font-size: 20px;
+    }
+
+    .decree-type {
+      font-weight: bold;
+      font-size: 15px;
+      color: #333;
+    }
+
+    .decree-number {
+      font-family: monospace;
+      font-size: 11px;
+      background: white;
+      padding: 3px 10px;
+      border-radius: 12px;
+      color: #667eea;
+    }
+
+    .decree-status {
+      color: white;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+
+    .decree-actions {
+      display: flex;
+      gap: 5px;
+    }
+
+    .decree-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .decree-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 10px;
+      border-top: 1px solid #e9ecef;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .decree-total {
+      font-size: 13px;
+      color: #333;
+    }
+
+    .decree-total strong {
+      color: #28a745;
+      font-size: 15px;
+    }
+
+    .decree-items-count {
+      font-size: 12px;
+      color: #667eea;
+    }
+
+    body.dark .decree-item {
+      background: #374151;
+    }
+    body.dark .decree-item:hover {
+      background: #4a5568;
+    }
+    body.dark .decree-type {
+      color: #e2e8f0;
+    }
+    body.dark .decree-number {
+      background: #1a202c;
+    }
+    body.dark .decree-footer {
+      border-top-color: #4a5568;
+    }
+    body.dark .decree-total {
+      color: #e2e8f0;
+    }
+
+
+    /* ============ Decree Items (داخل Modal) ============ */
+    .decree-item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      gap: 10px;
+    }
+
+    .decree-item-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #333;
+      flex: 1;
+    }
+
+    .decree-item-code {
+      font-weight: bold;
+      color: #667eea;
+      font-family: monospace;
+      min-width: 30px;
+    }
+
+    .decree-item-input {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .decree-item-input input {
+      width: 150px;
+      padding: 6px 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-family: 'Vazirmatn', Tahoma, sans-serif;
+      font-size: 13px;
+      text-align: left;
+      direction: ltr;
+    }
+
+    .decree-item-input input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .currency {
+      font-size: 11px;
+      color: #999;
+    }
+
+    .decree-total-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin: 15px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 15px;
+    }
+
+    .decree-total-box strong {
+      font-size: 22px;
+    }
+
+    body.dark .decree-item-row {
+      background: #374151;
+    }
+    body.dark .decree-item-label {
+      color: #e2e8f0;
+    }
+    body.dark .decree-item-input input {
+      background: #1a202c;
+      border-color: #4a5568;
+      color: #e2e8f0;
+    }
 
     </style>
   </head>
@@ -851,6 +1051,7 @@
     let employeeTasks = [];
     let operationalItems = [];
     let dependents = [];
+    let decrees = [];
 
       // ============================================
       // توابع کمکی
@@ -986,6 +1187,12 @@
         });
         dependents = await depsRes.json();
 
+        // لود احکام کارگزینی
+        const decreesRes = await fetch(`/api/employees/${personId}/decrees`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        decrees = await decreesRes.json();
+
         renderPage();
         } catch (error) {
           console.error("Load error:", error);
@@ -1048,7 +1255,7 @@
             <div class="placeholder"><div class="icon">📄</div><h3>متن قرارداد + امضای دیجیتال</h3><p>به زودی</p></div>
           </div>
           <div class="tab-panel" id="panel-decrees">
-            <div class="placeholder"><div class="icon">📋</div><h3>احکام کارگزینی</h3><p>به زودی</p></div>
+            ${renderDecreesTab()}
           </div>
           <div class="tab-panel" id="panel-dependents">
             ${renderDependentsTab()}
@@ -1650,7 +1857,653 @@
         </button>
       `;
     }
+    // ============================================
+    // تب احکام کارگزینی
+    // ============================================
+    function renderDecreesTab() {
+      const typeLabels = {
+        official: 'رسمی',
+        official_worker: 'رسمی کارگری',
+        contractual: 'پیمانی',
+        corporate: 'شرکتی',
+        specific_task: 'کارمعین',
+        worker_jobs: 'مشاغل کارگری',
+        temporary: 'موقت',
+        tasri: 'تسری'
+      };
 
+      const typeIcons = {
+        official: '🎖️',
+        official_worker: '👷',
+        contractual: '📝',
+        corporate: '🏢',
+        specific_task: '📋',
+        worker_jobs: '🔧',
+        temporary: '⏱️',
+        tasri: '📜'
+      };
+
+      const statusLabels = {
+        draft: { label: 'پیش‌نویس', color: '#6c757d' },
+        issued: { label: 'صادر شده', color: '#17a2b8' },
+        signed: { label: 'امضا شده', color: '#28a745' },
+        active: { label: 'فعال', color: '#28a745' },
+        expired: { label: 'منقضی', color: '#fd7e14' },
+        cancelled: { label: 'لغو شده', color: '#dc3545' }
+      };
+
+      let decreesHtml = '';
+
+      if (decrees.length === 0) {
+        decreesHtml = `
+          <div style="text-align:center; padding:40px; color:#999;">
+            <div style="font-size:40px; margin-bottom:10px;">📋</div>
+            <div>هنوز حکمی ثبت نشده</div>
+          </div>
+        `;
+      } else {
+        decrees.forEach((decree) => {
+          const icon = typeIcons[decree.decree_type] || '📋';
+          const typeLabel = typeLabels[decree.decree_type] || decree.decree_type;
+          const status = statusLabels[decree.status] || statusLabels.draft;
+
+          // جمع مبلغ
+          let totalAmount = decree.total_amount || 0;
+          let itemsCount = 0;
+          try {
+            const items = decree.items ? JSON.parse(decree.items) : [];
+            itemsCount = items.length;
+          } catch (e) {}
+
+          decreesHtml += `
+            <div class="decree-item">
+              <div class="decree-header">
+                <div class="decree-title">
+                  <span class="decree-icon">${icon}</span>
+                  <span class="decree-type">${typeLabel}</span>
+                  ${decree.decree_number ? `<span class="decree-number">شماره: ${decree.decree_number}</span>` : ''}
+                  <span class="decree-status" style="background:${status.color};">${status.label}</span>
+                </div>
+                <div class="decree-actions">
+                  <button class="dep-btn dep-edit-btn" onclick="openDecreeModal(${decree.id})" title="ویرایش">✏️</button>
+                  <button class="dep-btn" onclick="sendDecreeForSignature(${decree.id})" title="ارسال برای امضا" style="background:#17a2b8;">📱</button>
+                  <button class="dep-btn dep-delete-btn" onclick="deleteDecree(${decree.id})" title="حذف">🗑️</button>
+                </div>
+              </div>
+
+              <div class="decree-info">
+                ${decree.decree_date_shamsi ? `<div class="info-row"><span class="info-label">تاریخ صدور:</span><span class="info-value">${toPersianNumbers(decree.decree_date_shamsi)}</span></div>` : ''}
+                ${decree.execution_date_shamsi ? `<div class="info-row"><span class="info-label">تاریخ اجرا:</span><span class="info-value">${toPersianNumbers(decree.execution_date_shamsi)}</span></div>` : ''}
+                ${decree.contract_start_shamsi ? `<div class="info-row"><span class="info-label">شروع قرارداد:</span><span class="info-value">${toPersianNumbers(decree.contract_start_shamsi)}</span></div>` : ''}
+                ${decree.contract_end_shamsi ? `<div class="info-row"><span class="info-label">پایان قرارداد:</span><span class="info-value">${toPersianNumbers(decree.contract_end_shamsi)}</span></div>` : ''}
+                ${decree.organization_unit ? `<div class="info-row"><span class="info-label">واحد سازمانی:</span><span class="info-value">${decree.organization_unit}</span></div>` : ''}
+                ${decree.position_title ? `<div class="info-row"><span class="info-label">پست سازمانی:</span><span class="info-value">${decree.position_title}</span></div>` : ''}
+              </div>
+
+              <div class="decree-footer">
+                <div class="decree-total">
+                  <span>جمع کل:</span>
+                  <strong>${formatAmount(totalAmount)} ریال</strong>
+                </div>
+                <div class="decree-items-count">
+                  ${itemsCount > 0 ? `${toPersianNumbers(itemsCount)} آیتم حقوق` : 'بدون آیتم'}
+                </div>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      return `
+        <div class="section-divider">📋 احکام کارگزینی</div>
+
+        <div class="info-banner">
+          💡 <b>راهنما:</b> احکام کارگزینی برای هر کارمند قابل ثبت است.
+          <br>
+          • <b>۸ نوع حکم:</b> رسمی، رسمی کارگری، پیمانی، شرکتی، کارمعین، مشاغل کارگری، موقت، تسری
+          • <b>امضای دیجیتال:</b> با ارسال SMS (mock) به موبایل کارمند
+        </div>
+
+        <div class="decrees-container" id="decrees-container">
+          ${decreesHtml}
+        </div>
+
+        <button class="add-task-btn" onclick="openDecreeModal()">
+          ➕ افزودن حکم جدید
+        </button>
+      `;
+    }
+    
+        // ============================================
+    // Modal حکم کارگزینی
+    // ============================================
+    let currentDecreeItems = [];
+    let currentDecreeType = 'official';
+
+    async function openDecreeModal(decreeId = null) {
+      const decree = decreeId ? decrees.find(d => d.id === decreeId) : null;
+      const isEdit = !!decree;
+      const title = isEdit ? '✏️ ویرایش حکم' : '➕ افزودن حکم جدید';
+
+      // لیست آیتم‌ها
+      let items = [];
+      if (decree?.items) {
+        try {
+          items = typeof decree.items === 'string' ? JSON.parse(decree.items) : decree.items;
+        } catch (e) { items = []; }
+      }
+      currentDecreeItems = items;
+      currentDecreeType = decree?.decree_type || 'official';
+
+      // اطلاعات شخص از person
+      const p = person || {};
+
+      const modalHtml = `
+        <div class="dependent-modal-overlay open" id="decree-modal">
+          <div class="dependent-modal" style="max-width: 900px;">
+            <div class="dependent-modal-header">
+              <h3>${title}</h3>
+              <button class="dep-modal-close" onclick="closeDecreeModal()">✕</button>
+            </div>
+
+            <div class="dependent-modal-body">
+              <!-- نوع حکم -->
+              <div class="section-divider">📋 اطلاعات حکم</div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>نوع حکم <span class="required">*</span></label>
+                  <select id="decree-type" onchange="onDecreeTypeChange()">
+                    <option value="">— انتخاب کنید —</option>
+                    <option value="official" ${decree?.decree_type === 'official' ? 'selected' : ''}>رسمی</option>
+                    <option value="official_worker" ${decree?.decree_type === 'official_worker' ? 'selected' : ''}>رسمی کارگری</option>
+                    <option value="contractual" ${decree?.decree_type === 'contractual' ? 'selected' : ''}>پیمانی</option>
+                    <option value="corporate" ${decree?.decree_type === 'corporate' ? 'selected' : ''}>شرکتی</option>
+                    <option value="specific_task" ${decree?.decree_type === 'specific_task' ? 'selected' : ''}>کارمعین</option>
+                    <option value="worker_jobs" ${decree?.decree_type === 'worker_jobs' ? 'selected' : ''}>مشاغل کارگری</option>
+                    <option value="temporary" ${decree?.decree_type === 'temporary' ? 'selected' : ''}>موقت</option>
+                    <option value="tasri" ${decree?.decree_type === 'tasri' ? 'selected' : ''}>تسری</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>شماره حکم</label>
+                  <input type="text" id="decree-number" value="${decree?.decree_number || ''}" />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>تاریخ صدور</label>
+                  <input type="text" id="decree-date" value="${toPersianDate(decree?.decree_date_shamsi)}" placeholder="۱۴۰۵/۰۱/۰۱" />
+                </div>
+                <div class="form-group">
+                  <label>تاریخ اجرا</label>
+                  <input type="text" id="decree-execution-date" value="${toPersianDate(decree?.execution_date_shamsi)}" placeholder="۱۴۰۵/۰۱/۰۱" />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>تاریخ شروع قرارداد</label>
+                  <input type="text" id="decree-contract-start" value="${toPersianDate(decree?.contract_start_shamsi)}" placeholder="اختیاری" />
+                </div>
+                <div class="form-group">
+                  <label>تاریخ پایان قرارداد</label>
+                  <input type="text" id="decree-contract-end" value="${toPersianDate(decree?.contract_end_shamsi)}" placeholder="اختیاری" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>شرح حکم</label>
+                <textarea id="decree-description">${decree?.description || ''}</textarea>
+              </div>
+
+              <!-- اطلاعات شغلی -->
+              <div class="section-divider">💼 اطلاعات شغلی</div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>واحد سازمانی</label>
+                  <input type="text" id="decree-org-unit" value="${decree?.organization_unit || ''}" />
+                </div>
+                <div class="form-group">
+                  <label>محل خدمت</label>
+                  <input type="text" id="decree-service-location" value="${decree?.service_location || ''}" />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>پست سازمانی</label>
+                  <input type="text" id="decree-position" value="${decree?.position_title || ''}" />
+                </div>
+                <div class="form-group">
+                  <label>گروه شغلی</label>
+                  <input type="text" id="decree-job-group" value="${decree?.job_group || ''}" />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>رتبه</label>
+                  <input type="text" id="decree-job-rank" value="${decree?.job_rank || ''}" />
+                </div>
+                <div class="form-group">
+                  <label>طبقه شغلی</label>
+                  <input type="text" id="decree-job-class" value="${decree?.job_class || ''}" />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>نوع استخدام</label>
+                  <input type="text" id="decree-employment-type" value="${decree?.employment_type || ''}" />
+                </div>
+                <div class="form-group">
+                  <label>مدت اجرای قرارداد</label>
+                  <input type="text" id="decree-employment-duration" value="${decree?.employment_duration || ''}" />
+                </div>
+              </div>
+
+              <!-- سوابق -->
+              <div class="section-divider">📊 سوابق</div>
+
+              <div class="form-row-3">
+                <div class="form-group">
+                  <label>سابقه خدمت (سال)</label>
+                  <input type="number" id="decree-service-years" value="${decree?.service_history_years || 0}" min="0" />
+                </div>
+                <div class="form-group">
+                  <label>سابقه خدمت (ماه)</label>
+                  <input type="number" id="decree-service-months" value="${decree?.service_history_months || 0}" min="0" />
+                </div>
+                <div class="form-group">
+                  <label>سابقه خدمت (روز)</label>
+                  <input type="number" id="decree-service-days" value="${decree?.service_history_days || 0}" min="0" />
+                </div>
+              </div>
+
+              <div class="form-row-3">
+                <div class="form-group">
+                  <label>سابقه تجربی (سال)</label>
+                  <input type="number" id="decree-exp-years" value="${decree?.experience_years || 0}" min="0" />
+                </div>
+                <div class="form-group">
+                  <label>سابقه تجربی (ماه)</label>
+                  <input type="number" id="decree-exp-months" value="${decree?.experience_months || 0}" min="0" />
+                </div>
+                <div class="form-group">
+                  <label>سابقه تجربی (روز)</label>
+                  <input type="number" id="decree-exp-days" value="${decree?.experience_days || 0}" min="0" />
+                </div>
+              </div>
+
+              <!-- آیتم‌های حقوق -->
+              <div class="section-divider">💰 دستمزد و مزایا</div>
+
+              <div id="decree-items-container">
+                <!-- آیتم‌ها داینامیک اینجا میان -->
+              </div>
+
+              <div class="decree-total-box">
+                <span>جمع کل:</span>
+                <strong id="decree-total-amount">۰</strong>
+                <span>ریال</span>
+              </div>
+
+              <div class="form-group">
+                <label>جمع کل (به حروف)</label>
+                <input type="text" id="decree-total-words" value="${decree?.total_in_words || ''}" placeholder="مثلاً: ده میلیون ریال" />
+              </div>
+
+              <div class="form-group">
+                <label>یادداشت</label>
+                <textarea id="decree-notes">${decree?.notes || ''}</textarea>
+              </div>
+            </div>
+
+            <div class="dependent-modal-footer">
+              <button class="btn btn-cancel" onclick="closeDecreeModal()">انصراف</button>
+              <button class="btn btn-save" id="btn-save-decree" onclick="saveDecree(${decreeId || 'null'})">
+                💾 ذخیره
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // اضافه به body
+      const existing = document.getElementById('decree-modal');
+      if (existing) existing.remove();
+
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+      // راه‌اندازی date picker
+      setTimeout(() => {
+        ['decree-date', 'decree-execution-date', 'decree-contract-start', 'decree-contract-end'].forEach(id => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          try { $("#" + id).persianDatepicker('destroy'); } catch (e) {}
+          $("#" + id).persianDatepicker({
+            format: 'YYYY/MM/DD',
+            autoClose: true,
+            persianDigit: true,
+            initialValue: !!el.value
+          });
+        });
+
+        // بارگذاری آیتم‌ها
+        if (currentDecreeType) {
+          loadDecreeItems(currentDecreeType);
+        }
+      }, 100);
+    }
+
+    function closeDecreeModal() {
+      const modal = document.getElementById('decree-modal');
+      if (modal) modal.remove();
+    }
+
+    // ============================================
+    // تغییر نوع حکم
+    // ============================================
+    async function onDecreeTypeChange() {
+      const type = document.getElementById('decree-type').value;
+      if (!type) return;
+      currentDecreeType = type;
+      await loadDecreeItems(type);
+    }
+
+    // ============================================
+    // بارگذاری آیتم‌های حقوق
+    // ============================================
+    async function loadDecreeItems(decreeType) {
+      try {
+        const res = await fetch(`/api/decree-items?decree_type=${decreeType}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const templateItems = await res.json();
+
+        // merge با آیتم‌های فعلی
+        const merged = templateItems.map(t => {
+          const existing = currentDecreeItems.find(ci => ci.code === t.code);
+          return {
+            code: t.code,
+            title: t.title,
+            amount: existing ? existing.amount : 0
+          };
+        });
+
+        currentDecreeItems = merged;
+        renderDecreeItems();
+      } catch (error) {
+        console.error('Load items error:', error);
+      }
+    }
+
+    // ============================================
+    // رندر آیتم‌های حقوق
+    // ============================================
+    function renderDecreeItems() {
+      const container = document.getElementById('decree-items-container');
+      if (!container) return;
+
+      if (currentDecreeItems.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:20px; color:#999;">آیتمی برای این نوع حکم یافت نشد</div>`;
+        return;
+      }
+
+      let html = '';
+      currentDecreeItems.forEach((item, index) => {
+        html += `
+          <div class="decree-item-row">
+            <div class="decree-item-label">
+              <span class="decree-item-code">${item.code})</span>
+              <span>${item.title}</span>
+            </div>
+            <div class="decree-item-input">
+              <input type="text" 
+                     class="amount-input" 
+                     value="${item.amount ? formatAmount(item.amount) : ''}" 
+                     placeholder="۰"
+                     oninput="onDecreeAmountChange(${index}, this)" />
+              <span class="currency">ریال</span>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+
+      // راه‌اندازی فرمت مبلغ
+      container.querySelectorAll('.amount-input').forEach((input, idx) => {
+        input.addEventListener('input', function() {
+          let value = toEnglishNumbers(this.value);
+          value = value.replace(/,/g, '').replace(/[^\d]/g, '');
+          if (value === '') {
+            this.value = '';
+            return;
+          }
+          this.value = toPersianNumbers(value.replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+        });
+      });
+
+      updateDecreeTotal();
+    }
+
+    // ============================================
+    // تغییر مبلغ آیتم
+    // ============================================
+    function onDecreeAmountChange(index, input) {
+      let value = toEnglishNumbers(input.value);
+      value = value.replace(/,/g, '').replace(/[^\d]/g, '');
+      currentDecreeItems[index].amount = value === '' ? 0 : parseInt(value);
+      updateDecreeTotal();
+    }
+
+    // ============================================
+    // محاسبه جمع کل
+    // ============================================
+    function updateDecreeTotal() {
+      const total = currentDecreeItems.reduce((sum, item) => sum + (item.amount || 0), 0);
+      const totalEl = document.getElementById('decree-total-amount');
+      if (totalEl) {
+        totalEl.textContent = formatAmount(total);
+      }
+      return total;
+    }
+
+    // ============================================
+    // ذخیره حکم
+    // ============================================
+    async function saveDecree(decreeId) {
+      const btn = document.getElementById('btn-save-decree');
+      btn.disabled = true;
+      btn.textContent = '⏳ در حال ذخیره...';
+
+      try {
+        const decreeType = document.getElementById('decree-type').value;
+        if (!decreeType) {
+          throw new Error('نوع حکم الزامی است');
+        }
+
+        const total = updateDecreeTotal();
+
+        const data = {
+          id: decreeId || null,
+          decree_type: decreeType,
+          decree_number: document.getElementById('decree-number').value.trim() || null,
+          decree_date_shamsi: cleanDate(document.getElementById('decree-date').value),
+          execution_date_shamsi: cleanDate(document.getElementById('decree-execution-date').value),
+          contract_start_shamsi: cleanDate(document.getElementById('decree-contract-start').value),
+          contract_end_shamsi: cleanDate(document.getElementById('decree-contract-end').value),
+          description: document.getElementById('decree-description').value.trim() || null,
+          organization_unit: document.getElementById('decree-org-unit').value.trim() || null,
+          service_location: document.getElementById('decree-service-location').value.trim() || null,
+          position_title: document.getElementById('decree-position').value.trim() || null,
+          job_group: document.getElementById('decree-job-group').value.trim() || null,
+          job_rank: document.getElementById('decree-job-rank').value.trim() || null,
+          job_class: document.getElementById('decree-job-class').value.trim() || null,
+          employment_type: document.getElementById('decree-employment-type').value.trim() || null,
+          employment_duration: document.getElementById('decree-employment-duration').value.trim() || null,
+          service_history_years: parseInt(document.getElementById('decree-service-years').value) || 0,
+          service_history_months: parseInt(document.getElementById('decree-service-months').value) || 0,
+          service_history_days: parseInt(document.getElementById('decree-service-days').value) || 0,
+          experience_years: parseInt(document.getElementById('decree-exp-years').value) || 0,
+          experience_months: parseInt(document.getElementById('decree-exp-months').value) || 0,
+          experience_days: parseInt(document.getElementById('decree-exp-days').value) || 0,
+          items: currentDecreeItems.filter(i => i.amount > 0),
+          total_amount: total,
+          total_in_words: document.getElementById('decree-total-words').value.trim() || null,
+          notes: document.getElementById('decree-notes').value.trim() || null,
+        };
+
+        const res = await fetch(`/api/employees/${personId}/decrees`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'خطا');
+
+        showToast(decreeId ? 'با موفقیت ویرایش شد' : 'با موفقیت ثبت شد');
+        closeDecreeModal();
+
+        // ریلود
+        const decreesRes = await fetch(`/api/employees/${personId}/decrees`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        decrees = await decreesRes.json();
+
+        const panel = document.getElementById('panel-decrees');
+        if (panel) panel.innerHTML = renderDecreesTab();
+      } catch (error) {
+        showToast(error.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '💾 ذخیره';
+      }
+    }
+
+    // ============================================
+    // حذف حکم
+    // ============================================
+    async function deleteDecree(decreeId) {
+      if (!confirm('مطمئن هستید این حکم حذف شود؟')) return;
+
+      try {
+        const res = await fetch(`/api/decrees/${decreeId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) throw new Error('خطا در حذف');
+
+        showToast('با موفقیت حذف شد');
+
+        const decreesRes = await fetch(`/api/employees/${personId}/decrees`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        decrees = await decreesRes.json();
+
+        const panel = document.getElementById('panel-decrees');
+        if (panel) panel.innerHTML = renderDecreesTab();
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+
+    // ============================================
+    // ارسال برای امضا (Mock SMS)
+    // ============================================
+    async function sendDecreeForSignature(decreeId) {
+      const decree = decrees.find(d => d.id === decreeId);
+      if (!decree) return;
+
+      // چک موبایل
+      const mobile = person.mobile;
+      if (!mobile) {
+        showToast('شماره موبایل کارمند ثبت نشده است', 'error');
+        return;
+      }
+
+      if (!confirm(`ارسال کد تایید به موبایل ${mobile}؟`)) return;
+
+      try {
+        const res = await fetch('/api/signatures/send-otp', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            entity_type: 'decree',
+            entity_id: decreeId,
+            employee_person_id: personId,
+            mobile: mobile
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'خطا در ارسال');
+
+        // نمایش OTP در حالت mock
+        if (data.mock_otp) {
+          showToast(`کد تایید (mock): ${data.mock_otp}`, 'success');
+          
+          // پرامپت برای وارد کردن OTP
+          setTimeout(() => {
+            const otp = prompt(`کد تایید ارسال شده به ${mobile} را وارد کنید:\n(Mock: ${data.mock_otp})`);
+            if (otp) {
+              verifySignature(data.signature_id, otp);
+            }
+          }, 500);
+        }
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+
+    // ============================================
+    // تایید امضا
+    // ============================================
+    async function verifySignature(signatureId, otpCode) {
+      try {
+        const res = await fetch('/api/signatures/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            signature_id: signatureId,
+            otp_code: otpCode
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'کد اشتباه');
+
+        showToast('✅ امضا با موفقیت ثبت شد');
+
+        // ریلود
+        const decreesRes = await fetch(`/api/employees/${personId}/decrees`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        decrees = await decreesRes.json();
+
+        const panel = document.getElementById('panel-decrees');
+        if (panel) panel.innerHTML = renderDecreesTab();
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+    
+    
     // ============================================
     // Modal فرد تحت تکفل
     // ============================================

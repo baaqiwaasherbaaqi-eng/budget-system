@@ -2980,7 +2980,780 @@ export default {
           });
         }
       }
+      // ============================================
+      // Decrees API (احکام کارگزینی)
+      // ============================================
 
+      // GET: آیتم‌های حقوق بر اساس نوع حکم
+      if (url.pathname === "/api/decree-items" && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401,
+              headers,
+            });
+          }
+
+          const decreeType = url.searchParams.get("decree_type");
+
+          if (!decreeType) {
+            return new Response(
+              JSON.stringify({ error: "decree_type الزامی است" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          const items = await env.DB.prepare(
+            `SELECT * FROM decree_items WHERE decree_type = ? AND is_active = 1 ORDER BY sort_order`
+          )
+            .bind(decreeType)
+            .all();
+
+          return new Response(JSON.stringify(items.results), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Decree items error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // GET: لیست احکام یک کارمند
+      if (
+        url.pathname.match(/^\/api\/employees\/\d+\/decrees$/) &&
+        request.method === "GET"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401,
+              headers,
+            });
+          }
+
+          const personId = url.pathname.split("/")[3];
+
+          const decrees = await env.DB.prepare(
+            `SELECT * FROM decrees WHERE employee_person_id = ? ORDER BY id DESC`
+          )
+            .bind(personId)
+            .all();
+
+          return new Response(JSON.stringify(decrees.results), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Decrees GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // GET: یک حکم خاص
+      if (
+        url.pathname.match(/^\/api\/decrees\/\d+$/) &&
+        request.method === "GET"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401,
+              headers,
+            });
+          }
+
+          const decreeId = url.pathname.split("/").pop();
+
+          const decree = await env.DB.prepare(
+            `SELECT * FROM decrees WHERE id = ?`
+          )
+            .bind(decreeId)
+            .first();
+
+          if (!decree) {
+            return new Response(JSON.stringify({ error: "حکم یافت نشد" }), {
+              status: 404,
+              headers,
+            });
+          }
+
+          // آیتم‌ها رو parse کن
+          if (decree.items) {
+            try {
+              decree.items_parsed = JSON.parse(decree.items);
+            } catch (e) {
+              decree.items_parsed = [];
+            }
+          }
+
+          return new Response(JSON.stringify(decree), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Decree GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // POST: افزودن/ویرایش حکم
+      if (
+        url.pathname.match(/^\/api\/employees\/\d+\/decrees$/) &&
+        request.method === "POST"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const personId = url.pathname.split("/")[3];
+          const body = await request.json();
+
+          const {
+            id,
+            decree_type,
+            decree_number,
+            decree_date_shamsi,
+            execution_date_shamsi,
+            contract_start_shamsi,
+            contract_end_shamsi,
+            description,
+            organization_unit,
+            service_location,
+            position_title,
+            job_group,
+            job_rank,
+            job_class,
+            employment_type,
+            employment_duration,
+            person_first_name,
+            person_last_name,
+            person_father_name,
+            person_national_id,
+            person_id_number,
+            person_birth_date_shamsi,
+            person_birth_place,
+            person_education_level,
+            person_education_field,
+            person_marital_status,
+            person_children_count,
+            person_military_status,
+            person_employment_date_shamsi,
+            service_history_years,
+            service_history_months,
+            service_history_days,
+            experience_years,
+            experience_months,
+            experience_days,
+            items,
+            total_amount,
+            total_in_words,
+            extra_data,
+            notes,
+          } = body;
+
+          if (!decree_type) {
+            return new Response(
+              JSON.stringify({ error: "نوع حکم الزامی است" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          const nowShamsi = toShamsi(new Date());
+          const itemsJson = items ? JSON.stringify(items) : null;
+
+          if (id) {
+            // UPDATE
+            await env.DB.prepare(
+              `UPDATE decrees SET
+                decree_type = ?,
+                decree_number = ?,
+                decree_date_shamsi = ?,
+                execution_date_shamsi = ?,
+                contract_start_shamsi = ?,
+                contract_end_shamsi = ?,
+                description = ?,
+                organization_unit = ?,
+                service_location = ?,
+                position_title = ?,
+                job_group = ?,
+                job_rank = ?,
+                job_class = ?,
+                employment_type = ?,
+                employment_duration = ?,
+                person_first_name = ?,
+                person_last_name = ?,
+                person_father_name = ?,
+                person_national_id = ?,
+                person_id_number = ?,
+                person_birth_date_shamsi = ?,
+                person_birth_place = ?,
+                person_education_level = ?,
+                person_education_field = ?,
+                person_marital_status = ?,
+                person_children_count = ?,
+                person_military_status = ?,
+                person_employment_date_shamsi = ?,
+                service_history_years = ?,
+                service_history_months = ?,
+                service_history_days = ?,
+                experience_years = ?,
+                experience_months = ?,
+                experience_days = ?,
+                items = ?,
+                total_amount = ?,
+                total_in_words = ?,
+                extra_data = ?,
+                notes = ?,
+                updated_at = CURRENT_TIMESTAMP,
+                updated_at_shamsi = ?
+              WHERE id = ? AND employee_person_id = ?`
+            )
+              .bind(
+                decree_type,
+                decree_number || null,
+                decree_date_shamsi || null,
+                execution_date_shamsi || null,
+                contract_start_shamsi || null,
+                contract_end_shamsi || null,
+                description || null,
+                organization_unit || null,
+                service_location || null,
+                position_title || null,
+                job_group || null,
+                job_rank || null,
+                job_class || null,
+                employment_type || null,
+                employment_duration || null,
+                person_first_name || null,
+                person_last_name || null,
+                person_father_name || null,
+                person_national_id || null,
+                person_id_number || null,
+                person_birth_date_shamsi || null,
+                person_birth_place || null,
+                person_education_level || null,
+                person_education_field || null,
+                person_marital_status || null,
+                person_children_count || 0,
+                person_military_status || null,
+                person_employment_date_shamsi || null,
+                service_history_years || 0,
+                service_history_months || 0,
+                service_history_days || 0,
+                experience_years || 0,
+                experience_months || 0,
+                experience_days || 0,
+                itemsJson,
+                total_amount || 0,
+                total_in_words || null,
+                extra_data ? JSON.stringify(extra_data) : null,
+                notes || null,
+                nowShamsi,
+                id,
+                personId
+              )
+              .run();
+
+            return new Response(JSON.stringify({ success: true, id: id }), {
+              status: 200,
+              headers,
+            });
+          } else {
+            // INSERT
+            const result = await env.DB.prepare(
+              `INSERT INTO decrees (
+                employee_person_id, decree_type, decree_number, decree_date_shamsi,
+                execution_date_shamsi, contract_start_shamsi, contract_end_shamsi,
+                description, organization_unit, service_location, position_title,
+                job_group, job_rank, job_class, employment_type, employment_duration,
+                person_first_name, person_last_name, person_father_name, person_national_id,
+                person_id_number, person_birth_date_shamsi, person_birth_place,
+                person_education_level, person_education_field, person_marital_status,
+                person_children_count, person_military_status, person_employment_date_shamsi,
+                service_history_years, service_history_months, service_history_days,
+                experience_years, experience_months, experience_days,
+                items, total_amount, total_in_words, extra_data, notes,
+                created_at_shamsi, updated_at_shamsi
+              ) VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+              )`
+            )
+              .bind(
+                personId,
+                decree_type,
+                decree_number || null,
+                decree_date_shamsi || null,
+                execution_date_shamsi || null,
+                contract_start_shamsi || null,
+                contract_end_shamsi || null,
+                description || null,
+                organization_unit || null,
+                service_location || null,
+                position_title || null,
+                job_group || null,
+                job_rank || null,
+                job_class || null,
+                employment_type || null,
+                employment_duration || null,
+                person_first_name || null,
+                person_last_name || null,
+                person_father_name || null,
+                person_national_id || null,
+                person_id_number || null,
+                person_birth_date_shamsi || null,
+                person_birth_place || null,
+                person_education_level || null,
+                person_education_field || null,
+                person_marital_status || null,
+                person_children_count || 0,
+                person_military_status || null,
+                person_employment_date_shamsi || null,
+                service_history_years || 0,
+                service_history_months || 0,
+                service_history_days || 0,
+                experience_years || 0,
+                experience_months || 0,
+                experience_days || 0,
+                itemsJson,
+                total_amount || 0,
+                total_in_words || null,
+                extra_data ? JSON.stringify(extra_data) : null,
+                notes || null,
+                nowShamsi,
+                nowShamsi
+              )
+              .run();
+
+            return new Response(
+              JSON.stringify({
+                success: true,
+                id: result.meta.last_row_id,
+              }),
+              {
+                status: 201,
+                headers,
+              }
+            );
+          }
+        } catch (error) {
+          console.error("Decree POST error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // DELETE: حذف حکم
+      if (
+        url.pathname.match(/^\/api\/decrees\/\d+$/) &&
+        request.method === "DELETE"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const decreeId = url.pathname.split("/").pop();
+
+          await env.DB.prepare("DELETE FROM decrees WHERE id = ?")
+            .bind(decreeId)
+            .run();
+
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Decree DELETE error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // ============================================
+      // Signatures API (امضای دیجیتال - Mock SMS)
+      // ============================================
+
+      // POST: ارسال OTP (mock)
+      if (
+        url.pathname === "/api/signatures/send-otp" &&
+        request.method === "POST"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const body = await request.json();
+          const { entity_type, entity_id, employee_person_id, mobile } = body;
+
+          if (!entity_type || !entity_id || !employee_person_id || !mobile) {
+            return new Response(JSON.stringify({ error: "اطلاعات ناقص" }), {
+              status: 400,
+              headers,
+            });
+          }
+
+          // تولید OTP تصادفی ۶ رقمی
+          const otpCode = Math.floor(
+            100000 + Math.random() * 900000
+          ).toString();
+
+          const nowShamsi = toShamsi(new Date());
+
+          // ثبت در جدول signatures
+          const result = await env.DB.prepare(
+            `INSERT INTO signatures 
+             (entity_type, entity_id, employee_person_id, mobile, otp_code, otp_sent_at, status, created_at_shamsi)
+             VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'sent', ?)`
+          )
+            .bind(
+              entity_type,
+              entity_id,
+              employee_person_id,
+              mobile,
+              otpCode,
+              nowShamsi
+            )
+            .run();
+
+          // ثبت در لاگ SMS (mock)
+          await env.DB.prepare(
+            `INSERT INTO sms_log 
+             (mobile, message, message_type, provider, status, entity_type, entity_id, employee_person_id, sent_at_shamsi)
+             VALUES (?, ?, 'otp', 'mock', 'sent', ?, ?, ?, ?)`
+          )
+            .bind(
+              mobile,
+              `کد تایید امضای دیجیتال شما: ${otpCode}`,
+              entity_type,
+              entity_id,
+              employee_person_id,
+              nowShamsi
+            )
+            .run();
+
+          // در production واقعی، اینجا SMS ارسال می‌شه
+          console.log(`🔐 [MOCK SMS] OTP برای ${mobile}: ${otpCode}`);
+
+          return new Response(
+            JSON.stringify({
+              success: true,
+              signature_id: result.meta.last_row_id,
+              // ⚠️ فقط در حالت mock، OTP رو برمی‌گردونیم
+              mock_otp: otpCode,
+              message: "کد تایید ارسال شد (mock)",
+            }),
+            {
+              status: 200,
+              headers,
+            }
+          );
+        } catch (error) {
+          console.error("Send OTP error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // POST: تایید OTP و امضا
+      if (
+        url.pathname === "/api/signatures/verify" &&
+        request.method === "POST"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401,
+              headers,
+            });
+          }
+
+          const body = await request.json();
+          const { signature_id, otp_code } = body;
+
+          if (!signature_id || !otp_code) {
+            return new Response(JSON.stringify({ error: "اطلاعات ناقص" }), {
+              status: 400,
+              headers,
+            });
+          }
+
+          // چک کد
+          const signature = await env.DB.prepare(
+            `SELECT * FROM signatures WHERE id = ? AND status = 'sent'`
+          )
+            .bind(signature_id)
+            .first();
+
+          if (!signature) {
+            return new Response(
+              JSON.stringify({ error: "امضا یافت نشد یا منقضی شده" }),
+              {
+                status: 404,
+                headers,
+              }
+            );
+          }
+
+          // چک تعداد تلاش
+          if (signature.otp_attempts >= 5) {
+            await env.DB.prepare(
+              `UPDATE signatures SET status = 'failed' WHERE id = ?`
+            )
+              .bind(signature_id)
+              .run();
+
+            return new Response(
+              JSON.stringify({ error: "تعداد تلاش بیش از حد مجاز" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          if (signature.otp_code !== otp_code) {
+            // افزایش تعداد تلاش
+            await env.DB.prepare(
+              `UPDATE signatures SET otp_attempts = otp_attempts + 1 WHERE id = ?`
+            )
+              .bind(signature_id)
+              .run();
+
+            return new Response(
+              JSON.stringify({ error: "کد تایید اشتباه است" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          // تایید موفق
+          await env.DB.prepare(
+            `UPDATE signatures 
+             SET status = 'verified', 
+                 otp_verified_at = CURRENT_TIMESTAMP,
+                 signed_at = CURRENT_TIMESTAMP
+             WHERE id = ?`
+          )
+            .bind(signature_id)
+            .run();
+
+          // آپدیت حکم/قرارداد
+          if (signature.entity_type === "decree") {
+            await env.DB.prepare(
+              `UPDATE decrees 
+               SET status = 'signed', 
+                   signed_at = CURRENT_TIMESTAMP,
+                   signed_by_employee = 1
+               WHERE id = ?`
+            )
+              .bind(signature.entity_id)
+              .run();
+          }
+
+          return new Response(
+            JSON.stringify({
+              success: true,
+              message: "امضا با موفقیت ثبت شد",
+            }),
+            {
+              status: 200,
+              headers,
+            }
+          );
+        } catch (error) {
+          console.error("Verify OTP error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // GET: وضعیت امضاهای یک حکم
+      if (
+        url.pathname.match(/^\/api\/signatures\/\w+\/\d+$/) &&
+        request.method === "GET"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401,
+              headers,
+            });
+          }
+
+          const parts = url.pathname.split("/");
+          const entityType = parts[3];
+          const entityId = parts[4];
+
+          const signatures = await env.DB.prepare(
+            `SELECT id, entity_type, entity_id, mobile, status, otp_sent_at, otp_verified_at, signed_at
+             FROM signatures 
+             WHERE entity_type = ? AND entity_id = ?
+             ORDER BY id DESC`
+          )
+            .bind(entityType, entityId)
+            .all();
+
+          return new Response(JSON.stringify(signatures.results), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Signatures GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
       // ========== مدیریت کاربران ==========
 
       // دریافت لیست کاربران

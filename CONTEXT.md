@@ -198,7 +198,25 @@
 - [x] تب اطلاعات استخدامی (فرم کامل + DatePicker)
 - [x] دکمه «پرونده پرسنلی» توی `persons.html`
 - [x] Breadcrumb
+### مرحله ۷ (تکمیل شد):
+- [x] Migration 031: جدول `decrees` (احکام کارگزینی)
+- [x] Migration 032: جدول `decree_items` + Seed (۸ نوع حکم × آیتم‌ها)
+- [x] Migration 033: جدول `signatures` + `sms_log`
+- [x] API: `GET/POST/DELETE /api/employees/:id/decrees`
+- [x] API: `GET /api/decree-items?decree_type=...`
+- [x] API: `POST /api/signatures/send-otp` (mock SMS)
+- [x] API: `POST /api/signatures/verify`
+- [x] تب «احکام کارگزینی» توی `employee-profile.html`
+- [x] Modal افزودن/ویرایش حکم
+- [x] آیتم‌های حقوق داینامیک بر اساس نوع حکم
+- [x] Mock SMS + امضای دیجیتال
 
+### مراحل بعدی:
+- [ ] **مرحله ۴: محاسبات بیمه/مالیات**
+- [ ] **مرحله ۵: کسورات (وام‌ها)**
+- [ ] **مرحله ۶: حضور و غیاب + محاسبه حقوق**
+- [ ] **مرحله ۸: auto-generate بودجه**
+- [ ] **مرحله ۹: شهروند + خارج شهروند (حساب + گردش حساب)**
 - [ ] **مرحله ۲.۳: تب وظایف (طبقه‌بندی عملیاتی)**
 - [ ] **مرحله ۲.۴: تب مدرک تحصیلی (تکمیل‌تر)**
 - [ ] **مرحله ۳: افراد تحت تکفل**
