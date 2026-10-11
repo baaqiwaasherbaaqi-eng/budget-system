@@ -2515,19 +2515,25 @@ export default {
         }
       }
 
-
       // ============================================
       // Employee Tasks API
       // ============================================
 
       // GET: وظایف یک کارمند
-      if (url.pathname.match(/^\/api\/employees\/\d+\/tasks$/) && request.method === "GET") {
+      if (
+        url.pathname.match(/^\/api\/employees\/\d+\/tasks$/) &&
+        request.method === "GET"
+      ) {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
-              status: 401, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
@@ -2535,7 +2541,8 @@ export default {
 
           if (!userData) {
             return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
-              status: 401, headers,
+              status: 401,
+              headers,
             });
           }
 
@@ -2543,27 +2550,38 @@ export default {
 
           const tasks = await env.DB.prepare(
             `SELECT * FROM employee_tasks WHERE person_id = ? ORDER BY id`
-          ).bind(personId).all();
+          )
+            .bind(personId)
+            .all();
 
           return new Response(JSON.stringify(tasks.results), {
-            status: 200, headers,
+            status: 200,
+            headers,
           });
         } catch (error) {
           console.error("Tasks GET error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
-            status: 500, headers,
+            status: 500,
+            headers,
           });
         }
       }
 
       // POST: ذخیره وظایف یک کارمند
-      if (url.pathname.match(/^\/api\/employees\/\d+\/tasks$/) && request.method === "POST") {
+      if (
+        url.pathname.match(/^\/api\/employees\/\d+\/tasks$/) &&
+        request.method === "POST"
+      ) {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
-              status: 401, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
@@ -2571,7 +2589,8 @@ export default {
 
           if (!userData || !["admin", "manager"].includes(userData.role)) {
             return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
-              status: 403, headers,
+              status: 403,
+              headers,
             });
           }
 
@@ -2579,26 +2598,38 @@ export default {
           const { tasks } = await request.json();
 
           if (!Array.isArray(tasks)) {
-            return new Response(JSON.stringify({ error: "tasks باید آرایه باشد" }), {
-              status: 400, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "tasks باید آرایه باشد" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
           }
 
           // چک جمع درصد
-          const totalPercentage = tasks.reduce((sum, t) => sum + (t.percentage || 0), 0);
+          const totalPercentage = tasks.reduce(
+            (sum, t) => sum + (t.percentage || 0),
+            0
+          );
           if (totalPercentage > 100) {
-            return new Response(JSON.stringify({ 
-              error: `جمع درصدها (${totalPercentage}) نباید از ۱۰۰ بیشتر باشد` 
-            }), {
-              status: 400, headers,
-            });
+            return new Response(
+              JSON.stringify({
+                error: `جمع درصدها (${totalPercentage}) نباید از ۱۰۰ بیشتر باشد`,
+              }),
+              {
+                status: 400,
+                headers,
+              }
+            );
           }
 
           const nowShamsi = toShamsi(new Date());
 
           // حذف وظایف قبلی
           await env.DB.prepare("DELETE FROM employee_tasks WHERE person_id = ?")
-            .bind(personId).run();
+            .bind(personId)
+            .run();
 
           // درج وظایف جدید
           for (const t of tasks) {
@@ -2608,40 +2639,54 @@ export default {
               `INSERT INTO employee_tasks 
                (person_id, task_type, task_id, task_title, percentage, notes, created_at_shamsi, updated_at_shamsi)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-            ).bind(
-              personId,
-              t.task_type,
-              t.task_id,
-              t.task_title || null,
-              t.percentage || 0,
-              t.notes || null,
-              nowShamsi,
-              nowShamsi
-            ).run();
+            )
+              .bind(
+                personId,
+                t.task_type,
+                t.task_id,
+                t.task_title || null,
+                t.percentage || 0,
+                t.notes || null,
+                nowShamsi,
+                nowShamsi
+              )
+              .run();
           }
 
-          return new Response(JSON.stringify({ 
-            success: true,
-            total: totalPercentage 
-          }), {
-            status: 200, headers,
-          });
+          return new Response(
+            JSON.stringify({
+              success: true,
+              total: totalPercentage,
+            }),
+            {
+              status: 200,
+              headers,
+            }
+          );
         } catch (error) {
           console.error("Tasks POST error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
-            status: 500, headers,
+            status: 500,
+            headers,
           });
         }
       }
 
       // GET: لیست طبقه‌بندی عملیاتی (برای dropdown)
-      if (url.pathname === "/api/operational-tree" && request.method === "GET") {
+      if (
+        url.pathname === "/api/operational-tree" &&
+        request.method === "GET"
+      ) {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
-              status: 401, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
@@ -2649,7 +2694,8 @@ export default {
 
           if (!userData) {
             return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
-              status: 401, headers,
+              status: 401,
+              headers,
             });
           }
 
@@ -2660,12 +2706,277 @@ export default {
           ).all();
 
           return new Response(JSON.stringify(items.results), {
-            status: 200, headers,
+            status: 200,
+            headers,
           });
         } catch (error) {
           console.error("Operational tree error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
-            status: 500, headers,
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // ============================================
+      // Dependents API
+      // ============================================
+
+      // GET: افراد تحت تکفل یک کارمند
+      if (
+        url.pathname.match(/^\/api\/employees\/\d+\/dependents$/) &&
+        request.method === "GET"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401,
+              headers,
+            });
+          }
+
+          const personId = url.pathname.split("/")[3];
+
+          const deps = await env.DB.prepare(
+            `SELECT * FROM dependents WHERE employee_person_id = ? ORDER BY id`
+          )
+            .bind(personId)
+            .all();
+
+          return new Response(JSON.stringify(deps.results), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Dependents GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // POST: افزودن/ویرایش فرد تحت تکفل
+      if (
+        url.pathname.match(/^\/api\/employees\/\d+\/dependents$/) &&
+        request.method === "POST"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const personId = url.pathname.split("/")[3];
+          const body = await request.json();
+
+          const {
+            id,
+            national_id,
+            relation_type,
+            first_name,
+            last_name,
+            full_name,
+            father_name,
+            id_number,
+            birth_date_shamsi,
+            gender,
+            mobile,
+            education_status,
+            military_status,
+            marital_status,
+            marriage_date_shamsi,
+            is_disabled,
+            notes,
+          } = body;
+
+          const nowShamsi = toShamsi(new Date());
+
+          // چک کد ملی تکراری
+          if (national_id) {
+            const existing = await env.DB.prepare(
+              `SELECT id FROM dependents WHERE employee_person_id = ? AND national_id = ? AND id != ?`
+            )
+              .bind(personId, national_id, id || 0)
+              .first();
+
+            if (existing) {
+              return new Response(
+                JSON.stringify({
+                  error: "این کد ملی قبلاً برای این کارمند ثبت شده است",
+                }),
+                {
+                  status: 400,
+                  headers,
+                }
+              );
+            }
+          }
+
+          if (id) {
+            // UPDATE
+            await env.DB.prepare(
+              `UPDATE dependents SET
+                national_id = ?, relation_type = ?,
+                first_name = ?, last_name = ?, full_name = ?, father_name = ?,
+                id_number = ?, birth_date_shamsi = ?, gender = ?, mobile = ?,
+                education_status = ?, military_status = ?, marital_status = ?, marriage_date_shamsi = ?,
+                is_disabled = ?, notes = ?,
+                updated_at = CURRENT_TIMESTAMP, updated_at_shamsi = ?
+              WHERE id = ? AND employee_person_id = ?`
+            )
+              .bind(
+                national_id || null,
+                relation_type,
+                first_name || null,
+                last_name || null,
+                full_name,
+                father_name || null,
+                id_number || null,
+                birth_date_shamsi || null,
+                gender || null,
+                mobile || null,
+                education_status || null,
+                military_status || null,
+                marital_status || null,
+                marriage_date_shamsi || null,
+                is_disabled ? 1 : 0,
+                notes || null,
+                nowShamsi,
+                id,
+                personId
+              )
+              .run();
+
+            return new Response(JSON.stringify({ success: true, id: id }), {
+              status: 200,
+              headers,
+            });
+          } else {
+            // INSERT
+            const result = await env.DB.prepare(
+              `INSERT INTO dependents 
+               (employee_person_id, national_id, relation_type, first_name, last_name, full_name,
+                father_name, id_number, birth_date_shamsi, gender, mobile,
+                education_status, military_status, marital_status, marriage_date_shamsi,
+                is_disabled, notes, created_at_shamsi, updated_at_shamsi)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            )
+              .bind(
+                personId,
+                national_id || null,
+                relation_type,
+                first_name || null,
+                last_name || null,
+                full_name,
+                father_name || null,
+                id_number || null,
+                birth_date_shamsi || null,
+                gender || null,
+                mobile || null,
+                education_status || null,
+                military_status || null,
+                marital_status || null,
+                marriage_date_shamsi || null,
+                is_disabled ? 1 : 0,
+                notes || null,
+                nowShamsi,
+                nowShamsi
+              )
+              .run();
+
+            return new Response(
+              JSON.stringify({
+                success: true,
+                id: result.meta.last_row_id,
+              }),
+              {
+                status: 201,
+                headers,
+              }
+            );
+          }
+        } catch (error) {
+          console.error("Dependent POST error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // DELETE: حذف فرد تحت تکفل
+      if (
+        url.pathname.match(/^\/api\/dependents\/\d+$/) &&
+        request.method === "DELETE"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const dependentId = url.pathname.split("/").pop();
+
+          await env.DB.prepare("DELETE FROM dependents WHERE id = ?")
+            .bind(dependentId)
+            .run();
+
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Dependent DELETE error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
           });
         }
       }

@@ -518,6 +518,299 @@
         background: #1a202c;
         color: #90cdf4;
       }
+
+    /* ============ Dependents ============ */
+    .dependents-container {
+      margin-bottom: 20px;
+    }
+
+    .dependent-item {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 12px;
+      border-right: 4px solid #28a745;
+      transition: all 0.2s;
+    }
+
+    .dependent-item:hover {
+      background: #eef9f0;
+    }
+
+    .dependent-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .dependent-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .dependent-icon {
+      font-size: 20px;
+    }
+
+    .dependent-name {
+      font-weight: bold;
+      font-size: 15px;
+      color: #333;
+    }
+
+    .dependent-badge {
+      background: #28a745;
+      color: white;
+      padding: 3px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+
+    .dependent-actions {
+      display: flex;
+      gap: 5px;
+    }
+
+    .dep-btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dep-edit-btn {
+      background: #ffc107;
+      color: #333;
+    }
+
+    .dep-edit-btn:hover {
+      background: #e0a800;
+      transform: scale(1.05);
+    }
+
+    .dep-delete-btn {
+      background: #dc3545;
+      color: white;
+    }
+
+    .dep-delete-btn:hover {
+      background: #c82333;
+      transform: scale(1.05);
+    }
+
+    .dependent-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .info-row {
+      display: flex;
+      gap: 5px;
+      font-size: 12px;
+    }
+
+    .info-label {
+      color: #666;
+      min-width: 80px;
+    }
+
+    .info-value {
+      color: #333;
+      font-weight: 500;
+    }
+
+    .dependent-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge-allowance {
+      background: #fff3cd;
+      color: #856404;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+
+    .badge-insurance {
+      background: #d1ecf1;
+      color: #0c5460;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+
+    .badge-disabled {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+
+    .dependents-summary {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 12px 18px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      border-right: 4px solid #28a745;
+    }
+
+    .summary-item {
+      color: #333;
+    }
+
+    /* Modal */
+    .dependent-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10001;
+      padding: 20px;
+    }
+
+    .dependent-modal-overlay.open {
+      display: flex;
+    }
+
+    .dependent-modal {
+      background: white;
+      border-radius: 12px;
+      max-width: 700px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      animation: slideUp 0.2s;
+    }
+
+    .dependent-modal-header {
+      padding: 20px 25px;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .dependent-modal-header h3 {
+      margin: 0;
+      font-size: 16px;
+      color: #333;
+    }
+
+    .dep-modal-close {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+      color: #999;
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .dep-modal-close:hover {
+      background: #f0f2f5;
+      color: #333;
+    }
+
+    .dependent-modal-body {
+      padding: 25px;
+    }
+
+    .dependent-modal-footer {
+      padding: 20px 25px;
+      border-top: 1px solid #e9ecef;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .btn-lookup {
+      background: #17a2b8;
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .btn-lookup:hover {
+      background: #138496;
+      transform: scale(1.05);
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    /* Dark Mode */
+    body.dark .dependent-item {
+      background: #374151;
+    }
+    body.dark .dependent-item:hover {
+      background: #4a5568;
+    }
+    body.dark .dependent-name {
+      color: #e2e8f0;
+    }
+    body.dark .info-label {
+      color: #a0aec0;
+    }
+    body.dark .info-value {
+      color: #e2e8f0;
+    }
+    body.dark .dependents-summary {
+      background: #374151;
+      color: #e2e8f0;
+    }
+    body.dark .dependent-modal {
+      background: #2d3748;
+    }
+    body.dark .dependent-modal-header {
+      border-bottom-color: #4a5568;
+    }
+    body.dark .dependent-modal-header h3 {
+      color: #e2e8f0;
+    }
+    body.dark .dependent-modal-footer {
+      border-top-color: #4a5568;
+    }
+
+
     </style>
   </head>
 
@@ -555,8 +848,9 @@
       let decreeTypes = [];
       let organizations = [];
       let datePickersInitialized = false;
-      let employeeTasks = [];
-      let operationalItems = [];
+    let employeeTasks = [];
+    let operationalItems = [];
+    let dependents = [];
 
       // ============================================
       // توابع کمکی
@@ -680,13 +974,19 @@
           });
           employeeTasks = await tasksRes.json();
 
-          // لود طبقه‌بندی عملیاتی
-          const opRes = await fetch("/api/operational-tree", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          operationalItems = await opRes.json();
+        // لود طبقه‌بندی عملیاتی
+        const opRes = await fetch('/api/operational-tree', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        operationalItems = await opRes.json();
 
-          renderPage();
+        // لود افراد تحت تکفل
+        const depsRes = await fetch(`/api/employees/${personId}/dependents`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        dependents = await depsRes.json();
+
+        renderPage();
         } catch (error) {
           console.error("Load error:", error);
           document.getElementById("main-container").innerHTML = `
@@ -751,7 +1051,7 @@
             <div class="placeholder"><div class="icon">📋</div><h3>احکام کارگزینی</h3><p>به زودی</p></div>
           </div>
           <div class="tab-panel" id="panel-dependents">
-            <div class="placeholder"><div class="icon">👨‍👩‍👧</div><h3>افراد تحت تکفل</h3><p>به زودی</p></div>
+            ${renderDependentsTab()}
           </div>
           <div class="tab-panel" id="panel-calculations">
             <div class="placeholder"><div class="icon">💰</div><h3>محاسبات بیمه و مالیات</h3><p>به زودی</p></div>
@@ -1219,6 +1519,463 @@
         </div>
       `;
       }
+
+    // ============================================
+    // تب افراد تحت تکفل
+    // ============================================
+    function renderDependentsTab() {
+      const relationLabels = {
+        spouse: 'همسر',
+        son: 'فرزند پسر',
+        daughter: 'فرزند دختر',
+        father: 'پدر',
+        mother: 'مادر'
+      };
+
+      const relationIcons = {
+        spouse: '💑',
+        son: '👦',
+        daughter: '👧',
+        father: '👨',
+        mother: '👩'
+      };
+
+      // شمارش بر اساس نسبت
+      const counts = {};
+      dependents.forEach(d => {
+        counts[d.relation_type] = (counts[d.relation_type] || 0) + 1;
+      });
+
+      let dependentsHtml = '';
+
+      if (dependents.length === 0) {
+        dependentsHtml = `
+          <div style="text-align:center; padding:40px; color:#999;">
+            <div style="font-size:40px; margin-bottom:10px;">👨‍👩‍👧</div>
+            <div>هنوز فرد تحت تکفلی ثبت نشده</div>
+          </div>
+        `;
+      } else {
+        dependents.forEach((dep) => {
+          const relationIcon = relationIcons[dep.relation_type] || '👤';
+          const relationLabel = relationLabels[dep.relation_type] || dep.relation_type;
+
+          // وضعیت‌ها
+          const educationLabels = {
+            student: '🎓 محصل',
+            graduated: '🎓 فارغ‌التحصیل',
+            dropout: '❌ ترک تحصیل'
+          };
+          const militaryLabels = {
+            serving: '🎖️ در حال خدمت',
+            exempt: '✅ معاف',
+            completed: '✅ پایان خدمت',
+            not_applicable: '—'
+          };
+          const maritalLabels = {
+            single: 'مجرد',
+            married: 'متأهل',
+            divorced: 'مطلقه',
+            widowed: 'بیوه'
+          };
+
+          dependentsHtml += `
+            <div class="dependent-item">
+              <div class="dependent-header">
+                <div class="dependent-title">
+                  <span class="dependent-icon">${relationIcon}</span>
+                  <span class="dependent-name">${dep.full_name}</span>
+                  <span class="dependent-badge">${relationLabel}</span>
+                </div>
+                <div class="dependent-actions">
+                  <button class="dep-btn dep-edit-btn" onclick="openDependentModal(${dep.id})" title="ویرایش">✏️</button>
+                  <button class="dep-btn dep-delete-btn" onclick="deleteDependent(${dep.id})" title="حذف">🗑️</button>
+                </div>
+              </div>
+
+              <div class="dependent-info">
+                ${dep.national_id ? `<div class="info-row"><span class="info-label">کد ملی:</span><span class="info-value" dir="ltr">${dep.national_id}</span></div>` : ''}
+                ${dep.birth_date_shamsi ? `<div class="info-row"><span class="info-label">تاریخ تولد:</span><span class="info-value">${toPersianNumbers(dep.birth_date_shamsi)}</span></div>` : ''}
+                ${dep.mobile ? `<div class="info-row"><span class="info-label">موبایل:</span><span class="info-value" dir="ltr">${dep.mobile}</span></div>` : ''}
+                ${dep.education_status ? `<div class="info-row"><span class="info-label">وضعیت تحصیل:</span><span class="info-value">${educationLabels[dep.education_status] || dep.education_status}</span></div>` : ''}
+                ${dep.military_status && dep.military_status !== 'not_applicable' ? `<div class="info-row"><span class="info-label">وضعیت سربازی:</span><span class="info-value">${militaryLabels[dep.military_status] || dep.military_status}</span></div>` : ''}
+                ${dep.marital_status ? `<div class="info-row"><span class="info-label">وضعیت تأهل:</span><span class="info-value">${maritalLabels[dep.marital_status] || dep.marital_status}</span></div>` : ''}
+                ${dep.marriage_date_shamsi ? `<div class="info-row"><span class="info-label">تاریخ ازدواج:</span><span class="info-value">${toPersianNumbers(dep.marriage_date_shamsi)}</span></div>` : ''}
+              </div>
+
+              <div class="dependent-badges">
+                ${dep.is_eligible_for_allowance ? '<span class="badge-allowance">💰 مشمول حق عائله مندی</span>' : ''}
+                ${dep.is_eligible_for_insurance ? '<span class="badge-insurance">🏥 مشمول بیمه تکمیل درمان</span>' : ''}
+                ${dep.is_disabled ? '<span class="badge-disabled">♿ معلول</span>' : ''}
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      // خلاصه
+      let summaryHtml = '';
+      if (dependents.length > 0) {
+        const summaryItems = Object.entries(counts).map(([type, count]) => 
+          `<span class="summary-item">${relationIcons[type] || '👤'} ${relationLabels[type] || type}: <b>${toPersianNumbers(count)}</b></span>`
+        ).join('');
+        
+        summaryHtml = `
+          <div class="dependents-summary">
+            <span>جمع کل: <b>${toPersianNumbers(dependents.length)}</b></span>
+            ${summaryItems}
+          </div>
+        `;
+      }
+
+      return `
+        <div class="section-divider">👨‍👩‍👧 افراد تحت تکفل</div>
+
+        <div class="info-banner">
+          💡 <b>راهنما:</b> افراد تحت تکفل شامل همسر، فرزندان، پدر و مادر می‌شوند.
+          <br>
+          • <b>فرزند پسر بالای ۱۸ سال</b> → نیاز به گواهی اشتغال به تحصیل یا خدمت سربازی
+          • <b>فرزند دختر بالای ۱۸ سال</b> → تا پایان قرارداد مشمول بیمه تکمیل درمان
+          • <b>پدر/مادر بالای ۶۰ سال</b> → با محاسبات متفاوت بیمه
+        </div>
+
+        ${summaryHtml}
+
+        <div class="dependents-container" id="dependents-container">
+          ${dependentsHtml}
+        </div>
+
+        <button class="add-task-btn" onclick="openDependentModal()">
+          ➕ افزودن فرد تحت تکفل
+        </button>
+      `;
+    }
+
+    // ============================================
+    // Modal فرد تحت تکفل
+    // ============================================
+    function openDependentModal(depId = null) {
+      const dep = depId ? dependents.find(d => d.id === depId) : null;
+      const isEdit = !!dep;
+      const title = isEdit ? '✏️ ویرایش فرد تحت تکفل' : '➕ افزودن فرد تحت تکفل';
+
+      const modalHtml = `
+        <div class="dependent-modal-overlay open" id="dependent-modal">
+          <div class="dependent-modal">
+            <div class="dependent-modal-header">
+              <h3>${title}</h3>
+              <button class="dep-modal-close" onclick="closeDependentModal()">✕</button>
+            </div>
+
+            <div class="dependent-modal-body">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>نسبت <span class="required">*</span></label>
+                  <select id="dep-relation-type" onchange="onRelationChange()">
+                    <option value="">— انتخاب کنید —</option>
+                    <option value="spouse" ${dep?.relation_type === 'spouse' ? 'selected' : ''}>همسر</option>
+                    <option value="son" ${dep?.relation_type === 'son' ? 'selected' : ''}>فرزند پسر</option>
+                    <option value="daughter" ${dep?.relation_type === 'daughter' ? 'selected' : ''}>فرزند دختر</option>
+                    <option value="father" ${dep?.relation_type === 'father' ? 'selected' : ''}>پدر</option>
+                    <option value="mother" ${dep?.relation_type === 'mother' ? 'selected' : ''}>مادر</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>کد ملی</label>
+                  <div style="display:flex; gap:8px;">
+                    <input type="text" id="dep-national-id" value="${dep?.national_id || ''}" maxlength="10" dir="ltr" />
+                    <button class="btn-lookup" onclick="lookupNationalId()" title="استعلام از ثبت احوال">🔍</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>نام <span class="required">*</span></label>
+                  <input type="text" id="dep-first-name" value="${dep?.first_name || ''}" />
+                </div>
+                <div class="form-group">
+                  <label>نام خانوادگی</label>
+                  <input type="text" id="dep-last-name" value="${dep?.last_name || ''}" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>نام پدر</label>
+                <input type="text" id="dep-father-name" value="${dep?.father_name || ''}" />
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>شماره شناسنامه</label>
+                  <input type="text" id="dep-id-number" value="${dep?.id_number || ''}" />
+                </div>
+                <div class="form-group">
+                  <label>تاریخ تولد</label>
+                  <input type="text" id="dep-birth-date" value="${toPersianDate(dep?.birth_date_shamsi)}" placeholder="۱۳۷۰/۰۱/۰۱" />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>جنسیت</label>
+                  <select id="dep-gender">
+                    <option value="">— انتخاب کنید —</option>
+                    <option value="male" ${dep?.gender === 'male' ? 'selected' : ''}>مرد</option>
+                    <option value="female" ${dep?.gender === 'female' ? 'selected' : ''}>زن</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>موبایل</label>
+                  <input type="text" id="dep-mobile" value="${dep?.mobile || ''}" maxlength="11" dir="ltr" />
+                </div>
+              </div>
+
+              <div class="form-row" id="row-education-military">
+                <div class="form-group" id="group-education">
+                  <label>وضعیت تحصیل</label>
+                  <select id="dep-education-status">
+                    <option value="">— انتخاب کنید —</option>
+                    <option value="student" ${dep?.education_status === 'student' ? 'selected' : ''}>محصل</option>
+                    <option value="graduated" ${dep?.education_status === 'graduated' ? 'selected' : ''}>فارغ‌التحصیل</option>
+                    <option value="dropout" ${dep?.education_status === 'dropout' ? 'selected' : ''}>ترک تحصیل</option>
+                  </select>
+                </div>
+                <div class="form-group" id="group-military">
+                  <label>وضعیت سربازی</label>
+                  <select id="dep-military-status">
+                    <option value="">— انتخاب کنید —</option>
+                    <option value="serving" ${dep?.military_status === 'serving' ? 'selected' : ''}>در حال خدمت</option>
+                    <option value="exempt" ${dep?.military_status === 'exempt' ? 'selected' : ''}>معاف</option>
+                    <option value="completed" ${dep?.military_status === 'completed' ? 'selected' : ''}>پایان خدمت</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>وضعیت تأهل</label>
+                  <select id="dep-marital-status">
+                    <option value="">— انتخاب کنید —</option>
+                    <option value="single" ${dep?.marital_status === 'single' ? 'selected' : ''}>مجرد</option>
+                    <option value="married" ${dep?.marital_status === 'married' ? 'selected' : ''}>متأهل</option>
+                    <option value="divorced" ${dep?.marital_status === 'divorced' ? 'selected' : ''}>مطلقه</option>
+                    <option value="widowed" ${dep?.marital_status === 'widowed' ? 'selected' : ''}>بیوه</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>تاریخ ازدواج</label>
+                  <input type="text" id="dep-marriage-date" value="${toPersianDate(dep?.marriage_date_shamsi)}" placeholder="اختیاری" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                  <input type="checkbox" id="dep-is-disabled" ${dep?.is_disabled ? 'checked' : ''} style="width:auto;" />
+                  <span>♿ دارای معلولیت</span>
+                </label>
+              </div>
+
+              <div class="form-group">
+                <label>یادداشت</label>
+                <textarea id="dep-notes">${dep?.notes || ''}</textarea>
+              </div>
+            </div>
+
+            <div class="dependent-modal-footer">
+              <button class="btn btn-cancel" onclick="closeDependentModal()">انصراف</button>
+              <button class="btn btn-save" id="btn-save-dependent" onclick="saveDependent(${depId || 'null'})">
+                💾 ذخیره
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // اضافه به body
+      const existing = document.getElementById('dependent-modal');
+      if (existing) existing.remove();
+
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+      // راه‌اندازی date picker
+      setTimeout(() => {
+        try {
+          $("#dep-birth-date").persianDatepicker('destroy');
+        } catch (e) {}
+        $("#dep-birth-date").persianDatepicker({
+          format: 'YYYY/MM/DD',
+          autoClose: true,
+          persianDigit: true,
+          initialValue: false,
+          observer: true
+        });
+        
+        // اگه مقدار داشت، برگردون
+        if (dep?.birth_date_shamsi) {
+          document.getElementById('dep-birth-date').value = toPersianNumbers(dep.birth_date_shamsi);
+        }
+
+        try {
+          $("#dep-marriage-date").persianDatepicker('destroy');
+        } catch (e) {}
+        $("#dep-birth-date").persianDatepicker({
+          format: 'YYYY/MM/DD',
+          autoClose: true,
+          persianDigit: true,
+          initialValue: false,
+          observer: true
+        });
+        
+        // اگه مقدار داشت، برگردون
+        if (dep?.birth_date_shamsi) {
+          document.getElementById('dep-birth-date').value = toPersianNumbers(dep.birth_date_shamsi);
+        }
+
+        onRelationChange();
+      }, 100);
+    }
+
+    function closeDependentModal() {
+      const modal = document.getElementById('dependent-modal');
+      if (modal) modal.remove();
+    }
+
+    function onRelationChange() {
+      const relation = document.getElementById('dep-relation-type').value;
+      const groupEducation = document.getElementById('group-education');
+      const groupMilitary = document.getElementById('group-military');
+
+      // تحصیل: فقط برای فرزندان
+      if (relation === 'son' || relation === 'daughter') {
+        groupEducation.style.display = 'block';
+      } else {
+        groupEducation.style.display = 'none';
+      }
+
+      // سربازی: فقط برای فرزند پسر
+      if (relation === 'son') {
+        groupMilitary.style.display = 'block';
+      } else {
+        groupMilitary.style.display = 'none';
+      }
+    }
+
+    function lookupNationalId() {
+      const nationalId = document.getElementById('dep-national-id').value.trim();
+      
+      if (!nationalId || nationalId.length !== 10) {
+        showToast('کد ملی باید ۱۰ رقم باشد', 'error');
+        return;
+      }
+
+      // Mock استعلام
+      showToast('استعلام از ثبت احوال (mock) — این قابلیت بعداً فعال می‌شود');
+      
+      // TODO: اتصال به ثبت احوال
+      // fetch(`/api/registry/lookup?national_id=${nationalId}`)
+    }
+
+    async function saveDependent(depId) {
+      const btn = document.getElementById('btn-save-dependent');
+      btn.disabled = true;
+      btn.textContent = '⏳ در حال ذخیره...';
+
+      try {
+        const firstName = document.getElementById('dep-first-name').value.trim();
+        const lastName = document.getElementById('dep-last-name').value.trim();
+        const fullName = `${firstName} ${lastName}`.trim();
+
+        if (!fullName) {
+          throw new Error('نام الزامی است');
+        }
+
+        const relationType = document.getElementById('dep-relation-type').value;
+        if (!relationType) {
+          throw new Error('نسبت الزامی است');
+        }
+
+        const data = {
+          id: depId || null,
+          national_id: document.getElementById('dep-national-id').value.trim() || null,
+          relation_type: relationType,
+          first_name: firstName || null,
+          last_name: lastName || null,
+          full_name: fullName,
+          father_name: document.getElementById('dep-father-name').value.trim() || null,
+          id_number: document.getElementById('dep-id-number').value.trim() || null,
+          birth_date_shamsi: cleanDate(document.getElementById('dep-birth-date').value),
+          gender: document.getElementById('dep-gender').value || null,
+          mobile: document.getElementById('dep-mobile').value.trim() || null,
+          education_status: document.getElementById('dep-education-status')?.value || null,
+          military_status: document.getElementById('dep-military-status')?.value || null,
+          marital_status: document.getElementById('dep-marital-status').value || null,
+          marriage_date_shamsi: cleanDate(document.getElementById('dep-marriage-date').value),
+          is_disabled: document.getElementById('dep-is-disabled').checked ? 1 : 0,
+          notes: document.getElementById('dep-notes').value.trim() || null,
+        };
+
+        const res = await fetch(`/api/employees/${personId}/dependents`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'خطا');
+
+        showToast(depId ? 'با موفقیت ویرایش شد' : 'با موفقیت ثبت شد');
+        closeDependentModal();
+
+        // ریلود
+        const depsRes = await fetch(`/api/employees/${personId}/dependents`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        dependents = await depsRes.json();
+
+        const panel = document.getElementById('panel-dependents');
+        if (panel) {
+          panel.innerHTML = renderDependentsTab();
+        }
+      } catch (error) {
+        showToast(error.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '💾 ذخیره';
+      }
+    }
+
+    async function deleteDependent(depId) {
+      if (!confirm('مطمئن هستید این فرد تحت تکفل حذف شود؟')) return;
+
+      try {
+        const res = await fetch(`/api/dependents/${depId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'خطا');
+
+        showToast('با موفقیت حذف شد');
+
+        // ریلود
+        const depsRes = await fetch(`/api/employees/${personId}/dependents`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        dependents = await depsRes.json();
+
+        const panel = document.getElementById('panel-dependents');
+        if (panel) {
+          panel.innerHTML = renderDependentsTab();
+        }
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
 
       // ============================================
       // رندر گزینه‌های طبقه‌بندی عملیاتی
