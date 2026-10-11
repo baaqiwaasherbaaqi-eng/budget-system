@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// .wrangler/tmp/bundle-t1QgPC/checked-fetch.js
+// .wrangler/tmp/bundle-VKbKwR/checked-fetch.js
 var urls = /* @__PURE__ */ new Set();
 function checkURL(request, init) {
   const url = request instanceof URL ? request : new URL(
@@ -2253,6 +2253,141 @@ var src_default = {
           });
         }
       }
+      if (url.pathname.match(/^\/api\/employees\/\d+\/tasks$/) && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
+              status: 401,
+              headers
+            });
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "\u062A\u0648\u06A9\u0646 \u0646\u0627\u0645\u0639\u062A\u0628\u0631" }), {
+              status: 401,
+              headers
+            });
+          }
+          const personId = url.pathname.split("/")[3];
+          const tasks = await env.DB.prepare(
+            `SELECT * FROM employee_tasks WHERE person_id = ? ORDER BY id`
+          ).bind(personId).all();
+          return new Response(JSON.stringify(tasks.results), {
+            status: 200,
+            headers
+          });
+        } catch (error) {
+          console.error("Tasks GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname.match(/^\/api\/employees\/\d+\/tasks$/) && request.method === "POST") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
+              status: 401,
+              headers
+            });
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "\u062F\u0633\u062A\u0631\u0633\u06CC \u063A\u06CC\u0631\u0645\u062C\u0627\u0632" }), {
+              status: 403,
+              headers
+            });
+          }
+          const personId = url.pathname.split("/")[3];
+          const { tasks } = await request.json();
+          if (!Array.isArray(tasks)) {
+            return new Response(JSON.stringify({ error: "tasks \u0628\u0627\u06CC\u062F \u0622\u0631\u0627\u06CC\u0647 \u0628\u0627\u0634\u062F" }), {
+              status: 400,
+              headers
+            });
+          }
+          const totalPercentage = tasks.reduce((sum, t) => sum + (t.percentage || 0), 0);
+          if (totalPercentage > 100) {
+            return new Response(JSON.stringify({
+              error: `\u062C\u0645\u0639 \u062F\u0631\u0635\u062F\u0647\u0627 (${totalPercentage}) \u0646\u0628\u0627\u06CC\u062F \u0627\u0632 \u06F1\u06F0\u06F0 \u0628\u06CC\u0634\u062A\u0631 \u0628\u0627\u0634\u062F`
+            }), {
+              status: 400,
+              headers
+            });
+          }
+          const nowShamsi = toShamsi(/* @__PURE__ */ new Date());
+          await env.DB.prepare("DELETE FROM employee_tasks WHERE person_id = ?").bind(personId).run();
+          for (const t of tasks) {
+            if (!t.task_id || !t.task_type) continue;
+            await env.DB.prepare(
+              `INSERT INTO employee_tasks 
+               (person_id, task_type, task_id, task_title, percentage, notes, created_at_shamsi, updated_at_shamsi)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+            ).bind(
+              personId,
+              t.task_type,
+              t.task_id,
+              t.task_title || null,
+              t.percentage || 0,
+              t.notes || null,
+              nowShamsi,
+              nowShamsi
+            ).run();
+          }
+          return new Response(JSON.stringify({
+            success: true,
+            total: totalPercentage
+          }), {
+            status: 200,
+            headers
+          });
+        } catch (error) {
+          console.error("Tasks POST error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname === "/api/operational-tree" && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
+              status: 401,
+              headers
+            });
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "\u062A\u0648\u06A9\u0646 \u0646\u0627\u0645\u0639\u062A\u0628\u0631" }), {
+              status: 401,
+              headers
+            });
+          }
+          const items = await env.DB.prepare(
+            `SELECT id, code, title, type, parent_id, level FROM base_data 
+             WHERE section = 'operational' AND is_active = 1 
+             ORDER BY code`
+          ).all();
+          return new Response(JSON.stringify(items.results), {
+            status: 200,
+            headers
+          });
+        } catch (error) {
+          console.error("Operational tree error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
       if (url.pathname === "/api/users" && request.method === "GET") {
         const authHeader = request.headers.get("Authorization");
         if (!authHeader) {
@@ -3537,7 +3672,7 @@ var src_default = {
   }
 };
 
-// C:/Users/YAHOO/AppData/Roaming/npm/node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
+// C:/Users/User/AppData/Roaming/npm/node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
 var drainBody = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx) => {
   try {
     return await middlewareCtx.next(request, env);
@@ -3555,7 +3690,7 @@ var drainBody = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "drainBody");
 var middleware_ensure_req_body_drained_default = drainBody;
 
-// C:/Users/YAHOO/AppData/Roaming/npm/node_modules/wrangler/templates/middleware/middleware-miniflare3-json-error.ts
+// C:/Users/User/AppData/Roaming/npm/node_modules/wrangler/templates/middleware/middleware-miniflare3-json-error.ts
 function reduceError(e) {
   return {
     name: e?.name,
@@ -3584,14 +3719,14 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-t1QgPC/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-VKbKwR/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
 ];
 var middleware_insertion_facade_default = src_default;
 
-// C:/Users/YAHOO/AppData/Roaming/npm/node_modules/wrangler/templates/middleware/common.ts
+// C:/Users/User/AppData/Roaming/npm/node_modules/wrangler/templates/middleware/common.ts
 var __facade_middleware__ = [];
 function __facade_register__(...args) {
   __facade_middleware__.push(...args.flat());
@@ -3616,7 +3751,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-t1QgPC/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-VKbKwR/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

@@ -2515,6 +2515,161 @@ export default {
         }
       }
 
+
+      // ============================================
+      // Employee Tasks API
+      // ============================================
+
+      // GET: وظایف یک کارمند
+      if (url.pathname.match(/^\/api\/employees\/\d+\/tasks$/) && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
+              status: 401, headers,
+            });
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401, headers,
+            });
+          }
+
+          const personId = url.pathname.split("/")[3];
+
+          const tasks = await env.DB.prepare(
+            `SELECT * FROM employee_tasks WHERE person_id = ? ORDER BY id`
+          ).bind(personId).all();
+
+          return new Response(JSON.stringify(tasks.results), {
+            status: 200, headers,
+          });
+        } catch (error) {
+          console.error("Tasks GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500, headers,
+          });
+        }
+      }
+
+      // POST: ذخیره وظایف یک کارمند
+      if (url.pathname.match(/^\/api\/employees\/\d+\/tasks$/) && request.method === "POST") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
+              status: 401, headers,
+            });
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403, headers,
+            });
+          }
+
+          const personId = url.pathname.split("/")[3];
+          const { tasks } = await request.json();
+
+          if (!Array.isArray(tasks)) {
+            return new Response(JSON.stringify({ error: "tasks باید آرایه باشد" }), {
+              status: 400, headers,
+            });
+          }
+
+          // چک جمع درصد
+          const totalPercentage = tasks.reduce((sum, t) => sum + (t.percentage || 0), 0);
+          if (totalPercentage > 100) {
+            return new Response(JSON.stringify({ 
+              error: `جمع درصدها (${totalPercentage}) نباید از ۱۰۰ بیشتر باشد` 
+            }), {
+              status: 400, headers,
+            });
+          }
+
+          const nowShamsi = toShamsi(new Date());
+
+          // حذف وظایف قبلی
+          await env.DB.prepare("DELETE FROM employee_tasks WHERE person_id = ?")
+            .bind(personId).run();
+
+          // درج وظایف جدید
+          for (const t of tasks) {
+            if (!t.task_id || !t.task_type) continue;
+
+            await env.DB.prepare(
+              `INSERT INTO employee_tasks 
+               (person_id, task_type, task_id, task_title, percentage, notes, created_at_shamsi, updated_at_shamsi)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+            ).bind(
+              personId,
+              t.task_type,
+              t.task_id,
+              t.task_title || null,
+              t.percentage || 0,
+              t.notes || null,
+              nowShamsi,
+              nowShamsi
+            ).run();
+          }
+
+          return new Response(JSON.stringify({ 
+            success: true,
+            total: totalPercentage 
+          }), {
+            status: 200, headers,
+          });
+        } catch (error) {
+          console.error("Tasks POST error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500, headers,
+          });
+        }
+      }
+
+      // GET: لیست طبقه‌بندی عملیاتی (برای dropdown)
+      if (url.pathname === "/api/operational-tree" && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
+              status: 401, headers,
+            });
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401, headers,
+            });
+          }
+
+          const items = await env.DB.prepare(
+            `SELECT id, code, title, type, parent_id, level FROM base_data 
+             WHERE section = 'operational' AND is_active = 1 
+             ORDER BY code`
+          ).all();
+
+          return new Response(JSON.stringify(items.results), {
+            status: 200, headers,
+          });
+        } catch (error) {
+          console.error("Operational tree error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500, headers,
+          });
+        }
+      }
+
       // ========== مدیریت کاربران ==========
 
       // دریافت لیست کاربران
