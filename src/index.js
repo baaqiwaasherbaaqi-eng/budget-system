@@ -3754,6 +3754,261 @@ export default {
           });
         }
       }
+
+
+      // ============================================
+      // Payroll Settings API
+      // ============================================
+
+      // GET: تنظیمات محاسبات
+      if (url.pathname === "/api/payroll-settings" && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
+              status: 401, headers,
+            });
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401, headers,
+            });
+          }
+
+          const fiscalYearId = url.searchParams.get("fiscal_year_id");
+
+          let query = "SELECT * FROM payroll_settings WHERE 1=1";
+          const params = [];
+
+          if (fiscalYearId) {
+            query += " AND (fiscal_year_id = ? OR fiscal_year_id IS NULL)";
+            params.push(fiscalYearId);
+          } else {
+            query += " AND fiscal_year_id IS NULL";
+          }
+
+          query += " ORDER BY category, sort_order";
+
+          const items = await env.DB.prepare(query).bind(...params).all();
+
+          // دسته‌بندی
+          const grouped = {};
+          items.results.forEach(item => {
+            if (!grouped[item.category]) {
+              grouped[item.category] = [];
+            }
+            grouped[item.category].push(item);
+          });
+
+          return new Response(JSON.stringify({
+            items: items.results,
+            grouped: grouped
+          }), {
+            status: 200, headers,
+          });
+        } catch (error) {
+          console.error("Payroll settings GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500, headers,
+          });
+        }
+      }
+
+      // PUT: آپدیت تنظیمات (چندتایی)
+      if (url.pathname === "/api/payroll-settings" && request.method === "PUT") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
+              status: 401, headers,
+            });
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || userData.role !== "admin") {
+            return new Response(JSON.stringify({ error: "فقط مدیر سیستم می‌تواند تنظیمات را تغییر دهد" }), {
+              status: 403, headers,
+            });
+          }
+
+          const body = await request.json();
+          const { settings, fiscal_year_id } = body;
+
+          if (!Array.isArray(settings)) {
+            return new Response(JSON.stringify({ error: "settings باید آرایه باشد" }), {
+              status: 400, headers,
+            });
+          }
+
+          const nowShamsi = toShamsi(new Date());
+
+          for (const s of settings) {
+            if (!s.setting_key) continue;
+
+            const existing = await env.DB.prepare(
+              `SELECT id FROM payroll_settings WHERE setting_key = ? AND (fiscal_year_id = ? OR (fiscal_year_id IS NULL AND ? IS NULL))`
+            ).bind(s.setting_key, fiscal_year_id || null, fiscal_year_id || null).first();
+
+            if (existing) {
+              await env.DB.prepare(
+                `UPDATE payroll_settings SET setting_value = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+              ).bind(s.setting_value || null, existing.id).run();
+            } else {
+              await env.DB.prepare(
+                `INSERT INTO payroll_settings (fiscal_year_id, setting_key, setting_value, setting_type, description, category, sort_order)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`
+              ).bind(
+                fiscal_year_id || null,
+                s.setting_key,
+                s.setting_value || null,
+                s.setting_type || 'number',
+                s.description || null,
+                s.category || 'general',
+                s.sort_order || 0
+              ).run();
+            }
+          }
+
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200, headers,
+          });
+        } catch (error) {
+          console.error("Payroll settings PUT error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500, headers,
+          });
+        }
+      }
+
+      // GET: آیتم‌های حقوق پایه
+      if (url.pathname === "/api/payroll-items" && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
+              status: 401, headers,
+            });
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401, headers,
+            });
+          }
+
+          const items = await env.DB.prepare(
+            "SELECT * FROM payroll_items WHERE is_active = 1 ORDER BY sort_order"
+          ).all();
+
+          return new Response(JSON.stringify(items.results), {
+            status: 200, headers,
+          });
+        } catch (error) {
+          console.error("Payroll items GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500, headers,
+          });
+        }
+      }
+
+      // PUT: آپدیت آیتم حقوقی (مشمولیت‌ها)
+      if (url.pathname.match(/^\/api\/payroll-items\/\d+$/) && request.method === "PUT") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
+              status: 401, headers,
+            });
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || userData.role !== "admin") {
+            return new Response(JSON.stringify({ error: "فقط مدیر سیستم" }), {
+              status: 403, headers,
+            });
+          }
+
+          const itemId = url.pathname.split("/").pop();
+          const body = await request.json();
+
+          const {
+            title,
+            category,
+            calc_type,
+            default_formula,
+            is_insurance_subject,
+            is_tax_subject,
+            is_overtime_subject,
+            is_holiday_subject,
+            is_nightshift_subject,
+            is_mission_subject,
+            is_family_allowance_subject,
+            is_child_allowance_subject,
+            is_active,
+            sort_order,
+            notes,
+          } = body;
+
+          await env.DB.prepare(
+            `UPDATE payroll_items SET
+              title = ?,
+              category = ?,
+              calc_type = ?,
+              default_formula = ?,
+              is_insurance_subject = ?,
+              is_tax_subject = ?,
+              is_overtime_subject = ?,
+              is_holiday_subject = ?,
+              is_nightshift_subject = ?,
+              is_mission_subject = ?,
+              is_family_allowance_subject = ?,
+              is_child_allowance_subject = ?,
+              is_active = ?,
+              sort_order = ?,
+              notes = ?,
+              updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?`
+          ).bind(
+            title,
+            category || null,
+            calc_type || 'fixed',
+            default_formula || null,
+            is_insurance_subject ? 1 : 0,
+            is_tax_subject ? 1 : 0,
+            is_overtime_subject ? 1 : 0,
+            is_holiday_subject ? 1 : 0,
+            is_nightshift_subject ? 1 : 0,
+            is_mission_subject ? 1 : 0,
+            is_family_allowance_subject ? 1 : 0,
+            is_child_allowance_subject ? 1 : 0,
+            is_active !== undefined ? (is_active ? 1 : 0) : 1,
+            sort_order || 0,
+            notes || null,
+            itemId
+          ).run();
+
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200, headers,
+          });
+        } catch (error) {
+          console.error("Payroll item PUT error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500, headers,
+          });
+        }
+      }
+
       // ========== مدیریت کاربران ==========
 
       // دریافت لیست کاربران
@@ -5379,6 +5634,7 @@ export default {
         "/persons.html",
         "/permissions.html",
         "/employee-profile.html",
+        "/payroll-settings.html",
       ];
 
       if (staticPaths.includes(url.pathname)) {

@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// .wrangler/tmp/bundle-8FligD/checked-fetch.js
+// .wrangler/tmp/bundle-K3FXbt/checked-fetch.js
 var urls = /* @__PURE__ */ new Set();
 function checkURL(request, init) {
   const url = request instanceof URL ? request : new URL(
@@ -3250,6 +3250,235 @@ var src_default = {
           });
         }
       }
+      if (url.pathname === "/api/payroll-settings" && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
+              status: 401,
+              headers
+            });
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "\u062A\u0648\u06A9\u0646 \u0646\u0627\u0645\u0639\u062A\u0628\u0631" }), {
+              status: 401,
+              headers
+            });
+          }
+          const fiscalYearId = url.searchParams.get("fiscal_year_id");
+          let query = "SELECT * FROM payroll_settings WHERE 1=1";
+          const params = [];
+          if (fiscalYearId) {
+            query += " AND (fiscal_year_id = ? OR fiscal_year_id IS NULL)";
+            params.push(fiscalYearId);
+          } else {
+            query += " AND fiscal_year_id IS NULL";
+          }
+          query += " ORDER BY category, sort_order";
+          const items = await env.DB.prepare(query).bind(...params).all();
+          const grouped = {};
+          items.results.forEach((item) => {
+            if (!grouped[item.category]) {
+              grouped[item.category] = [];
+            }
+            grouped[item.category].push(item);
+          });
+          return new Response(JSON.stringify({
+            items: items.results,
+            grouped
+          }), {
+            status: 200,
+            headers
+          });
+        } catch (error) {
+          console.error("Payroll settings GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname === "/api/payroll-settings" && request.method === "PUT") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
+              status: 401,
+              headers
+            });
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData || userData.role !== "admin") {
+            return new Response(JSON.stringify({ error: "\u0641\u0642\u0637 \u0645\u062F\u06CC\u0631 \u0633\u06CC\u0633\u062A\u0645 \u0645\u06CC\u200C\u062A\u0648\u0627\u0646\u062F \u062A\u0646\u0638\u06CC\u0645\u0627\u062A \u0631\u0627 \u062A\u063A\u06CC\u06CC\u0631 \u062F\u0647\u062F" }), {
+              status: 403,
+              headers
+            });
+          }
+          const body = await request.json();
+          const { settings, fiscal_year_id } = body;
+          if (!Array.isArray(settings)) {
+            return new Response(JSON.stringify({ error: "settings \u0628\u0627\u06CC\u062F \u0622\u0631\u0627\u06CC\u0647 \u0628\u0627\u0634\u062F" }), {
+              status: 400,
+              headers
+            });
+          }
+          const nowShamsi = toShamsi(/* @__PURE__ */ new Date());
+          for (const s of settings) {
+            if (!s.setting_key) continue;
+            const existing = await env.DB.prepare(
+              `SELECT id FROM payroll_settings WHERE setting_key = ? AND (fiscal_year_id = ? OR (fiscal_year_id IS NULL AND ? IS NULL))`
+            ).bind(s.setting_key, fiscal_year_id || null, fiscal_year_id || null).first();
+            if (existing) {
+              await env.DB.prepare(
+                `UPDATE payroll_settings SET setting_value = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+              ).bind(s.setting_value || null, existing.id).run();
+            } else {
+              await env.DB.prepare(
+                `INSERT INTO payroll_settings (fiscal_year_id, setting_key, setting_value, setting_type, description, category, sort_order)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`
+              ).bind(
+                fiscal_year_id || null,
+                s.setting_key,
+                s.setting_value || null,
+                s.setting_type || "number",
+                s.description || null,
+                s.category || "general",
+                s.sort_order || 0
+              ).run();
+            }
+          }
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers
+          });
+        } catch (error) {
+          console.error("Payroll settings PUT error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname === "/api/payroll-items" && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
+              status: 401,
+              headers
+            });
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "\u062A\u0648\u06A9\u0646 \u0646\u0627\u0645\u0639\u062A\u0628\u0631" }), {
+              status: 401,
+              headers
+            });
+          }
+          const items = await env.DB.prepare(
+            "SELECT * FROM payroll_items WHERE is_active = 1 ORDER BY sort_order"
+          ).all();
+          return new Response(JSON.stringify(items.results), {
+            status: 200,
+            headers
+          });
+        } catch (error) {
+          console.error("Payroll items GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname.match(/^\/api\/payroll-items\/\d+$/) && request.method === "PUT") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
+              status: 401,
+              headers
+            });
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData || userData.role !== "admin") {
+            return new Response(JSON.stringify({ error: "\u0641\u0642\u0637 \u0645\u062F\u06CC\u0631 \u0633\u06CC\u0633\u062A\u0645" }), {
+              status: 403,
+              headers
+            });
+          }
+          const itemId = url.pathname.split("/").pop();
+          const body = await request.json();
+          const {
+            title,
+            category,
+            calc_type,
+            default_formula,
+            is_insurance_subject,
+            is_tax_subject,
+            is_overtime_subject,
+            is_holiday_subject,
+            is_nightshift_subject,
+            is_mission_subject,
+            is_family_allowance_subject,
+            is_child_allowance_subject,
+            is_active,
+            sort_order,
+            notes
+          } = body;
+          await env.DB.prepare(
+            `UPDATE payroll_items SET
+              title = ?,
+              category = ?,
+              calc_type = ?,
+              default_formula = ?,
+              is_insurance_subject = ?,
+              is_tax_subject = ?,
+              is_overtime_subject = ?,
+              is_holiday_subject = ?,
+              is_nightshift_subject = ?,
+              is_mission_subject = ?,
+              is_family_allowance_subject = ?,
+              is_child_allowance_subject = ?,
+              is_active = ?,
+              sort_order = ?,
+              notes = ?,
+              updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?`
+          ).bind(
+            title,
+            category || null,
+            calc_type || "fixed",
+            default_formula || null,
+            is_insurance_subject ? 1 : 0,
+            is_tax_subject ? 1 : 0,
+            is_overtime_subject ? 1 : 0,
+            is_holiday_subject ? 1 : 0,
+            is_nightshift_subject ? 1 : 0,
+            is_mission_subject ? 1 : 0,
+            is_family_allowance_subject ? 1 : 0,
+            is_child_allowance_subject ? 1 : 0,
+            is_active !== void 0 ? is_active ? 1 : 0 : 1,
+            sort_order || 0,
+            notes || null,
+            itemId
+          ).run();
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers
+          });
+        } catch (error) {
+          console.error("Payroll item PUT error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
       if (url.pathname === "/api/users" && request.method === "GET") {
         const authHeader = request.headers.get("Authorization");
         if (!authHeader) {
@@ -4515,7 +4744,8 @@ var src_default = {
         "/goods.html",
         "/persons.html",
         "/permissions.html",
-        "/employee-profile.html"
+        "/employee-profile.html",
+        "/payroll-settings.html"
       ];
       if (staticPaths.includes(url.pathname)) {
         return await env.ASSETS.fetch(request);
@@ -4581,7 +4811,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-8FligD/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-K3FXbt/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -4613,7 +4843,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-8FligD/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-K3FXbt/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

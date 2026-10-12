@@ -129,7 +129,8 @@
             font-size: 11px;
             padding: 3px 10px;
             border-radius: 12px;
-            display: none; /* ← هاید شده، بعداً می‌شه درآورد */
+            display: none;
+            /* ← هاید شده، بعداً می‌شه درآورد */
         }
 
         .status-ready {
@@ -226,13 +227,13 @@
                 status: 'ready'
             },
             {
-    icon: '🏷️',
-    title: 'نوع اعتبار و مصرف',
-    desc: 'اعتبارات هزینه‌ای، سرمایه‌ای، مالی و مصرف عمومی/اختصاصی',
-    url: '/budget-types.html',
-    roles: ['admin', 'manager'],
-    status: 'ready'
-},
+                icon: '🏷️',
+                title: 'نوع اعتبار و مصرف',
+                desc: 'اعتبارات هزینه‌ای، سرمایه‌ای، مالی و مصرف عمومی/اختصاصی',
+                url: '/budget-types.html',
+                roles: ['admin', 'manager'],
+                status: 'ready'
+            },
             {
                 icon: '📊',
                 title: 'طبقه‌بندی عملیاتی',
@@ -241,7 +242,7 @@
                 roles: ['admin', 'manager'],
                 status: 'ready'
             },
-           
+
             {
                 icon: '📒',
                 title: 'حسابداری',
@@ -251,22 +252,30 @@
                 status: 'ready'
             },
             {
-    icon: '📦',
-    title: 'کالا و خدمات',
-    desc: 'کدینگ کالا، فهرست بها، جداول استهلاک و احکام حقوقی',
-    url: '/goods.html',
-    roles: ['admin', 'manager'],
-    status: 'ready'
-},
-
+                icon: '📦',
+                title: 'کالا و خدمات',
+                desc: 'کدینگ کالا، فهرست بها، جداول استهلاک و احکام حقوقی',
+                url: '/goods.html',
+                roles: ['admin', 'manager'],
+                status: 'ready'
+            },
             {
-    icon: '👥',
-    title: 'اشخاص',
-    desc: 'اشخاص حقیقی و حقوقی، کارکنان و تفصیلی شناور',
-    url: '/persons.html',
-    roles: ['admin', 'manager', 'expert', 'viewer'],
-    status: 'ready'
-}
+                icon: '👥',
+                title: 'اشخاص',
+                desc: 'اشخاص حقیقی و حقوقی، کارکنان و تفصیلی شناور',
+                url: '/persons.html',
+                roles: ['admin', 'manager', 'expert', 'viewer'],
+                status: 'ready'
+            },
+            {
+                icon: '⚙️',
+                title: 'تنظیمات محاسبات حقوق',
+                desc: 'نرخ‌های بیمه، مالیات، ضرایب اضافه‌کاری، کمک هزینه‌ها',
+                url: '/payroll-settings.html',
+                roles: ['admin', 'manager'],
+                status: 'ready'
+            },
+
         ];
 
         const cardsGrid = document.getElementById('cards-grid');

@@ -263,3 +263,24 @@
 ### اصلاحات:
 - [x] **تب «اطلاعات پایه» توی پرونده پرسنلی قابل ویرایش شد**
 - [x] API `PUT /api/persons/:id` آپدیت شد (first_name, last_name, mother_name, birth_place, gender, nationality)
+
+
+### مرحله ۴ (در حال انجام):
+- [x] **مرحله ۴.۱: جداول محاسبات**
+- [x] Migration 034: `payroll_items` + `payroll_settings`
+- [x] Seed ۳۱ آیتم حقوق + ۱۶ تنظیم
+- [x] API: `GET/PUT /api/payroll-settings`
+- [x] API: `GET/PUT /api/payroll-items`
+
+- [x] **مرحله ۴.۲: صفحه تنظیمات محاسبات**
+- [x] صفحه `payroll-settings.html` با ۶ تب
+- [x] نمایش فارسی اعداد (ریال با کاما، درصد، عدد)
+- [x] ویرایش مشمولیت‌های آیتم‌های حقوق
+
+### مراحل بعدی:
+- [ ] **مرحله ۴.۳: صفحه محاسبه حقوق (`payroll-calculate.html`)**
+- [ ] **مرحله ۴.۴: جدول `payroll_calculations`**
+- [ ] **مرحله ۵: کسورات (وام‌ها)**
+- [ ] **مرحله ۶: حضور و غیاب**
+- [ ] **مرحله ۸: auto-generate بودجه**
+- [ ] **مرحله ۹: شهروند + خارج شهروند**

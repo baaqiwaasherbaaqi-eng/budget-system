@@ -153,6 +153,14 @@ async function renderSidebar() {
       url: "/audit-log.html",
       permission: "audit_log.view",
     },
+    {
+      icon: "⚙️",
+      title: "تنظیمات محاسبات",
+      url: "/payroll-settings.html",
+      permission: "base_info.view",
+    },
+
+
   ];
 
   // فیلتر بر اساس Permission
@@ -532,6 +540,11 @@ function renderBreadcrumb() {
       icon: "📁",
       title: "پرونده پرسنلی",
       parent: "/persons.html",
+    },
+    "/payroll-settings.html": {
+      icon: "⚙️",
+      title: "تنظیمات محاسبات",
+      parent: "/base-info.html",
     },
   };
   

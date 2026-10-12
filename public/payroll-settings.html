@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>تنظیمات محاسبات حقوق</title>
+  <link rel="stylesheet" href="/sidebar.css" />
+  <script src="/sidebar.js"></script>
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: "Vazirmatn", Tahoma, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px 30px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .header h1 { margin: 0; font-size: 20px; }
+
+    /* ============ Tabs ============ */
+    .tabs-nav {
+      display: flex;
+      gap: 5px;
+      background: white;
+      padding: 8px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .tab-item {
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Vazirmatn', Tahoma, sans-serif;
+      font-size: 13px;
+      color: #666;
+      white-space: nowrap;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+      background: transparent;
+    }
+
+    .tab-item:hover { background: #f0f2f5; color: #667eea; }
+    .tab-item.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-weight: bold;
+    }
+
+    /* ============ Content ============ */
+    .tab-content {
+      background: white;
+      border-radius: 10px;
+      padding: 25px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      min-height: 400px;
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #667eea;
+      margin: 0 0 15px 0;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e9ecef;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ============ Setting Row ============ */
+    .setting-row {
+      display: grid;
+      grid-template-columns: 250px 200px 1fr;
+      gap: 15px;
+      align-items: center;
+      padding: 12px 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      border-right: 4px solid #667eea;
+      transition: all 0.2s;
+    }
+
+    .setting-row:hover {
+      background: #eef1ff;
+    }
+
+    .setting-row label {
+      font-size: 13px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .setting-row input,
+    .setting-row select {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-family: 'Vazirmatn', Tahoma, sans-serif;
+      font-size: 13px;
+      width: 100%;
+    }
+
+    .setting-row input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .setting-row .desc {
+      font-size: 11px;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    .setting-row .value-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .setting-row .value-wrapper input {
+      flex: 1;
+    }
+
+    .setting-row .unit {
+      font-size: 11px;
+      color: #999;
+      padding: 4px 8px;
+      background: white;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    /* ============ Actions ============ */
+    .actions-bar {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 25px;
+      padding-top: 20px;
+      border-top: 1px solid #e9ecef;
+    }
+
+    .btn {
+      padding: 12px 30px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-family: 'Vazirmatn', Tahoma, sans-serif;
+      font-size: 14px;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-save {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-save:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-save:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ============ Payroll Items Table ============ */
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .items-table th {
+      background: #f8f9fa;
+      padding: 10px 8px;
+      text-align: center;
+      font-weight: bold;
+      border-bottom: 2px solid #e0e0e0;
+      color: #333;
+      font-size: 11px;
+    }
+
+    .items-table td {
+      padding: 8px;
+      text-align: center;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .items-table td.title-cell {
+      text-align: right;
+      font-weight: bold;
+    }
+
+    .items-table tr:hover {
+      background: #fafafa;
+    }
+
+    .check-cell {
+      font-size: 16px;
+    }
+
+    .check-yes { color: #28a745; }
+    .check-no { color: #dc3545; }
+
+    /* ============ Toast ============ */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #333;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      z-index: 10002;
+      transition: transform 0.3s;
+      font-family: 'Vazirmatn', Tahoma, sans-serif;
+    }
+
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { background: #28a745; }
+    .toast.error { background: #dc3545; }
+
+    /* ============ Loading ============ */
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .loading .spinner {
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      border: 3px solid #e9ecef;
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 15px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ============ Dark Mode ============ */
+    body.dark { background: #1a202c; color: #e2e8f0; }
+    body.dark .tabs-nav,
+    body.dark .tab-content { background: #2d3748; }
+    body.dark .tab-item { color: #a0aec0; }
+    body.dark .tab-item.active { color: white; }
+    body.dark .section-title { border-bottom-color: #4a5568; }
+    body.dark .setting-row { background: #374151; }
+    body.dark .setting-row:hover { background: #4a5568; }
+    body.dark .setting-row label { color: #e2e8f0; }
+    body.dark .setting-row input { background: #1a202c; border-color: #4a5568; color: #e2e8f0; }
+    body.dark .setting-row .unit { background: #1a202c; color: #a0aec0; }
+    body.dark .items-table th { background: #1a202c; color: #e2e8f0; border-bottom-color: #4a5568; }
+    body.dark .items-table td { border-bottom-color: #4a5568; }
+    body.dark .items-table tr:hover { background: #374151; }
+    body.dark .actions-bar { border-top-color: #4a5568; }
+
+
+    .subject-check {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: #28a745;
+    }
+
+    .subject-check:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    /* ============ Responsive ============ */
+    @media (max-width: 768px) {
+      .setting-row { grid-template-columns: 1fr; }
+      .items-table { font-size: 10px; }
+      .items-table th, .items-table td { padding: 5px 3px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container" id="main-container">
+    <div class="loading">
+      <div class="spinner"></div>
+      <div>در حال بارگذاری...</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/common.js"></script>
+
+  <script>
+    // ============================================
+    // بررسی احراز هویت
+    // ============================================
+    if (!isTokenValid()) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login.html";
+    }
+
+    const token = localStorage.getItem("token");
+    const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+    // ============================================
+    // وضعیت
+    // ============================================
+    let settingsData = null;
+    let payrollItems = [];
+    let activeTab = 'general';
+
+    // ============================================
+    // توابع کمکی
+    // ============================================
+    function showToast(message, type = "success") {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.className = `toast ${type} show`;
+      setTimeout(() => toast.classList.remove("show"), 3000);
+    }
+
+    // ============================================
+    // لود دیتا
+    // ============================================
+    async function loadData() {
+      try {
+        const [settingsRes, itemsRes] = await Promise.all([
+          fetch('/api/payroll-settings', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch('/api/payroll-items', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+        ]);
+
+        if (!settingsRes.ok || !itemsRes.ok) {
+          throw new Error('خطا در دریافت اطلاعات');
+        }
+
+        settingsData = await settingsRes.json();
+        payrollItems = await itemsRes.json();
+
+        renderPage();
+      } catch (error) {
+        console.error('Load error:', error);
+        document.getElementById('main-container').innerHTML = `
+          <div class="loading">
+            <div style="font-size: 40px;">❌</div>
+            <div>${error.message}</div>
+          </div>`;
+      }
+    }
+
+    // ============================================
+    // رندر صفحه
+    // ============================================
+    function renderPage() {
+      const html = `
+        <div class="header">
+          <h1>⚙️ تنظیمات محاسبات حقوق</h1>
+        </div>
+
+        <div class="tabs-nav">
+          <button class="tab-item active" onclick="switchTab('general', this)">
+            🌐 عمومی
+          </button>
+          <button class="tab-item" onclick="switchTab('insurance', this)">
+            🏥 بیمه
+          </button>
+          <button class="tab-item" onclick="switchTab('tax', this)">
+            💰 مالیات
+          </button>
+          <button class="tab-item" onclick="switchTab('overtime', this)">
+            ⏰ اضافه‌کاری و مأموریت
+          </button>
+          <button class="tab-item" onclick="switchTab('allowance', this)">
+            👨‍👩‍👧 کمک هزینه‌ها
+          </button>
+          <button class="tab-item" onclick="switchTab('items', this)">
+            📋 آیتم‌های حقوق
+          </button>
+        </div>
+
+        <div class="tab-content">
+          <div class="tab-panel active" id="panel-general">
+            ${renderSettingsGroup('general', '🌐 تنظیمات عمومی')}
+          </div>
+          <div class="tab-panel" id="panel-insurance">
+            ${renderSettingsGroup('insurance', '🏥 تنظیمات بیمه')}
+          </div>
+          <div class="tab-panel" id="panel-tax">
+            ${renderSettingsGroup('tax', '💰 تنظیمات مالیات')}
+          </div>
+          <div class="tab-panel" id="panel-overtime">
+            ${renderSettingsGroup('overtime', '⏰ ضرایب اضافه‌کاری و مأموریت')}
+          </div>
+          <div class="tab-panel" id="panel-allowance">
+            ${renderSettingsGroup('allowance', '👨‍👩‍👧 کمک هزینه‌ها')}
+          </div>
+          <div class="tab-panel" id="panel-items">
+            ${renderPayrollItems()}
+          </div>
+        </div>
+      `;
+
+      document.getElementById('main-container').innerHTML = html;
+
+      // راه‌اندازی فرمت اعداد
+      setTimeout(setupNumberInputs, 100);
+    }
+
+    // ============================================
+    // راه‌اندازی فرمت اعداد
+    // ============================================
+    function setupNumberInputs() {
+      // فیلدهای مبلغ (با کاما)
+      document.querySelectorAll('.amount-input').forEach(input => {
+        input.addEventListener('input', function() {
+          let value = toEnglishNumbers(this.value);
+          value = value.replace(/,/g, '').replace(/[^\d]/g, '');
+          
+          if (value === '') {
+            this.value = '';
+            this.dataset.rawValue = '';
+            return;
+          }
+
+          this.dataset.rawValue = value;
+          this.value = toPersianNumbers(value.replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+        });
+      });
+
+      // فیلدهای عددی عمومی (بدون کاما، با اعشار)
+      document.querySelectorAll('.number-input').forEach(input => {
+        input.addEventListener('input', function() {
+          let value = toEnglishNumbers(this.value);
+          value = value.replace(/[^\d.]/g, '');
+          
+          if (value === '') {
+            this.value = '';
+            this.dataset.rawValue = '';
+            return;
+          }
+
+          this.dataset.rawValue = value;
+          this.value = toPersianNumbers(value);
+        });
+      });
+
+      // فیلدهای درصد (فقط عدد صحیح، فارسی)
+      document.querySelectorAll('.percent-input').forEach(input => {
+        input.addEventListener('input', function() {
+          let value = toEnglishNumbers(this.value);
+          value = value.replace(/[^\d]/g, '');
+          
+          if (value === '') {
+            this.value = '';
+            this.dataset.rawValue = '';
+            return;
+          }
+
+          this.dataset.rawValue = value;
+          this.value = toPersianNumbers(value);
+        });
+      });
+    }
+    // ============================================
+    // رندر گروه تنظیمات
+    // ============================================
+    function renderSettingsGroup(category, title) {
+      const items = settingsData.grouped[category] || [];
+
+      if (items.length === 0) {
+        return `<div style="text-align:center; padding:40px; color:#999;">تنظیمی در این دسته یافت نشد</div>`;
+      }
+
+      let html = `<h3 class="section-title">${title}</h3>`;
+
+      items.forEach(item => {
+        let unit = '';
+        let isAmountField = false;
+        
+        if (item.setting_type === 'percent') {
+          unit = '٪';
+        } else if (item.setting_type === 'number') {
+          if (item.setting_key.includes('amount') || 
+              item.setting_key.includes('salary') ||
+              item.setting_key.includes('exemption')) {
+            unit = 'ریال';
+            isAmountField = true;
+          } else if (item.setting_key.includes('rate') || 
+                     item.setting_key.includes('days') || 
+                     item.setting_key.includes('hours')) {
+            unit = item.setting_key.includes('rate') ? '٪' : '';
+          }
+        }
+
+             // تعیین کلاس بر اساس نوع
+             let inputClass = 'number-input';
+        if (isAmountField) {
+          inputClass = 'amount-input';
+        } else if (item.setting_type === 'percent') {
+          inputClass = 'percent-input';
+        }
+
+        // مقدار نمایشی
+        let displayValue = item.setting_value || '';
+        if (displayValue && !isNaN(displayValue)) {
+          if (isAmountField) {
+            // فرمت کاما + فارسی
+            displayValue = toPersianNumbers(
+              parseInt(displayValue).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+            );
+          } else {
+            // فقط فارسی (بدون کاما)
+            displayValue = toPersianNumbers(displayValue);
+          }
+        }
+
+        html += `
+          <div class="setting-row">
+            <label>${item.description || item.setting_key}</label>
+            <div class="value-wrapper">
+              <input type="text" 
+                     class="setting-input ${inputClass}" 
+                     data-key="${item.setting_key}"
+                     data-type="${item.setting_type}"
+                     data-is-amount="${isAmountField}"
+                     value="${displayValue}"
+                     ${currentUser.role !== 'admin' ? 'disabled' : ''} />
+              ${unit ? `<span class="unit">${unit}</span>` : ''}
+            </div>
+          </div>
+        `;
+      });
+
+      if (currentUser.role === 'admin') {
+        html += `
+          <div class="actions-bar">
+            <button class="btn btn-save" onclick="saveSettings('${category}')">
+              💾 ذخیره تنظیمات ${title}
+            </button>
+          </div>
+        `;
+      }
+
+      return html;
+    }
+
+    function getSettingHint(key) {
+      const hints = {
+        'insurance_rate_employee': 'این نرخ از حقوق کارمند کسر می‌شود',
+        'insurance_rate_employer': 'این نرخ توسط شهرداری پرداخت می‌شود',
+        'tax_exemption_monthly': 'درآمد کمتر از این مبلغ، معاف از مالیات است',
+        'tax_rate_1': 'برای طبقه اول درآمد ماهانه',
+        'tax_rate_2': 'برای طبقه دوم درآمد ماهانه',
+        'tax_rate_3': 'برای طبقه سوم درآمد ماهانه',
+        'tax_rate_4': 'برای طبقه چهارم درآمد ماهانه',
+        'overtime_rate': 'مبلغ هر ساعت اضافه‌کاری = (حقوق مبنا / ۲۲۰) × این ضریب',
+        'holiday_rate': 'مبلغ هر ساعت تعطیل‌کاری = (حقوق مبنا / ۲۲۰) × این ضریب',
+        'nightshift_rate': 'مبلغ هر ساعت نوبت‌کاری = (حقوق مبنا / ۲۲۰) × این ضریب',
+        'mission_rate': 'مبلغ هر روز مأموریت = (حقوق مبنا / ۳۰) × این ضریب',
+        'family_allowance_amount': 'مبلغ ثابت ماهانه برای افراد متأهل',
+        'child_allowance_amount': 'مبلغ ثابت ماهانه برای هر فرزند',
+        'minimum_salary': 'حداقل حقوق قانونی ماهانه',
+        'work_days_per_month': 'تعداد روزهای کاری در ماه (مبنای محاسبه)',
+        'work_hours_per_day': 'ساعت کار روزانه (مبنای محاسبه)'
+      };
+      return hints[key] || '';
+    }
+
+    // ============================================
+    // رندر آیتم‌های حقوق
+    // ============================================
+    function renderPayrollItems() {
+      if (payrollItems.length === 0) {
+        return `<div style="text-align:center; padding:40px; color:#999;">آیتمی یافت نشد</div>`;
+      }
+
+      const categoryLabels = {
+        salary: 'حقوق',
+        benefit: 'مزایا',
+        allowance: 'کمک هزینه',
+        overtime: 'اضافه‌کاری'
+      };
+
+      // گروه‌بندی بر اساس category
+      const grouped = {};
+      payrollItems.forEach(item => {
+        if (!grouped[item.category]) grouped[item.category] = [];
+        grouped[item.category].push(item);
+      });
+
+      let html = `<h3 class="section-title">📋 آیتم‌های حقوق و مشمولیت‌ها</h3>`;
+
+      html += `
+        <div style="overflow-x: auto;">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th style="width: 200px;">عنوان</th>
+                <th style="width: 80px;">دسته</th>
+                <th style="width: 60px;">بیمه</th>
+                <th style="width: 60px;">مالیات</th>
+                <th style="width: 60px;">اضافه‌کاری</th>
+                <th style="width: 60px;">تعطیل‌کاری</th>
+                <th style="width: 60px;">نوبت‌کاری</th>
+                <th style="width: 60px;">مأموریت</th>
+                <th style="width: 60px;">عائله</th>
+                <th style="width: 60px;">اولاد</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      payrollItems.forEach(item => {
+        const disabled = currentUser.role !== 'admin' ? 'disabled' : '';
+        
+        html += `
+          <tr data-id="${item.id}">
+            <td class="title-cell">${item.title}</td>
+            <td><span style="font-size: 10px; background: #e9ecef; padding: 2px 6px; border-radius: 8px;">${categoryLabels[item.category] || item.category || '—'}</span></td>
+            <td class="check-cell">
+              <input type="checkbox" class="subject-check" data-id="${item.id}" data-field="is_insurance_subject" 
+                     ${item.is_insurance_subject ? 'checked' : ''} ${disabled} />
+            </td>
+            <td class="check-cell">
+              <input type="checkbox" class="subject-check" data-id="${item.id}" data-field="is_tax_subject" 
+                     ${item.is_tax_subject ? 'checked' : ''} ${disabled} />
+            </td>
+            <td class="check-cell">
+              <input type="checkbox" class="subject-check" data-id="${item.id}" data-field="is_overtime_subject" 
+                     ${item.is_overtime_subject ? 'checked' : ''} ${disabled} />
+            </td>
+            <td class="check-cell">
+              <input type="checkbox" class="subject-check" data-id="${item.id}" data-field="is_holiday_subject" 
+                     ${item.is_holiday_subject ? 'checked' : ''} ${disabled} />
+            </td>
+            <td class="check-cell">
+              <input type="checkbox" class="subject-check" data-id="${item.id}" data-field="is_nightshift_subject" 
+                     ${item.is_nightshift_subject ? 'checked' : ''} ${disabled} />
+            </td>
+            <td class="check-cell">
+              <input type="checkbox" class="subject-check" data-id="${item.id}" data-field="is_mission_subject" 
+                     ${item.is_mission_subject ? 'checked' : ''} ${disabled} />
+            </td>
+            <td class="check-cell">
+              <input type="checkbox" class="subject-check" data-id="${item.id}" data-field="is_family_allowance_subject" 
+                     ${item.is_family_allowance_subject ? 'checked' : ''} ${disabled} />
+            </td>
+            <td class="check-cell">
+              <input type="checkbox" class="subject-check" data-id="${item.id}" data-field="is_child_allowance_subject" 
+                     ${item.is_child_allowance_subject ? 'checked' : ''} ${disabled} />
+            </td>
+          </tr>
+        `;
+      });
+
+
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      html += `
+        <div style="margin-top: 15px; padding: 10px 15px; background: #e7f3ff; border-right: 4px solid #17a2b8; border-radius: 6px; font-size: 12px; color: #0c5460;">
+          💡 <b>راهنما:</b> تیک = مشمول، بدون تیک = غیرمشمول. این تنظیمات در محاسبات حقوق اعمال می‌شود.
+        </div>
+      `;
+
+      if (currentUser.role === 'admin') {
+        html += `
+          <div class="actions-bar">
+            <button class="btn btn-save" onclick="savePayrollItems()">
+              💾 ذخیره مشمولیت‌ها
+            </button>
+          </div>
+        `;
+      }
+
+      return html;
+    }
+
+    // ============================================
+    // سوئیچ تب
+    // ============================================
+    function switchTab(tabName, btn) {
+      document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+      btn.classList.add('active');
+      document.getElementById('panel-' + tabName).classList.add('active');
+      activeTab = tabName;
+    }
+
+    // ============================================
+    // ذخیره مشمولیت‌های آیتم‌های حقوق
+    // ============================================
+    async function savePayrollItems() {
+      const checkboxes = document.querySelectorAll('.subject-check');
+
+      // گروه‌بندی بر اساس id
+      const grouped = {};
+      checkboxes.forEach(cb => {
+        const id = cb.dataset.id;
+        const field = cb.dataset.field;
+        if (!grouped[id]) grouped[id] = { id: parseInt(id) };
+        grouped[id][field] = cb.checked;
+      });
+
+      // ارسال هر آیتم
+      const items = Object.values(grouped);
+
+      if (items.length === 0) {
+        showToast('آیتمی برای ذخیره یافت نشد', 'error');
+        return;
+      }
+
+      try {
+        let successCount = 0;
+        for (const item of items) {
+          const original = payrollItems.find(p => p.id === item.id);
+          if (!original) continue;
+
+          const res = await fetch(`/api/payroll-items/${item.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              title: original.title,
+              category: original.category,
+              calc_type: original.calc_type,
+              default_formula: original.default_formula,
+              is_insurance_subject: item.is_insurance_subject ?? original.is_insurance_subject,
+              is_tax_subject: item.is_tax_subject ?? original.is_tax_subject,
+              is_overtime_subject: item.is_overtime_subject ?? original.is_overtime_subject,
+              is_holiday_subject: item.is_holiday_subject ?? original.is_holiday_subject,
+              is_nightshift_subject: item.is_nightshift_subject ?? original.is_nightshift_subject,
+              is_mission_subject: item.is_mission_subject ?? original.is_mission_subject,
+              is_family_allowance_subject: item.is_family_allowance_subject ?? original.is_family_allowance_subject,
+              is_child_allowance_subject: item.is_child_allowance_subject ?? original.is_child_allowance_subject,
+              is_active: original.is_active,
+              sort_order: original.sort_order,
+              notes: original.notes,
+            })
+          });
+
+          if (res.ok) successCount++;
+        }
+
+        showToast(`${toPersianNumbers(successCount)} آیتم با موفقیت ذخیره شد`);
+
+        // ریلود
+        const itemsRes = await fetch('/api/payroll-items', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        payrollItems = await itemsRes.json();
+
+        // رفرش تب
+        const panel = document.getElementById('panel-items');
+        if (panel) panel.innerHTML = renderPayrollItems();
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+
+
+    // ============================================
+    // ذخیره تنظیمات
+    // ============================================
+    async function saveSettings(category) {
+      const inputs = document.querySelectorAll('.setting-input');
+      const settings = [];
+
+      inputs.forEach(input => {
+        const key = input.dataset.key;
+        
+        // ✅ مقدار خام (انگلیسی) رو از dataset بگیر
+        let value = input.dataset.rawValue;
+        
+        // اگه dataset خالی بود، از value بخون و تبدیل کن
+        if (value === undefined || value === '') {
+          value = toEnglishNumbers(input.value.trim());
+          value = value.replace(/,/g, '').replace(/[^\d.]/g, '');
+        }
+        
+        // چک کن توی همون دسته هست
+        const isInCategory = settingsData.items.some(
+          item => item.setting_key === key && item.category === category
+        );
+        
+        if (isInCategory) {
+          settings.push({
+            setting_key: key,
+            setting_value: value || null,
+            setting_type: input.dataset.type || 'number',
+            category: category
+          });
+        }
+      });
+
+      if (settings.length === 0) {
+        showToast('تنظیمی برای ذخیره یافت نشد', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/payroll-settings', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ settings })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'خطا');
+
+        showToast('تنظیمات با موفقیت ذخیره شد');
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+
+    // ============================================
+    // شروع
+    // ============================================
+    loadData();
+  </script>
+
+</body>
+</html>
