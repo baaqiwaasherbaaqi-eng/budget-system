@@ -165,6 +165,12 @@ async function renderSidebar() {
       url: "/payroll-calculate.html",
       permission: "budget.view",
     },
+    {
+      icon: "💰",
+      title: "کسورات و وام‌ها",
+      url: "/employee-deductions.html",
+      permission: "budget.view",
+    },
 
   ];
 
@@ -378,6 +384,12 @@ function renderBreadcrumb() {
       title: "محاسبه حقوق",
       parent: "/dashboard.html",
     },
+    "/employee-deductions.html": {
+      icon: "💰",
+      title: "کسورات و وام‌ها",
+      parent: "/dashboard.html",
+    },
+
   };
   
   const current = pathMap[currentPath];
@@ -563,6 +575,12 @@ function renderBreadcrumb() {
       title: "محاسبه حقوق",
       parent: "/dashboard.html",
     },
+    "/employee-deductions.html": {
+      icon: "💰",
+      title: "کسورات و وام‌ها",
+      parent: "/dashboard.html",
+    },
+
   };
   
   const current = pathMap[currentPath];

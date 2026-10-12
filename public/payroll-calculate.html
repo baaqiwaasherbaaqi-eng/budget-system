@@ -282,9 +282,11 @@
     }
 
     .summary-row .value {
-      font-family: monospace;
+      font-family: 'Sahel', 'Vazirmatn', Tahoma, sans-serif !important;
+      font-feature-settings: normal !important;
       font-size: 15px;
       direction: ltr;
+      text-align: left;
     }
 
     .summary-row:last-child .value {
@@ -412,6 +414,137 @@
     body.dark .history-table td { border-bottom-color: #4a5568; }
     body.dark .btn-secondary { background: #4a5568; color: #e2e8f0; }
 
+    /* ============ Employee Search ============ */
+    .search-wrapper {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .search-wrapper input {
+      flex: 1;
+      padding: 12px 15px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-family: 'Vazirmatn', Tahoma, sans-serif;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    .search-wrapper input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .search-results {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-top: 5px;
+    }
+
+    .search-result-item {
+      padding: 12px 15px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.15s;
+    }
+
+    .search-result-item:last-child {
+      border-bottom: none;
+    }
+
+    .search-result-item:hover {
+      background: #eef1ff;
+    }
+
+    .search-result-item .emp-name {
+      font-weight: bold;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .search-result-item .emp-meta {
+      font-size: 12px;
+      color: #666;
+      margin-top: 3px;
+    }
+
+    .search-result-item .emp-badge {
+      background: #667eea;
+      color: white;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+
+    .search-results-empty {
+      padding: 20px;
+      text-align: center;
+      color: #999;
+      font-size: 13px;
+    }
+
+    .selected-employee {
+      background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+      border: 2px solid #28a745;
+      border-radius: 8px;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .selected-emp-info {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .selected-emp-name {
+      font-weight: bold;
+      font-size: 15px;
+      color: #155724;
+    }
+
+    .selected-emp-meta {
+      font-size: 12px;
+      color: #155724;
+      opacity: 0.8;
+    }
+
+    /* Dark Mode */
+    body.dark .search-wrapper input {
+      background: #1a202c;
+      border-color: #4a5568;
+      color: #e2e8f0;
+    }
+    body.dark .search-results {
+      background: #2d3748;
+      border-color: #4a5568;
+    }
+    body.dark .search-result-item {
+      border-bottom-color: #4a5568;
+    }
+    body.dark .search-result-item:hover {
+      background: #4a5568;
+    }
+    body.dark .search-result-item .emp-name {
+      color: #e2e8f0;
+    }
+    body.dark .search-result-item .emp-meta {
+      color: #a0aec0;
+    }
+
     /* ============ Responsive ============ */
     @media (max-width: 768px) {
       .form-row { grid-template-columns: 1fr; }
@@ -456,15 +589,40 @@
       <h1>💰 محاسبه حقوق و دستمزد</h1>
     </div>
 
-    <!-- انتخاب کارمند و دوره -->
+      <!-- جستجوی کارمند -->
     <div class="selection-card">
-      <div class="form-row">
-        <div class="form-group">
-          <label>کارمند <span style="color:#e74c3c;">*</span></label>
-          <select id="employee-select">
-            <option value="">— در حال بارگذاری —</option>
-          </select>
+      <label style="display:block; margin-bottom:8px; font-weight:bold; color:#444; font-size:13px;">
+        🔍 جستجوی کارمند (بر اساس کد ملی یا نام)
+      </label>
+      <div class="search-wrapper">
+        <input 
+          type="text" 
+          id="employee-search-input" 
+          placeholder="کد ملی یا نام کارمند را وارد کنید..."
+          autocomplete="off"
+          oninput="onSearchInput()"
+          onkeydown="if(event.key === 'Enter') searchEmployees()"
+        />
+        <button class="btn btn-primary" onclick="searchEmployees()">
+          🔍 جستجو
+        </button>
+      </div>
+      <div id="search-results" class="search-results" style="display:none;"></div>
+      
+      <div id="selected-employee" class="selected-employee" style="display:none;">
+        <div class="selected-emp-info">
+          <span class="selected-emp-name" id="selected-emp-name"></span>
+          <span class="selected-emp-meta" id="selected-emp-meta"></span>
         </div>
+        <button class="btn btn-cancel" onclick="clearSelectedEmployee()">
+          ✕ پاک کردن
+        </button>
+      </div>
+    </div>
+
+    <!-- انتخاب دوره و محاسبه -->
+    <div class="selection-card" id="calculation-card" style="display:none;">
+      <div class="form-row">
         <div class="form-group">
           <label>سال <span style="color:#e74c3c;">*</span></label>
           <input type="text" id="period-year" value="۱۴۰۵" />
@@ -549,43 +707,126 @@
       setTimeout(() => toast.classList.remove("show"), 3000);
     }
 
+        // ============================================
+    // جستجوی کارمندان
+    // ============================================
+    let searchTimeout = null;
+    let currentEmployee = null;
+
+    function onSearchInput() {
+      const query = document.getElementById('employee-search-input').value.trim();
+      
+      if (searchTimeout) clearTimeout(searchTimeout);
+      
+      if (query.length < 2) {
+        document.getElementById('search-results').style.display = 'none';
+        return;
+      }
+      
+      // Debounce: 400ms
+      searchTimeout = setTimeout(() => {
+        searchEmployees();
+      }, 400);
+    }
+
+    async function searchEmployees() {
+      const query = document.getElementById('employee-search-input').value.trim();
+      
+      if (query.length < 2) {
+        showToast('حداقل ۲ کاراکتر وارد کنید', 'error');
+        return;
+      }
+
+      const resultsBox = document.getElementById('search-results');
+      resultsBox.style.display = 'block';
+      resultsBox.innerHTML = '<div class="search-results-empty">🔍 در حال جستجو...</div>';
+
+      try {
+        const res = await fetch(`/api/employees/search?q=${encodeURIComponent(query)}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(data.error || 'خطا در جستجو');
+        }
+
+        const results = data.results || [];
+
+        if (results.length === 0) {
+          resultsBox.innerHTML = '<div class="search-results-empty">❌ کارمندی با این مشخصات یافت نشد</div>';
+          return;
+        }
+
+        let html = '';
+        results.forEach(emp => {
+          // برای escape کردن کاراکترهای خاص
+          const safeName = emp.full_name.replace(/'/g, "\\'");
+          const safeNationalId = (emp.national_id || '').replace(/'/g, "\\'");
+          const safeCode = (emp.code || '').replace(/'/g, "\\'");
+          
+          html += `
+            <div class="search-result-item" onclick="selectEmployee(${emp.id}, '${safeName}', '${safeNationalId}', '${safeCode}', ${emp.decrees_count})">
+              <div>
+                <div class="emp-name">${emp.full_name}</div>
+                <div class="emp-meta">
+                  کد ملی: ${emp.national_id ? toPersianNumbers(emp.national_id) : '—'}
+                  | کد: ${toPersianNumbers(emp.code || '—')}
+                </div>
+              </div>
+              <span class="emp-badge">${toPersianNumbers(emp.decrees_count)} حکم</span>
+            </div>
+          `;
+        });
+
+        resultsBox.innerHTML = html;
+      } catch (error) {
+        resultsBox.innerHTML = `<div class="search-results-empty">❌ ${error.message}</div>`;
+      }
+    }
+
+    function selectEmployee(id, fullName, nationalId, code, decreesCount) {
+      currentEmployee = {
+        id: id,
+        full_name: fullName,
+        national_id: nationalId,
+        code: code,
+        decrees_count: decreesCount
+      };
+      
+      // مخفی کردن نتایج
+      document.getElementById('search-results').style.display = 'none';
+      document.getElementById('employee-search-input').value = '';
+      
+      // نمایش کارمند انتخاب شده
+      const selectedBox = document.getElementById('selected-employee');
+      selectedBox.style.display = 'flex';
+      document.getElementById('selected-emp-name').textContent = fullName;
+      document.getElementById('selected-emp-meta').textContent = 
+        `کد ملی: ${nationalId ? toPersianNumbers(nationalId) : '—'} | کد: ${toPersianNumbers(code || '—')} | ${toPersianNumbers(decreesCount)} حکم`;
+
+      // نمایش کارت محاسبه
+      document.getElementById('calculation-card').style.display = 'block';
+      
+      // مخفی کردن نتیجه قبلی
+      document.getElementById('result-card').classList.remove('show');
+    }
+
+    function clearSelectedEmployee() {
+      currentEmployee = null;
+      document.getElementById('selected-employee').style.display = 'none';
+      document.getElementById('calculation-card').style.display = 'none';
+      document.getElementById('employee-search-input').value = '';
+      document.getElementById('search-results').style.display = 'none';
+      document.getElementById('result-card').classList.remove('show');
+    }
+
     function formatRial(amount) {
       if (!amount && amount !== 0) return '۰';
       return toPersianNumbers(
         Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
       );
-    }
-
-    // ============================================
-    // لود کارکنان
-    // ============================================
-    async function loadEmployees() {
-      try {
-        const res = await fetch('/api/employees/list', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (!res.ok) throw new Error('خطا در دریافت کارکنان');
-
-        employees = await res.json();
-
-        const select = document.getElementById('employee-select');
-        select.innerHTML = '<option value="">— انتخاب کنید —</option>';
-
-        employees.forEach(emp => {
-          const opt = document.createElement('option');
-          opt.value = emp.id;
-          opt.textContent = `${emp.full_name} (${emp.code}) - ${emp.decrees_count} حکم`;
-          select.appendChild(opt);
-        });
-
-        if (employees.length === 0) {
-          select.innerHTML = '<option value="">— کارمندی با حکم ثبت نشده —</option>';
-        }
-      } catch (error) {
-        console.error('Load employees error:', error);
-        showToast(error.message, 'error');
-      }
     }
 
     // ============================================
@@ -688,14 +929,14 @@
     // محاسبه حقوق
     // ============================================
     async function calculatePayroll() {
-      const employeeId = document.getElementById('employee-select').value;
-      const yearRaw = document.getElementById('period-year').value;
-      const month = document.getElementById('period-month').value;
-
-      if (!employeeId) {
-        showToast('کارمند را انتخاب کنید', 'error');
+      if (!currentEmployee) {
+        showToast('ابتدا کارمند را جستجو و انتخاب کنید', 'error');
         return;
       }
+
+      const employeeId = currentEmployee.id;
+      const yearRaw = document.getElementById('period-year').value;
+      const month = document.getElementById('period-month').value;
 
       const year = toEnglishNumbers(yearRaw);
       if (!year || isNaN(year)) {
@@ -726,7 +967,7 @@
 
         lastCalculation = {
           ...data.calculation,
-          employee: employees.find(e => e.id === parseInt(employeeId)),
+          employee: currentEmployee,
           period_year: parseInt(year),
           period_month: parseInt(month),
           id: data.id
@@ -813,7 +1054,7 @@
             </table>
           </div>
 
-          <!-- بخش ۲: کسورات -->
+                   <!-- بخش ۲: کسورات -->
           <div class="result-section">
             <h3 class="result-section-title">➖ کسورات</h3>
             <table class="result-table">
@@ -832,6 +1073,18 @@
                   <td>مالیات حقوق</td>
                   <td class="amount-cell" style="color: #dc3545;">${formatRial(taxAmount)}</td>
                 </tr>
+                ${(calc.applied_deductions || []).filter(d => d.type === 'loan').map(d => `
+                  <tr>
+                    <td>💳 ${d.title}</td>
+                    <td class="amount-cell" style="color: #dc3545;">${formatRial(d.amount)}</td>
+                  </tr>
+                `).join('')}
+                ${(calc.applied_deductions || []).filter(d => d.type === 'deduction').map(d => `
+                  <tr>
+                    <td>➖ ${d.title}</td>
+                    <td class="amount-cell" style="color: #dc3545;">${formatRial(d.amount)}</td>
+                  </tr>
+                `).join('')}
                 <tr class="total-row">
                   <td>جمع کسورات</td>
                   <td class="amount-cell" style="color: #dc3545;">${formatRial(totalDeductions)}</td>
@@ -843,16 +1096,16 @@
           <!-- بخش ۳: خلاصه -->
           <div class="summary-box">
             <div class="summary-row">
-              <span>جمع حقوق و مزایا</span>
-              <span class="value">${formatRial(totalItems)} ریال</span>
+              <span>جمع حقوق و مزایا (ریال)</span>
+              <span class="value">${formatRial(totalItems)}</span>
             </div>
             <div class="summary-row">
-              <span>جمع کسورات</span>
-              <span class="value">${formatRial(totalDeductions)} ریال</span>
+              <span>جمع کسورات (ریال)</span>
+              <span class="value">${formatRial(totalDeductions)}</span>
             </div>
             <div class="summary-row">
-              <span>خالص پرداختی</span>
-              <span class="value">${formatRial(netPay)} ریال</span>
+              <span>خالص پرداختی (ریال)</span>
+              <span class="value">${formatRial(netPay)}</span>
             </div>
           </div>
 
@@ -915,19 +1168,21 @@
           national_id: calc.national_id,
           code: calc.person_code
         };
-        calc.period_year = calc.period_year;
-        calc.period_month = calc.period_month;
+
+        // استخراج کسورات از snapshot
+        const settings = calc.settings_parsed || {};
+        calc.applied_deductions = settings.applied_deductions || [];
+        calc.loan_installments = settings.loan_installments || 0;
+        calc.other_deductions = settings.other_deductions || 0;
 
         renderResult(calc);
       } catch (error) {
         showToast(error.message, 'error');
       }
     }
-
     // ============================================
     // شروع
     // ============================================
-    loadEmployees();
     loadHistory();
   </script>
 

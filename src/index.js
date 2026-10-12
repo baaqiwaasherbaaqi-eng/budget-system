@@ -3755,19 +3755,25 @@ export default {
         }
       }
 
-
       // ============================================
       // Payroll Settings API
       // ============================================
 
       // GET: تنظیمات محاسبات
-      if (url.pathname === "/api/payroll-settings" && request.method === "GET") {
+      if (
+        url.pathname === "/api/payroll-settings" &&
+        request.method === "GET"
+      ) {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
-              status: 401, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
@@ -3775,7 +3781,8 @@ export default {
 
           if (!userData) {
             return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
-              status: 401, headers,
+              status: 401,
+              headers,
             });
           }
 
@@ -3793,57 +3800,81 @@ export default {
 
           query += " ORDER BY category, sort_order";
 
-          const items = await env.DB.prepare(query).bind(...params).all();
+          const items = await env.DB.prepare(query)
+            .bind(...params)
+            .all();
 
           // دسته‌بندی
           const grouped = {};
-          items.results.forEach(item => {
+          items.results.forEach((item) => {
             if (!grouped[item.category]) {
               grouped[item.category] = [];
             }
             grouped[item.category].push(item);
           });
 
-          return new Response(JSON.stringify({
-            items: items.results,
-            grouped: grouped
-          }), {
-            status: 200, headers,
-          });
+          return new Response(
+            JSON.stringify({
+              items: items.results,
+              grouped: grouped,
+            }),
+            {
+              status: 200,
+              headers,
+            }
+          );
         } catch (error) {
           console.error("Payroll settings GET error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
-            status: 500, headers,
+            status: 500,
+            headers,
           });
         }
       }
 
       // PUT: آپدیت تنظیمات (چندتایی)
-      if (url.pathname === "/api/payroll-settings" && request.method === "PUT") {
+      if (
+        url.pathname === "/api/payroll-settings" &&
+        request.method === "PUT"
+      ) {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
-              status: 401, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
           const userData = await verifyToken(token, env.JWT_SECRET);
 
           if (!userData || userData.role !== "admin") {
-            return new Response(JSON.stringify({ error: "فقط مدیر سیستم می‌تواند تنظیمات را تغییر دهد" }), {
-              status: 403, headers,
-            });
+            return new Response(
+              JSON.stringify({
+                error: "فقط مدیر سیستم می‌تواند تنظیمات را تغییر دهد",
+              }),
+              {
+                status: 403,
+                headers,
+              }
+            );
           }
 
           const body = await request.json();
           const { settings, fiscal_year_id } = body;
 
           if (!Array.isArray(settings)) {
-            return new Response(JSON.stringify({ error: "settings باید آرایه باشد" }), {
-              status: 400, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "settings باید آرایه باشد" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
           }
 
           const nowShamsi = toShamsi(new Date());
@@ -3853,35 +3884,47 @@ export default {
 
             const existing = await env.DB.prepare(
               `SELECT id FROM payroll_settings WHERE setting_key = ? AND (fiscal_year_id = ? OR (fiscal_year_id IS NULL AND ? IS NULL))`
-            ).bind(s.setting_key, fiscal_year_id || null, fiscal_year_id || null).first();
+            )
+              .bind(
+                s.setting_key,
+                fiscal_year_id || null,
+                fiscal_year_id || null
+              )
+              .first();
 
             if (existing) {
               await env.DB.prepare(
                 `UPDATE payroll_settings SET setting_value = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
-              ).bind(s.setting_value || null, existing.id).run();
+              )
+                .bind(s.setting_value || null, existing.id)
+                .run();
             } else {
               await env.DB.prepare(
                 `INSERT INTO payroll_settings (fiscal_year_id, setting_key, setting_value, setting_type, description, category, sort_order)
                  VALUES (?, ?, ?, ?, ?, ?, ?)`
-              ).bind(
-                fiscal_year_id || null,
-                s.setting_key,
-                s.setting_value || null,
-                s.setting_type || 'number',
-                s.description || null,
-                s.category || 'general',
-                s.sort_order || 0
-              ).run();
+              )
+                .bind(
+                  fiscal_year_id || null,
+                  s.setting_key,
+                  s.setting_value || null,
+                  s.setting_type || "number",
+                  s.description || null,
+                  s.category || "general",
+                  s.sort_order || 0
+                )
+                .run();
             }
           }
 
           return new Response(JSON.stringify({ success: true }), {
-            status: 200, headers,
+            status: 200,
+            headers,
           });
         } catch (error) {
           console.error("Payroll settings PUT error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
-            status: 500, headers,
+            status: 500,
+            headers,
           });
         }
       }
@@ -3891,9 +3934,13 @@ export default {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
-              status: 401, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
@@ -3901,7 +3948,8 @@ export default {
 
           if (!userData) {
             return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
-              status: 401, headers,
+              status: 401,
+              headers,
             });
           }
 
@@ -3910,24 +3958,33 @@ export default {
           ).all();
 
           return new Response(JSON.stringify(items.results), {
-            status: 200, headers,
+            status: 200,
+            headers,
           });
         } catch (error) {
           console.error("Payroll items GET error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
-            status: 500, headers,
+            status: 500,
+            headers,
           });
         }
       }
 
       // PUT: آپدیت آیتم حقوقی (مشمولیت‌ها)
-      if (url.pathname.match(/^\/api\/payroll-items\/\d+$/) && request.method === "PUT") {
+      if (
+        url.pathname.match(/^\/api\/payroll-items\/\d+$/) &&
+        request.method === "PUT"
+      ) {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
-              status: 401, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
@@ -3935,7 +3992,8 @@ export default {
 
           if (!userData || userData.role !== "admin") {
             return new Response(JSON.stringify({ error: "فقط مدیر سیستم" }), {
-              status: 403, headers,
+              status: 403,
+              headers,
             });
           }
 
@@ -3979,49 +4037,59 @@ export default {
               notes = ?,
               updated_at = CURRENT_TIMESTAMP
             WHERE id = ?`
-          ).bind(
-            title,
-            category || null,
-            calc_type || 'fixed',
-            default_formula || null,
-            is_insurance_subject ? 1 : 0,
-            is_tax_subject ? 1 : 0,
-            is_overtime_subject ? 1 : 0,
-            is_holiday_subject ? 1 : 0,
-            is_nightshift_subject ? 1 : 0,
-            is_mission_subject ? 1 : 0,
-            is_family_allowance_subject ? 1 : 0,
-            is_child_allowance_subject ? 1 : 0,
-            is_active !== undefined ? (is_active ? 1 : 0) : 1,
-            sort_order || 0,
-            notes || null,
-            itemId
-          ).run();
+          )
+            .bind(
+              title,
+              category || null,
+              calc_type || "fixed",
+              default_formula || null,
+              is_insurance_subject ? 1 : 0,
+              is_tax_subject ? 1 : 0,
+              is_overtime_subject ? 1 : 0,
+              is_holiday_subject ? 1 : 0,
+              is_nightshift_subject ? 1 : 0,
+              is_mission_subject ? 1 : 0,
+              is_family_allowance_subject ? 1 : 0,
+              is_child_allowance_subject ? 1 : 0,
+              is_active !== undefined ? (is_active ? 1 : 0) : 1,
+              sort_order || 0,
+              notes || null,
+              itemId
+            )
+            .run();
 
           return new Response(JSON.stringify({ success: true }), {
-            status: 200, headers,
+            status: 200,
+            headers,
           });
         } catch (error) {
           console.error("Payroll item PUT error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
-            status: 500, headers,
+            status: 500,
+            headers,
           });
         }
       }
-
 
       // ============================================
       // Payroll Calculations API
       // ============================================
 
       // GET: لیست محاسبات
-      if (url.pathname === "/api/payroll-calculations" && request.method === "GET") {
+      if (
+        url.pathname === "/api/payroll-calculations" &&
+        request.method === "GET"
+      ) {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
-              status: 401, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
@@ -4029,7 +4097,8 @@ export default {
 
           if (!userData) {
             return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
-              status: 401, headers,
+              status: 401,
+              headers,
             });
           }
 
@@ -4056,29 +4125,41 @@ export default {
             params.push(month);
           }
 
-          query += " ORDER BY pc.period_year DESC, pc.period_month DESC, pc.id DESC LIMIT 200";
+          query +=
+            " ORDER BY pc.period_year DESC, pc.period_month DESC, pc.id DESC LIMIT 200";
 
-          const items = await env.DB.prepare(query).bind(...params).all();
+          const items = await env.DB.prepare(query)
+            .bind(...params)
+            .all();
 
           return new Response(JSON.stringify(items.results), {
-            status: 200, headers,
+            status: 200,
+            headers,
           });
         } catch (error) {
           console.error("Payroll calc GET error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
-            status: 500, headers,
+            status: 500,
+            headers,
           });
         }
       }
 
       // GET: یک محاسبه خاص
-      if (url.pathname.match(/^\/api\/payroll-calculations\/\d+$/) && request.method === "GET") {
+      if (
+        url.pathname.match(/^\/api\/payroll-calculations\/\d+$/) &&
+        request.method === "GET"
+      ) {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
-              status: 401, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
@@ -4086,7 +4167,8 @@ export default {
 
           if (!userData) {
             return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
-              status: 401, headers,
+              status: 401,
+              headers,
             });
           }
 
@@ -4097,37 +4179,57 @@ export default {
              FROM payroll_calculations pc
              LEFT JOIN persons p ON pc.employee_person_id = p.id
              WHERE pc.id = ?`
-          ).bind(id).first();
+          )
+            .bind(id)
+            .first();
 
           if (!calc) {
             return new Response(JSON.stringify({ error: "محاسبه یافت نشد" }), {
-              status: 404, headers,
+              status: 404,
+              headers,
             });
           }
 
           // Parse JSON fields
-          try { calc.items_parsed = JSON.parse(calc.items || '[]'); } catch (e) { calc.items_parsed = []; }
-          try { calc.settings_parsed = JSON.parse(calc.settings_snapshot || '{}'); } catch (e) { calc.settings_parsed = {}; }
+          try {
+            calc.items_parsed = JSON.parse(calc.items || "[]");
+          } catch (e) {
+            calc.items_parsed = [];
+          }
+          try {
+            calc.settings_parsed = JSON.parse(calc.settings_snapshot || "{}");
+          } catch (e) {
+            calc.settings_parsed = {};
+          }
 
           return new Response(JSON.stringify(calc), {
-            status: 200, headers,
+            status: 200,
+            headers,
           });
         } catch (error) {
           console.error("Payroll calc GET error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
-            status: 500, headers,
+            status: 500,
+            headers,
           });
         }
       }
 
       // POST: محاسبه و ذخیره حقوق
-      if (url.pathname === "/api/payroll-calculations/calculate" && request.method === "POST") {
+      if (
+        url.pathname === "/api/payroll-calculations/calculate" &&
+        request.method === "POST"
+      ) {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
-              status: 401, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
@@ -4135,43 +4237,57 @@ export default {
 
           if (!userData || !["admin", "manager"].includes(userData.role)) {
             return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
-              status: 403, headers,
+              status: 403,
+              headers,
             });
           }
 
           const body = await request.json();
-          const { employee_person_id, period_year, period_month, fiscal_year_id, decree_id } = body;
+          const {
+            employee_person_id,
+            period_year,
+            period_month,
+            fiscal_year_id,
+            decree_id,
+          } = body;
 
           if (!employee_person_id || !period_year || !period_month) {
             return new Response(JSON.stringify({ error: "اطلاعات ناقص" }), {
-              status: 400, headers,
+              status: 400,
+              headers,
             });
           }
 
           // لود حکم
           let decree;
           if (decree_id) {
-            decree = await env.DB.prepare(
-              `SELECT * FROM decrees WHERE id = ?`
-            ).bind(decree_id).first();
+            decree = await env.DB.prepare(`SELECT * FROM decrees WHERE id = ?`)
+              .bind(decree_id)
+              .first();
           } else {
             decree = await env.DB.prepare(
               `SELECT * FROM decrees 
                WHERE employee_person_id = ? AND status IN ('signed', 'active', 'issued')
                ORDER BY id DESC LIMIT 1`
-            ).bind(employee_person_id).first();
+            )
+              .bind(employee_person_id)
+              .first();
           }
 
           if (!decree) {
-            return new Response(JSON.stringify({ error: "حکم فعالی برای این کارمند یافت نشد" }), {
-              status: 404, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "حکم فعالی برای این کارمند یافت نشد" }),
+              {
+                status: 404,
+                headers,
+              }
+            );
           }
 
           // Parse آیتم‌های حکم
           let decreeItems = [];
           try {
-            decreeItems = JSON.parse(decree.items || '[]');
+            decreeItems = JSON.parse(decree.items || "[]");
           } catch (e) {
             decreeItems = [];
           }
@@ -4182,7 +4298,7 @@ export default {
           ).all();
 
           const payrollItemsMap = {};
-          payrollItemsData.results.forEach(p => {
+          payrollItemsData.results.forEach((p) => {
             payrollItemsMap[p.title] = p;
           });
 
@@ -4192,7 +4308,7 @@ export default {
           ).all();
 
           const settings = {};
-          settingsData.results.forEach(s => {
+          settingsData.results.forEach((s) => {
             settings[s.setting_key] = s.setting_value;
           });
 
@@ -4201,7 +4317,7 @@ export default {
           let totalInsuranceSubject = 0;
           let totalTaxSubject = 0;
 
-          const calculatedItems = decreeItems.map(di => {
+          const calculatedItems = decreeItems.map((di) => {
             const pi = payrollItemsMap[di.title] || {};
             const amount = parseFloat(di.amount) || 0;
             const isInsurance = pi.is_insurance_subject === 1;
@@ -4216,39 +4332,112 @@ export default {
               title: di.title,
               amount: amount,
               is_insurance: isInsurance,
-              is_tax: isTax
+              is_tax: isTax,
             };
           });
 
           // محاسبه بیمه
-          const insuranceRateEmployee = parseFloat(settings.insurance_rate_employee || '7') / 100;
-          const insuranceRateEmployer = parseFloat(settings.insurance_rate_employer || '23') / 100;
-          const insuranceEmployee = Math.round(totalInsuranceSubject * insuranceRateEmployee);
-          const insuranceEmployer = Math.round(totalInsuranceSubject * insuranceRateEmployer);
+          const insuranceRateEmployee =
+            parseFloat(settings.insurance_rate_employee || "7") / 100;
+          const insuranceRateEmployer =
+            parseFloat(settings.insurance_rate_employer || "23") / 100;
+          const insuranceEmployee = Math.round(
+            totalInsuranceSubject * insuranceRateEmployee
+          );
+          const insuranceEmployer = Math.round(
+            totalInsuranceSubject * insuranceRateEmployer
+          );
 
           // محاسبه مالیات (ساده - پله‌ای)
-          const taxExemption = parseFloat(settings.tax_exemption_monthly || '120000000');
+          const taxExemption = parseFloat(
+            settings.tax_exemption_monthly || "120000000"
+          );
           const taxBase = Math.max(0, totalTaxSubject - taxExemption);
-          
+
           // نرخ‌های پله‌ای
           const rates = [
-            parseFloat(settings.tax_rate_1 || '10') / 100,
-            parseFloat(settings.tax_rate_2 || '15') / 100,
-            parseFloat(settings.tax_rate_3 || '20') / 100,
-            parseFloat(settings.tax_rate_4 || '25') / 100
+            parseFloat(settings.tax_rate_1 || "10") / 100,
+            parseFloat(settings.tax_rate_2 || "15") / 100,
+            parseFloat(settings.tax_rate_3 || "20") / 100,
+            parseFloat(settings.tax_rate_4 || "25") / 100,
           ];
 
           // محاسبه ساده مالیات (فقط پله اول برای الان)
           const taxAmount = Math.round(taxBase * rates[0]);
 
-          // سایر کسورات (فعلاً ۰)
-          const otherDeductions = 0;
+          // ============================================
+          // کسورات: وام‌ها + سایر کسورات
+          // ============================================
+          let loanInstallments = 0;
+          let otherDeductions = 0;
+          const appliedDeductions = [];
+
+          // ۱. وام‌های فعال
+          const activeLoans = await env.DB.prepare(
+            `SELECT * FROM loans 
+             WHERE employee_person_id = ? 
+               AND status = 'active' 
+               AND is_active = 1
+               AND paid_installments < installments_count
+             ORDER BY id`
+          )
+            .bind(employee_person_id)
+            .all();
+
+          for (const loan of activeLoans.results) {
+            const installmentAmt = parseFloat(loan.installment_amount) || 0;
+            if (installmentAmt > 0) {
+              loanInstallments += installmentAmt;
+              appliedDeductions.push({
+                type: "loan",
+                loan_id: loan.id,
+                title: `${loan.lender_name || "وام"} - قسط ${
+                  loan.paid_installments + 1
+                }`,
+                amount: installmentAmt,
+              });
+            }
+          }
+
+          // ۲. سایر کسورات فعال
+          const activeDeductions = await env.DB.prepare(
+            `SELECT ed.*, dt.title as type_title
+             FROM employee_deductions ed
+             LEFT JOIN deduction_types dt ON ed.deduction_type_id = dt.id
+             WHERE ed.employee_person_id = ? 
+               AND ed.status = 'active' 
+               AND ed.is_active = 1`
+          )
+            .bind(employee_person_id)
+            .all();
+
+          for (const ded of activeDeductions.results) {
+            const amt = parseFloat(ded.amount) || 0;
+            if (amt > 0) {
+              otherDeductions += amt;
+              appliedDeductions.push({
+                type: "deduction",
+                deduction_id: ded.id,
+                title: ded.title,
+                amount: amt,
+              });
+            }
+          }
 
           // جمع کسورات
-          const totalDeductions = insuranceEmployee + taxAmount + otherDeductions;
+          const totalDeductions =
+            insuranceEmployee + taxAmount + loanInstallments + otherDeductions;
 
           // خالص
           const netPay = totalGross - totalDeductions;
+
+          // تنظیمات اضافه برای snapshot
+          const extendedSettings = {
+            ...settings,
+            applied_deductions: appliedDeductions,
+            loan_installments: loanInstallments,
+            other_deductions: otherDeductions,
+          };
 
           const nowShamsi = toShamsi(new Date());
 
@@ -4261,62 +4450,140 @@ export default {
               total_deductions, net_pay, settings_snapshot, status,
               calculated_by, calculated_at_shamsi, created_at_shamsi, updated_at_shamsi)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'calculated', ?, ?, ?, ?)`
-          ).bind(
-            employee_person_id,
-            fiscal_year_id || null,
-            period_year,
-            period_month,
-            decree.id,
-            JSON.stringify(calculatedItems),
-            totalGross,
-            totalInsuranceSubject,
-            totalTaxSubject,
-            insuranceEmployee,
-            insuranceEmployer,
-            taxAmount,
-            otherDeductions,
-            totalDeductions,
-            netPay,
-            JSON.stringify(settings),
-            userData.userId,
-            nowShamsi,
-            nowShamsi,
-            nowShamsi
-          ).run();
+          )
+            .bind(
+              employee_person_id,
+              fiscal_year_id || null,
+              period_year,
+              period_month,
+              decree.id,
+              JSON.stringify(calculatedItems),
+              totalGross,
+              totalInsuranceSubject,
+              totalTaxSubject,
+              insuranceEmployee,
+              insuranceEmployer,
+              taxAmount,
+              otherDeductions + loanInstallments, // ← مجموع کسورات غیر بیمه/مالیات
+              totalDeductions,
+              netPay,
+              JSON.stringify(extendedSettings), // ← settings با applied_deductions
+              userData.userId,
+              nowShamsi,
+              nowShamsi,
+              nowShamsi
+            )
+            .run();
 
-          return new Response(JSON.stringify({
-            success: true,
-            id: result.meta.last_row_id,
-            calculation: {
-              total_gross: totalGross,
-              total_insurance_subject: totalInsuranceSubject,
-              total_tax_subject: totalTaxSubject,
-              insurance_employee: insuranceEmployee,
-              insurance_employer: insuranceEmployer,
-              tax_amount: taxAmount,
-              total_deductions: totalDeductions,
-              net_pay: netPay,
-              items: calculatedItems
+          // ============================================
+          // ثبت پرداخت اقساط وام
+          // ============================================
+          const calculationId = result.meta.last_row_id;
+
+          for (const loan of activeLoans.results) {
+            const installmentAmt = parseFloat(loan.installment_amount) || 0;
+            if (installmentAmt <= 0) continue;
+
+            const nextInstallmentNumber = (loan.paid_installments || 0) + 1;
+
+            // ثبت پرداخت
+            await env.DB.prepare(
+              `INSERT INTO loan_payments 
+               (loan_id, employee_person_id, installment_number, amount,
+                period_year, period_month, payroll_calculation_id,
+                status, created_at_shamsi)
+               VALUES (?, ?, ?, ?, ?, ?, ?, 'paid', ?)`
+            )
+              .bind(
+                loan.id,
+                employee_person_id,
+                nextInstallmentNumber,
+                installmentAmt,
+                period_year,
+                period_month,
+                calculationId,
+                nowShamsi
+              )
+              .run();
+
+            // آپدیت وام
+            const newPaidInstallments = (loan.paid_installments || 0) + 1;
+            const newPaidAmount = (loan.paid_amount || 0) + installmentAmt;
+            const newRemaining = (loan.total_amount || 0) - newPaidAmount;
+            const newStatus =
+              newPaidInstallments >= loan.installments_count
+                ? "completed"
+                : "active";
+
+            await env.DB.prepare(
+              `UPDATE loans SET
+                paid_installments = ?,
+                paid_amount = ?,
+                remaining_amount = ?,
+                status = ?,
+                updated_at = CURRENT_TIMESTAMP,
+                updated_at_shamsi = ?
+              WHERE id = ?`
+            )
+              .bind(
+                newPaidInstallments,
+                newPaidAmount,
+                newRemaining,
+                newStatus,
+                nowShamsi,
+                loan.id
+              )
+              .run();
+          }
+
+          return new Response(
+            JSON.stringify({
+              success: true,
+              id: result.meta.last_row_id,
+              calculation: {
+                total_gross: totalGross,
+                total_insurance_subject: totalInsuranceSubject,
+                total_tax_subject: totalTaxSubject,
+                insurance_employee: insuranceEmployee,
+                insurance_employer: insuranceEmployer,
+                tax_amount: taxAmount,
+                loan_installments: loanInstallments, // ← جدید
+                other_deductions: otherDeductions, // ← جدید
+                total_deductions: totalDeductions,
+                net_pay: netPay,
+                items: calculatedItems,
+                applied_deductions: appliedDeductions, // ← جدید
+              },
+            }),
+            {
+              status: 201,
+              headers,
             }
-          }), {
-            status: 201, headers,
-          });
+          );
         } catch (error) {
           console.error("Payroll calculate error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
-            status: 500, headers,
+            status: 500,
+            headers,
           });
         }
       }
 
       // DELETE: حذف محاسبه
-      if (url.pathname.match(/^\/api\/payroll-calculations\/\d+$/) && request.method === "DELETE") {
+      if (
+        url.pathname.match(/^\/api\/payroll-calculations\/\d+$/) &&
+        request.method === "DELETE"
+      ) {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
-              status: 401, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
@@ -4324,22 +4591,26 @@ export default {
 
           if (!userData || !["admin", "manager"].includes(userData.role)) {
             return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
-              status: 403, headers,
+              status: 403,
+              headers,
             });
           }
 
           const id = url.pathname.split("/").pop();
 
           await env.DB.prepare("DELETE FROM payroll_calculations WHERE id = ?")
-            .bind(id).run();
+            .bind(id)
+            .run();
 
           return new Response(JSON.stringify({ success: true }), {
-            status: 200, headers,
+            status: 200,
+            headers,
           });
         } catch (error) {
           console.error("Payroll calc DELETE error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
-            status: 500, headers,
+            status: 500,
+            headers,
           });
         }
       }
@@ -4349,9 +4620,13 @@ export default {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
-              status: 401, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
@@ -4359,7 +4634,8 @@ export default {
 
           if (!userData) {
             return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
-              status: 401, headers,
+              status: 401,
+              headers,
             });
           }
 
@@ -4374,16 +4650,737 @@ export default {
           ).all();
 
           return new Response(JSON.stringify(employees.results), {
-            status: 200, headers,
+            status: 200,
+            headers,
           });
         } catch (error) {
           console.error("Employees list error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
-            status: 500, headers,
+            status: 500,
+            headers,
           });
         }
       }
 
+      // ============================================
+      // Deduction Types API (انواع کسورات)
+      // ============================================
+
+      // GET: لیست انواع کسورات
+      if (url.pathname === "/api/deduction-types" && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401,
+              headers,
+            });
+          }
+
+          const items = await env.DB.prepare(
+            "SELECT * FROM deduction_types WHERE is_active = 1 ORDER BY sort_order"
+          ).all();
+
+          return new Response(JSON.stringify(items.results), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Deduction types error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // ============================================
+      // Loans API (وام‌ها)
+      // ============================================
+
+      // GET: لیست وام‌های یک کارمند
+      if (
+        url.pathname.match(/^\/api\/employees\/\d+\/loans$/) &&
+        request.method === "GET"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401,
+              headers,
+            });
+          }
+
+          const personId = url.pathname.split("/")[3];
+
+          const loans = await env.DB.prepare(
+            `SELECT * FROM loans WHERE employee_person_id = ? ORDER BY id DESC`
+          )
+            .bind(personId)
+            .all();
+
+          return new Response(JSON.stringify(loans.results), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Loans GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // GET: یک وام خاص
+      if (
+        url.pathname.match(/^\/api\/loans\/\d+$/) &&
+        request.method === "GET"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401,
+              headers,
+            });
+          }
+
+          const loanId = url.pathname.split("/").pop();
+
+          const loan = await env.DB.prepare(`SELECT * FROM loans WHERE id = ?`)
+            .bind(loanId)
+            .first();
+
+          if (!loan) {
+            return new Response(JSON.stringify({ error: "وام یافت نشد" }), {
+              status: 404,
+              headers,
+            });
+          }
+
+          // پرداخت‌ها
+          const payments = await env.DB.prepare(
+            `SELECT * FROM loan_payments WHERE loan_id = ? ORDER BY installment_number`
+          )
+            .bind(loanId)
+            .all();
+
+          return new Response(
+            JSON.stringify({
+              loan: loan,
+              payments: payments.results,
+            }),
+            {
+              status: 200,
+              headers,
+            }
+          );
+        } catch (error) {
+          console.error("Loan GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // POST: افزودن/ویرایش وام
+      if (
+        url.pathname.match(/^\/api\/employees\/\d+\/loans$/) &&
+        request.method === "POST"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const personId = url.pathname.split("/")[3];
+          const body = await request.json();
+
+          const {
+            id,
+            loan_type,
+            lender_name,
+            loan_number,
+            total_amount,
+            installments_count,
+            installment_amount,
+            start_date_shamsi,
+            end_date_shamsi,
+            first_installment_shamsi,
+            notes,
+          } = body;
+
+          if (!total_amount || !installments_count) {
+            return new Response(
+              JSON.stringify({ error: "مبلغ کل و تعداد اقساط الزامی است" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          const nowShamsi = toShamsi(new Date());
+          const installmentAmt =
+            installment_amount || Math.round(total_amount / installments_count);
+          const remaining = total_amount; // هنگام درج، مانده = کل
+
+          if (id) {
+            // UPDATE
+            await env.DB.prepare(
+              `UPDATE loans SET
+                loan_type = ?,
+                lender_name = ?,
+                loan_number = ?,
+                total_amount = ?,
+                installments_count = ?,
+                installment_amount = ?,
+                start_date_shamsi = ?,
+                end_date_shamsi = ?,
+                first_installment_shamsi = ?,
+                notes = ?,
+                updated_at = CURRENT_TIMESTAMP,
+                updated_at_shamsi = ?
+              WHERE id = ? AND employee_person_id = ?`
+            )
+              .bind(
+                loan_type || null,
+                lender_name || null,
+                loan_number || null,
+                total_amount,
+                installments_count,
+                installmentAmt,
+                start_date_shamsi || null,
+                end_date_shamsi || null,
+                first_installment_shamsi || null,
+                notes || null,
+                nowShamsi,
+                id,
+                personId
+              )
+              .run();
+
+            return new Response(JSON.stringify({ success: true, id: id }), {
+              status: 200,
+              headers,
+            });
+          } else {
+            // INSERT
+            const result = await env.DB.prepare(
+              `INSERT INTO loans 
+               (employee_person_id, loan_type, lender_name, loan_number,
+                total_amount, paid_amount, remaining_amount,
+                installments_count, installment_amount, paid_installments,
+                start_date_shamsi, end_date_shamsi, first_installment_shamsi,
+                status, notes, created_at_shamsi, updated_at_shamsi)
+               VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, 0, ?, ?, ?, 'active', ?, ?, ?)`
+            )
+              .bind(
+                personId,
+                loan_type || null,
+                lender_name || null,
+                loan_number || null,
+                total_amount,
+                remaining,
+                installments_count,
+                installmentAmt,
+                start_date_shamsi || null,
+                end_date_shamsi || null,
+                first_installment_shamsi || null,
+                notes || null,
+                nowShamsi,
+                nowShamsi
+              )
+              .run();
+
+            return new Response(
+              JSON.stringify({
+                success: true,
+                id: result.meta.last_row_id,
+              }),
+              {
+                status: 201,
+                headers,
+              }
+            );
+          }
+        } catch (error) {
+          console.error("Loan POST error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // DELETE: حذف وام
+      if (
+        url.pathname.match(/^\/api\/loans\/\d+$/) &&
+        request.method === "DELETE"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const loanId = url.pathname.split("/").pop();
+
+          await env.DB.prepare("DELETE FROM loans WHERE id = ?")
+            .bind(loanId)
+            .run();
+
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Loan DELETE error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // ============================================
+      // Employee Deductions API (کسورات غیر وام)
+      // ============================================
+
+      // GET: لیست کسورات یک کارمند
+      if (
+        url.pathname.match(/^\/api\/employees\/\d+\/deductions$/) &&
+        request.method === "GET"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401,
+              headers,
+            });
+          }
+
+          const personId = url.pathname.split("/")[3];
+
+          const ded = await env.DB.prepare(
+            `SELECT ed.*, dt.title as type_title, dt.code as type_code, dt.category as type_category
+             FROM employee_deductions ed
+             LEFT JOIN deduction_types dt ON ed.deduction_type_id = dt.id
+             WHERE ed.employee_person_id = ?
+             ORDER BY ed.id DESC`
+          )
+            .bind(personId)
+            .all();
+
+          return new Response(JSON.stringify(ded.results), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Deductions GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // POST: افزودن/ویرایش کسور
+      if (
+        url.pathname.match(/^\/api\/employees\/\d+\/deductions$/) &&
+        request.method === "POST"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const personId = url.pathname.split("/")[3];
+          const body = await request.json();
+
+          const {
+            id,
+            deduction_type_id,
+            title,
+            amount,
+            start_date_shamsi,
+            end_date_shamsi,
+            remaining_count,
+            notes,
+          } = body;
+
+          if (!title || !amount) {
+            return new Response(
+              JSON.stringify({ error: "عنوان و مبلغ الزامی است" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          const nowShamsi = toShamsi(new Date());
+
+          if (id) {
+            await env.DB.prepare(
+              `UPDATE employee_deductions SET
+                deduction_type_id = ?,
+                title = ?,
+                amount = ?,
+                start_date_shamsi = ?,
+                end_date_shamsi = ?,
+                remaining_count = ?,
+                notes = ?,
+                updated_at = CURRENT_TIMESTAMP,
+                updated_at_shamsi = ?
+              WHERE id = ? AND employee_person_id = ?`
+            )
+              .bind(
+                deduction_type_id || null,
+                title,
+                amount,
+                start_date_shamsi || null,
+                end_date_shamsi || null,
+                remaining_count || null,
+                notes || null,
+                nowShamsi,
+                id,
+                personId
+              )
+              .run();
+
+            return new Response(JSON.stringify({ success: true, id: id }), {
+              status: 200,
+              headers,
+            });
+          } else {
+            const result = await env.DB.prepare(
+              `INSERT INTO employee_deductions 
+               (employee_person_id, deduction_type_id, title, amount,
+                start_date_shamsi, end_date_shamsi, remaining_count,
+                status, notes, created_at_shamsi, updated_at_shamsi)
+               VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`
+            )
+              .bind(
+                personId,
+                deduction_type_id || null,
+                title,
+                amount,
+                start_date_shamsi || null,
+                end_date_shamsi || null,
+                remaining_count || null,
+                notes || null,
+                nowShamsi,
+                nowShamsi
+              )
+              .run();
+
+            return new Response(
+              JSON.stringify({
+                success: true,
+                id: result.meta.last_row_id,
+              }),
+              {
+                status: 201,
+                headers,
+              }
+            );
+          }
+        } catch (error) {
+          console.error("Deduction POST error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // DELETE: حذف کسور
+      if (
+        url.pathname.match(/^\/api\/employee-deductions\/\d+$/) &&
+        request.method === "DELETE"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const id = url.pathname.split("/").pop();
+
+          await env.DB.prepare("DELETE FROM employee_deductions WHERE id = ?")
+            .bind(id)
+            .run();
+
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Deduction DELETE error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // GET: پرداخت‌های وام
+      if (
+        url.pathname.match(/^\/api\/loans\/\d+\/payments$/) &&
+        request.method === "GET"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401,
+              headers,
+            });
+          }
+
+          const loanId = url.pathname.split("/")[3];
+
+          const payments = await env.DB.prepare(
+            `SELECT * FROM loan_payments WHERE loan_id = ? ORDER BY installment_number`
+          )
+            .bind(loanId)
+            .all();
+
+          return new Response(JSON.stringify(payments.results), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Loan payments GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // ============================================
+      // جستجوی کارکنان (بر اساس کد ملی یا نام)
+      // ============================================
+      if (
+        url.pathname === "/api/employees/search" &&
+        request.method === "GET"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401,
+              headers,
+            });
+          }
+
+          const query = url.searchParams.get("q") || "";
+          const limit = parseInt(url.searchParams.get("limit") || "20");
+
+          if (!query || query.length < 2) {
+            return new Response(
+              JSON.stringify({
+                error: "حداقل ۲ کاراکتر وارد کنید",
+                results: [],
+              }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          // جستجو بر اساس کد ملی یا نام
+          const searchPattern = `%${query}%`;
+
+          const employees = await env.DB.prepare(
+            `SELECT DISTINCT p.id, p.code, p.full_name, p.national_id, p.mobile,
+                    (SELECT COUNT(*) FROM decrees d 
+                     WHERE d.employee_person_id = p.id 
+                       AND d.status IN ('signed', 'active', 'issued')) as decrees_count
+             FROM persons p
+             INNER JOIN decrees d ON d.employee_person_id = p.id
+             WHERE p.person_type = 'employee' 
+               AND p.is_active = 1
+               AND (
+                 p.national_id LIKE ? 
+                 OR p.full_name LIKE ?
+                 OR p.code LIKE ?
+               )
+             ORDER BY p.full_name
+             LIMIT ?`
+          )
+            .bind(searchPattern, searchPattern, searchPattern, limit)
+            .all();
+
+          return new Response(
+            JSON.stringify({
+              results: employees.results,
+              count: employees.results.length,
+            }),
+            {
+              status: 200,
+              headers,
+            }
+          );
+        } catch (error) {
+          console.error("Employees search error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
       // ========== مدیریت کاربران ==========
 
       // دریافت لیست کاربران
@@ -6011,6 +7008,7 @@ export default {
         "/employee-profile.html",
         "/payroll-settings.html",
         "/payroll-calculate.html",
+        "/employee-deductions.html",
       ];
 
       if (staticPaths.includes(url.pathname)) {
