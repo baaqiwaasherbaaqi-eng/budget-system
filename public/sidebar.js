@@ -159,7 +159,12 @@ async function renderSidebar() {
       url: "/payroll-settings.html",
       permission: "base_info.view",
     },
-
+    {
+      icon: "🧮",
+      title: "محاسبه حقوق",
+      url: "/payroll-calculate.html",
+      permission: "budget.view",
+    },
 
   ];
 
@@ -368,6 +373,11 @@ function renderBreadcrumb() {
       title: "پرونده پرسنلی",
       parent: "/persons.html",
     },
+    "/payroll-calculate.html": {
+      icon: "🧮",
+      title: "محاسبه حقوق",
+      parent: "/dashboard.html",
+    },
   };
   
   const current = pathMap[currentPath];
@@ -546,6 +556,13 @@ function renderBreadcrumb() {
       title: "تنظیمات محاسبات",
       parent: "/base-info.html",
     },
+
+
+    "/payroll-calculate.html": {
+      icon: "🧮",
+      title: "محاسبه حقوق",
+      parent: "/dashboard.html",
+    },
   };
   
   const current = pathMap[currentPath];
@@ -622,6 +639,46 @@ window.addEventListener('load', function() {
         script.src = '/footer.js';
         document.head.appendChild(script);
     }
+})();
+
+// ============================================
+// اعمال فونت Vazirmatn روی همه فیلدهای ورودی
+// ============================================
+(function applyInputFont() {
+  function apply() {
+      // اضافه کردن style
+      if (!document.getElementById('input-font-style')) {
+          const style = document.createElement('style');
+          style.id = 'input-font-style';
+          style.textContent = `
+              input, select, textarea, button,
+              input[type="text"], input[type="number"], 
+              input[type="email"], input[type="tel"],
+              .amount-input, .number-input, .percent-input {
+                  font-family: 'Vazirmatn', 'Tahoma', sans-serif !important;
+              }
+          `;
+          document.head.appendChild(style);
+      }
+
+      // اعمال مستقیم با JS (برای اطمینان)
+      const applyToAll = () => {
+          document.querySelectorAll('input, select, textarea, button').forEach(el => {
+              el.style.setProperty('font-family', "'Vazirmatn', Tahoma, sans-serif", 'important');
+          });
+      };
+
+      applyToAll();
+
+      // هر ۱ ثانیه دوباره چک کن (برای فیلدهای داینامیک)
+      setInterval(applyToAll, 1000);
+  }
+
+  if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', apply);
+  } else {
+      apply();
+  }
 })();
 
 // ============================================
@@ -758,3 +815,7 @@ function renderTopBar() {
     oldHeader.style.display = "none";
   }
 }
+
+
+
+

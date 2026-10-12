@@ -2,18 +2,19 @@
 // توابع مشترک سامانه بودجه
 // ============================================
 
+
 // تبدیل اعداد فارسی به انگلیسی
 function toEnglishNumbers(str) {
   if (str === null || str === undefined) return "";
-  return str.toString().replace(/[۰-۹]/g, function (d) {
-    return "۰۱۲۳۴۵۶۷۸۹".indexOf(d);
+  return str.toString().replace(/[\u06F0-\u06F9]/g, function (d) {
+    return "\u06F0\u06F1\u06F2\u06F3\u06F4\u06F5\u06F6\u06F7\u06F8\u06F9".indexOf(d);
   });
 }
 
-// تبدیل اعداد انگلیسی به فارسی
+// تبدیل اعداد انگلیسی به فارسی (فارسی استاندارد - U+06F0 تا U+06F9)
 function toPersianNumbers(str) {
   if (str === null || str === undefined) return "";
-  const persianDigits = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
+  const persianDigits = ["\u06F0", "\u06F1", "\u06F2", "\u06F3", "\u06F4", "\u06F5", "\u06F6", "\u06F7", "\u06F8", "\u06F9"];
   return str.toString().replace(/\d/g, function (d) {
     return persianDigits[parseInt(d)];
   });

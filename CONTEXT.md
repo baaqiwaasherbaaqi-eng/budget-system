@@ -284,3 +284,29 @@
 - [ ] **مرحله ۶: حضور و غیاب**
 - [ ] **مرحله ۸: auto-generate بودجه**
 - [ ] **مرحله ۹: شهروند + خارج شهروند**
+
+
+### مرحله ۴ (تکمیل شد):
+- [x] **مرحله ۴.۱: جداول محاسبات**
+- [x] Migration 034: `payroll_items` + `payroll_settings`
+- [x] Seed ۳۱ آیتم حقوق + ۱۶ تنظیم
+- [x] API: `GET/PUT /api/payroll-settings` + `payroll-items`
+
+- [x] **مرحله ۴.۲: صفحه تنظیمات محاسبات**
+- [x] صفحه `payroll-settings.html` با ۶ تب
+- [x] نمایش فارسی اعداد (ریال با کاما، درصد، عدد)
+- [x] ویرایش مشمولیت‌های آیتم‌های حقوق
+
+- [x] **مرحله ۴.۳: صفحه محاسبه حقوق**
+- [x] Migration 035: `payroll_calculations`
+- [x] API: `payroll-calculations` (calculate, list, view, delete)
+- [x] API: `employees/list` (کارکنان با حکم)
+- [x] صفحه `payroll-calculate.html`
+- [x] محاسبه خودکار: بیمه (۷٪ کارمند، ۲۳٪ کارفرما) + مالیات
+- [x] فیش حقوقی با چاپ
+- [x] تاریخچه محاسبات
+- [x] فونت `Sahel` برای اعداد فارسی
+
+### اصلاحات:
+- [x] فونت `Sahel` برای نمایش اعداد فارسی
+- [x] `font-feature-settings` برای `amount-cell`

@@ -4009,6 +4009,381 @@ export default {
         }
       }
 
+
+      // ============================================
+      // Payroll Calculations API
+      // ============================================
+
+      // GET: لیست محاسبات
+      if (url.pathname === "/api/payroll-calculations" && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
+              status: 401, headers,
+            });
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401, headers,
+            });
+          }
+
+          const employeeId = url.searchParams.get("employee_person_id");
+          const year = url.searchParams.get("year");
+          const month = url.searchParams.get("month");
+
+          let query = `SELECT pc.*, p.full_name, p.national_id, p.code as person_code
+                       FROM payroll_calculations pc
+                       LEFT JOIN persons p ON pc.employee_person_id = p.id
+                       WHERE 1=1`;
+          const params = [];
+
+          if (employeeId) {
+            query += " AND pc.employee_person_id = ?";
+            params.push(employeeId);
+          }
+          if (year) {
+            query += " AND pc.period_year = ?";
+            params.push(year);
+          }
+          if (month) {
+            query += " AND pc.period_month = ?";
+            params.push(month);
+          }
+
+          query += " ORDER BY pc.period_year DESC, pc.period_month DESC, pc.id DESC LIMIT 200";
+
+          const items = await env.DB.prepare(query).bind(...params).all();
+
+          return new Response(JSON.stringify(items.results), {
+            status: 200, headers,
+          });
+        } catch (error) {
+          console.error("Payroll calc GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500, headers,
+          });
+        }
+      }
+
+      // GET: یک محاسبه خاص
+      if (url.pathname.match(/^\/api\/payroll-calculations\/\d+$/) && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
+              status: 401, headers,
+            });
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401, headers,
+            });
+          }
+
+          const id = url.pathname.split("/").pop();
+
+          const calc = await env.DB.prepare(
+            `SELECT pc.*, p.full_name, p.national_id, p.code as person_code, p.mobile
+             FROM payroll_calculations pc
+             LEFT JOIN persons p ON pc.employee_person_id = p.id
+             WHERE pc.id = ?`
+          ).bind(id).first();
+
+          if (!calc) {
+            return new Response(JSON.stringify({ error: "محاسبه یافت نشد" }), {
+              status: 404, headers,
+            });
+          }
+
+          // Parse JSON fields
+          try { calc.items_parsed = JSON.parse(calc.items || '[]'); } catch (e) { calc.items_parsed = []; }
+          try { calc.settings_parsed = JSON.parse(calc.settings_snapshot || '{}'); } catch (e) { calc.settings_parsed = {}; }
+
+          return new Response(JSON.stringify(calc), {
+            status: 200, headers,
+          });
+        } catch (error) {
+          console.error("Payroll calc GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500, headers,
+          });
+        }
+      }
+
+      // POST: محاسبه و ذخیره حقوق
+      if (url.pathname === "/api/payroll-calculations/calculate" && request.method === "POST") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
+              status: 401, headers,
+            });
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403, headers,
+            });
+          }
+
+          const body = await request.json();
+          const { employee_person_id, period_year, period_month, fiscal_year_id, decree_id } = body;
+
+          if (!employee_person_id || !period_year || !period_month) {
+            return new Response(JSON.stringify({ error: "اطلاعات ناقص" }), {
+              status: 400, headers,
+            });
+          }
+
+          // لود حکم
+          let decree;
+          if (decree_id) {
+            decree = await env.DB.prepare(
+              `SELECT * FROM decrees WHERE id = ?`
+            ).bind(decree_id).first();
+          } else {
+            decree = await env.DB.prepare(
+              `SELECT * FROM decrees 
+               WHERE employee_person_id = ? AND status IN ('signed', 'active', 'issued')
+               ORDER BY id DESC LIMIT 1`
+            ).bind(employee_person_id).first();
+          }
+
+          if (!decree) {
+            return new Response(JSON.stringify({ error: "حکم فعالی برای این کارمند یافت نشد" }), {
+              status: 404, headers,
+            });
+          }
+
+          // Parse آیتم‌های حکم
+          let decreeItems = [];
+          try {
+            decreeItems = JSON.parse(decree.items || '[]');
+          } catch (e) {
+            decreeItems = [];
+          }
+
+          // لود payroll_items برای مشمولیت‌ها
+          const payrollItemsData = await env.DB.prepare(
+            "SELECT * FROM payroll_items WHERE is_active = 1"
+          ).all();
+
+          const payrollItemsMap = {};
+          payrollItemsData.results.forEach(p => {
+            payrollItemsMap[p.title] = p;
+          });
+
+          // لود تنظیمات
+          const settingsData = await env.DB.prepare(
+            "SELECT setting_key, setting_value FROM payroll_settings WHERE fiscal_year_id IS NULL"
+          ).all();
+
+          const settings = {};
+          settingsData.results.forEach(s => {
+            settings[s.setting_key] = s.setting_value;
+          });
+
+          // محاسبه
+          let totalGross = 0;
+          let totalInsuranceSubject = 0;
+          let totalTaxSubject = 0;
+
+          const calculatedItems = decreeItems.map(di => {
+            const pi = payrollItemsMap[di.title] || {};
+            const amount = parseFloat(di.amount) || 0;
+            const isInsurance = pi.is_insurance_subject === 1;
+            const isTax = pi.is_tax_subject === 1;
+
+            totalGross += amount;
+            if (isInsurance) totalInsuranceSubject += amount;
+            if (isTax) totalTaxSubject += amount;
+
+            return {
+              code: di.code,
+              title: di.title,
+              amount: amount,
+              is_insurance: isInsurance,
+              is_tax: isTax
+            };
+          });
+
+          // محاسبه بیمه
+          const insuranceRateEmployee = parseFloat(settings.insurance_rate_employee || '7') / 100;
+          const insuranceRateEmployer = parseFloat(settings.insurance_rate_employer || '23') / 100;
+          const insuranceEmployee = Math.round(totalInsuranceSubject * insuranceRateEmployee);
+          const insuranceEmployer = Math.round(totalInsuranceSubject * insuranceRateEmployer);
+
+          // محاسبه مالیات (ساده - پله‌ای)
+          const taxExemption = parseFloat(settings.tax_exemption_monthly || '120000000');
+          const taxBase = Math.max(0, totalTaxSubject - taxExemption);
+          
+          // نرخ‌های پله‌ای
+          const rates = [
+            parseFloat(settings.tax_rate_1 || '10') / 100,
+            parseFloat(settings.tax_rate_2 || '15') / 100,
+            parseFloat(settings.tax_rate_3 || '20') / 100,
+            parseFloat(settings.tax_rate_4 || '25') / 100
+          ];
+
+          // محاسبه ساده مالیات (فقط پله اول برای الان)
+          const taxAmount = Math.round(taxBase * rates[0]);
+
+          // سایر کسورات (فعلاً ۰)
+          const otherDeductions = 0;
+
+          // جمع کسورات
+          const totalDeductions = insuranceEmployee + taxAmount + otherDeductions;
+
+          // خالص
+          const netPay = totalGross - totalDeductions;
+
+          const nowShamsi = toShamsi(new Date());
+
+          // ذخیره
+          const result = await env.DB.prepare(
+            `INSERT INTO payroll_calculations 
+             (employee_person_id, fiscal_year_id, period_year, period_month,
+              decree_id, items, total_gross, total_insurance_subject, total_tax_subject,
+              insurance_employee, insurance_employer, tax_amount, other_deductions,
+              total_deductions, net_pay, settings_snapshot, status,
+              calculated_by, calculated_at_shamsi, created_at_shamsi, updated_at_shamsi)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'calculated', ?, ?, ?, ?)`
+          ).bind(
+            employee_person_id,
+            fiscal_year_id || null,
+            period_year,
+            period_month,
+            decree.id,
+            JSON.stringify(calculatedItems),
+            totalGross,
+            totalInsuranceSubject,
+            totalTaxSubject,
+            insuranceEmployee,
+            insuranceEmployer,
+            taxAmount,
+            otherDeductions,
+            totalDeductions,
+            netPay,
+            JSON.stringify(settings),
+            userData.userId,
+            nowShamsi,
+            nowShamsi,
+            nowShamsi
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            id: result.meta.last_row_id,
+            calculation: {
+              total_gross: totalGross,
+              total_insurance_subject: totalInsuranceSubject,
+              total_tax_subject: totalTaxSubject,
+              insurance_employee: insuranceEmployee,
+              insurance_employer: insuranceEmployer,
+              tax_amount: taxAmount,
+              total_deductions: totalDeductions,
+              net_pay: netPay,
+              items: calculatedItems
+            }
+          }), {
+            status: 201, headers,
+          });
+        } catch (error) {
+          console.error("Payroll calculate error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500, headers,
+          });
+        }
+      }
+
+      // DELETE: حذف محاسبه
+      if (url.pathname.match(/^\/api\/payroll-calculations\/\d+$/) && request.method === "DELETE") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
+              status: 401, headers,
+            });
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403, headers,
+            });
+          }
+
+          const id = url.pathname.split("/").pop();
+
+          await env.DB.prepare("DELETE FROM payroll_calculations WHERE id = ?")
+            .bind(id).run();
+
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200, headers,
+          });
+        } catch (error) {
+          console.error("Payroll calc DELETE error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500, headers,
+          });
+        }
+      }
+
+      // GET: لیست کارکنان (برای dropdown)
+      if (url.pathname === "/api/employees/list" && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
+              status: 401, headers,
+            });
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401, headers,
+            });
+          }
+
+          // کارکنانی که حکم دارن
+          const employees = await env.DB.prepare(
+            `SELECT DISTINCT p.id, p.code, p.full_name, p.national_id, p.mobile,
+                    (SELECT COUNT(*) FROM decrees d WHERE d.employee_person_id = p.id AND d.status IN ('signed', 'active', 'issued')) as decrees_count
+             FROM persons p
+             INNER JOIN decrees d ON d.employee_person_id = p.id
+             WHERE p.person_type = 'employee' AND p.is_active = 1
+             ORDER BY p.full_name`
+          ).all();
+
+          return new Response(JSON.stringify(employees.results), {
+            status: 200, headers,
+          });
+        } catch (error) {
+          console.error("Employees list error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500, headers,
+          });
+        }
+      }
+
       // ========== مدیریت کاربران ==========
 
       // دریافت لیست کاربران
@@ -5635,6 +6010,7 @@ export default {
         "/permissions.html",
         "/employee-profile.html",
         "/payroll-settings.html",
+        "/payroll-calculate.html",
       ];
 
       if (staticPaths.includes(url.pathname)) {

@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>محاسبه حقوق و دستمزد</title>
+  <link rel="stylesheet" href="/sidebar.css" />
+  <script src="/sidebar.js"></script>
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: "Vazirmatn", Tahoma, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px 30px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .header h1 { margin: 0; font-size: 20px; }
+
+    /* ============ Selection Card ============ */
+    .selection-card {
+      background: white;
+      border-radius: 10px;
+      padding: 25px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 15px;
+      align-items: end;
+    }
+
+    .form-group { margin-bottom: 0; }
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      color: #444;
+      font-size: 13px;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-family: 'Vazirmatn', Tahoma, sans-serif;
+      font-size: 13px;
+      background: white;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    /* ============ Buttons ============ */
+    .btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-family: 'Vazirmatn', Tahoma, sans-serif;
+      font-size: 14px;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-secondary {
+      background: #e9ecef;
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      background: #dee2e6;
+    }
+
+    .btn-success {
+      background: #28a745;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #218838;
+    }
+
+    .btn-info {
+      background: #17a2b8;
+      color: white;
+    }
+
+    .btn-info:hover {
+      background: #138496;
+    }
+
+    /* ============ Result Card (فیش حقوقی) ============ */
+    .result-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .result-card.show { display: block; }
+
+    .result-header {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: white;
+      padding: 20px 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .result-header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .result-header .period {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    .result-body {
+      padding: 25px;
+    }
+
+    /* ============ Result Sections ============ */
+    .result-section {
+      margin-bottom: 25px;
+    }
+
+    .result-section-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #667eea;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e9ecef;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .result-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .result-table th {
+      background: #f8f9fa;
+      padding: 10px;
+      text-align: right;
+      font-weight: bold;
+      border-bottom: 2px solid #e0e0e0;
+      color: #333;
+      font-size: 12px;
+    }
+
+    .result-table td {
+      padding: 10px;
+      border-bottom: 1px solid #f0f0f0;
+      text-align: right;
+    }
+
+    .result-table tr:hover {
+      background: #fafafa;
+    }
+
+    .result-table .amount-cell {
+      font-family: monospace;
+      font-size: 13px;
+      color: #333;
+      text-align: left;
+      direction: ltr;
+    }
+
+    .result-table .total-row {
+      background: #f8f9fa !important;
+      font-weight: bold;
+    }
+
+    .result-table .total-row td {
+      border-top: 2px solid #667eea;
+      border-bottom: none;
+    }
+
+    .subject-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      margin-right: 4px;
+    }
+
+    .badge-insurance {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+
+    .badge-tax {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    /* ============ Summary Box ============ */
+    .summary-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+      font-size: 14px;
+    }
+
+    .summary-row:last-child {
+      border-bottom: none;
+      font-size: 18px;
+      font-weight: bold;
+      padding-top: 20px;
+      margin-top: 10px;
+      border-top: 2px solid rgba(255,255,255,0.4);
+    }
+
+    .summary-row .value {
+      font-family: monospace;
+      font-size: 15px;
+      direction: ltr;
+    }
+
+    .summary-row:last-child .value {
+      font-size: 20px;
+    }
+
+    /* ============ Actions ============ */
+    .actions-bar {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    /* ============ History ============ */
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .history-table th {
+      background: #f8f9fa;
+      padding: 12px;
+      text-align: right;
+      font-weight: bold;
+      border-bottom: 2px solid #e0e0e0;
+      font-size: 12px;
+    }
+
+    .history-table td {
+      padding: 12px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .history-table tr:hover {
+      background: #fafafa;
+    }
+
+    .status-badge {
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      color: white;
+    }
+
+    .status-draft { background: #6c757d; }
+    .status-calculated { background: #17a2b8; }
+    .status-approved { background: #28a745; }
+    .status-paid { background: #20c997; }
+    .status-cancelled { background: #dc3545; }
+
+    /* ============ Loading ============ */
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .loading .spinner {
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      border: 3px solid #e9ecef;
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 15px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ============ Empty State ============ */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .empty-state .icon {
+      font-size: 60px;
+      margin-bottom: 15px;
+      opacity: 0.5;
+    }
+
+    /* ============ Toast ============ */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #333;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      z-index: 10002;
+      transition: transform 0.3s;
+      font-family: 'Vazirmatn', Tahoma, sans-serif;
+    }
+
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { background: #28a745; }
+    .toast.error { background: #dc3545; }
+
+    /* ============ Dark Mode ============ */
+    body.dark { background: #1a202c; color: #e2e8f0; }
+    body.dark .selection-card,
+    body.dark .result-card { background: #2d3748; }
+    body.dark .form-group label { color: #cbd5e0; }
+    body.dark .form-group input,
+    body.dark .form-group select {
+      background: #1a202c;
+      border-color: #4a5568;
+      color: #e2e8f0;
+    }
+    body.dark .result-section-title { border-bottom-color: #4a5568; }
+    body.dark .result-table th { background: #1a202c; color: #e2e8f0; border-bottom-color: #4a5568; }
+    body.dark .result-table td { border-bottom-color: #4a5568; color: #e2e8f0; }
+    body.dark .result-table tr:hover { background: #374151; }
+    body.dark .result-table .total-row { background: #374151 !important; }
+    body.dark .history-table th { background: #1a202c; color: #e2e8f0; }
+    body.dark .history-table td { border-bottom-color: #4a5568; }
+    body.dark .btn-secondary { background: #4a5568; color: #e2e8f0; }
+
+    /* ============ Responsive ============ */
+    @media (max-width: 768px) {
+      .form-row { grid-template-columns: 1fr; }
+      .result-header { padding: 15px 20px; }
+      .result-header h2 { font-size: 16px; }
+      .result-body { padding: 15px; }
+      .summary-box { padding: 15px; }
+    }
+
+    /* ============ Print ============ */
+    @media print {
+      body { background: white; padding: 0; }
+      .selection-card,
+      .actions-bar,
+      .sidebar-toggle,
+      #top-bar,
+      .breadcrumb { display: none !important; }
+      .result-card { box-shadow: none; }
+    }
+
+    .amount-cell {
+      font-family: 'Sahel', 'Vazirmatn', Tahoma, sans-serif !important;
+      font-feature-settings: normal !important;
+      direction: ltr;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    .result-table .amount-cell {
+      font-family: 'Sahel', 'Vazirmatn', Tahoma, sans-serif !important;
+      font-feature-settings: normal !important;
+    }
+
+
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1>💰 محاسبه حقوق و دستمزد</h1>
+    </div>
+
+    <!-- انتخاب کارمند و دوره -->
+    <div class="selection-card">
+      <div class="form-row">
+        <div class="form-group">
+          <label>کارمند <span style="color:#e74c3c;">*</span></label>
+          <select id="employee-select">
+            <option value="">— در حال بارگذاری —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>سال <span style="color:#e74c3c;">*</span></label>
+          <input type="text" id="period-year" value="۱۴۰۵" />
+        </div>
+        <div class="form-group">
+          <label>ماه <span style="color:#e74c3c;">*</span></label>
+          <select id="period-month">
+            <option value="1">فروردین</option>
+            <option value="2">اردیبهشت</option>
+            <option value="3">خرداد</option>
+            <option value="4">تیر</option>
+            <option value="5">مرداد</option>
+            <option value="6">شهریور</option>
+            <option value="7">مهر</option>
+            <option value="8">آبان</option>
+            <option value="9">آذر</option>
+            <option value="10">دی</option>
+            <option value="11">بهمن</option>
+            <option value="12">اسفند</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary" id="btn-calculate" onclick="calculatePayroll()" style="width:100%;">
+            🧮 محاسبه حقوق
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- نتیجه محاسبه -->
+    <div class="result-card" id="result-card">
+      <!-- محتوا داینامیک -->
+    </div>
+
+    <!-- تاریخچه -->
+    <div class="result-card show" id="history-card">
+      <div class="result-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <h2>📋 تاریخچه محاسبات اخیر</h2>
+      </div>
+      <div class="result-body">
+        <div id="history-container">
+          <div class="loading">
+            <div class="spinner"></div>
+            <div>در حال بارگذاری...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/common.js"></script>
+
+  <script>
+    // ============================================
+    // بررسی احراز هویت
+    // ============================================
+    if (!isTokenValid()) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login.html";
+    }
+
+    const token = localStorage.getItem("token");
+    const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+    // ============================================
+    // وضعیت
+    // ============================================
+    let employees = [];
+    let lastCalculation = null;
+
+    // ============================================
+    // توابع کمکی
+    // ============================================
+    function showToast(message, type = "success") {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.className = `toast ${type} show`;
+      setTimeout(() => toast.classList.remove("show"), 3000);
+    }
+
+    function formatRial(amount) {
+      if (!amount && amount !== 0) return '۰';
+      return toPersianNumbers(
+        Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+      );
+    }
+
+    // ============================================
+    // لود کارکنان
+    // ============================================
+    async function loadEmployees() {
+      try {
+        const res = await fetch('/api/employees/list', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) throw new Error('خطا در دریافت کارکنان');
+
+        employees = await res.json();
+
+        const select = document.getElementById('employee-select');
+        select.innerHTML = '<option value="">— انتخاب کنید —</option>';
+
+        employees.forEach(emp => {
+          const opt = document.createElement('option');
+          opt.value = emp.id;
+          opt.textContent = `${emp.full_name} (${emp.code}) - ${emp.decrees_count} حکم`;
+          select.appendChild(opt);
+        });
+
+        if (employees.length === 0) {
+          select.innerHTML = '<option value="">— کارمندی با حکم ثبت نشده —</option>';
+        }
+      } catch (error) {
+        console.error('Load employees error:', error);
+        showToast(error.message, 'error');
+      }
+    }
+
+    // ============================================
+    // لود تاریخچه
+    // ============================================
+    async function loadHistory() {
+      try {
+        const res = await fetch('/api/payroll-calculations', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) throw new Error('خطا در دریافت تاریخچه');
+
+        const items = await res.json();
+        renderHistory(items);
+      } catch (error) {
+        console.error('Load history error:', error);
+        document.getElementById('history-container').innerHTML = `
+          <div class="empty-state">
+            <div class="icon">❌</div>
+            <div>${error.message}</div>
+          </div>`;
+      }
+    }
+
+    function renderHistory(items) {
+      const container = document.getElementById('history-container');
+
+      if (!items || items.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">📭</div>
+            <div>هنوز محاسبه‌ای ثبت نشده</div>
+          </div>`;
+        return;
+      }
+
+      const monthNames = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+
+      const statusLabels = {
+        draft: 'پیش‌نویس',
+        calculated: 'محاسبه شده',
+        approved: 'تایید شده',
+        paid: 'پرداخت شده',
+        cancelled: 'لغو شده'
+      };
+
+      let html = `
+        <div style="overflow-x: auto;">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>کارمند</th>
+                <th>دوره</th>
+                <th>جمع کل</th>
+                <th>کسورات</th>
+                <th>خالص پرداختی</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      items.forEach(item => {
+        html += `
+          <tr>
+            <td>
+              <strong>${item.full_name || '—'}</strong>
+              <div style="font-size: 11px; color: #999;">${item.person_code || ''}</div>
+            </td>
+            <td>${monthNames[item.period_month - 1] || item.period_month} ${toPersianNumbers(item.period_year)}</td>
+            <td class="amount-cell">${formatRial(item.total_gross)}</td>
+            <td class="amount-cell" style="color: #dc3545;">${formatRial(item.total_deductions)}</td>
+            <td class="amount-cell" style="color: #28a745; font-weight: bold;">${formatRial(item.net_pay)}</td>
+            <td>
+              <span class="status-badge status-${item.status}">
+                ${statusLabels[item.status] || item.status}
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-info" style="padding: 5px 10px; font-size: 11px;" onclick="viewCalculation(${item.id})">
+                👁️ مشاهده
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    // ============================================
+    // محاسبه حقوق
+    // ============================================
+    async function calculatePayroll() {
+      const employeeId = document.getElementById('employee-select').value;
+      const yearRaw = document.getElementById('period-year').value;
+      const month = document.getElementById('period-month').value;
+
+      if (!employeeId) {
+        showToast('کارمند را انتخاب کنید', 'error');
+        return;
+      }
+
+      const year = toEnglishNumbers(yearRaw);
+      if (!year || isNaN(year)) {
+        showToast('سال معتبر وارد کنید', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('btn-calculate');
+      btn.disabled = true;
+      btn.textContent = '⏳ در حال محاسبه...';
+
+      try {
+        const res = await fetch('/api/payroll-calculations/calculate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            employee_person_id: parseInt(employeeId),
+            period_year: parseInt(year),
+            period_month: parseInt(month)
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'خطا در محاسبه');
+
+        lastCalculation = {
+          ...data.calculation,
+          employee: employees.find(e => e.id === parseInt(employeeId)),
+          period_year: parseInt(year),
+          period_month: parseInt(month),
+          id: data.id
+        };
+
+        renderResult(lastCalculation);
+        showToast('محاسبه با موفقیت انجام شد');
+
+        // رفرش تاریخچه
+        loadHistory();
+      } catch (error) {
+        showToast(error.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🧮 محاسبه حقوق';
+      }
+    }
+
+    // ============================================
+    // رندر نتیجه (فیش حقوقی)
+    // ============================================
+    function renderResult(calc) {
+      const card = document.getElementById('result-card');
+      const monthNames = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+
+      // جدول آیتم‌های حقوق
+      let itemsHtml = '';
+      let totalItems = 0;
+
+      calc.items.forEach(item => {
+        totalItems += item.amount;
+
+        let badges = '';
+        if (item.is_insurance) badges += '<span class="subject-badge badge-insurance">بیمه</span>';
+        if (item.is_tax) badges += '<span class="subject-badge badge-tax">مالیات</span>';
+
+        itemsHtml += `
+          <tr>
+            <td>${item.code}) ${item.title} ${badges}</td>
+            <td class="amount-cell">${formatRial(item.amount)}</td>
+          </tr>
+        `;
+      });
+
+      // محاسبات
+      const insuranceEmployee = calc.insurance_employee || 0;
+      const insuranceEmployer = calc.insurance_employer || 0;
+      const taxAmount = calc.tax_amount || 0;
+      const totalDeductions = calc.total_deductions || 0;
+      const netPay = calc.net_pay || 0;
+
+      card.innerHTML = `
+        <div class="result-header">
+          <div>
+            <h2>📄 فیش حقوقی - ${calc.employee?.full_name || ''}</h2>
+            <div class="period">
+              کد ملی: ${calc.employee?.national_id || '—'} |
+              دوره: ${monthNames[calc.period_month - 1]} ${toPersianNumbers(calc.period_year)}
+            </div>
+          </div>
+          <button class="btn btn-secondary" onclick="window.print()" style="background: rgba(255,255,255,0.2); color: white;">
+            🖨️ چاپ
+          </button>
+        </div>
+
+        <div class="result-body">
+          <!-- بخش ۱: حقوق و مزایا -->
+          <div class="result-section">
+            <h3 class="result-section-title">💵 حقوق و مزایا</h3>
+            <table class="result-table">
+              <thead>
+                <tr>
+                  <th>شرح</th>
+                  <th style="width: 200px;">مبلغ (ریال)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml || '<tr><td colspan="2" style="text-align:center; color:#999;">آیتمی یافت نشد</td></tr>'}
+                <tr class="total-row">
+                  <td>جمع کل حقوق و مزایا</td>
+                  <td class="amount-cell">${formatRial(totalItems)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- بخش ۲: کسورات -->
+          <div class="result-section">
+            <h3 class="result-section-title">➖ کسورات</h3>
+            <table class="result-table">
+              <thead>
+                <tr>
+                  <th>شرح</th>
+                  <th style="width: 200px;">مبلغ (ریال)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>بیمه سهم کارمند (۷٪)</td>
+                  <td class="amount-cell" style="color: #dc3545;">${formatRial(insuranceEmployee)}</td>
+                </tr>
+                <tr>
+                  <td>مالیات حقوق</td>
+                  <td class="amount-cell" style="color: #dc3545;">${formatRial(taxAmount)}</td>
+                </tr>
+                <tr class="total-row">
+                  <td>جمع کسورات</td>
+                  <td class="amount-cell" style="color: #dc3545;">${formatRial(totalDeductions)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- بخش ۳: خلاصه -->
+          <div class="summary-box">
+            <div class="summary-row">
+              <span>جمع حقوق و مزایا</span>
+              <span class="value">${formatRial(totalItems)} ریال</span>
+            </div>
+            <div class="summary-row">
+              <span>جمع کسورات</span>
+              <span class="value">${formatRial(totalDeductions)} ریال</span>
+            </div>
+            <div class="summary-row">
+              <span>خالص پرداختی</span>
+              <span class="value">${formatRial(netPay)} ریال</span>
+            </div>
+          </div>
+
+          <!-- بخش ۴: بیمه کارفرما (اطلاعاتی) -->
+          <div class="result-section" style="margin-top: 20px;">
+            <h3 class="result-section-title">ℹ️ اطلاعات بیمه کارفرما</h3>
+            <table class="result-table">
+              <tbody>
+                <tr>
+                  <td>بیمه سهم کارفرما (۲۳٪)</td>
+                  <td class="amount-cell">${formatRial(insuranceEmployer)}</td>
+                </tr>
+                <tr>
+                  <td>جمع مشمول بیمه</td>
+                  <td class="amount-cell">${formatRial(calc.total_insurance_subject || 0)}</td>
+                </tr>
+                <tr>
+                  <td>جمع مشمول مالیات</td>
+                  <td class="amount-cell">${formatRial(calc.total_tax_subject || 0)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="actions-bar">
+            <button class="btn btn-secondary" onclick="closeResult()">
+              بستن
+            </button>
+            <button class="btn btn-info" onclick="viewCalculation(${calc.id})">
+              👁️ مشاهده کامل
+            </button>
+          </div>
+        </div>
+      `;
+
+      card.classList.add('show');
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function closeResult() {
+      document.getElementById('result-card').classList.remove('show');
+      lastCalculation = null;
+    }
+
+    // ============================================
+    // مشاهده محاسبه
+    // ============================================
+    async function viewCalculation(id) {
+      try {
+        const res = await fetch(`/api/payroll-calculations/${id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) throw new Error('خطا در دریافت محاسبه');
+
+        const calc = await res.json();
+        calc.items = calc.items_parsed || calc.items;
+        calc.employee = {
+          full_name: calc.full_name,
+          national_id: calc.national_id,
+          code: calc.person_code
+        };
+        calc.period_year = calc.period_year;
+        calc.period_month = calc.period_month;
+
+        renderResult(calc);
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+
+    // ============================================
+    // شروع
+    // ============================================
+    loadEmployees();
+    loadHistory();
+  </script>
+
+</body>
+</html>

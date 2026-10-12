@@ -525,3 +525,52 @@ body > .container {
     width: 100%;
 }
 
+/* ============================================
+   فونت یکدست برای همه فیلدهای ورودی
+   ============================================ */
+   input,
+   select,
+   textarea,
+   button {
+       font-family: 'Vazirmatn', Tahoma, sans-serif !important;
+   }
+   
+   /* فیلدهای عددی با اعداد فارسی */
+   input[type="text"],
+   input[type="number"] {
+       font-feature-settings: normal;
+       font-variant-numeric: normal;
+   }
+   
+   /* فیلدهای LTR (کد ملی، موبایل، شبا) */
+   input[dir="ltr"] {
+       direction: ltr;
+       text-align: left;
+   }
+
+
+   /* ============================================
+   فونت Sahel برای اعداد فارسی
+   ============================================ */
+@font-face {
+    font-family: 'Sahel';
+    src: url('https://cdn.jsdelivr.net/gh/rastikerdar/sahel-font@v3.4.0/dist/Sahel.woff2') format('woff2'),
+         url('https://cdn.jsdelivr.net/gh/rastikerdar/sahel-font@v3.4.0/dist/Sahel.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Sahel';
+    src: url('https://cdn.jsdelivr.net/gh/rastikerdar/sahel-font@v3.4.0/dist/Sahel-Bold.woff2') format('woff2'),
+         url('https://cdn.jsdelivr.net/gh/rastikerdar/sahel-font@v3.4.0/dist/Sahel-Bold.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* اعمال فونت */
+body, input, select, textarea, button {
+    font-family: 'Sahel', 'Vazirmatn', Tahoma, sans-serif !important;
+}
