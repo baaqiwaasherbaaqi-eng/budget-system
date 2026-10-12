@@ -1308,92 +1308,213 @@
       // تب اطلاعات پایه
       // ============================================
       function renderBasicTab() {
-        return `
+      return `
         <div class="section-divider">📋 اطلاعات سجلی</div>
+
         <div class="form-row">
-          <div class="form-group"><label>نام</label><input type="text" value="${
-            person.first_name || ""
-          }" disabled /></div>
-          <div class="form-group"><label>نام خانوادگی</label><input type="text" value="${
-            person.last_name || ""
-          }" disabled /></div>
+          <div class="form-group">
+            <label>نام <span class="required">*</span></label>
+            <input type="text" id="basic-first-name" value="${person.first_name || ''}" />
+          </div>
+          <div class="form-group">
+            <label>نام خانوادگی <span class="required">*</span></label>
+            <input type="text" id="basic-last-name" value="${person.last_name || ''}" />
+          </div>
         </div>
+
         <div class="form-row">
-          <div class="form-group"><label>نام پدر</label><input type="text" value="${
-            person.father_name || ""
-          }" disabled /></div>
-          <div class="form-group"><label>نام مادر</label><input type="text" value="${
-            person.mother_name || ""
-          }" disabled /></div>
+          <div class="form-group">
+            <label>نام پدر</label>
+            <input type="text" id="basic-father-name" value="${person.father_name || ''}" />
+          </div>
+          <div class="form-group">
+            <label>نام مادر</label>
+            <input type="text" id="basic-mother-name" value="${person.mother_name || ''}" />
+          </div>
         </div>
+
         <div class="form-row">
-          <div class="form-group"><label>کد ملی</label><input type="text" value="${
-            person.national_id || ""
-          }" dir="ltr" disabled /></div>
-          <div class="form-group"><label>شماره شناسنامه</label><input type="text" value="${
-            person.id_number || ""
-          }" disabled /></div>
+          <div class="form-group">
+            <label>کد ملی</label>
+            <input type="text" id="basic-national-id" value="${person.national_id || ''}" maxlength="10" dir="ltr" />
+          </div>
+          <div class="form-group">
+            <label>شماره شناسنامه</label>
+            <input type="text" id="basic-id-number" value="${person.id_number || ''}" />
+          </div>
         </div>
+
         <div class="form-row">
-          <div class="form-group"><label>تاریخ تولد</label><input type="text" value="${
-            toPersianDate(person.birth_date_shamsi) || ""
-          }" disabled /></div>
-          <div class="form-group"><label>محل تولد</label><input type="text" value="${
-            person.birth_place || ""
-          }" disabled /></div>
+          <div class="form-group">
+            <label>تاریخ تولد</label>
+            <input type="text" id="basic-birth-date" value="${toPersianDate(person.birth_date_shamsi)}" placeholder="۱۳۷۰/۰۱/۰۱" />
+          </div>
+          <div class="form-group">
+            <label>محل تولد</label>
+            <input type="text" id="basic-birth-place" value="${person.birth_place || ''}" />
+          </div>
         </div>
+
         <div class="form-row">
-          <div class="form-group"><label>جنسیت</label><input type="text" value="${
-            person.gender === "male"
-              ? "مرد"
-              : person.gender === "female"
-              ? "زن"
-              : "—"
-          }" disabled /></div>
-          <div class="form-group"><label>تابعیت</label><input type="text" value="${
-            person.nationality || "ایرانی"
-          }" disabled /></div>
+          <div class="form-group">
+            <label>جنسیت</label>
+            <select id="basic-gender">
+              <option value="">— انتخاب کنید —</option>
+              <option value="male" ${person.gender === 'male' ? 'selected' : ''}>مرد</option>
+              <option value="female" ${person.gender === 'female' ? 'selected' : ''}>زن</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>تابعیت</label>
+            <input type="text" id="basic-nationality" value="${person.nationality || 'ایرانی'}" />
+          </div>
         </div>
 
         <div class="section-divider">📞 اطلاعات تماس</div>
+
         <div class="form-row">
-          <div class="form-group"><label>موبایل</label><input type="text" value="${
-            person.mobile || ""
-          }" dir="ltr" disabled /></div>
-          <div class="form-group"><label>تلفن ثابت</label><input type="text" value="${
-            person.phone || ""
-          }" disabled /></div>
+          <div class="form-group">
+            <label>موبایل</label>
+            <input type="text" id="basic-mobile" value="${person.mobile || ''}" maxlength="11" dir="ltr" />
+          </div>
+          <div class="form-group">
+            <label>تلفن ثابت</label>
+            <input type="text" id="basic-phone" value="${person.phone || ''}" />
+          </div>
         </div>
-        <div class="form-group"><label>آدرس</label><textarea disabled>${
-          person.address || ""
-        }</textarea></div>
+
+        <div class="form-group">
+          <label>آدرس</label>
+          <textarea id="basic-address">${person.address || ''}</textarea>
+        </div>
+
         <div class="form-row">
-          <div class="form-group"><label>کد پستی</label><input type="text" value="${
-            person.postal_code || ""
-          }" disabled /></div>
-          <div class="form-group"><label>ایمیل</label><input type="text" value="${
-            person.email || ""
-          }" dir="ltr" disabled /></div>
+          <div class="form-group">
+            <label>کد پستی</label>
+            <input type="text" id="basic-postal-code" value="${person.postal_code || ''}" maxlength="10" />
+          </div>
+          <div class="form-group">
+            <label>ایمیل</label>
+            <input type="email" id="basic-email" value="${person.email || ''}" dir="ltr" />
+          </div>
         </div>
 
         <div class="section-divider">🏦 اطلاعات بانکی</div>
+
         <div class="form-row">
-          <div class="form-group"><label>نام بانک</label><input type="text" value="${
-            person.bank_name || ""
-          }" disabled /></div>
-          <div class="form-group"><label>شماره حساب</label><input type="text" value="${
-            person.bank_account || ""
-          }" dir="ltr" disabled /></div>
+          <div class="form-group">
+            <label>نام بانک</label>
+            <input type="text" id="basic-bank-name" value="${person.bank_name || ''}" />
+          </div>
+          <div class="form-group">
+            <label>شماره حساب</label>
+            <input type="text" id="basic-bank-account" value="${person.bank_account || ''}" dir="ltr" />
+          </div>
         </div>
-        <div class="form-group"><label>شبا</label><input type="text" value="${
-          person.iban || ""
-        }" dir="ltr" disabled /></div>
+
+        <div class="form-group">
+          <label>شبا (IR)</label>
+          <input type="text" id="basic-iban" value="${person.iban || ''}" dir="ltr" placeholder="IR..." />
+        </div>
 
         <div class="actions-bar">
-          <a href="/persons.html" class="btn btn-save" style="text-decoration:none;">✏️ ویرایش اطلاعات در صفحه اشخاص</a>
+          <button class="btn btn-save" id="btn-save-basic" onclick="saveBasicInfo()">
+            💾 ذخیره اطلاعات پایه
+          </button>
         </div>
       `;
+    }
+
+
+    // ============================================
+    // ذخیره اطلاعات پایه
+    // ============================================
+    async function saveBasicInfo() {
+      const btn = document.getElementById('btn-save-basic');
+      btn.disabled = true;
+      btn.textContent = '⏳ در حال ذخیره...';
+
+      try {
+        const firstName = document.getElementById('basic-first-name').value.trim();
+        const lastName = document.getElementById('basic-last-name').value.trim();
+        const fullName = `${firstName} ${lastName}`.trim();
+
+        if (!fullName) {
+          throw new Error('نام و نام خانوادگی الزامی است');
+        }
+
+        const data = {
+          full_name: fullName,
+          first_name: firstName || null,
+          last_name: lastName || null,
+          father_name: document.getElementById('basic-father-name').value.trim() || null,
+          mother_name: document.getElementById('basic-mother-name').value.trim() || null,
+          national_id: document.getElementById('basic-national-id').value.trim() || null,
+          id_number: document.getElementById('basic-id-number').value.trim() || null,
+          birth_date_shamsi: cleanDate(document.getElementById('basic-birth-date').value),
+          birth_place: document.getElementById('basic-birth-place').value.trim() || null,
+          gender: document.getElementById('basic-gender').value || null,
+          nationality: document.getElementById('basic-nationality').value.trim() || 'ایرانی',
+          mobile: document.getElementById('basic-mobile').value.trim() || null,
+          phone: document.getElementById('basic-phone').value.trim() || null,
+          address: document.getElementById('basic-address').value.trim() || null,
+          postal_code: document.getElementById('basic-postal-code').value.trim() || null,
+          email: document.getElementById('basic-email').value.trim() || null,
+          bank_name: document.getElementById('basic-bank-name').value.trim() || null,
+          bank_account: document.getElementById('basic-bank-account').value.trim() || null,
+          iban: document.getElementById('basic-iban').value.trim() || null,
+          is_active: person.is_active,
+        };
+
+        const res = await fetch(`/api/persons/${personId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'خطا');
+
+        showToast('اطلاعات پایه با موفقیت ذخیره شد');
+
+        // ریلود اطلاعات
+        const res2 = await fetch(`/api/employees/${personId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data2 = await res2.json();
+        person = data2.person;
+
+        // رفرش تب
+        const panel = document.getElementById('panel-basic');
+        if (panel) {
+          panel.innerHTML = renderBasicTab();
+          setTimeout(initBasicDatePickers, 100);
+        }
+      } catch (error) {
+        showToast(error.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '💾 ذخیره اطلاعات پایه';
       }
+    }
+
+    // ============================================
+    // DatePicker برای تب اطلاعات پایه
+    // ============================================
+    function initBasicDatePickers() {
+      const el = document.getElementById('basic-birth-date');
+      if (!el) return;
+      try { $("#basic-birth-date").persianDatepicker('destroy'); } catch (e) {}
+      $("#basic-birth-date").persianDatepicker({
+        format: 'YYYY/MM/DD',
+        autoClose: true,
+        persianDigit: true,
+        initialValue: !!el.value
+      });
+    }
 
       // ============================================
       // تب اطلاعات استخدامی

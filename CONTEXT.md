@@ -244,3 +244,22 @@
   - `س-004003` — اداره پسماند
 - `س-005` — معاونت فرهنگی و اجتماعی
 - `س-006` — معاونت برنامه‌ریزی و توسعه
+
+
+
+### مرحله ۷ (تکمیل شد):
+- [x] Migration 031: جدول `decrees` (احکام کارگزینی)
+- [x] Migration 032: جدول `decree_items` + Seed (۸ نوع حکم × آیتم‌ها)
+- [x] Migration 033: جدول `signatures` + `sms_log`
+- [x] API: `GET/POST/DELETE /api/employees/:id/decrees`
+- [x] API: `GET /api/decree-items?decree_type=...`
+- [x] API: `POST /api/signatures/send-otp` (mock SMS)
+- [x] API: `POST /api/signatures/verify`
+- [x] تب «احکام کارگزینی» توی `employee-profile.html`
+- [x] Modal افزودن/ویرایش حکم
+- [x] آیتم‌های حقوق داینامیک بر اساس نوع حکم
+- [x] Mock SMS + امضای دیجیتال
+
+### اصلاحات:
+- [x] **تب «اطلاعات پایه» توی پرونده پرسنلی قابل ویرایش شد**
+- [x] API `PUT /api/persons/:id` آپدیت شد (first_name, last_name, mother_name, birth_place, gender, nationality)
