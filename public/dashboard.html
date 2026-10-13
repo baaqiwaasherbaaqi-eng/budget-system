@@ -1,693 +1,732 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>داشبورد - سامانه بودجه شهرداری</title>
-    <link
-      href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css"
-      rel="stylesheet"
-      type="text/css"
-    />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/sidebar.css">
-    <script src="/sidebar.js"></script>
-    
-    <style>
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        font-family: "Vazirmatn", Tahoma, sans-serif;
-        background: #f0f2f5;
-        margin: 0;
-        padding: 0;
-        transition: background 0.3s, color 0.3s;
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>داشبورد - سامانه بودجه شهرداری</title>
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet"
+    type="text/css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="/sidebar.css">
+  <script src="/sidebar.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Vazirmatn", Tahoma, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 0;
+      transition: background 0.3s, color 0.3s;
+    }
+
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .welcome {
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .welcome h2 {
+      margin: 0 0 5px 0;
+      color: #333;
+    }
+
+    .welcome p {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      border-right: 4px solid;
+      transition: transform 0.2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card.blue {
+      border-color: #667eea;
+    }
+
+    .stat-card.green {
+      border-color: #28a745;
+    }
+
+    .stat-card.orange {
+      border-color: #fd7e14;
+    }
+
+    .stat-card.purple {
+      border-color: #6f42c1;
+    }
+
+    .stat-card h3 {
+      margin: 0 0 10px 0;
+      font-size: 13px;
+      color: #666;
+      font-weight: normal;
+    }
+
+    .stat-card .value {
+      font-size: 22px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .stat-card .unit {
+      font-size: 12px;
+      color: #999;
+      margin-top: 5px;
+    }
+
+    .section-title {
+      color: #333;
+      margin: 0 0 15px 0;
+      font-size: 18px;
+      padding: 12px 0;
+      border-bottom: 2px solid #667eea;
+      position: relative;
+    }
+
+    .section-title::before {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      right: 0;
+      width: 60px;
+      height: 2px;
+      background: #764ba2;
+    }
+
+    .section-divider {
+      height: 2px;
+      background: linear-gradient(90deg, #667eea 0%, transparent 100%);
+      margin: 30px 0;
+      border-radius: 2px;
+    }
+
+    body.dark .section-title {
+      color: #e2e8f0;
+      border-bottom-color: #667eea;
+    }
+
+    body.dark .section-divider {
+      background: linear-gradient(90deg, #667eea 0%, transparent 100%);
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+
+    .menu-card {
+      background: white;
+      padding: 25px 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      border: 2px solid transparent;
+    }
+
+    .menu-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.15);
+      border-color: #667eea;
+    }
+
+    .menu-card .icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .menu-card h3 {
+      margin: 0 0 5px 0;
+      font-size: 15px;
+      color: #333;
+    }
+
+    .menu-card p {
+      margin: 0;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+
+    .chart-card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .chart-card h3 {
+      margin: 0 0 15px 0;
+      font-size: 15px;
+      color: #333;
+    }
+
+
+    /* Dark mode */
+    body.dark {
+      background: #1a202c;
+      color: #e2e8f0;
+    }
+
+    body.dark .welcome,
+    body.dark .stat-card,
+    body.dark .menu-card,
+    body.dark .chart-card {
+      background: #2d3748;
+      color: #e2e8f0;
+    }
+
+    body.dark .welcome h2,
+    body.dark .stat-card .value,
+    body.dark .menu-card h3,
+    body.dark .section-title,
+    body.dark .chart-card h3 {
+      color: #e2e8f0;
+    }
+
+    body.dark .welcome p,
+    body.dark .stat-card h3,
+    body.dark .menu-card p {
+      color: #a0aec0;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header {
+        padding: 15px 20px;
       }
 
+      .header h1 {
+        font-size: 18px;
+      }
 
       .container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 20px;
+        padding: 15px;
       }
-      .welcome {
-        background: white;
-        padding: 25px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-      }
-      .welcome h2 {
-        margin: 0 0 5px 0;
-        color: #333;
-      }
-      .welcome p {
-        margin: 0;
-        color: #666;
-        font-size: 14px;
-      }
-      .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 15px;
-        margin-bottom: 25px;
-      }
-      .stat-card {
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-        border-right: 4px solid;
-        transition: transform 0.2s;
-      }
-      .stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-      }
-      .stat-card.blue {
-        border-color: #667eea;
-      }
-      .stat-card.green {
-        border-color: #28a745;
-      }
-      .stat-card.orange {
-        border-color: #fd7e14;
-      }
-      .stat-card.purple {
-        border-color: #6f42c1;
-      }
-      .stat-card h3 {
-        margin: 0 0 10px 0;
-        font-size: 13px;
-        color: #666;
-        font-weight: normal;
-      }
-      .stat-card .value {
-        font-size: 22px;
-        font-weight: bold;
-        color: #333;
-      }
-      .stat-card .unit {
-        font-size: 12px;
-        color: #999;
-        margin-top: 5px;
-      }
-        .section-title {
-            color: #333;
-            margin: 0 0 15px 0;
-            font-size: 18px;
-            padding: 12px 0;
-            border-bottom: 2px solid #667eea;
-            position: relative;
-        }
 
-        .section-title::before {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            right: 0;
-            width: 60px;
-            height: 2px;
-            background: #764ba2;
-        }
-
-        .section-divider {
-            height: 2px;
-            background: linear-gradient(90deg, #667eea 0%, transparent 100%);
-            margin: 30px 0;
-            border-radius: 2px;
-        }
-
-        body.dark .section-title {
-            color: #e2e8f0;
-            border-bottom-color: #667eea;
-        }
-
-        body.dark .section-divider {
-            background: linear-gradient(90deg, #667eea 0%, transparent 100%);
-        }
-      .menu-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-      }
-      .menu-card {
-        background: white;
-        padding: 25px 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-        cursor: pointer;
-        transition: all 0.2s;
-        text-align: center;
-        border: 2px solid transparent;
-      }
-      .menu-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.15);
-        border-color: #667eea;
-      }
-      .menu-card .icon {
-        font-size: 32px;
-        margin-bottom: 10px;
-      }
-      .menu-card h3 {
-        margin: 0 0 5px 0;
-        font-size: 15px;
-        color: #333;
-      }
-      .menu-card p {
-        margin: 0;
-        font-size: 12px;
-        color: #666;
-      }
       .charts-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-        gap: 20px;
-        margin-bottom: 25px;
-      }
-      .chart-card {
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-      }
-      .chart-card h3 {
-        margin: 0 0 15px 0;
-        font-size: 15px;
-        color: #333;
+        grid-template-columns: 1fr;
       }
 
-
-      /* Dark mode */
-      body.dark {
-        background: #1a202c;
-        color: #e2e8f0;
+      .menu-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       }
 
-      body.dark .welcome,
-      body.dark .stat-card,
-      body.dark .menu-card,
-      body.dark .chart-card {
-        background: #2d3748;
-        color: #e2e8f0;
-      }
-      body.dark .welcome h2,
-      body.dark .stat-card .value,
-      body.dark .menu-card h3,
-      body.dark .section-title,
-      body.dark .chart-card h3 {
-        color: #e2e8f0;
-      }
-      body.dark .welcome p,
-      body.dark .stat-card h3,
-      body.dark .menu-card p {
-        color: #a0aec0;
+      .menu-card {
+        padding: 20px 15px;
       }
 
-      /* Responsive */
-      @media (max-width: 768px) {
-        .header {
-          padding: 15px 20px;
-        }
-        .header h1 {
-          font-size: 18px;
-        }
-        .container {
-          padding: 15px;
-        }
-        .charts-grid {
-          grid-template-columns: 1fr;
-        }
-        .menu-grid {
-          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        }
-        .menu-card {
-          padding: 20px 15px;
-        }
-        .menu-card .icon {
-          font-size: 24px;
-        }
-        .menu-card h3 {
-          font-size: 13px;
-        }
+      .menu-card .icon {
+        font-size: 24px;
       }
-    </style>
-    
-  </head>
-  <body>
+
+      .menu-card h3 {
+        font-size: 13px;
+      }
+    }
+  </style>
+
+</head>
+
+<body>
 
 
-    <div class="container">
-      <h2 class="section-title">📋 دسترسی سریع</h2>
-      <div class="menu-grid" id="menu-grid"></div>
+  <div class="container">
+    <h2 class="section-title">📋 دسترسی سریع</h2>
+    <div class="menu-grid" id="menu-grid"></div>
 
+    <div class="section-divider"></div>
+
+    <h2 class="section-title">📊 آمار کلی</h2>
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <div id="charts-section" style="display: none">
       <div class="section-divider"></div>
-
-      <h2 class="section-title">📊 آمار کلی</h2>
-      <div class="stats-grid" id="stats-grid"></div>
-
-      <div id="charts-section" style="display: none">
-        <div class="section-divider"></div>
-        <h2 class="section-title">📊 نمودارها</h2>
-        <div class="charts-grid">
-          <div class="chart-card">
-            <h3>بودجه بر اساس وضعیت</h3>
-            <canvas id="status-chart"></canvas>
-          </div>
-          <div class="chart-card">
-            <h3>بودجه بر اساس سازمان</h3>
-            <canvas id="org-chart"></canvas>
-          </div>
+      <h2 class="section-title">📊 نمودارها</h2>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>بودجه بر اساس وضعیت</h3>
+          <canvas id="status-chart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>بودجه بر اساس سازمان</h3>
+          <canvas id="org-chart"></canvas>
         </div>
       </div>
     </div>
+  </div>
 
 
 
-    <script>
-      if (!localStorage.getItem("token")) {
-        window.location.href = "/login.html";
-      }
+  <script>
+    if (!localStorage.getItem("token")) {
+      window.location.href = "/login.html";
+    }
 
-      const token = localStorage.getItem("token");
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
 
-      function toPersianNumbers(str) {
-        if (!str && str !== 0) return "";
-        const persianDigits = [
-          "۰",
-          "۱",
-          "۲",
-          "۳",
-          "۴",
-          "۵",
-          "۶",
-          "۷",
-          "۸",
-          "۹",
-        ];
-        return str.toString().replace(/\d/g, function (d) {
-          return persianDigits[parseInt(d)];
-        });
-      }
-
-      function formatAmount(amount) {
-        if (!amount && amount !== 0) return "۰";
-        return toPersianNumbers(
-          Math.round(amount)
-            .toString()
-            .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-        );
-      }
-
-
-      // منوها
-            const allMenus = [
-        {
-          icon: "📂",
-          title: "اطلاعات پایه",
-          desc: "مدیریت اطلاعات پایه",
-          url: "/base-info.html",
-          permission: "base_info.view",
-        },
-        {
-          icon: "💰",
-          title: "بودجه پیشنهادی",
-          desc: "ثبت و مدیریت بودجه",
-          url: "/budget-proposals.html",
-          permission: "budget.view",
-        },
-        {
-          icon: "💳",
-          title: "تخصیص اعتبار",
-          desc: "تخصیص به سازمان‌ها",
-          url: "/allocations.html",
-          permission: "allocations.view",
-        },
-        {
-          icon: "💸",
-          title: "تامین اعتبار",
-          desc: "ثبت هزینه‌ها",
-          url: "/executions.html",
-          permission: "executions.view",
-        },
-        {
-          icon: "🔄",
-          title: "اصلاح بودجه",
-          desc: "اصلاحات و متمم",
-          url: "/revisions.html",
-          permission: "budget.view",
-        },
-        {
-          icon: "📈",
-          title: "گزارشات",
-          desc: "گزارش‌های مالی",
-          url: "/reports.html",
-          permission: "reports.view",
-        },
-        {
-          icon: "📊",
-          title: "گزارش پیشرفته",
-          desc: "گزارشات جامع",
-          url: "/advanced-reports.html",
-          permission: "reports.view",
-        },
-        {
-          icon: "📋",
-          title: "تفریغ بودجه",
-          desc: "مقایسه مصوب و عملکرد",
-          url: "/tafriq.html",
-          permission: "reports.view",
-        },
-        {
-          icon: "📅",
-          title: "سال مالی",
-          desc: "مدیریت سال مالی",
-          url: "/fiscal-years.html",
-          permission: "fiscal_years.view",
-        },
-        {
-          icon: "👥",
-          title: "مدیریت کاربران",
-          desc: "کاربران",
-          url: "/users.html",
-          permission: "users.view",
-        },
-        {
-          icon: "📜",
-          title: "لاگ سیستم",
-          desc: "تاریخچه عملیات",
-          url: "/audit-log.html",
-          permission: "audit_log.view",
-        },
-        {
-  icon: "🧮",
-  title: "محاسبه حقوق",
-  desc: "محاسبه حقوق و دستمزد",
-  url: "/payroll-calculate.html",
-  permission: "budget.view",
-},
-{
-  icon: "💰",
-  title: "کسورات و وام‌ها",
-  desc: "مدیریت وام‌ها و کسورات کارکنان",
-  url: "/employee-deductions.html",
-  permission: "budget.view",
-},
-
+    function toPersianNumbers(str) {
+      if (!str && str !== 0) return "";
+      const persianDigits = [
+        "۰",
+        "۱",
+        "۲",
+        "۳",
+        "۴",
+        "۵",
+        "۶",
+        "۷",
+        "۸",
+        "۹",
       ];
+      return str.toString().replace(/\d/g, function (d) {
+        return persianDigits[parseInt(d)];
+      });
+    }
 
-      const menuGrid = document.getElementById("menu-grid");
+    function formatAmount(amount) {
+      if (!amount && amount !== 0) return "۰";
+      return toPersianNumbers(
+        Math.round(amount)
+          .toString()
+          .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+      );
+    }
 
-      // لود Permission ها
-      async function initDashboard() {
-        try {
-          const res = await fetch('/api/me/permissions', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          
-          if (!res.ok) {
-            throw new Error('خطا در بررسی دسترسی');
-          }
-          
-          const data = await res.json();
-          const permissions = data.permissions || {};
 
-          // فیلتر منوها بر اساس Permission
-          allMenus.forEach((menu) => {
-            if (menu.permission === null || menu.permission === undefined || permissions[menu.permission]) {
-              createMenuCard(menu);
-            }
-          });
-        } catch (error) {
-          console.error('Error loading permissions:', error);
-          // اگه خطا داد، همه منوها رو نشون بده
-          allMenus.forEach((menu) => createMenuCard(menu));
+    // منوها
+    const allMenus = [
+      {
+        icon: "📂",
+        title: "اطلاعات پایه",
+        desc: "مدیریت اطلاعات پایه",
+        url: "/base-info.html",
+        permission: "base_info.view",
+      },
+      {
+        icon: "💰",
+        title: "بودجه پیشنهادی",
+        desc: "ثبت و مدیریت بودجه",
+        url: "/budget-proposals.html",
+        permission: "budget.view",
+      },
+      {
+        icon: "💳",
+        title: "تخصیص اعتبار",
+        desc: "تخصیص به سازمان‌ها",
+        url: "/allocations.html",
+        permission: "allocations.view",
+      },
+      {
+        icon: "💸",
+        title: "تامین اعتبار",
+        desc: "ثبت هزینه‌ها",
+        url: "/executions.html",
+        permission: "executions.view",
+      },
+      {
+        icon: "🔄",
+        title: "اصلاح بودجه",
+        desc: "اصلاحات و متمم",
+        url: "/revisions.html",
+        permission: "budget.view",
+      },
+      {
+        icon: "📈",
+        title: "گزارشات",
+        desc: "گزارش‌های مالی",
+        url: "/reports.html",
+        permission: "reports.view",
+      },
+      {
+        icon: "📊",
+        title: "گزارش پیشرفته",
+        desc: "گزارشات جامع",
+        url: "/advanced-reports.html",
+        permission: "reports.view",
+      },
+      {
+        icon: "📋",
+        title: "تفریغ بودجه",
+        desc: "مقایسه مصوب و عملکرد",
+        url: "/tafriq.html",
+        permission: "reports.view",
+      },
+      {
+        icon: "📅",
+        title: "سال مالی",
+        desc: "مدیریت سال مالی",
+        url: "/fiscal-years.html",
+        permission: "fiscal_years.view",
+      },
+      {
+        icon: "👥",
+        title: "مدیریت کاربران",
+        desc: "کاربران",
+        url: "/users.html",
+        permission: "users.view",
+      },
+      {
+        icon: "📜",
+        title: "لاگ سیستم",
+        desc: "تاریخچه عملیات",
+        url: "/audit-log.html",
+        permission: "audit_log.view",
+      },
+      {
+        icon: "🧮",
+        title: "محاسبه حقوق",
+        desc: "محاسبه حقوق و دستمزد",
+        url: "/payroll-calculate.html",
+        permission: "budget.view",
+      },
+      {
+        icon: "💰",
+        title: "کسورات و وام‌ها",
+        desc: "مدیریت وام‌ها و کسورات کارکنان",
+        url: "/employee-deductions.html",
+        permission: "budget.view",
+      },
+      {
+        icon: "📅",
+        title: "حضور و غیاب",
+        desc: "ثبت کارکرد، اضافه‌کاری، مأموریت",
+        url: "/attendance.html",
+        permission: "budget.view",
+      },
+    ];
+
+    const menuGrid = document.getElementById("menu-grid");
+
+    // لود Permission ها
+    async function initDashboard() {
+      try {
+        const res = await fetch('/api/me/permissions', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          throw new Error('خطا در بررسی دسترسی');
         }
+
+        const data = await res.json();
+        const permissions = data.permissions || {};
+
+        // فیلتر منوها بر اساس Permission
+        allMenus.forEach((menu) => {
+          if (menu.permission === null || menu.permission === undefined || permissions[menu.permission]) {
+            createMenuCard(menu);
+          }
+        });
+      } catch (error) {
+        console.error('Error loading permissions:', error);
+        // اگه خطا داد، همه منوها رو نشون بده
+        allMenus.forEach((menu) => createMenuCard(menu));
       }
+    }
 
-      initDashboard();
+    initDashboard();
 
-      function createMenuCard(menu) {
-        const card = document.createElement("div");
-        card.className = "menu-card";
-        card.onclick = () => (window.location.href = menu.url);
-        card.innerHTML = `
+    function createMenuCard(menu) {
+      const card = document.createElement("div");
+      card.className = "menu-card";
+      card.onclick = () => (window.location.href = menu.url);
+      card.innerHTML = `
                 <div class="icon">${menu.icon}</div>
                 <h3>${menu.title}</h3>
                 <p>${menu.desc}</p>
             `;
-        menuGrid.appendChild(card);
-      }
+      menuGrid.appendChild(card);
+    }
 
-      // لود آمار
-      async function loadStats() {
-        try {
-          const yearsRes = await fetch("/api/fiscal-years", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          const years = await yearsRes.json();
+    // لود آمار
+    async function loadStats() {
+      try {
+        const yearsRes = await fetch("/api/fiscal-years", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const years = await yearsRes.json();
 
-          const activeYear = years.find((y) => y.is_active);
+        const activeYear = years.find((y) => y.is_active);
 
-          if (!activeYear) {
-            document.getElementById("stats-grid").innerHTML = `
+        if (!activeYear) {
+          document.getElementById("stats-grid").innerHTML = `
                         <div class="stat-card blue">
                             <h3>سال مالی فعال</h3>
                             <div class="value">تعریف نشده</div>
                             <div class="unit">لطفاً سال مالی تعریف کنید</div>
                         </div>
                     `;
-            return;
+          return;
+        }
+
+        const budgetRes = await fetch(
+          `/api/budget-proposals?fiscal_year_id=${activeYear.id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
           }
+        );
+        const budgets = await budgetRes.json();
 
-          const budgetRes = await fetch(
-            `/api/budget-proposals?fiscal_year_id=${activeYear.id}`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-          const budgets = await budgetRes.json();
+        const totalAmount = budgets.reduce((sum, b) => sum + b.amount, 0);
+        const approvedBudgets = budgets.filter(
+          (b) => b.status === "approved"
+        );
+        const approvedAmount = approvedBudgets.reduce(
+          (sum, b) => sum + b.amount,
+          0
+        );
+        const pendingCount = budgets.filter(
+          (b) => b.status !== "approved" && b.status !== "rejected"
+        ).length;
 
-          const totalAmount = budgets.reduce((sum, b) => sum + b.amount, 0);
-          const approvedBudgets = budgets.filter(
-            (b) => b.status === "approved"
-          );
-          const approvedAmount = approvedBudgets.reduce(
-            (sum, b) => sum + b.amount,
-            0
-          );
-          const pendingCount = budgets.filter(
-            (b) => b.status !== "approved" && b.status !== "rejected"
-          ).length;
-
-          document.getElementById("stats-grid").innerHTML = `
+        document.getElementById("stats-grid").innerHTML = `
                     <div class="stat-card blue">
                         <h3>سال مالی فعال</h3>
                         <div class="value">${toPersianNumbers(
-                          activeYear.year
-                        )}</div>
+          activeYear.year
+        )}</div>
                         <div class="unit">در حال اجرا</div>
                     </div>
                     <div class="stat-card purple">
                         <h3>تعداد کل ردیف‌ها</h3>
                         <div class="value">${toPersianNumbers(
-                          budgets.length
-                        )}</div>
+          budgets.length
+        )}</div>
                         <div class="unit">ردیف بودجه</div>
                     </div>
                     <div class="stat-card green">
                         <h3>بودجه تصویب شده</h3>
                         <div class="value">${formatAmount(approvedAmount)}</div>
                         <div class="unit">ریال (${toPersianNumbers(
-                          approvedBudgets.length
-                        )} ردیف)</div>
+          approvedBudgets.length
+        )} ردیف)</div>
                     </div>
                     <div class="stat-card orange">
                         <h3>در انتظار تایید</h3>
                         <div class="value">${toPersianNumbers(
-                          pendingCount
-                        )}</div>
+          pendingCount
+        )}</div>
                         <div class="unit">ردیف</div>
                     </div>
                 `;
 
-          // نمودارها
-          if (
-            budgets.length > 0 &&
-            user.role !== "province" &&
-            user.role !== "ministry"
-          ) {
-            document.getElementById("charts-section").style.display = "block";
-            drawStatusChart(budgets);
-            drawOrgChart(budgets);
-          }
-        } catch (error) {
-          console.error("Error loading stats:", error);
+        // نمودارها
+        if (
+          budgets.length > 0 &&
+          user.role !== "province" &&
+          user.role !== "ministry"
+        ) {
+          document.getElementById("charts-section").style.display = "block";
+          drawStatusChart(budgets);
+          drawOrgChart(budgets);
         }
+      } catch (error) {
+        console.error("Error loading stats:", error);
       }
+    }
 
-      function drawStatusChart(budgets) {
-        const statusCounts = {};
-        budgets.forEach((b) => {
-          statusCounts[b.status] = (statusCounts[b.status] || 0) + 1;
-        });
+    function drawStatusChart(budgets) {
+      const statusCounts = {};
+      budgets.forEach((b) => {
+        statusCounts[b.status] = (statusCounts[b.status] || 0) + 1;
+      });
 
-        const statusLabels = {
-          draft: "پیش‌نویس",
-          submitted: "ارسال شده",
-          manager_approved: "تایید مدیر",
-          finance_approved: "تایید مالی",
-          approved: "تصویب نهایی",
-          rejected: "رد شده",
-        };
+      const statusLabels = {
+        draft: "پیش‌نویس",
+        submitted: "ارسال شده",
+        manager_approved: "تایید مدیر",
+        finance_approved: "تایید مالی",
+        approved: "تصویب نهایی",
+        rejected: "رد شده",
+      };
 
-        const colors = {
-          draft: "#6c757d",
-          submitted: "#17a2b8",
-          manager_approved: "#6f42c1",
-          finance_approved: "#fd7e14",
-          approved: "#28a745",
-          rejected: "#dc3545",
-        };
+      const colors = {
+        draft: "#6c757d",
+        submitted: "#17a2b8",
+        manager_approved: "#6f42c1",
+        finance_approved: "#fd7e14",
+        approved: "#28a745",
+        rejected: "#dc3545",
+      };
 
-                    const labels = Object.keys(statusCounts).map(k => statusLabels[k] || k);
-            const dataValues = Object.values(statusCounts);
-            const bgColors = Object.keys(statusCounts).map(k => colors[k] || '#667eea');
-            
-            new Chart(document.getElementById('status-chart'), {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: dataValues,
-                        backgroundColor: bgColors,
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
+      const labels = Object.keys(statusCounts).map(k => statusLabels[k] || k);
+      const dataValues = Object.values(statusCounts);
+      const bgColors = Object.keys(statusCounts).map(k => colors[k] || '#667eea');
+
+      new Chart(document.getElementById('status-chart'), {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: dataValues,
+            backgroundColor: bgColors,
+            borderWidth: 2,
+            borderColor: '#fff'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              rtl: true,
+              labels: {
+                font: {
+                  family: 'Vazirmatn',
+                  size: 13
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            rtl: true,
-                            labels: { 
-                                font: { 
-                                    family: 'Vazirmatn',
-                                    size: 13
-                                },
-                                padding: 15,
-                                usePointStyle: true,
-                                pointStyle: 'circle',
-                                generateLabels: function(chart) {
-                                    const data = chart.data;
-                                    if (data.labels.length && data.datasets.length) {
-                                        return data.labels.map((label, i) => {
-                                            const value = data.datasets[0].data[i];
-                                            return {
-                                                text: `${label} (${toPersianNumbers(value)})`,
-                                                fillStyle: data.datasets[0].backgroundColor[i],
-                                                strokeStyle: data.datasets[0].backgroundColor[i],
-                                                lineWidth: 0,
-                                                pointStyle: 'circle',
-                                                hidden: false,
-                                                index: i
-                                            };
-                                        });
-                                    }
-                                    return [];
-                                }
-                            }
-                        },
-                        tooltip: {
-                            titleFont: { family: 'Vazirmatn', size: 13 },
-                            bodyFont: { family: 'Vazirmatn', size: 13 },
-                            rtl: true,
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.parsed || 0;
-                                    return ` ${label}: ${toPersianNumbers(value)} ردیف`;
-                                }
-                            }
-                        }
-                    }
+                padding: 15,
+                usePointStyle: true,
+                pointStyle: 'circle',
+                generateLabels: function (chart) {
+                  const data = chart.data;
+                  if (data.labels.length && data.datasets.length) {
+                    return data.labels.map((label, i) => {
+                      const value = data.datasets[0].data[i];
+                      return {
+                        text: `${label} (${toPersianNumbers(value)})`,
+                        fillStyle: data.datasets[0].backgroundColor[i],
+                        strokeStyle: data.datasets[0].backgroundColor[i],
+                        lineWidth: 0,
+                        pointStyle: 'circle',
+                        hidden: false,
+                        index: i
+                      };
+                    });
+                  }
+                  return [];
                 }
-            });
-      }
-
-      function drawOrgChart(budgets) {
-        const orgTotals = {};
-        budgets.forEach((b) => {
-          if (b.status === "approved") {
-            const orgName = b.organization_name || "نامشخص";
-            orgTotals[orgName] = (orgTotals[orgName] || 0) + b.amount;
+              }
+            },
+            tooltip: {
+              titleFont: { family: 'Vazirmatn', size: 13 },
+              bodyFont: { family: 'Vazirmatn', size: 13 },
+              rtl: true,
+              callbacks: {
+                label: function (context) {
+                  const label = context.label || '';
+                  const value = context.parsed || 0;
+                  return ` ${label}: ${toPersianNumbers(value)} ردیف`;
+                }
+              }
+            }
           }
-        });
+        }
+      });
+    }
 
-        new Chart(document.getElementById("org-chart"), {
-          type: "bar",
-          data: {
-            labels: Object.keys(orgTotals),
-            datasets: [
-              {
-                label: "مبلغ (ریال)",
-                data: Object.values(orgTotals),
-                backgroundColor: "#667eea",
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: {
-                display: false,
-                labels: {
-                  font: { family: "Vazirmatn", size: 13 },
-                },
-              },
-              tooltip: {
-                titleFont: { family: "Vazirmatn", size: 13 },
-                bodyFont: { family: "Vazirmatn", size: 13 },
-                callbacks: {
-                  title: function (context) {
-                    return context[0].label;
-                  },
-                  label: function (context) {
-                    const value = context.parsed.y || 0;
-                    return `مبلغ: ${formatAmount(value)} ریال`;
-                  },
-                },
+    function drawOrgChart(budgets) {
+      const orgTotals = {};
+      budgets.forEach((b) => {
+        if (b.status === "approved") {
+          const orgName = b.organization_name || "نامشخص";
+          orgTotals[orgName] = (orgTotals[orgName] || 0) + b.amount;
+        }
+      });
+
+      new Chart(document.getElementById("org-chart"), {
+        type: "bar",
+        data: {
+          labels: Object.keys(orgTotals),
+          datasets: [
+            {
+              label: "مبلغ (ریال)",
+              data: Object.values(orgTotals),
+              backgroundColor: "#667eea",
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false,
+              labels: {
+                font: { family: "Vazirmatn", size: 13 },
               },
             },
-            scales: {
-              x: {
-                ticks: {
-                  font: { family: "Vazirmatn", size: 12 },
+            tooltip: {
+              titleFont: { family: "Vazirmatn", size: 13 },
+              bodyFont: { family: "Vazirmatn", size: 13 },
+              callbacks: {
+                title: function (context) {
+                  return context[0].label;
                 },
-              },
-              y: {
-                ticks: {
-                  font: { family: "Vazirmatn", size: 12 },
-                  callback: function (value) {
-                    const millions = value / 1000000;
-                    return toPersianNumbers(millions.toFixed(0)) + " میلیون";
-                  },
+                label: function (context) {
+                  const value = context.parsed.y || 0;
+                  return `مبلغ: ${formatAmount(value)} ریال`;
                 },
               },
             },
           },
-        });
-      }
+          scales: {
+            x: {
+              ticks: {
+                font: { family: "Vazirmatn", size: 12 },
+              },
+            },
+            y: {
+              ticks: {
+                font: { family: "Vazirmatn", size: 12 },
+                callback: function (value) {
+                  const millions = value / 1000000;
+                  return toPersianNumbers(millions.toFixed(0)) + " میلیون";
+                },
+              },
+            },
+          },
+        },
+      });
+    }
 
 
 
 
 
-      loadStats();
-    </script>
-  </body>
+    loadStats();
+  </script>
+</body>
+
 </html>

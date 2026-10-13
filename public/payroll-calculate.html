@@ -911,6 +911,16 @@
               <button class="btn btn-info" style="padding: 5px 10px; font-size: 11px;" onclick="viewCalculation(${item.id})">
                 👁️ مشاهده
               </button>
+              ${item.status !== 'cancelled' && (currentUser.role === 'admin' || currentUser.role === 'manager') ? `
+                <button class="btn btn-cancel" style="padding: 5px 10px; font-size: 11px; background:#fd7e14; color:white;" onclick="cancelCalculation(${item.id})" title="لغو">
+                  🚫 لغو
+                </button>
+              ` : ''}
+              ${item.status === 'cancelled' && currentUser.role === 'admin' ? `
+                <button class="btn btn-cancel" style="padding: 5px 10px; font-size: 11px; background:#dc3545; color:white;" onclick="deleteCalculation(${item.id})" title="حذف کامل">
+                  🗑️
+                </button>
+              ` : ''}
             </td>
           </tr>
         `;
@@ -990,11 +1000,15 @@
     // رندر نتیجه (فیش حقوقی)
     // ============================================
     function renderResult(calc) {
+ 
+      console.log('=== renderResult ===');
+      console.log('calc.items:', calc.items);
+ 
       const card = document.getElementById('result-card');
       const monthNames = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
 
-      // جدول آیتم‌های حقوق
-      let itemsHtml = '';
+       // جدول آیتم‌های حقوق
+       let itemsHtml = '';
       let totalItems = 0;
 
       calc.items.forEach(item => {
@@ -1004,9 +1018,15 @@
         if (item.is_insurance) badges += '<span class="subject-badge badge-insurance">بیمه</span>';
         if (item.is_tax) badges += '<span class="subject-badge badge-tax">مالیات</span>';
 
+        // اگه code انگلیسی بود (مثل OVERTIME)، فقط title رو نشون بده
+        const isEnglishCode = /^[A-Z_]+$/.test(item.code);
+        const displayText = isEnglishCode 
+          ? item.title 
+          : `${item.code}) ${item.title}`;
+
         itemsHtml += `
           <tr>
-            <td>${item.code}) ${item.title} ${badges}</td>
+            <td>${displayText} ${badges}</td>
             <td class="amount-cell">${formatRial(item.amount)}</td>
           </tr>
         `;
@@ -1085,6 +1105,13 @@
                     <td class="amount-cell" style="color: #dc3545;">${formatRial(d.amount)}</td>
                   </tr>
                 `).join('')}
+                ${(calc.applied_deductions || []).filter(d => d.type === 'absence').map(d => `
+                  <tr>
+                    <td>📅 ${d.title}</td>
+                    <td class="amount-cell" style="color: #dc3545;">${formatRial(d.amount)}</td>
+                  </tr>
+                `).join('')}
+
                 <tr class="total-row">
                   <td>جمع کسورات</td>
                   <td class="amount-cell" style="color: #dc3545;">${formatRial(totalDeductions)}</td>
@@ -1148,6 +1175,90 @@
     function closeResult() {
       document.getElementById('result-card').classList.remove('show');
       lastCalculation = null;
+    }
+
+        // ============================================
+    // حذف محاسبه
+    // ============================================
+    async function deleteCalculation(id) {
+      if (!confirm('مطمئن هستید این محاسبه حذف شود؟\n\n⚠️ توجه: اگر اقساط وام پرداخت شده باشند، آنها هم حذف می‌شوند.')) return;
+
+      try {
+        const res = await fetch(`/api/payroll-calculations/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'خطا در حذف');
+        }
+
+        showToast('با موفقیت حذف شد');
+        loadHistory();
+
+        // اگه محاسبه فعلی بود، ببندش
+        if (lastCalculation && lastCalculation.id === id) {
+          closeResult();
+        }
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+
+    // ============================================
+    // لغو محاسبه
+    // ============================================
+    async function cancelCalculation(id) {
+      const reason = prompt('دلیل لغو محاسبه را وارد کنید (اختیاری):');
+      if (reason === null) return; // کاربر کنسل کرد
+
+      if (!confirm('مطمئن هستید این محاسبه لغو شود؟\n\nاقساط وام پرداخت‌شده بازگردانده می‌شوند.')) return;
+
+      try {
+        const res = await fetch(`/api/payroll-calculations/${id}/cancel`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ reason })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'خطا در لغو');
+
+        showToast('محاسبه لغو شد و اقساط بازگردانده شدند');
+        loadHistory();
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+
+    // ============================================
+    // حذف کامل (فقط admin)
+    // ============================================
+    async function deleteCalculation(id) {
+      if (!confirm('مطمئن هستید این محاسبه برای همیشه حذف شود؟\n\nاین عمل قابل بازگشت نیست.')) return;
+
+      try {
+        const res = await fetch(`/api/payroll-calculations/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'خطا در حذف');
+
+        showToast('با موفقیت حذف شد');
+        loadHistory();
+
+        if (lastCalculation && lastCalculation.id === id) {
+          closeResult();
+        }
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
     }
 
     // ============================================

@@ -171,7 +171,12 @@ async function renderSidebar() {
       url: "/employee-deductions.html",
       permission: "budget.view",
     },
-
+    {
+      icon: "📅",
+      title: "حضور و غیاب",
+      url: "/attendance.html",
+      permission: "budget.view",
+    },
   ];
 
   // فیلتر بر اساس Permission
@@ -389,7 +394,11 @@ function renderBreadcrumb() {
       title: "کسورات و وام‌ها",
       parent: "/dashboard.html",
     },
-
+    "/attendance.html": {
+      icon: "📅",
+      title: "حضور و غیاب",
+      parent: "/dashboard.html",
+    },
   };
   
   const current = pathMap[currentPath];
@@ -580,7 +589,11 @@ function renderBreadcrumb() {
       title: "کسورات و وام‌ها",
       parent: "/dashboard.html",
     },
-
+    "/attendance.html": {
+      icon: "📅",
+      title: "حضور و غیاب",
+      parent: "/dashboard.html",
+    },
   };
   
   const current = pathMap[currentPath];

@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// .wrangler/tmp/bundle-OkJ3CY/checked-fetch.js
+// .wrangler/tmp/bundle-Bp5eqA/checked-fetch.js
 var urls = /* @__PURE__ */ new Set();
 function checkURL(request, init) {
   const url = request instanceof URL ? request : new URL(
@@ -3688,6 +3688,66 @@ var src_default = {
           settingsData.results.forEach((s) => {
             settings[s.setting_key] = s.setting_value;
           });
+          const attendance = await env.DB.prepare(
+            `SELECT * FROM attendance 
+             WHERE employee_person_id = ? 
+               AND period_year = ? 
+               AND period_month = ?
+               AND status IN ('draft', 'submitted', 'manager_approved', 'mayor_approved')`
+          ).bind(employee_person_id, period_year, period_month).first();
+          const baseSalaryItem = decreeItems.find((i) => i.title === "\u062D\u0642\u0648\u0642 \u0645\u0628\u0646\u0627" || i.title === "\u0645\u0632\u062F \u0634\u063A\u0644");
+          const baseSalary = baseSalaryItem ? parseFloat(baseSalaryItem.amount) : 0;
+          const hourlyRate = baseSalary > 0 ? baseSalary / 220 : 0;
+          if (attendance) {
+            const overtimeRate = parseFloat(settings.overtime_rate || "140") / 100;
+            const holidayRate = parseFloat(settings.holiday_rate || "140") / 100;
+            const nightshiftRate = parseFloat(settings.nightshift_rate || "35") / 100;
+            const missionRate = parseFloat(settings.mission_rate || "100") / 100;
+            if (attendance.overtime_hours > 0 && hourlyRate > 0) {
+              const overtimeAmount = Math.round(attendance.overtime_hours * hourlyRate * overtimeRate);
+              decreeItems.push({
+                code: "\u0636",
+                title: "\u0627\u0636\u0627\u0641\u0647 \u06A9\u0627\u0631\u06CC",
+                amount: overtimeAmount,
+                is_insurance_subject: true,
+                is_tax_subject: true
+              });
+            }
+            if (attendance.holiday_hours > 0 && hourlyRate > 0) {
+              const holidayAmount = Math.round(attendance.holiday_hours * hourlyRate * holidayRate);
+              decreeItems.push({
+                code: "\u0637",
+                title: "\u062A\u0639\u0637\u06CC\u0644 \u06A9\u0627\u0631\u06CC",
+                amount: holidayAmount,
+                is_insurance_subject: true,
+                is_tax_subject: true
+              });
+            }
+            if (attendance.nightshift_hours > 0 && hourlyRate > 0) {
+              const nightshiftAmount = Math.round(attendance.nightshift_hours * hourlyRate * nightshiftRate);
+              decreeItems.push({
+                code: "\u0638",
+                title: "\u0641\u0648\u0642 \u0627\u0644\u0639\u0627\u062F\u0647 \u0646\u0648\u0628\u062A \u06A9\u0627\u0631\u06CC",
+                amount: nightshiftAmount,
+                is_insurance_subject: true,
+                is_tax_subject: true
+              });
+            }
+            if (attendance.mission_days_with_stay > 0 || attendance.mission_days_without_stay > 0) {
+              const dailyRate = baseSalary / 30;
+              const totalMissionDays = (attendance.mission_days_with_stay || 0) + (attendance.mission_days_without_stay || 0);
+              if (totalMissionDays > 0) {
+                const missionAmount = Math.round(totalMissionDays * dailyRate * missionRate);
+                decreeItems.push({
+                  code: "\u0639",
+                  title: "\u0645\u0623\u0645\u0648\u0631\u06CC\u062A",
+                  amount: missionAmount,
+                  is_insurance_subject: true,
+                  is_tax_subject: true
+                });
+              }
+            }
+          }
           let totalGross = 0;
           let totalInsuranceSubject = 0;
           let totalTaxSubject = 0;
@@ -3757,6 +3817,18 @@ var src_default = {
                AND ed.status = 'active' 
                AND ed.is_active = 1`
           ).bind(employee_person_id).all();
+          if (attendance && attendance.absence_days > 0 && baseSalary > 0) {
+            const dailyRate = baseSalary / 30;
+            const absenceAmount = Math.round(attendance.absence_days * dailyRate);
+            if (absenceAmount > 0) {
+              otherDeductions += absenceAmount;
+              appliedDeductions.push({
+                type: "absence",
+                title: `\u06A9\u0633\u0631 \u063A\u06CC\u0628\u062A (${toPersianNumbers(attendance.absence_days)} \u0631\u0648\u0632)`,
+                amount: absenceAmount
+              });
+            }
+          }
           for (const ded of activeDeductions.results) {
             const amt = parseFloat(ded.amount) || 0;
             if (amt > 0) {
@@ -3888,17 +3960,14 @@ var src_default = {
           });
         }
       }
-      if (url.pathname.match(/^\/api\/payroll-calculations\/\d+$/) && request.method === "DELETE") {
+      if (url.pathname.match(/^\/api\/payroll-calculations\/\d+\/cancel$/) && request.method === "POST") {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(
-              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
-              {
-                status: 401,
-                headers
-              }
-            );
+            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
+              status: 401,
+              headers
+            });
           }
           const token = authHeader.replace("Bearer ", "");
           const userData = await verifyToken(token, env.JWT_SECRET);
@@ -3908,7 +3977,130 @@ var src_default = {
               headers
             });
           }
+          const id = url.pathname.split("/")[3];
+          const body = await request.json();
+          const { reason } = body;
+          const calc = await env.DB.prepare(
+            `SELECT * FROM payroll_calculations WHERE id = ?`
+          ).bind(id).first();
+          if (!calc) {
+            return new Response(JSON.stringify({ error: "\u0645\u062D\u0627\u0633\u0628\u0647 \u06CC\u0627\u0641\u062A \u0646\u0634\u062F" }), {
+              status: 404,
+              headers
+            });
+          }
+          if (calc.status === "cancelled") {
+            return new Response(JSON.stringify({ error: "\u0627\u06CC\u0646 \u0645\u062D\u0627\u0633\u0628\u0647 \u0642\u0628\u0644\u0627\u064B \u0644\u063A\u0648 \u0634\u062F\u0647" }), {
+              status: 400,
+              headers
+            });
+          }
+          const nowShamsi = toShamsi(/* @__PURE__ */ new Date());
+          const loanPayments = await env.DB.prepare(
+            `SELECT * FROM loan_payments 
+             WHERE payroll_calculation_id = ? AND status = 'paid'`
+          ).bind(id).all();
+          for (const payment of loanPayments.results) {
+            const loan = await env.DB.prepare(
+              `SELECT * FROM loans WHERE id = ?`
+            ).bind(payment.loan_id).first();
+            if (loan) {
+              const newPaidInstallments = Math.max(0, (loan.paid_installments || 0) - 1);
+              const newPaidAmount = Math.max(0, (loan.paid_amount || 0) - payment.amount);
+              const newRemaining = (loan.total_amount || 0) - newPaidAmount;
+              let newStatus = loan.status;
+              if (loan.status === "completed" && newPaidInstallments < loan.installments_count) {
+                newStatus = "active";
+              }
+              await env.DB.prepare(
+                `UPDATE loans SET
+                  paid_installments = ?,
+                  paid_amount = ?,
+                  remaining_amount = ?,
+                  status = ?,
+                  updated_at = CURRENT_TIMESTAMP,
+                  updated_at_shamsi = ?
+                WHERE id = ?`
+              ).bind(
+                newPaidInstallments,
+                newPaidAmount,
+                newRemaining,
+                newStatus,
+                nowShamsi,
+                loan.id
+              ).run();
+            }
+          }
+          await env.DB.prepare(
+            `UPDATE loan_payments SET status = 'cancelled' 
+             WHERE payroll_calculation_id = ?`
+          ).bind(id).run();
+          await env.DB.prepare(
+            `UPDATE payroll_calculations SET
+              status = 'cancelled',
+              cancelled_at = CURRENT_TIMESTAMP,
+              cancelled_by = ?,
+              cancelled_reason = ?,
+              updated_at = CURRENT_TIMESTAMP,
+              updated_at_shamsi = ?
+            WHERE id = ?`
+          ).bind(
+            userData.userId,
+            reason || null,
+            nowShamsi,
+            id
+          ).run();
+          return new Response(JSON.stringify({
+            success: true,
+            message: "\u0645\u062D\u0627\u0633\u0628\u0647 \u0644\u063A\u0648 \u0634\u062F \u0648 \u0627\u0642\u0633\u0627\u0637 \u0648\u0627\u0645 \u0628\u0627\u0632\u06AF\u0631\u062F\u0627\u0646\u062F\u0647 \u0634\u062F\u0646\u062F"
+          }), {
+            status: 200,
+            headers
+          });
+        } catch (error) {
+          console.error("Payroll cancel error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname.match(/^\/api\/payroll-calculations\/\d+$/) && request.method === "DELETE") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
+              status: 401,
+              headers
+            });
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData || userData.role !== "admin") {
+            return new Response(JSON.stringify({ error: "\u0641\u0642\u0637 \u0645\u062F\u06CC\u0631 \u0633\u06CC\u0633\u062A\u0645" }), {
+              status: 403,
+              headers
+            });
+          }
           const id = url.pathname.split("/").pop();
+          const calc = await env.DB.prepare(
+            `SELECT status FROM payroll_calculations WHERE id = ?`
+          ).bind(id).first();
+          if (!calc) {
+            return new Response(JSON.stringify({ error: "\u0645\u062D\u0627\u0633\u0628\u0647 \u06CC\u0627\u0641\u062A \u0646\u0634\u062F" }), {
+              status: 404,
+              headers
+            });
+          }
+          if (calc.status !== "cancelled") {
+            return new Response(JSON.stringify({
+              error: "\u0641\u0642\u0637 \u0645\u062D\u0627\u0633\u0628\u0627\u062A \u0644\u063A\u0648 \u0634\u062F\u0647 \u0642\u0627\u0628\u0644 \u062D\u0630\u0641 \u06A9\u0627\u0645\u0644 \u0647\u0633\u062A\u0646\u062F"
+            }), {
+              status: 400,
+              headers
+            });
+          }
+          await env.DB.prepare("DELETE FROM loan_payments WHERE payroll_calculation_id = ?").bind(id).run();
           await env.DB.prepare("DELETE FROM payroll_calculations WHERE id = ?").bind(id).run();
           return new Response(JSON.stringify({ success: true }), {
             status: 200,
@@ -4525,6 +4717,319 @@ var src_default = {
           );
         } catch (error) {
           console.error("Employees search error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname === "/api/attendance" && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
+              status: 401,
+              headers
+            });
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "\u062A\u0648\u06A9\u0646 \u0646\u0627\u0645\u0639\u062A\u0628\u0631" }), {
+              status: 401,
+              headers
+            });
+          }
+          const employeeId = url.searchParams.get("employee_person_id");
+          const year = url.searchParams.get("year");
+          const month = url.searchParams.get("month");
+          let query = `SELECT a.*, p.full_name, p.code as person_code, p.national_id
+                       FROM attendance a
+                       LEFT JOIN persons p ON a.employee_person_id = p.id
+                       WHERE 1=1`;
+          const params = [];
+          if (employeeId) {
+            query += " AND a.employee_person_id = ?";
+            params.push(employeeId);
+          }
+          if (year) {
+            query += " AND a.period_year = ?";
+            params.push(year);
+          }
+          if (month) {
+            query += " AND a.period_month = ?";
+            params.push(month);
+          }
+          query += " ORDER BY a.period_year DESC, a.period_month DESC, a.id DESC LIMIT 200";
+          const items = await env.DB.prepare(query).bind(...params).all();
+          return new Response(JSON.stringify(items.results), {
+            status: 200,
+            headers
+          });
+        } catch (error) {
+          console.error("Attendance GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname.match(/^\/api\/attendance\/\d+$/) && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
+              status: 401,
+              headers
+            });
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "\u062A\u0648\u06A9\u0646 \u0646\u0627\u0645\u0639\u062A\u0628\u0631" }), {
+              status: 401,
+              headers
+            });
+          }
+          const id = url.pathname.split("/").pop();
+          const item = await env.DB.prepare(
+            `SELECT a.*, p.full_name, p.code as person_code, p.national_id
+             FROM attendance a
+             LEFT JOIN persons p ON a.employee_person_id = p.id
+             WHERE a.id = ?`
+          ).bind(id).first();
+          if (!item) {
+            return new Response(JSON.stringify({ error: "\u0631\u06A9\u0648\u0631\u062F \u06CC\u0627\u0641\u062A \u0646\u0634\u062F" }), {
+              status: 404,
+              headers
+            });
+          }
+          return new Response(JSON.stringify(item), {
+            status: 200,
+            headers
+          });
+        } catch (error) {
+          console.error("Attendance GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname === "/api/attendance" && request.method === "POST") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
+              status: 401,
+              headers
+            });
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData || !["admin", "manager", "expert"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "\u062F\u0633\u062A\u0631\u0633\u06CC \u063A\u06CC\u0631\u0645\u062C\u0627\u0632" }), {
+              status: 403,
+              headers
+            });
+          }
+          const body = await request.json();
+          const {
+            id,
+            employee_person_id,
+            period_year,
+            period_month,
+            working_days,
+            absence_days,
+            leave_days,
+            sick_leave_days,
+            overtime_hours,
+            holiday_hours,
+            nightshift_hours,
+            mission_days_with_stay,
+            mission_days_without_stay,
+            notes
+          } = body;
+          if (!employee_person_id || !period_year || !period_month) {
+            return new Response(JSON.stringify({ error: "\u0627\u0637\u0644\u0627\u0639\u0627\u062A \u0646\u0627\u0642\u0635" }), {
+              status: 400,
+              headers
+            });
+          }
+          const nowShamsi = toShamsi(/* @__PURE__ */ new Date());
+          if (id) {
+            await env.DB.prepare(
+              `UPDATE attendance SET
+                working_days = ?,
+                absence_days = ?,
+                leave_days = ?,
+                sick_leave_days = ?,
+                overtime_hours = ?,
+                holiday_hours = ?,
+                nightshift_hours = ?,
+                mission_days_with_stay = ?,
+                mission_days_without_stay = ?,
+                notes = ?,
+                updated_at = CURRENT_TIMESTAMP,
+                updated_at_shamsi = ?
+              WHERE id = ?`
+            ).bind(
+              working_days || 0,
+              absence_days || 0,
+              leave_days || 0,
+              sick_leave_days || 0,
+              overtime_hours || 0,
+              holiday_hours || 0,
+              nightshift_hours || 0,
+              mission_days_with_stay || 0,
+              mission_days_without_stay || 0,
+              notes || null,
+              nowShamsi,
+              id
+            ).run();
+            return new Response(JSON.stringify({ success: true, id }), {
+              status: 200,
+              headers
+            });
+          } else {
+            const result = await env.DB.prepare(
+              `INSERT INTO attendance 
+               (employee_person_id, period_year, period_month,
+                working_days, absence_days, leave_days, sick_leave_days,
+                overtime_hours, holiday_hours, nightshift_hours,
+                mission_days_with_stay, mission_days_without_stay,
+                status, notes, created_at_shamsi, updated_at_shamsi)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?)`
+            ).bind(
+              employee_person_id,
+              period_year,
+              period_month,
+              working_days || 0,
+              absence_days || 0,
+              leave_days || 0,
+              sick_leave_days || 0,
+              overtime_hours || 0,
+              holiday_hours || 0,
+              nightshift_hours || 0,
+              mission_days_with_stay || 0,
+              mission_days_without_stay || 0,
+              notes || null,
+              nowShamsi,
+              nowShamsi
+            ).run();
+            return new Response(JSON.stringify({
+              success: true,
+              id: result.meta.last_row_id
+            }), {
+              status: 201,
+              headers
+            });
+          }
+        } catch (error) {
+          console.error("Attendance POST error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname.match(/^\/api\/attendance\/\d+\/approve$/) && request.method === "PUT") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
+              status: 401,
+              headers
+            });
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "\u062A\u0648\u06A9\u0646 \u0646\u0627\u0645\u0639\u062A\u0628\u0631" }), {
+              status: 401,
+              headers
+            });
+          }
+          const id = url.pathname.split("/")[3];
+          const body = await request.json();
+          const { approve_type, approved } = body;
+          if (!["manager", "mayor"].includes(approve_type)) {
+            return new Response(JSON.stringify({ error: "\u0646\u0648\u0639 \u062A\u0623\u06CC\u06CC\u062F \u0646\u0627\u0645\u0639\u062A\u0628\u0631" }), {
+              status: 400,
+              headers
+            });
+          }
+          const nowShamsi = toShamsi(/* @__PURE__ */ new Date());
+          if (approve_type === "manager") {
+            await env.DB.prepare(
+              `UPDATE attendance SET
+                manager_approved = ?,
+                manager_approved_by = ?,
+                manager_approved_at = CURRENT_TIMESTAMP,
+                status = ?,
+                updated_at_shamsi = ?
+              WHERE id = ?`
+            ).bind(
+              approved ? 1 : 0,
+              userData.userId,
+              approved ? "manager_approved" : "rejected",
+              nowShamsi,
+              id
+            ).run();
+          } else {
+            await env.DB.prepare(
+              `UPDATE attendance SET
+                mayor_approved = ?,
+                mayor_approved_by = ?,
+                mayor_approved_at = CURRENT_TIMESTAMP,
+                status = ?,
+                updated_at_shamsi = ?
+              WHERE id = ?`
+            ).bind(
+              approved ? 1 : 0,
+              userData.userId,
+              approved ? "mayor_approved" : "rejected",
+              nowShamsi,
+              id
+            ).run();
+          }
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers
+          });
+        } catch (error) {
+          console.error("Attendance approve error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname.match(/^\/api\/attendance\/\d+$/) && request.method === "DELETE") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
+              status: 401,
+              headers
+            });
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "\u062F\u0633\u062A\u0631\u0633\u06CC \u063A\u06CC\u0631\u0645\u062C\u0627\u0632" }), {
+              status: 403,
+              headers
+            });
+          }
+          const id = url.pathname.split("/").pop();
+          await env.DB.prepare("DELETE FROM attendance WHERE id = ?").bind(id).run();
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers
+          });
+        } catch (error) {
+          console.error("Attendance DELETE error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
             status: 500,
             headers
@@ -5799,7 +6304,8 @@ var src_default = {
         "/employee-profile.html",
         "/payroll-settings.html",
         "/payroll-calculate.html",
-        "/employee-deductions.html"
+        "/employee-deductions.html",
+        "/attendance.html"
       ];
       if (staticPaths.includes(url.pathname)) {
         return await env.ASSETS.fetch(request);
@@ -5818,7 +6324,7 @@ var src_default = {
   }
 };
 
-// C:/Users/User/AppData/Roaming/npm/node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
+// C:/Users/YAHOO/AppData/Roaming/npm/node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
 var drainBody = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx) => {
   try {
     return await middlewareCtx.next(request, env);
@@ -5836,7 +6342,7 @@ var drainBody = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "drainBody");
 var middleware_ensure_req_body_drained_default = drainBody;
 
-// C:/Users/User/AppData/Roaming/npm/node_modules/wrangler/templates/middleware/middleware-miniflare3-json-error.ts
+// C:/Users/YAHOO/AppData/Roaming/npm/node_modules/wrangler/templates/middleware/middleware-miniflare3-json-error.ts
 function reduceError(e) {
   return {
     name: e?.name,
@@ -5865,14 +6371,14 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-OkJ3CY/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-Bp5eqA/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
 ];
 var middleware_insertion_facade_default = src_default;
 
-// C:/Users/User/AppData/Roaming/npm/node_modules/wrangler/templates/middleware/common.ts
+// C:/Users/YAHOO/AppData/Roaming/npm/node_modules/wrangler/templates/middleware/common.ts
 var __facade_middleware__ = [];
 function __facade_register__(...args) {
   __facade_middleware__.push(...args.flat());
@@ -5897,7 +6403,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-OkJ3CY/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-Bp5eqA/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
