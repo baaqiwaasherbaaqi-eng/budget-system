@@ -263,7 +263,88 @@
       .menu-card h3 {
         font-size: 13px;
       }
+     
     }
+
+    /* ============ Card Context Menu ============ */
+    .card-menu {
+      position: fixed;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+      padding: 8px;
+      z-index: 10000;
+      min-width: 220px;
+      opacity: 0;
+      transition: opacity 0.15s;
+      pointer-events: none;
+    }
+
+    .card-menu.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .card-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 12px 16px;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Vazirmatn', Tahoma, sans-serif;
+      font-size: 14px;
+      color: #333;
+      text-align: right;
+      transition: background 0.15s;
+    }
+
+    .card-menu-item:hover {
+      background: #eef1ff;
+      color: #667eea;
+    }
+
+    .card-menu-icon {
+      font-size: 18px;
+      width: 24px;
+      text-align: center;
+    }
+
+    .card-menu-title {
+      font-weight: 500;
+    }
+
+    .card-arrow {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      color: #667eea;
+      opacity: 0.6;
+    }
+
+    .menu-card {
+      position: relative;
+    }
+
+    /* Dark Mode */
+    body.dark .card-menu {
+      background: #2d3748;
+    }
+
+    body.dark .card-menu-item {
+      color: #e2e8f0;
+    }
+
+    body.dark .card-menu-item:hover {
+      background: #4a5568;
+      color: #90cdf4;
+    }
+
   </style>
 
 </head>
@@ -344,6 +425,30 @@
         url: "/base-info.html",
         permission: "base_info.view",
       },
+    {
+      icon: "💼",
+      title: "حقوق و دستمزد",
+      desc: "محاسبه، کسورات، حضور و غیاب",
+      permission: "budget.view",
+      children: [
+        {
+          icon: "🧮",
+          title: "محاسبه حقوق",
+          url: "/payroll-calculate.html",
+        },
+        {
+          icon: "💰",
+          title: "کسورات و وام‌ها",
+          url: "/employee-deductions.html",
+        },
+        {
+          icon: "📅",
+          title: "حضور و غیاب",
+          url: "/attendance.html",
+        },
+      ],
+    },
+
       {
         icon: "💰",
         title: "بودجه پیشنهادی",
@@ -414,27 +519,7 @@
         url: "/audit-log.html",
         permission: "audit_log.view",
       },
-      {
-        icon: "🧮",
-        title: "محاسبه حقوق",
-        desc: "محاسبه حقوق و دستمزد",
-        url: "/payroll-calculate.html",
-        permission: "budget.view",
-      },
-      {
-        icon: "💰",
-        title: "کسورات و وام‌ها",
-        desc: "مدیریت وام‌ها و کسورات کارکنان",
-        url: "/employee-deductions.html",
-        permission: "budget.view",
-      },
-      {
-        icon: "📅",
-        title: "حضور و غیاب",
-        desc: "ثبت کارکرد، اضافه‌کاری، مأموریت",
-        url: "/attendance.html",
-        permission: "budget.view",
-      },
+ 
     ];
 
     const menuGrid = document.getElementById("menu-grid");
@@ -468,19 +553,107 @@
 
     initDashboard();
 
-    function createMenuCard(menu) {
-      const card = document.createElement("div");
-      card.className = "menu-card";
-      card.onclick = () => (window.location.href = menu.url);
-      card.innerHTML = `
-                <div class="icon">${menu.icon}</div>
-                <h3>${menu.title}</h3>
-                <p>${menu.desc}</p>
-            `;
-      menuGrid.appendChild(card);
-    }
+      function createMenuCard(menu) {
 
-    // لود آمار
+        const card = document.createElement("div");
+        card.className = "menu-card";
+
+        // اگه children داره → دکمه منو
+        if (menu.children && menu.children.length > 0) {
+          card.classList.add('has-children');
+          card.onclick = (e) => {
+            e.stopPropagation();
+            openCardMenu(card, menu.children);
+          };
+        } else {
+          // آیتم معمولی
+          card.onclick = () => (window.location.href = menu.url);
+        }
+
+        card.innerHTML = `
+          <div class="icon">${menu.icon}</div>
+          <h3>${menu.title}</h3>
+          <p>${menu.desc}</p>
+          ${menu.children ? '<span class="card-arrow">▼</span>' : ''}
+        `;
+        menuGrid.appendChild(card);
+      }
+
+      // ============================================
+      // باز کردن منوی کارت
+      // ============================================
+      function openCardMenu(card, children) {
+        // بستن منوهای قبلی
+        closeAllCardMenus();
+
+        // ساخت منو
+        const menu = document.createElement('div');
+        menu.className = 'card-menu';
+        menu.id = 'active-card-menu';
+
+        children.forEach(child => {
+          const item = document.createElement('button');
+          item.className = 'card-menu-item';
+          item.innerHTML = `
+            <span class="card-menu-icon">${child.icon}</span>
+            <span class="card-menu-title">${child.title}</span>
+          `;
+          item.onclick = (e) => {
+            e.stopPropagation();
+            window.location.href = child.url;
+          };
+          menu.appendChild(item);
+        });
+
+        // اضافه به body
+        document.body.appendChild(menu);
+
+        // ⚠️ اول show کن (تا مرورگر render کنه)
+        menu.classList.add('show');
+
+        // بعد توی فریم بعدی، موقعیت رو حساب کن
+        requestAnimationFrame(() => {
+          const cardRect = card.getBoundingClientRect();
+          const menuRect = menu.getBoundingClientRect();
+
+          console.log('=== Position Debug ===');
+          console.log('cardRect:', cardRect);
+          console.log('menuRect:', menuRect);
+
+          let left = cardRect.left + (cardRect.width / 2) - (menuRect.width / 2);
+          let top = cardRect.top + (cardRect.height / 2) - (menuRect.height / 2);
+
+          // چک لبه‌ها
+          if (left < 10) left = 10;
+          if (left + menuRect.width > window.innerWidth - 10) {
+            left = window.innerWidth - menuRect.width - 10;
+          }
+          if (top < 10) top = 10;
+          if (top + menuRect.height > window.innerHeight - 10) {
+            top = window.innerHeight - menuRect.height - 10;
+          }
+
+          menu.style.left = left + 'px';
+          menu.style.top = top + 'px';
+          menu.style.zIndex = '99999'; // ← مهم!
+
+          console.log('final left:', left, 'top:', top);
+        });
+
+        // بستن با کلیک بیرون
+        setTimeout(() => {
+          document.addEventListener('click', closeAllCardMenus, { once: true });
+        }, 100);
+      }
+     
+      // ============================================
+      // بستن همه منوهای کارت
+      // ============================================
+      function closeAllCardMenus() {
+        document.querySelectorAll('.card-menu').forEach(m => m.remove());
+      }
+
+     // لود آمار
     async function loadStats() {
       try {
         const yearsRes = await fetch("/api/fiscal-years", {

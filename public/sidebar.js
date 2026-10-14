@@ -94,6 +94,32 @@ async function renderSidebar() {
       permission: "persons.view",
     },
     {
+      icon: "💼",
+      title: "حقوق و دستمزد",
+      permission: "budget.view",
+      children: [
+        {
+          icon: "🧮",
+          title: "محاسبه حقوق",
+          url: "/payroll-calculate.html",
+          permission: "budget.view",
+        },
+        {
+          icon: "💰",
+          title: "کسورات و وام‌ها",
+          url: "/employee-deductions.html",
+          permission: "budget.view",
+        },
+        {
+          icon: "📅",
+          title: "حضور و غیاب",
+          url: "/attendance.html",
+          permission: "budget.view",
+        },
+      ],
+    },
+
+    {
       icon: "💰",
       title: "بودجه پیشنهادی",
       url: "/budget-proposals.html",
@@ -159,24 +185,6 @@ async function renderSidebar() {
       url: "/payroll-settings.html",
       permission: "base_info.view",
     },
-    {
-      icon: "🧮",
-      title: "محاسبه حقوق",
-      url: "/payroll-calculate.html",
-      permission: "budget.view",
-    },
-    {
-      icon: "💰",
-      title: "کسورات و وام‌ها",
-      url: "/employee-deductions.html",
-      permission: "budget.view",
-    },
-    {
-      icon: "📅",
-      title: "حضور و غیاب",
-      url: "/attendance.html",
-      permission: "budget.view",
-    },
   ];
 
   // فیلتر بر اساس Permission
@@ -202,16 +210,58 @@ async function renderSidebar() {
             </div>
             <nav class="sidebar-nav">
                 ${visibleMenus
+                  .map((menu) => {
+                    // اگه children داره، Submenu
+                    if (menu.children && menu.children.length > 0) {
+                      const childrenVisible = menu.children.filter((child) => {
+                        if (!child.permission) return true;
+                        return hasPermission(child.permission);
+                      });
+
+                      if (childrenVisible.length === 0) return "";
+
+                      // آیا یکی از فرزندان فعاله؟
+                      const hasActiveChild = childrenVisible.some(
+                        (child) => currentPath === child.url
+                      );
+
+                      return `
+            <div class="sidebar-group ${hasActiveChild ? "active" : ""}">
+              <button class="sidebar-link sidebar-group-toggle" onclick="toggleSidebarGroup(this)">
+                <span class="sidebar-icon">${menu.icon}</span>
+                <span class="sidebar-text">${menu.title}</span>
+                <span class="sidebar-arrow">▼</span>
+              </button>
+              <div class="sidebar-submenu ${hasActiveChild ? "open" : ""}">
+                ${childrenVisible
                   .map(
-                    (menu) => `
-                    <a href="${menu.url}" class="sidebar-link ${
+                    (child) => `
+                      <a href="${
+                        child.url
+                      }" class="sidebar-link sidebar-sublink ${
+                      currentPath === child.url ? "active" : ""
+                    }">
+                        <span class="sidebar-icon">${child.icon}</span>
+                        <span class="sidebar-text">${child.title}</span>
+                      </a>
+                    `
+                  )
+                  .join("")}
+              </div>
+            </div>
+          `;
+                    }
+
+                    // آیتم معمولی
+                    return `
+          <a href="${menu.url}" class="sidebar-link ${
                       currentPath === menu.url ? "active" : ""
                     }">
-                        <span class="sidebar-icon">${menu.icon}</span>
-                        <span class="sidebar-text">${menu.title}</span>
-                    </a>
-                `
-                  )
+            <span class="sidebar-icon">${menu.icon}</span>
+            <span class="sidebar-text">${menu.title}</span>
+          </a>
+        `;
+                  })
                   .join("")}
             </nav>
             <div class="sidebar-footer">
@@ -237,6 +287,17 @@ function getRoleLabel(role) {
     ministry: "وزارت کشور",
   };
   return labels[role] || role;
+}
+
+// ============================================
+// باز/بسته کردن Submenu
+// ============================================
+function toggleSidebarGroup(btn) {
+  const group = btn.closest('.sidebar-group');
+  const submenu = group.querySelector('.sidebar-submenu');
+  
+  group.classList.toggle('open');
+  submenu.classList.toggle('open');
 }
 
 function toggleSidebar() {
@@ -309,6 +370,22 @@ function renderBreadcrumb() {
       title: "مشخصات شهرداری",
       parent: "/base-info.html",
     },
+    "/payroll-calculate.html": {
+      icon: "🧮",
+      title: "محاسبه حقوق",
+      parent: "/dashboard.html",
+    },
+    "/employee-deductions.html": {
+      icon: "💰",
+      title: "کسورات و وام‌ها",
+      parent: "/dashboard.html",
+    },
+    "/attendance.html": {
+      icon: "📅",
+      title: "حضور و غیاب",
+      parent: "/dashboard.html",
+    },
+
     "/fiscal-years.html": {
       icon: "📅",
       title: "سال مالی",
@@ -383,21 +460,6 @@ function renderBreadcrumb() {
       icon: "📁",
       title: "پرونده پرسنلی",
       parent: "/persons.html",
-    },
-    "/payroll-calculate.html": {
-      icon: "🧮",
-      title: "محاسبه حقوق",
-      parent: "/dashboard.html",
-    },
-    "/employee-deductions.html": {
-      icon: "💰",
-      title: "کسورات و وام‌ها",
-      parent: "/dashboard.html",
-    },
-    "/attendance.html": {
-      icon: "📅",
-      title: "حضور و غیاب",
-      parent: "/dashboard.html",
     },
   };
   

@@ -5577,11 +5577,10 @@ export default {
           const employees = await env.DB.prepare(
             `SELECT DISTINCT p.id, p.code, p.full_name, p.national_id, p.mobile,
                     (SELECT COUNT(*) FROM decrees d 
-                     WHERE d.employee_person_id = p.id 
-                       AND d.status IN ('signed', 'active', 'issued')) as decrees_count
+                     WHERE d.employee_person_id = p.id) as decrees_count
              FROM persons p
-             INNER JOIN decrees d ON d.employee_person_id = p.id
              WHERE p.person_type = 'employee' 
+               AND p.level = 4
                AND p.is_active = 1
                AND (
                  p.national_id LIKE ? 

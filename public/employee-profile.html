@@ -1237,46 +1237,26 @@
         <div class="tabs-nav">
           <button class="tab-item active" onclick="switchTab('basic', this)">📋 اطلاعات پایه</button>
           <button class="tab-item" onclick="switchTab('employment', this)">💼 اطلاعات استخدامی</button>
-          <button class="tab-item" onclick="switchTab('contract', this)">📄 قرارداد + امضا</button>
           <button class="tab-item" onclick="switchTab('decrees', this)">📋 احکام کارگزینی</button>
           <button class="tab-item" onclick="switchTab('dependents', this)">👨‍👩‍👧 افراد تحت تکفل</button>
-          <button class="tab-item" onclick="switchTab('calculations', this)">💰 محاسبات</button>
-          <button class="tab-item" onclick="switchTab('deductions', this)">💳 کسورات</button>
-          <button class="tab-item" onclick="switchTab('attendance', this)">📅 حضور و غیاب</button>
           <button class="tab-item" onclick="switchTab('organization', this)">🏢 واحد سازمانی</button>
           <button class="tab-item" onclick="switchTab('tasks', this)">🎯 وظایف</button>
-          <button class="tab-item" onclick="switchTab('education', this)">🎓 مدرک تحصیلی</button>
         </div>
 
         <div class="tab-content">
           <div class="tab-panel active" id="panel-basic">${renderBasicTab()}</div>
           <div class="tab-panel" id="panel-employment">${renderEmploymentTab()}</div>
-          <div class="tab-panel" id="panel-contract">
-            <div class="placeholder"><div class="icon">📄</div><h3>متن قرارداد + امضای دیجیتال</h3><p>به زودی</p></div>
-          </div>
           <div class="tab-panel" id="panel-decrees">
             ${renderDecreesTab()}
           </div>
           <div class="tab-panel" id="panel-dependents">
             ${renderDependentsTab()}
           </div>
-          <div class="tab-panel" id="panel-calculations">
-            <div class="placeholder"><div class="icon">💰</div><h3>محاسبات بیمه و مالیات</h3><p>به زودی</p></div>
-          </div>
-          <div class="tab-panel" id="panel-deductions">
-            <div class="placeholder"><div class="icon">💳</div><h3>کسورات حقوق</h3><p>به زودی</p></div>
-          </div>
-          <div class="tab-panel" id="panel-attendance">
-            <div class="placeholder"><div class="icon">📅</div><h3>حضور و غیاب</h3><p>به زودی</p></div>
-          </div>
           <div class="tab-panel" id="panel-organization">
             <div class="placeholder"><div class="icon">🏢</div><h3>واحد سازمانی</h3><p>به زودی</p></div>
           </div>
           <div class="tab-panel" id="panel-tasks">
             ${renderTasksTab()}
-          </div>
-          <div class="tab-panel" id="panel-education">
-            <div class="placeholder"><div class="icon">🎓</div><h3>مدرک تحصیلی</h3><p>به زودی</p></div>
           </div>
         </div>
       `;
@@ -1307,9 +1287,20 @@
       // ============================================
       // تب اطلاعات پایه
       // ============================================
-      function renderBasicTab() {
+     function renderBasicTab() {
       return `
         <div class="section-divider">📋 اطلاعات سجلی</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>کد ملی <span class="required">*</span></label>
+            <input type="text" id="basic-national-id" value="${person.national_id || ''}" maxlength="10" dir="ltr" />
+          </div>
+          <div class="form-group">
+            <label>شماره شناسنامه</label>
+            <input type="text" id="basic-id-number" value="${person.id_number || ''}" />
+          </div>
+        </div>
 
         <div class="form-row">
           <div class="form-group">
@@ -1330,17 +1321,6 @@
           <div class="form-group">
             <label>نام مادر</label>
             <input type="text" id="basic-mother-name" value="${person.mother_name || ''}" />
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>کد ملی</label>
-            <input type="text" id="basic-national-id" value="${person.national_id || ''}" maxlength="10" dir="ltr" />
-          </div>
-          <div class="form-group">
-            <label>شماره شناسنامه</label>
-            <input type="text" id="basic-id-number" value="${person.id_number || ''}" />
           </div>
         </div>
 
@@ -1383,11 +1363,6 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label>آدرس</label>
-          <textarea id="basic-address">${person.address || ''}</textarea>
-        </div>
-
         <div class="form-row">
           <div class="form-group">
             <label>کد پستی</label>
@@ -1397,6 +1372,11 @@
             <label>ایمیل</label>
             <input type="email" id="basic-email" value="${person.email || ''}" dir="ltr" />
           </div>
+        </div>
+
+        <div class="form-group">
+          <label>آدرس</label>
+          <textarea id="basic-address">${person.address || ''}</textarea>
         </div>
 
         <div class="section-divider">🏦 اطلاعات بانکی</div>
@@ -1424,7 +1404,6 @@
         </div>
       `;
     }
-
 
     // ============================================
     // ذخیره اطلاعات پایه

@@ -574,3 +574,92 @@ body > .container {
 body, input, select, textarea, button {
     font-family: 'Sahel', 'Vazirmatn', Tahoma, sans-serif !important;
 }
+
+/* ============ Sidebar Group (Submenu) ============ */
+.sidebar-group {
+  position: relative;
+}
+
+.sidebar-group-toggle {
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: right;
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  color: #333;
+  font-size: 14px;
+  transition: all 0.2s;
+  border-right: 3px solid transparent;
+}
+
+.sidebar-group-toggle:hover {
+  background: #f0f2f5;
+  color: #667eea;
+}
+
+.sidebar-group.active .sidebar-group-toggle {
+  background: #eef1ff;
+  color: #667eea;
+  border-right-color: #667eea;
+  font-weight: bold;
+}
+
+.sidebar-arrow {
+  margin-right: auto;
+  font-size: 10px;
+  transition: transform 0.2s;
+  color: #999;
+}
+
+.sidebar-group.open .sidebar-arrow {
+  transform: rotate(180deg);
+}
+
+.sidebar-submenu {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  background: #fafafa;
+}
+
+.sidebar-submenu.open {
+  max-height: 500px;
+}
+
+.sidebar-sublink {
+  padding-right: 45px !important;
+  font-size: 13px !important;
+}
+
+.sidebar-sublink.active {
+  background: #eef1ff;
+  color: #667eea;
+  font-weight: bold;
+}
+
+/* Dark mode */
+body.dark .sidebar-group-toggle {
+  color: #e2e8f0;
+}
+
+body.dark .sidebar-group-toggle:hover {
+  background: #4a5568;
+}
+
+body.dark .sidebar-group.active .sidebar-group-toggle {
+  background: #4a5568;
+  color: #90cdf4;
+}
+
+body.dark .sidebar-submenu {
+  background: #1a202c;
+}
+
+body.dark .sidebar-sublink.active {
+  background: #4a5568;
+  color: #90cdf4;
+}
