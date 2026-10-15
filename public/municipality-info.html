@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مشخصات شهرداری</title>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+        <!-- Persian DatePicker -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/persian-date@1.1.0/dist/persian-date.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
     <link rel="stylesheet" href="/sidebar.css">
     <style>
         body {
@@ -168,6 +173,206 @@
             color: #999;
             margin-bottom: 15px;
         }
+
+        /* Council Members - Accordion */
+        .council-member-row {
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-right: 4px solid #667eea;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .council-member-row:hover {
+            background: #eef1ff;
+        }
+
+        .council-member-row.open {
+            background: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+        }
+
+        /* هدر آکاردئون (همیشه دیده می‌شه) */
+        .member-header {
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s;
+        }
+
+        .member-header:hover {
+            background: #eef1ff;
+        }
+
+        .member-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .member-arrow {
+            font-size: 12px;
+            color: #667eea;
+            transition: transform 0.25s;
+            flex-shrink: 0;
+        }
+
+        .council-member-row.open .member-arrow {
+            transform: rotate(180deg);
+        }
+
+        .member-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .member-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .member-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .member-position-badge {
+            font-size: 11px;
+            color: #667eea;
+            background: #eef1ff;
+            padding: 2px 10px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-top: 2px;
+        }
+
+        .member-header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .member-remove {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .member-remove:hover {
+            background: #c0392b;
+            transform: scale(1.05);
+        }
+
+        /* بدنه آکاردئون (بسته به پیش‌فرض) */
+        .member-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease;
+            padding: 0 18px;
+        }
+
+        .council-member-row.open .member-body {
+            max-height: 2000px;
+            padding: 15px 18px 18px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .member-body .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .member-body label {
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .member-body input,
+        .member-body select,
+        .member-body textarea {
+            padding: 8px 10px;
+            font-size: 12px;
+        }
+
+        .member-body .form-group {
+            margin-bottom: 12px;
+        }
+
+        /* وقتی بسته‌ست، فرم‌ها نمایش داده نشن */
+        .council-member-row:not(.open) .member-body .form-group {
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .member-body .form-row {
+                grid-template-columns: 1fr;
+            }
+            .member-name {
+                font-size: 13px;
+            }
+        }
+
+        .add-member-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .add-member-btn:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .add-member-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+            .council-member-row .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -271,6 +476,23 @@
             </div>
         </div>
 
+
+        
+
+                <!-- بخش ۵: اعضای شورای شهر -->
+        <div class="section">
+            <h2 class="section-title">🏛️ اعضای شورای شهر</h2>
+            <div class="hint" style="margin-bottom: 15px;">
+                اعضای شورای شهر را می‌توانید اضافه، ویرایش یا حذف کنید.
+            </div>
+
+            <div id="council-members-list"></div>
+
+            <button type="button" class="add-member-btn" onclick="addCouncilMember()" id="add-member-btn">
+                ➕ افزودن عضو جدید
+            </button>
+        </div>
+
         <!-- دکمه‌ها -->
         <div class="btn-group">
             <button class="btn-success" onclick="saveInfo()" id="save-btn">
@@ -342,6 +564,309 @@
                     el.disabled = false;
                 });
                 document.getElementById('save-btn').style.display = 'inline-block';
+            }
+        }
+
+        // ============================================
+        // اعضای شورای شهر
+        // ============================================
+        let councilMembers = [];
+
+        async function loadCouncilMembers() {
+            try {
+                const res = await fetch('/api/council-members', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!res.ok) throw new Error('خطا در دریافت اعضای شورا');
+
+                councilMembers = await res.json();
+                renderCouncilMembers();
+            } catch (error) {
+                console.error('Load council members error:', error);
+            }
+        }
+
+        function renderCouncilMembers() {
+            const container = document.getElementById('council-members-list');
+            if (!container) return;
+
+            if (councilMembers.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #999; background: #f8f9fa; border-radius: 8px; margin-bottom: 15px;">
+                        هنوز عضوی از شورا ثبت نشده
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            councilMembers.forEach((member, index) => {
+                // آیا این ردیف بازه؟
+                const isOpen = member._open === true;
+
+                const initial = (member.full_name || '?').charAt(0);
+                const positionBadge = member.position 
+                    ? `<span class="member-position-badge">${member.position}</span>` 
+                    : '<span class="member-position-badge" style="background:#f8f9fa; color:#999;">بدون سمت</span>';
+
+                html += `
+                    <div class="council-member-row ${isOpen ? 'open' : ''}" data-id="${member.id || ''}" data-index="${index}">
+                        <div class="member-header" onclick="toggleMember(${index})">
+                            <div class="member-header-left">
+                                <span class="member-arrow">▼</span>
+                                <div class="member-avatar">${initial}</div>
+                                <div class="member-info">
+                                    <div class="member-name">${member.full_name || 'عضو جدید'}</div>
+                                    ${positionBadge}
+                                </div>
+                            </div>
+                            <div class="member-header-right">
+                                <button type="button" class="member-remove" onclick="event.stopPropagation(); removeCouncilMember(${index})" title="حذف">✕</button>
+                            </div>
+                        </div>
+
+                        <div class="member-body">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>نام و نام خانوادگی <span style="color:#e74c3c;">*</span></label>
+                                    <input type="text" class="member-full-name" value="${member.full_name || ''}" ${!canEdit ? 'disabled' : ''} onchange="updateMemberField(${index}, 'full_name', this.value)" />
+                                </div>
+                                <div class="form-group">
+                                    <label>کد ملی</label>
+                                    <input type="text" class="member-national-id" value="${member.national_id || ''}" maxlength="10" dir="ltr" ${!canEdit ? 'disabled' : ''} />
+                                </div>
+                                <div class="form-group">
+                                    <label>سمت در شورا</label>
+                                    <select class="member-position" ${!canEdit ? 'disabled' : ''} onchange="updateMemberField(${index}, 'position', this.value)">
+                                        <option value="">— انتخاب کنید —</option>
+                                        <option value="رئیس" ${member.position === 'رئیس' ? 'selected' : ''}>رئیس</option>
+                                        <option value="نایب‌رئیس" ${member.position === 'نایب‌رئیس' ? 'selected' : ''}>نایب‌رئیس</option>
+                                        <option value="منشی" ${member.position === 'منشی' ? 'selected' : ''}>منشی</option>
+                                        <option value="عضو" ${member.position === 'عضو' ? 'selected' : ''}>عضو</option>
+                                        <option value="سخنگو" ${member.position === 'سخنگو' ? 'selected' : ''}>سخنگو</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>موبایل</label>
+                                    <input type="text" class="member-mobile" value="${member.mobile || ''}" maxlength="11" dir="ltr" ${!canEdit ? 'disabled' : ''} />
+                                </div>
+                                <div class="form-group">
+                                    <label>تلفن ثابت</label>
+                                    <input type="text" class="member-phone" value="${member.phone || ''}" ${!canEdit ? 'disabled' : ''} />
+                                </div>
+                                <div class="form-group">
+                                    <label>ایمیل</label>
+                                    <input type="email" class="member-email" value="${member.email || ''}" dir="ltr" ${!canEdit ? 'disabled' : ''} />
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>تاریخ شروع عضویت</label>
+                                    <input type="text" class="member-start-date" value="${member.start_date_shamsi ? toPersianNumbers(member.start_date_shamsi) : ''}" placeholder="۱۴۰۴/۰۱/۰۱" ${!canEdit ? 'disabled' : ''} />
+                                </div>
+                                <div class="form-group">
+                                    <label>تاریخ پایان عضویت</label>
+                                    <input type="text" class="member-end-date" value="${member.end_date_shamsi ? toPersianNumbers(member.end_date_shamsi) : ''}" placeholder="اختیاری" ${!canEdit ? 'disabled' : ''} />
+                                </div>
+                                <div class="form-group">
+                                    <label>وضعیت</label>
+                                    <select class="member-is-active" ${!canEdit ? 'disabled' : ''}>
+                                        <option value="1" ${member.is_active ? 'selected' : ''}>فعال</option>
+                                        <option value="0" ${!member.is_active ? 'selected' : ''}>غیرفعال</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>آدرس</label>
+                                <textarea class="member-address" rows="2" ${!canEdit ? 'disabled' : ''}>${member.address || ''}</textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label>یادداشت</label>
+                                <textarea class="member-notes" rows="2" ${!canEdit ? 'disabled' : ''}>${member.notes || ''}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            // راه‌اندازی DatePicker فقط برای ردیف‌های باز
+            setTimeout(() => {
+                document.querySelectorAll('.council-member-row.open .member-start-date, .council-member-row.open .member-end-date').forEach(el => {
+                    if (el.disabled) return;
+                    try { $(el).persianDatepicker('destroy'); } catch (e) {}
+                    $(el).persianDatepicker({
+                        format: 'YYYY/MM/DD',
+                        autoClose: true,
+                        persianDigit: true,
+                        initialValue: !!el.value
+                    });
+                });
+            }, 100);
+        }
+        
+        
+                // ============================================
+        // باز/بسته کردن آکاردئون عضو
+        // ============================================
+        function toggleMember(index) {
+            // اگه قبلاً باز بود، ببند. اگه بسته بود، باز کن.
+            councilMembers.forEach((m, i) => {
+                if (i === index) {
+                    m._open = !m._open;
+                } else {
+                    // بقیه رو ببند (اختیاری - برای اینکه فقط یکی باز باشه)
+                    // اگه می‌خوای چند تا باز باشه، این خط رو کامنت کن
+                    m._open = false;
+                }
+            });
+
+            renderCouncilMembers();
+        }
+
+        // ============================================
+        // آپدیت یه فیلد از عضو (برای نمایش زنده در هدر)
+        // ============================================
+        function updateMemberField(index, field, value) {
+            if (councilMembers[index]) {
+                councilMembers[index][field] = value;
+                // فقط هدر رو آپدیت کن (بدون رندر کامل)
+                const row = document.querySelector(`.council-member-row[data-index="${index}"]`);
+                if (row && (field === 'full_name' || field === 'position')) {
+                    renderCouncilMembers();
+                }
+            }
+        }
+        
+        function addCouncilMember() {
+            // بستن بقیه
+            councilMembers.forEach(m => m._open = false);
+
+            // اضافه کردن عضو جدید (باز)
+            councilMembers.push({
+                id: null,
+                full_name: '',
+                national_id: '',
+                mobile: '',
+                phone: '',
+                position: '',
+                position_order: councilMembers.length + 1,
+                start_date_shamsi: '',
+                end_date_shamsi: '',
+                address: '',
+                email: '',
+                notes: '',
+                is_active: 1,
+                _open: true, // ← باز
+            });
+            renderCouncilMembers();
+        }
+        function removeCouncilMember(index) {
+            if (!confirm('مطمئن هستید این عضو حذف شود؟')) return;
+            councilMembers.splice(index, 1);
+            renderCouncilMembers();
+        }
+        // ============================================
+        // پاک‌سازی تاریخ (تبدیل به فرمت YYYY/MM/DD)
+        // ============================================
+        function cleanDate(value) {
+            if (!value) return null;
+            
+            // تبدیل اعداد فارسی به انگلیسی
+            let normalized = toEnglishNumbers(value.toString());
+            
+            const trimmed = normalized.trim();
+            if (!trimmed) return null;
+            
+            // اگه شامل `/` هست
+            if (trimmed.includes('/')) {
+                const match = trimmed.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+                if (match) {
+                    return `${match[1]}/${match[2].padStart(2, '0')}/${match[3].padStart(2, '0')}`;
+                }
+            }
+            
+            return null;
+        }
+        async function saveCouncilMembers() {
+            console.log('=== saveCouncilMembers called ===');
+            console.log('canEdit:', canEdit);
+
+            if (!canEdit) return;
+
+            try {
+                const rows = document.querySelectorAll('.council-member-row');
+                console.log('rows:', rows.length);
+
+                // جمع‌آوری از UI
+                const membersToSave = [];
+
+                rows.forEach((row, index) => {
+                    const member = {
+                        id: null, // ← همیشه null، چون همه رو از نو insert می‌کنیم
+                        full_name: row.querySelector('.member-full-name').value.trim(),
+                        national_id: row.querySelector('.member-national-id').value.trim() || null,
+                        mobile: row.querySelector('.member-mobile').value.trim() || null,
+                        phone: row.querySelector('.member-phone').value.trim() || null,
+                        position: row.querySelector('.member-position').value || null,
+                        position_order: index + 1,
+                        start_date_shamsi: cleanDate(row.querySelector('.member-start-date').value),
+                        end_date_shamsi: cleanDate(row.querySelector('.member-end-date').value),
+                        address: row.querySelector('.member-address').value.trim() || null,
+                        email: row.querySelector('.member-email').value.trim() || null,
+                        notes: row.querySelector('.member-notes').value.trim() || null,
+                        is_active: parseInt(row.querySelector('.member-is-active').value),
+                    };
+
+                    if (member.full_name) {
+                        membersToSave.push(member);
+                    }
+                });
+
+                // ۱. حذف همه اعضای فعلی از سرور
+                const existingRes = await fetch('/api/council-members', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const existingList = await existingRes.json();
+
+                for (const existing of existingList) {
+                    await fetch(`/api/council-members/${existing.id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                }
+
+                // ۲. ذخیره همه اعضای جدید
+                for (const member of membersToSave) {
+                    const res = await fetch('/api/council-members', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(member)
+                    });
+
+                    if (!res.ok) {
+                        const data = await res.json();
+                        throw new Error(data.error || 'خطا در ذخیره');
+                    }
+                }
+
+                showAlert('اعضای شورا با موفقیت ذخیره شد', 'success');
+                councilMembers = [];
+                await loadCouncilMembers();
+            } catch (error) {
+                console.error('Save council members error:', error);
+                showAlert('خطا: ' + error.message, 'error');
             }
         }
 
@@ -433,8 +958,11 @@
                 const result = await response.json();
                 
                 if (response.ok) {
+                    // ذخیره اعضای شورا
+                    await saveCouncilMembers();
+
                     showAlert('اطلاعات با موفقیت ذخیره شد', 'success');
-                    loadInfo();
+                    await loadInfo();
                 } else {
                     showAlert('خطا: ' + result.error, 'error');
                 }
@@ -473,6 +1001,7 @@
         (async function init() {
             await checkEditPermission();  // اول چک دسترسی
             await loadInfo();             // بعد لود اطلاعات
+            await loadCouncilMembers();   // ← این خط رو اضافه کن
         })();
 
         // راه‌اندازی breadcrumb

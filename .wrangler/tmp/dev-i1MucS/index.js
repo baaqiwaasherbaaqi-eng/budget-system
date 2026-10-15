@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// .wrangler/tmp/bundle-iH8q3x/checked-fetch.js
+// .wrangler/tmp/bundle-MDvAui/checked-fetch.js
 var urls = /* @__PURE__ */ new Set();
 function checkURL(request, init) {
   const url = request instanceof URL ? request : new URL(
@@ -5141,6 +5141,203 @@ var src_default = {
           });
         }
       }
+      if (url.pathname === "/api/council-members" && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
+              {
+                status: 401,
+                headers
+              }
+            );
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "\u062A\u0648\u06A9\u0646 \u0646\u0627\u0645\u0639\u062A\u0628\u0631" }), {
+              status: 401,
+              headers
+            });
+          }
+          const items = await env.DB.prepare(
+            `SELECT * FROM council_members ORDER BY position_order, id`
+          ).all();
+          return new Response(JSON.stringify(items.results), {
+            status: 200,
+            headers
+          });
+        } catch (error) {
+          console.error("Council members GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname === "/api/council-members" && request.method === "POST") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
+              {
+                status: 401,
+                headers
+              }
+            );
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData || userData.role !== "admin") {
+            return new Response(JSON.stringify({ error: "\u0641\u0642\u0637 \u0645\u062F\u06CC\u0631 \u0633\u06CC\u0633\u062A\u0645" }), {
+              status: 403,
+              headers
+            });
+          }
+          const body = await request.json();
+          const {
+            id,
+            full_name,
+            national_id,
+            mobile,
+            phone,
+            position,
+            position_order,
+            start_date_shamsi,
+            end_date_shamsi,
+            address,
+            email,
+            notes,
+            is_active
+          } = body;
+          if (!full_name) {
+            return new Response(JSON.stringify({ error: "\u0646\u0627\u0645 \u0627\u0644\u0632\u0627\u0645\u06CC \u0627\u0633\u062A" }), {
+              status: 400,
+              headers
+            });
+          }
+          const nowShamsi = toShamsi(/* @__PURE__ */ new Date());
+          const mInfo = await env.DB.prepare(
+            `SELECT id FROM municipality_info ORDER BY id DESC LIMIT 1`
+          ).first();
+          const municipalityId = mInfo ? mInfo.id : null;
+          if (id) {
+            await env.DB.prepare(
+              `UPDATE council_members SET
+                full_name = ?,
+                national_id = ?,
+                mobile = ?,
+                phone = ?,
+                position = ?,
+                position_order = ?,
+                start_date_shamsi = ?,
+                end_date_shamsi = ?,
+                address = ?,
+                email = ?,
+                notes = ?,
+                is_active = ?,
+                updated_at = CURRENT_TIMESTAMP,
+                updated_at_shamsi = ?
+              WHERE id = ?`
+            ).bind(
+              full_name,
+              national_id || null,
+              mobile || null,
+              phone || null,
+              position || null,
+              position_order || 0,
+              start_date_shamsi || null,
+              end_date_shamsi || null,
+              address || null,
+              email || null,
+              notes || null,
+              is_active !== void 0 ? is_active ? 1 : 0 : 1,
+              nowShamsi,
+              id
+            ).run();
+            return new Response(JSON.stringify({ success: true, id }), {
+              status: 200,
+              headers
+            });
+          } else {
+            const result = await env.DB.prepare(
+              `INSERT INTO council_members 
+               (municipality_info_id, full_name, national_id, mobile, phone,
+                position, position_order, start_date_shamsi, end_date_shamsi,
+                address, email, notes, is_active, created_at_shamsi, updated_at_shamsi)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            ).bind(
+              municipalityId,
+              full_name,
+              national_id || null,
+              mobile || null,
+              phone || null,
+              position || null,
+              position_order || 0,
+              start_date_shamsi || null,
+              end_date_shamsi || null,
+              address || null,
+              email || null,
+              notes || null,
+              is_active !== void 0 ? is_active ? 1 : 0 : 1,
+              nowShamsi,
+              nowShamsi
+            ).run();
+            return new Response(
+              JSON.stringify({
+                success: true,
+                id: result.meta.last_row_id
+              }),
+              {
+                status: 201,
+                headers
+              }
+            );
+          }
+        } catch (error) {
+          console.error("Council member POST error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname.match(/^\/api\/council-members\/\d+$/) && request.method === "DELETE") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
+              {
+                status: 401,
+                headers
+              }
+            );
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData || userData.role !== "admin") {
+            return new Response(JSON.stringify({ error: "\u0641\u0642\u0637 \u0645\u062F\u06CC\u0631 \u0633\u06CC\u0633\u062A\u0645" }), {
+              status: 403,
+              headers
+            });
+          }
+          const id = url.pathname.split("/").pop();
+          await env.DB.prepare("DELETE FROM council_members WHERE id = ?").bind(id).run();
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers
+          });
+        } catch (error) {
+          console.error("Council member DELETE error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
       if (url.pathname === "/api/users" && request.method === "GET") {
         const authHeader = request.headers.get("Authorization");
         if (!authHeader) {
@@ -6476,7 +6673,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-iH8q3x/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-MDvAui/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -6508,7 +6705,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-iH8q3x/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-MDvAui/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
