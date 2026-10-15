@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// .wrangler/tmp/bundle-ZEn54m/checked-fetch.js
+// .wrangler/tmp/bundle-iH8q3x/checked-fetch.js
 var urls = /* @__PURE__ */ new Set();
 function checkURL(request, init) {
   const url = request instanceof URL ? request : new URL(
@@ -2409,6 +2409,59 @@ var src_default = {
           });
         }
       }
+      if (url.pathname === "/api/operational-children" && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
+              {
+                status: 401,
+                headers
+              }
+            );
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "\u062A\u0648\u06A9\u0646 \u0646\u0627\u0645\u0639\u062A\u0628\u0631" }), {
+              status: 401,
+              headers
+            });
+          }
+          const parentId = url.searchParams.get("parent_id");
+          let items;
+          if (parentId === "null" || parentId === "" || parentId === null) {
+            items = await env.DB.prepare(
+              `SELECT id, code, title, type, level, parent_id 
+               FROM base_data
+               WHERE section = 'operational' 
+                 AND parent_id IS NULL 
+                 AND is_active = 1
+               ORDER BY code`
+            ).all();
+          } else {
+            items = await env.DB.prepare(
+              `SELECT id, code, title, type, level, parent_id 
+               FROM base_data
+               WHERE section = 'operational' 
+                 AND parent_id = ? 
+                 AND is_active = 1
+               ORDER BY code`
+            ).bind(parentId).all();
+          }
+          return new Response(JSON.stringify(items.results), {
+            status: 200,
+            headers
+          });
+        } catch (error) {
+          console.error("Operational children error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
       if (url.pathname.match(/^\/api\/employees\/\d+\/dependents$/) && request.method === "GET") {
         try {
           const authHeader = request.headers.get("Authorization");
@@ -3695,7 +3748,9 @@ var src_default = {
                AND period_month = ?
                AND status IN ('draft', 'submitted', 'manager_approved', 'mayor_approved')`
           ).bind(employee_person_id, period_year, period_month).first();
-          const baseSalaryItem = decreeItems.find((i) => i.title === "\u062D\u0642\u0648\u0642 \u0645\u0628\u0646\u0627" || i.title === "\u0645\u0632\u062F \u0634\u063A\u0644");
+          const baseSalaryItem = decreeItems.find(
+            (i) => i.title === "\u062D\u0642\u0648\u0642 \u0645\u0628\u0646\u0627" || i.title === "\u0645\u0632\u062F \u0634\u063A\u0644"
+          );
           const baseSalary = baseSalaryItem ? parseFloat(baseSalaryItem.amount) : 0;
           const hourlyRate = baseSalary > 0 ? baseSalary / 220 : 0;
           if (attendance) {
@@ -3704,7 +3759,9 @@ var src_default = {
             const nightshiftRate = parseFloat(settings.nightshift_rate || "35") / 100;
             const missionRate = parseFloat(settings.mission_rate || "100") / 100;
             if (attendance.overtime_hours > 0 && hourlyRate > 0) {
-              const overtimeAmount = Math.round(attendance.overtime_hours * hourlyRate * overtimeRate);
+              const overtimeAmount = Math.round(
+                attendance.overtime_hours * hourlyRate * overtimeRate
+              );
               decreeItems.push({
                 code: "\u0636",
                 title: "\u0627\u0636\u0627\u0641\u0647 \u06A9\u0627\u0631\u06CC",
@@ -3714,7 +3771,9 @@ var src_default = {
               });
             }
             if (attendance.holiday_hours > 0 && hourlyRate > 0) {
-              const holidayAmount = Math.round(attendance.holiday_hours * hourlyRate * holidayRate);
+              const holidayAmount = Math.round(
+                attendance.holiday_hours * hourlyRate * holidayRate
+              );
               decreeItems.push({
                 code: "\u0637",
                 title: "\u062A\u0639\u0637\u06CC\u0644 \u06A9\u0627\u0631\u06CC",
@@ -3724,7 +3783,9 @@ var src_default = {
               });
             }
             if (attendance.nightshift_hours > 0 && hourlyRate > 0) {
-              const nightshiftAmount = Math.round(attendance.nightshift_hours * hourlyRate * nightshiftRate);
+              const nightshiftAmount = Math.round(
+                attendance.nightshift_hours * hourlyRate * nightshiftRate
+              );
               decreeItems.push({
                 code: "\u0638",
                 title: "\u0641\u0648\u0642 \u0627\u0644\u0639\u0627\u062F\u0647 \u0646\u0648\u0628\u062A \u06A9\u0627\u0631\u06CC",
@@ -3737,7 +3798,9 @@ var src_default = {
               const dailyRate = baseSalary / 30;
               const totalMissionDays = (attendance.mission_days_with_stay || 0) + (attendance.mission_days_without_stay || 0);
               if (totalMissionDays > 0) {
-                const missionAmount = Math.round(totalMissionDays * dailyRate * missionRate);
+                const missionAmount = Math.round(
+                  totalMissionDays * dailyRate * missionRate
+                );
                 decreeItems.push({
                   code: "\u0639",
                   title: "\u0645\u0623\u0645\u0648\u0631\u06CC\u062A",
@@ -3819,12 +3882,16 @@ var src_default = {
           ).bind(employee_person_id).all();
           if (attendance && attendance.absence_days > 0 && baseSalary > 0) {
             const dailyRate = baseSalary / 30;
-            const absenceAmount = Math.round(attendance.absence_days * dailyRate);
+            const absenceAmount = Math.round(
+              attendance.absence_days * dailyRate
+            );
             if (absenceAmount > 0) {
               otherDeductions += absenceAmount;
               appliedDeductions.push({
                 type: "absence",
-                title: `\u06A9\u0633\u0631 \u063A\u06CC\u0628\u062A (${toPersianNumbers(attendance.absence_days)} \u0631\u0648\u0632)`,
+                title: `\u06A9\u0633\u0631 \u063A\u06CC\u0628\u062A (${toPersianNumbers(
+                  attendance.absence_days
+                )} \u0631\u0648\u0632)`,
                 amount: absenceAmount
               });
             }
@@ -3964,10 +4031,13 @@ var src_default = {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
-              status: 401,
-              headers
-            });
+            return new Response(
+              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
+              {
+                status: 401,
+                headers
+              }
+            );
           }
           const token = authHeader.replace("Bearer ", "");
           const userData = await verifyToken(token, env.JWT_SECRET);
@@ -3990,10 +4060,13 @@ var src_default = {
             });
           }
           if (calc.status === "cancelled") {
-            return new Response(JSON.stringify({ error: "\u0627\u06CC\u0646 \u0645\u062D\u0627\u0633\u0628\u0647 \u0642\u0628\u0644\u0627\u064B \u0644\u063A\u0648 \u0634\u062F\u0647" }), {
-              status: 400,
-              headers
-            });
+            return new Response(
+              JSON.stringify({ error: "\u0627\u06CC\u0646 \u0645\u062D\u0627\u0633\u0628\u0647 \u0642\u0628\u0644\u0627\u064B \u0644\u063A\u0648 \u0634\u062F\u0647" }),
+              {
+                status: 400,
+                headers
+              }
+            );
           }
           const nowShamsi = toShamsi(/* @__PURE__ */ new Date());
           const loanPayments = await env.DB.prepare(
@@ -4005,8 +4078,14 @@ var src_default = {
               `SELECT * FROM loans WHERE id = ?`
             ).bind(payment.loan_id).first();
             if (loan) {
-              const newPaidInstallments = Math.max(0, (loan.paid_installments || 0) - 1);
-              const newPaidAmount = Math.max(0, (loan.paid_amount || 0) - payment.amount);
+              const newPaidInstallments = Math.max(
+                0,
+                (loan.paid_installments || 0) - 1
+              );
+              const newPaidAmount = Math.max(
+                0,
+                (loan.paid_amount || 0) - payment.amount
+              );
               const newRemaining = (loan.total_amount || 0) - newPaidAmount;
               let newStatus = loan.status;
               if (loan.status === "completed" && newPaidInstallments < loan.installments_count) {
@@ -4044,19 +4123,17 @@ var src_default = {
               updated_at = CURRENT_TIMESTAMP,
               updated_at_shamsi = ?
             WHERE id = ?`
-          ).bind(
-            userData.userId,
-            reason || null,
-            nowShamsi,
-            id
-          ).run();
-          return new Response(JSON.stringify({
-            success: true,
-            message: "\u0645\u062D\u0627\u0633\u0628\u0647 \u0644\u063A\u0648 \u0634\u062F \u0648 \u0627\u0642\u0633\u0627\u0637 \u0648\u0627\u0645 \u0628\u0627\u0632\u06AF\u0631\u062F\u0627\u0646\u062F\u0647 \u0634\u062F\u0646\u062F"
-          }), {
-            status: 200,
-            headers
-          });
+          ).bind(userData.userId, reason || null, nowShamsi, id).run();
+          return new Response(
+            JSON.stringify({
+              success: true,
+              message: "\u0645\u062D\u0627\u0633\u0628\u0647 \u0644\u063A\u0648 \u0634\u062F \u0648 \u0627\u0642\u0633\u0627\u0637 \u0648\u0627\u0645 \u0628\u0627\u0632\u06AF\u0631\u062F\u0627\u0646\u062F\u0647 \u0634\u062F\u0646\u062F"
+            }),
+            {
+              status: 200,
+              headers
+            }
+          );
         } catch (error) {
           console.error("Payroll cancel error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
@@ -4069,10 +4146,13 @@ var src_default = {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
-              status: 401,
-              headers
-            });
+            return new Response(
+              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
+              {
+                status: 401,
+                headers
+              }
+            );
           }
           const token = authHeader.replace("Bearer ", "");
           const userData = await verifyToken(token, env.JWT_SECRET);
@@ -4093,14 +4173,19 @@ var src_default = {
             });
           }
           if (calc.status !== "cancelled") {
-            return new Response(JSON.stringify({
-              error: "\u0641\u0642\u0637 \u0645\u062D\u0627\u0633\u0628\u0627\u062A \u0644\u063A\u0648 \u0634\u062F\u0647 \u0642\u0627\u0628\u0644 \u062D\u0630\u0641 \u06A9\u0627\u0645\u0644 \u0647\u0633\u062A\u0646\u062F"
-            }), {
-              status: 400,
-              headers
-            });
+            return new Response(
+              JSON.stringify({
+                error: "\u0641\u0642\u0637 \u0645\u062D\u0627\u0633\u0628\u0627\u062A \u0644\u063A\u0648 \u0634\u062F\u0647 \u0642\u0627\u0628\u0644 \u062D\u0630\u0641 \u06A9\u0627\u0645\u0644 \u0647\u0633\u062A\u0646\u062F"
+              }),
+              {
+                status: 400,
+                headers
+              }
+            );
           }
-          await env.DB.prepare("DELETE FROM loan_payments WHERE payroll_calculation_id = ?").bind(id).run();
+          await env.DB.prepare(
+            "DELETE FROM loan_payments WHERE payroll_calculation_id = ?"
+          ).bind(id).run();
           await env.DB.prepare("DELETE FROM payroll_calculations WHERE id = ?").bind(id).run();
           return new Response(JSON.stringify({ success: true }), {
             status: 200,
@@ -4726,10 +4811,13 @@ var src_default = {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
-              status: 401,
-              headers
-            });
+            return new Response(
+              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
+              {
+                status: 401,
+                headers
+              }
+            );
           }
           const token = authHeader.replace("Bearer ", "");
           const userData = await verifyToken(token, env.JWT_SECRET);
@@ -4777,10 +4865,13 @@ var src_default = {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
-              status: 401,
-              headers
-            });
+            return new Response(
+              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
+              {
+                status: 401,
+                headers
+              }
+            );
           }
           const token = authHeader.replace("Bearer ", "");
           const userData = await verifyToken(token, env.JWT_SECRET);
@@ -4819,10 +4910,13 @@ var src_default = {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
-              status: 401,
-              headers
-            });
+            return new Response(
+              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
+              {
+                status: 401,
+                headers
+              }
+            );
           }
           const token = authHeader.replace("Bearer ", "");
           const userData = await verifyToken(token, env.JWT_SECRET);
@@ -4916,13 +5010,16 @@ var src_default = {
               nowShamsi,
               nowShamsi
             ).run();
-            return new Response(JSON.stringify({
-              success: true,
-              id: result.meta.last_row_id
-            }), {
-              status: 201,
-              headers
-            });
+            return new Response(
+              JSON.stringify({
+                success: true,
+                id: result.meta.last_row_id
+              }),
+              {
+                status: 201,
+                headers
+              }
+            );
           }
         } catch (error) {
           console.error("Attendance POST error:", error);
@@ -4936,10 +5033,13 @@ var src_default = {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
-              status: 401,
-              headers
-            });
+            return new Response(
+              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
+              {
+                status: 401,
+                headers
+              }
+            );
           }
           const token = authHeader.replace("Bearer ", "");
           const userData = await verifyToken(token, env.JWT_SECRET);
@@ -4953,10 +5053,13 @@ var src_default = {
           const body = await request.json();
           const { approve_type, approved } = body;
           if (!["manager", "mayor"].includes(approve_type)) {
-            return new Response(JSON.stringify({ error: "\u0646\u0648\u0639 \u062A\u0623\u06CC\u06CC\u062F \u0646\u0627\u0645\u0639\u062A\u0628\u0631" }), {
-              status: 400,
-              headers
-            });
+            return new Response(
+              JSON.stringify({ error: "\u0646\u0648\u0639 \u062A\u0623\u06CC\u06CC\u062F \u0646\u0627\u0645\u0639\u062A\u0628\u0631" }),
+              {
+                status: 400,
+                headers
+              }
+            );
           }
           const nowShamsi = toShamsi(/* @__PURE__ */ new Date());
           if (approve_type === "manager") {
@@ -5008,10 +5111,13 @@ var src_default = {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }), {
-              status: 401,
-              headers
-            });
+            return new Response(
+              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
+              {
+                status: 401,
+                headers
+              }
+            );
           }
           const token = authHeader.replace("Bearer ", "");
           const userData = await verifyToken(token, env.JWT_SECRET);
@@ -6370,7 +6476,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-ZEn54m/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-iH8q3x/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -6402,7 +6508,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-ZEn54m/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-iH8q3x/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

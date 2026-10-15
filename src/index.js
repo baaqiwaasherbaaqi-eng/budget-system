@@ -2719,6 +2719,74 @@ export default {
       }
 
       // ============================================
+      // GET: فرزندان یک گره در طبقه‌بندی عملیاتی
+      // ============================================
+      if (
+        url.pathname === "/api/operational-children" &&
+        request.method === "GET"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401,
+              headers,
+            });
+          }
+
+          const parentId = url.searchParams.get("parent_id");
+
+          let items;
+          if (parentId === "null" || parentId === "" || parentId === null) {
+            // سطح ۱: مأموریت‌ها (بدون والد)
+            items = await env.DB.prepare(
+              `SELECT id, code, title, type, level, parent_id 
+               FROM base_data
+               WHERE section = 'operational' 
+                 AND parent_id IS NULL 
+                 AND is_active = 1
+               ORDER BY code`
+            ).all();
+          } else {
+            items = await env.DB.prepare(
+              `SELECT id, code, title, type, level, parent_id 
+               FROM base_data
+               WHERE section = 'operational' 
+                 AND parent_id = ? 
+                 AND is_active = 1
+               ORDER BY code`
+            )
+              .bind(parentId)
+              .all();
+          }
+
+          return new Response(JSON.stringify(items.results), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Operational children error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // ============================================
       // Dependents API
       // ============================================
 
@@ -4291,8 +4359,6 @@ export default {
           } catch (e) {
             decreeItems = [];
           }
-         
-
 
           // لود payroll_items برای مشمولیت‌ها
           const payrollItemsData = await env.DB.prepare(
@@ -4314,8 +4380,6 @@ export default {
             settings[s.setting_key] = s.setting_value;
           });
 
-
-          
           // ============================================
           // لود حضور و غیاب
           // ============================================
@@ -4325,70 +4389,93 @@ export default {
                AND period_year = ? 
                AND period_month = ?
                AND status IN ('draft', 'submitted', 'manager_approved', 'mayor_approved')`
-          ).bind(employee_person_id, period_year, period_month).first();
+          )
+            .bind(employee_person_id, period_year, period_month)
+            .first();
 
-          const baseSalaryItem = decreeItems.find(i => i.title === 'حقوق مبنا' || i.title === 'مزد شغل');
-          const baseSalary = baseSalaryItem ? parseFloat(baseSalaryItem.amount) : 0;
+          const baseSalaryItem = decreeItems.find(
+            (i) => i.title === "حقوق مبنا" || i.title === "مزد شغل"
+          );
+          const baseSalary = baseSalaryItem
+            ? parseFloat(baseSalaryItem.amount)
+            : 0;
           const hourlyRate = baseSalary > 0 ? baseSalary / 220 : 0;
 
           // ============================================
           // آیتم‌های اضافه‌کاری (بر اساس حضور و غیاب)
           // ============================================
           if (attendance) {
-            const overtimeRate = parseFloat(settings.overtime_rate || '140') / 100;
-            const holidayRate = parseFloat(settings.holiday_rate || '140') / 100;
-            const nightshiftRate = parseFloat(settings.nightshift_rate || '35') / 100;
-            const missionRate = parseFloat(settings.mission_rate || '100') / 100;
+            const overtimeRate =
+              parseFloat(settings.overtime_rate || "140") / 100;
+            const holidayRate =
+              parseFloat(settings.holiday_rate || "140") / 100;
+            const nightshiftRate =
+              parseFloat(settings.nightshift_rate || "35") / 100;
+            const missionRate =
+              parseFloat(settings.mission_rate || "100") / 100;
 
             // اضافه‌کاری
             if (attendance.overtime_hours > 0 && hourlyRate > 0) {
-              const overtimeAmount = Math.round(attendance.overtime_hours * hourlyRate * overtimeRate);
+              const overtimeAmount = Math.round(
+                attendance.overtime_hours * hourlyRate * overtimeRate
+              );
               decreeItems.push({
-                code: 'ض',
-                title: 'اضافه کاری',
+                code: "ض",
+                title: "اضافه کاری",
                 amount: overtimeAmount,
                 is_insurance_subject: true,
-                is_tax_subject: true
+                is_tax_subject: true,
               });
             }
 
             // تعطیل‌کاری
             if (attendance.holiday_hours > 0 && hourlyRate > 0) {
-              const holidayAmount = Math.round(attendance.holiday_hours * hourlyRate * holidayRate);
+              const holidayAmount = Math.round(
+                attendance.holiday_hours * hourlyRate * holidayRate
+              );
               decreeItems.push({
-                code: 'ط',
-                title: 'تعطیل کاری',
+                code: "ط",
+                title: "تعطیل کاری",
                 amount: holidayAmount,
                 is_insurance_subject: true,
-                is_tax_subject: true
+                is_tax_subject: true,
               });
             }
 
             // نوبت‌کاری
             if (attendance.nightshift_hours > 0 && hourlyRate > 0) {
-              const nightshiftAmount = Math.round(attendance.nightshift_hours * hourlyRate * nightshiftRate);
+              const nightshiftAmount = Math.round(
+                attendance.nightshift_hours * hourlyRate * nightshiftRate
+              );
               decreeItems.push({
-                code: 'ظ',
-                title: 'فوق العاده نوبت کاری',
+                code: "ظ",
+                title: "فوق العاده نوبت کاری",
                 amount: nightshiftAmount,
                 is_insurance_subject: true,
-                is_tax_subject: true
+                is_tax_subject: true,
               });
             }
 
             // مأموریت
-            if (attendance.mission_days_with_stay > 0 || attendance.mission_days_without_stay > 0) {
+            if (
+              attendance.mission_days_with_stay > 0 ||
+              attendance.mission_days_without_stay > 0
+            ) {
               const dailyRate = baseSalary / 30;
-              const totalMissionDays = (attendance.mission_days_with_stay || 0) + (attendance.mission_days_without_stay || 0);
-              
+              const totalMissionDays =
+                (attendance.mission_days_with_stay || 0) +
+                (attendance.mission_days_without_stay || 0);
+
               if (totalMissionDays > 0) {
-                const missionAmount = Math.round(totalMissionDays * dailyRate * missionRate);
+                const missionAmount = Math.round(
+                  totalMissionDays * dailyRate * missionRate
+                );
                 decreeItems.push({
-                  code: 'ع',
-                  title: 'مأموریت',
+                  code: "ع",
+                  title: "مأموریت",
                   amount: missionAmount,
                   is_insurance_subject: true,
-                  is_tax_subject: true
+                  is_tax_subject: true,
                 });
               }
             }
@@ -4495,18 +4582,21 @@ export default {
           // ۲.۵. کسور غیبت (از حضور و غیاب)
           if (attendance && attendance.absence_days > 0 && baseSalary > 0) {
             const dailyRate = baseSalary / 30;
-            const absenceAmount = Math.round(attendance.absence_days * dailyRate);
-            
+            const absenceAmount = Math.round(
+              attendance.absence_days * dailyRate
+            );
+
             if (absenceAmount > 0) {
               otherDeductions += absenceAmount;
               appliedDeductions.push({
-                type: 'absence',
-                title: `کسر غیبت (${toPersianNumbers(attendance.absence_days)} روز)`,
-                amount: absenceAmount
+                type: "absence",
+                title: `کسر غیبت (${toPersianNumbers(
+                  attendance.absence_days
+                )} روز)`,
+                amount: absenceAmount,
               });
             }
           }
-
 
           for (const ded of activeDeductions.results) {
             const amt = parseFloat(ded.amount) || 0;
@@ -4666,14 +4756,21 @@ export default {
         }
       }
 
-               // POST: لغو محاسبه (به جای حذف)
-      if (url.pathname.match(/^\/api\/payroll-calculations\/\d+\/cancel$/) && request.method === "POST") {
+      // POST: لغو محاسبه (به جای حذف)
+      if (
+        url.pathname.match(/^\/api\/payroll-calculations\/\d+\/cancel$/) &&
+        request.method === "POST"
+      ) {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
-              status: 401, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
@@ -4681,7 +4778,8 @@ export default {
 
           if (!userData || !["admin", "manager"].includes(userData.role)) {
             return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
-              status: 403, headers,
+              status: 403,
+              headers,
             });
           }
 
@@ -4692,18 +4790,25 @@ export default {
           // چک کن محاسبه وجود داره
           const calc = await env.DB.prepare(
             `SELECT * FROM payroll_calculations WHERE id = ?`
-          ).bind(id).first();
+          )
+            .bind(id)
+            .first();
 
           if (!calc) {
             return new Response(JSON.stringify({ error: "محاسبه یافت نشد" }), {
-              status: 404, headers,
+              status: 404,
+              headers,
             });
           }
 
-          if (calc.status === 'cancelled') {
-            return new Response(JSON.stringify({ error: "این محاسبه قبلاً لغو شده" }), {
-              status: 400, headers,
-            });
+          if (calc.status === "cancelled") {
+            return new Response(
+              JSON.stringify({ error: "این محاسبه قبلاً لغو شده" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
           }
 
           const nowShamsi = toShamsi(new Date());
@@ -4712,22 +4817,35 @@ export default {
           const loanPayments = await env.DB.prepare(
             `SELECT * FROM loan_payments 
              WHERE payroll_calculation_id = ? AND status = 'paid'`
-          ).bind(id).all();
+          )
+            .bind(id)
+            .all();
 
           for (const payment of loanPayments.results) {
             const loan = await env.DB.prepare(
               `SELECT * FROM loans WHERE id = ?`
-            ).bind(payment.loan_id).first();
+            )
+              .bind(payment.loan_id)
+              .first();
 
             if (loan) {
-              const newPaidInstallments = Math.max(0, (loan.paid_installments || 0) - 1);
-              const newPaidAmount = Math.max(0, (loan.paid_amount || 0) - payment.amount);
+              const newPaidInstallments = Math.max(
+                0,
+                (loan.paid_installments || 0) - 1
+              );
+              const newPaidAmount = Math.max(
+                0,
+                (loan.paid_amount || 0) - payment.amount
+              );
               const newRemaining = (loan.total_amount || 0) - newPaidAmount;
-              
+
               // اگه قبلاً completed بود، به active برگردون
               let newStatus = loan.status;
-              if (loan.status === 'completed' && newPaidInstallments < loan.installments_count) {
-                newStatus = 'active';
+              if (
+                loan.status === "completed" &&
+                newPaidInstallments < loan.installments_count
+              ) {
+                newStatus = "active";
               }
 
               await env.DB.prepare(
@@ -4739,14 +4857,16 @@ export default {
                   updated_at = CURRENT_TIMESTAMP,
                   updated_at_shamsi = ?
                 WHERE id = ?`
-              ).bind(
-                newPaidInstallments,
-                newPaidAmount,
-                newRemaining,
-                newStatus,
-                nowShamsi,
-                loan.id
-              ).run();
+              )
+                .bind(
+                  newPaidInstallments,
+                  newPaidAmount,
+                  newRemaining,
+                  newStatus,
+                  nowShamsi,
+                  loan.id
+                )
+                .run();
             }
           }
 
@@ -4754,7 +4874,9 @@ export default {
           await env.DB.prepare(
             `UPDATE loan_payments SET status = 'cancelled' 
              WHERE payroll_calculation_id = ?`
-          ).bind(id).run();
+          )
+            .bind(id)
+            .run();
 
           // ۳. لغو محاسبه
           await env.DB.prepare(
@@ -4766,35 +4888,44 @@ export default {
               updated_at = CURRENT_TIMESTAMP,
               updated_at_shamsi = ?
             WHERE id = ?`
-          ).bind(
-            userData.userId,
-            reason || null,
-            nowShamsi,
-            id
-          ).run();
+          )
+            .bind(userData.userId, reason || null, nowShamsi, id)
+            .run();
 
-          return new Response(JSON.stringify({ 
-            success: true,
-            message: 'محاسبه لغو شد و اقساط وام بازگردانده شدند'
-          }), {
-            status: 200, headers,
-          });
+          return new Response(
+            JSON.stringify({
+              success: true,
+              message: "محاسبه لغو شد و اقساط وام بازگردانده شدند",
+            }),
+            {
+              status: 200,
+              headers,
+            }
+          );
         } catch (error) {
           console.error("Payroll cancel error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
-            status: 500, headers,
+            status: 500,
+            headers,
           });
         }
       }
 
       // DELETE: حذف کامل (فقط admin و فقط اگه cancelled باشه)
-      if (url.pathname.match(/^\/api\/payroll-calculations\/\d+$/) && request.method === "DELETE") {
+      if (
+        url.pathname.match(/^\/api\/payroll-calculations\/\d+$/) &&
+        request.method === "DELETE"
+      ) {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
-              status: 401, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
@@ -4802,7 +4933,8 @@ export default {
 
           if (!userData || userData.role !== "admin") {
             return new Response(JSON.stringify({ error: "فقط مدیر سیستم" }), {
-              status: 403, headers,
+              status: 403,
+              headers,
             });
           }
 
@@ -4811,37 +4943,50 @@ export default {
           // چک کن status
           const calc = await env.DB.prepare(
             `SELECT status FROM payroll_calculations WHERE id = ?`
-          ).bind(id).first();
+          )
+            .bind(id)
+            .first();
 
           if (!calc) {
             return new Response(JSON.stringify({ error: "محاسبه یافت نشد" }), {
-              status: 404, headers,
+              status: 404,
+              headers,
             });
           }
 
-          if (calc.status !== 'cancelled') {
-            return new Response(JSON.stringify({ 
-              error: "فقط محاسبات لغو شده قابل حذف کامل هستند" 
-            }), {
-              status: 400, headers,
-            });
+          if (calc.status !== "cancelled") {
+            return new Response(
+              JSON.stringify({
+                error: "فقط محاسبات لغو شده قابل حذف کامل هستند",
+              }),
+              {
+                status: 400,
+                headers,
+              }
+            );
           }
 
           // حذف پرداخت‌های وام
-          await env.DB.prepare("DELETE FROM loan_payments WHERE payroll_calculation_id = ?")
-            .bind(id).run();
+          await env.DB.prepare(
+            "DELETE FROM loan_payments WHERE payroll_calculation_id = ?"
+          )
+            .bind(id)
+            .run();
 
           // حذف محاسبه
           await env.DB.prepare("DELETE FROM payroll_calculations WHERE id = ?")
-            .bind(id).run();
+            .bind(id)
+            .run();
 
           return new Response(JSON.stringify({ success: true }), {
-            status: 200, headers,
+            status: 200,
+            headers,
           });
         } catch (error) {
           console.error("Payroll calc DELETE error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
-            status: 500, headers,
+            status: 500,
+            headers,
           });
         }
       }
@@ -5612,7 +5757,6 @@ export default {
         }
       }
 
-
       // ============================================
       // Attendance API (حضور و غیاب)
       // ============================================
@@ -5622,9 +5766,13 @@ export default {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
-              status: 401, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
@@ -5632,7 +5780,8 @@ export default {
 
           if (!userData) {
             return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
-              status: 401, headers,
+              status: 401,
+              headers,
             });
           }
 
@@ -5659,29 +5808,41 @@ export default {
             params.push(month);
           }
 
-          query += " ORDER BY a.period_year DESC, a.period_month DESC, a.id DESC LIMIT 200";
+          query +=
+            " ORDER BY a.period_year DESC, a.period_month DESC, a.id DESC LIMIT 200";
 
-          const items = await env.DB.prepare(query).bind(...params).all();
+          const items = await env.DB.prepare(query)
+            .bind(...params)
+            .all();
 
           return new Response(JSON.stringify(items.results), {
-            status: 200, headers,
+            status: 200,
+            headers,
           });
         } catch (error) {
           console.error("Attendance GET error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
-            status: 500, headers,
+            status: 500,
+            headers,
           });
         }
       }
 
       // GET: یک رکورد حضور و غیاب
-      if (url.pathname.match(/^\/api\/attendance\/\d+$/) && request.method === "GET") {
+      if (
+        url.pathname.match(/^\/api\/attendance\/\d+$/) &&
+        request.method === "GET"
+      ) {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
-              status: 401, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
@@ -5689,7 +5850,8 @@ export default {
 
           if (!userData) {
             return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
-              status: 401, headers,
+              status: 401,
+              headers,
             });
           }
 
@@ -5700,21 +5862,26 @@ export default {
              FROM attendance a
              LEFT JOIN persons p ON a.employee_person_id = p.id
              WHERE a.id = ?`
-          ).bind(id).first();
+          )
+            .bind(id)
+            .first();
 
           if (!item) {
             return new Response(JSON.stringify({ error: "رکورد یافت نشد" }), {
-              status: 404, headers,
+              status: 404,
+              headers,
             });
           }
 
           return new Response(JSON.stringify(item), {
-            status: 200, headers,
+            status: 200,
+            headers,
           });
         } catch (error) {
           console.error("Attendance GET error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
-            status: 500, headers,
+            status: 500,
+            headers,
           });
         }
       }
@@ -5724,17 +5891,25 @@ export default {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
-              status: 401, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
           const userData = await verifyToken(token, env.JWT_SECRET);
 
-          if (!userData || !["admin", "manager", "expert"].includes(userData.role)) {
+          if (
+            !userData ||
+            !["admin", "manager", "expert"].includes(userData.role)
+          ) {
             return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
-              status: 403, headers,
+              status: 403,
+              headers,
             });
           }
 
@@ -5758,7 +5933,8 @@ export default {
 
           if (!employee_person_id || !period_year || !period_month) {
             return new Response(JSON.stringify({ error: "اطلاعات ناقص" }), {
-              status: 400, headers,
+              status: 400,
+              headers,
             });
           }
 
@@ -5781,23 +5957,26 @@ export default {
                 updated_at = CURRENT_TIMESTAMP,
                 updated_at_shamsi = ?
               WHERE id = ?`
-            ).bind(
-              working_days || 0,
-              absence_days || 0,
-              leave_days || 0,
-              sick_leave_days || 0,
-              overtime_hours || 0,
-              holiday_hours || 0,
-              nightshift_hours || 0,
-              mission_days_with_stay || 0,
-              mission_days_without_stay || 0,
-              notes || null,
-              nowShamsi,
-              id
-            ).run();
+            )
+              .bind(
+                working_days || 0,
+                absence_days || 0,
+                leave_days || 0,
+                sick_leave_days || 0,
+                overtime_hours || 0,
+                holiday_hours || 0,
+                nightshift_hours || 0,
+                mission_days_with_stay || 0,
+                mission_days_without_stay || 0,
+                notes || null,
+                nowShamsi,
+                id
+              )
+              .run();
 
             return new Response(JSON.stringify({ success: true, id: id }), {
-              status: 200, headers,
+              status: 200,
+              headers,
             });
           } else {
             // INSERT
@@ -5809,47 +5988,61 @@ export default {
                 mission_days_with_stay, mission_days_without_stay,
                 status, notes, created_at_shamsi, updated_at_shamsi)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?)`
-            ).bind(
-              employee_person_id,
-              period_year,
-              period_month,
-              working_days || 0,
-              absence_days || 0,
-              leave_days || 0,
-              sick_leave_days || 0,
-              overtime_hours || 0,
-              holiday_hours || 0,
-              nightshift_hours || 0,
-              mission_days_with_stay || 0,
-              mission_days_without_stay || 0,
-              notes || null,
-              nowShamsi,
-              nowShamsi
-            ).run();
+            )
+              .bind(
+                employee_person_id,
+                period_year,
+                period_month,
+                working_days || 0,
+                absence_days || 0,
+                leave_days || 0,
+                sick_leave_days || 0,
+                overtime_hours || 0,
+                holiday_hours || 0,
+                nightshift_hours || 0,
+                mission_days_with_stay || 0,
+                mission_days_without_stay || 0,
+                notes || null,
+                nowShamsi,
+                nowShamsi
+              )
+              .run();
 
-            return new Response(JSON.stringify({
-              success: true,
-              id: result.meta.last_row_id,
-            }), {
-              status: 201, headers,
-            });
+            return new Response(
+              JSON.stringify({
+                success: true,
+                id: result.meta.last_row_id,
+              }),
+              {
+                status: 201,
+                headers,
+              }
+            );
           }
         } catch (error) {
           console.error("Attendance POST error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
-            status: 500, headers,
+            status: 500,
+            headers,
           });
         }
       }
 
       // PUT: تأیید حضور و غیاب
-      if (url.pathname.match(/^\/api\/attendance\/\d+\/approve$/) && request.method === "PUT") {
+      if (
+        url.pathname.match(/^\/api\/attendance\/\d+\/approve$/) &&
+        request.method === "PUT"
+      ) {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
-              status: 401, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
@@ -5857,7 +6050,8 @@ export default {
 
           if (!userData) {
             return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
-              status: 401, headers,
+              status: 401,
+              headers,
             });
           }
 
@@ -5866,9 +6060,13 @@ export default {
           const { approve_type, approved } = body;
 
           if (!["manager", "mayor"].includes(approve_type)) {
-            return new Response(JSON.stringify({ error: "نوع تأیید نامعتبر" }), {
-              status: 400, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "نوع تأیید نامعتبر" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
           }
 
           const nowShamsi = toShamsi(new Date());
@@ -5882,13 +6080,15 @@ export default {
                 status = ?,
                 updated_at_shamsi = ?
               WHERE id = ?`
-            ).bind(
-              approved ? 1 : 0,
-              userData.userId,
-              approved ? 'manager_approved' : 'rejected',
-              nowShamsi,
-              id
-            ).run();
+            )
+              .bind(
+                approved ? 1 : 0,
+                userData.userId,
+                approved ? "manager_approved" : "rejected",
+                nowShamsi,
+                id
+              )
+              .run();
           } else {
             await env.DB.prepare(
               `UPDATE attendance SET
@@ -5898,34 +6098,45 @@ export default {
                 status = ?,
                 updated_at_shamsi = ?
               WHERE id = ?`
-            ).bind(
-              approved ? 1 : 0,
-              userData.userId,
-              approved ? 'mayor_approved' : 'rejected',
-              nowShamsi,
-              id
-            ).run();
+            )
+              .bind(
+                approved ? 1 : 0,
+                userData.userId,
+                approved ? "mayor_approved" : "rejected",
+                nowShamsi,
+                id
+              )
+              .run();
           }
 
           return new Response(JSON.stringify({ success: true }), {
-            status: 200, headers,
+            status: 200,
+            headers,
           });
         } catch (error) {
           console.error("Attendance approve error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
-            status: 500, headers,
+            status: 500,
+            headers,
           });
         }
       }
 
       // DELETE: حذف رکورد
-      if (url.pathname.match(/^\/api\/attendance\/\d+$/) && request.method === "DELETE") {
+      if (
+        url.pathname.match(/^\/api\/attendance\/\d+$/) &&
+        request.method === "DELETE"
+      ) {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
-              status: 401, headers,
-            });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
@@ -5933,22 +6144,26 @@ export default {
 
           if (!userData || !["admin", "manager"].includes(userData.role)) {
             return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
-              status: 403, headers,
+              status: 403,
+              headers,
             });
           }
 
           const id = url.pathname.split("/").pop();
 
           await env.DB.prepare("DELETE FROM attendance WHERE id = ?")
-            .bind(id).run();
+            .bind(id)
+            .run();
 
           return new Response(JSON.stringify({ success: true }), {
-            status: 200, headers,
+            status: 200,
+            headers,
           });
         } catch (error) {
           console.error("Attendance DELETE error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
-            status: 500, headers,
+            status: 500,
+            headers,
           });
         }
       }

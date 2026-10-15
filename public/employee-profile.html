@@ -1011,6 +1011,68 @@
       color: #e2e8f0;
     }
 
+
+    /* ============ Task Cascade ============ */
+    .task-cascade {
+      margin-bottom: 20px;
+    }
+
+    .task-breadcrumb {
+      background: #eef1ff;
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #667eea;
+      line-height: 1.8;
+      direction: rtl;
+      word-wrap: break-word;
+    }
+
+    .cascade-select {
+      font-family: 'Vazirmatn', Tahoma, sans-serif;
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+      background: white;
+      margin-bottom: 10px;
+    }
+
+    .cascade-select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    body.dark .task-breadcrumb {
+      background: #374151;
+      color: #90cdf4;
+    }
+
+    body.dark .cascade-select {
+      background: #1a202c;
+      border-color: #4a5568;
+      color: #e2e8f0;
+    }
+
+    .btn-choose-level {
+      background: #28a745;
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 18px;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .btn-choose-level:hover {
+      background: #218838;
+      transform: scale(1.05);
+    }
+
     </style>
   </head>
 
@@ -1052,7 +1114,7 @@
     let operationalItems = [];
     let dependents = [];
     let decrees = [];
-
+    let lockedTaskType = null; // ← سطح قفل‌شده
       // ============================================
       // توابع کمکی
       // ============================================
@@ -1170,10 +1232,14 @@
           organizations = await orgRes.json();
 
           // لود وظایف کارمند
-          const tasksRes = await fetch(`/api/employees/${personId}/tasks`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          employeeTasks = await tasksRes.json();
+        const tasksRes = await fetch(`/api/employees/${personId}/tasks`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        employeeTasks = await tasksRes.json();
+
+        // تشخیص سطح قفل‌شده
+        detectLockedType();
+
 
         // لود طبقه‌بندی عملیاتی
         const opRes = await fetch('/api/operational-tree', {
@@ -1193,7 +1259,12 @@
         });
         decrees = await decreesRes.json();
 
-        renderPage();
+      
+                renderPage();
+                 setTimeout(initCascade, 200);
+        setTimeout(initDatePickers, 200);
+        setTimeout(initBasicDatePickers, 200);
+        setTimeout(initCascade, 300); // ← اضافه کن
         } catch (error) {
           console.error("Load error:", error);
           document.getElementById("main-container").innerHTML = `
@@ -1721,102 +1792,126 @@
         </div>
       `;
       }
-      // ============================================
-      // تب وظایف (طبقه‌بندی عملیاتی)
-      // ============================================
-      function renderTasksTab() {
-        // محاسبه جمع درصدها
-        const totalPercentage = employeeTasks.reduce(
-          (sum, t) => sum + (t.percentage || 0),
-          0
-        );
 
-        let totalColor = "#28a745";
-        if (totalPercentage > 100) totalColor = "#dc3545";
-        else if (totalPercentage < 100) totalColor = "#fd7e14";
+    // ============================================
+    // تب وظایف (درخت کشویی پویا)
+    // ============================================
+    let taskLevels = []; // [{parent_id, selected, options, type, title, code}]
 
-        let tasksHtml = "";
+    function renderTasksTab() {
+      const totalPercentage = employeeTasks.reduce((sum, t) => sum + (t.percentage || 0), 0);
 
-        if (employeeTasks.length === 0) {
-          tasksHtml = `
+      let totalColor = '#28a745';
+      if (totalPercentage > 100) totalColor = '#dc3545';
+      else if (totalPercentage < 100) totalColor = '#fd7e14';
+
+      let tasksHtml = '';
+
+      if (employeeTasks.length === 0) {
+        tasksHtml = `
           <div style="text-align:center; padding:30px; color:#999;">
             هنوز وظیفه‌ای ثبت نشده
           </div>
         `;
-        } else {
-          employeeTasks.forEach((task, index) => {
-            const typeLabels = {
-              mission: "مأموریت",
-              program: "برنامه",
-              service: "خدمت",
-              plan: "طرح",
-              activity: "فعالیت",
-              project: "پروژه",
-            };
-
-            tasksHtml += `
+      } else {
+        employeeTasks.forEach((task, index) => {
+          tasksHtml += `
             <div class="task-item" data-index="${index}">
-                            <div class="task-row">
-                <div class="form-group" style="flex:2;">
+              <div class="task-row" style="align-items: flex-start;">
+                <div class="form-group" style="flex:1;">
                   <label>وظیفه</label>
-                  <select class="task-select" onchange="onTaskChange(${index}, this.value)">
-                    ${renderOperationalOptions(task.task_id)}
-                  </select>
-                </div>
-                <div class="form-group" style="flex:0.5;">
-                  <label>نوع</label>
-                  <input type="text" value="${
-                    typeLabels[task.task_type] || "—"
-                  }" disabled style="color:#667eea;font-weight:bold;" />
+                  <div class="task-breadcrumb">${task.breadcrumb || task.task_title || '—'}</div>
                 </div>
                 <div class="form-group" style="flex:0.5;">
                   <label>درصد</label>
-                  <input type="number" class="task-percentage" min="0" max="100" value="${
-                    task.percentage || 0
-                  }" onchange="onPercentageChange(${index}, this.value)" />
+                  <input type="number" class="task-percentage" min="0" max="100" value="${task.percentage || 0}" 
+                         onchange="onPercentageChange(${index}, this.value)" />
                 </div>
-                <button class="task-remove-btn" onclick="removeTask(${index})" title="حذف">🗑️</button>
+                <button class="task-remove-btn" onclick="removeTask(${index})" title="حذف" style="margin-top:24px;">🗑️</button>
               </div>
               <div class="form-group" style="margin-top:10px;">
-                <input type="text" class="task-notes" placeholder="یادداشت (اختیاری)" value="${
-                  task.notes || ""
-                }" onchange="onNotesChange(${index}, this.value)" />
+                <input type="text" class="task-notes" placeholder="یادداشت (اختیاری)" value="${task.notes || ''}" 
+                       onchange="onNotesChange(${index}, this.value)" />
               </div>
             </div>
           `;
-          });
-        }
+        });
+      }
 
-        return `
+      // فرم افزودن وظیفه (کشوهای پویا)
+      let cascadeHtml = '';
+
+      if (employeeTasks.length === 0 || true) { // همیشه نمایش داده بشه
+        cascadeHtml = `
+          <div class="task-cascade" style="border: 2px dashed #ddd; border-radius: 10px; padding: 15px; margin-top: 15px; background: #fafbff;">
+            <div style="font-size: 13px; font-weight: bold; color: #667eea; margin-bottom: 10px;">
+              ➕ افزودن وظیفه جدید
+            </div>
+
+            <div id="cascade-container">
+              <!-- کشوها داینامیک اینجا میان -->
+            </div>
+
+            <div style="margin-top: 12px;">
+              <div class="form-group">
+                <label>درصد زمانی <span style="color:#e74c3c;">*</span></label>
+                <input type="number" id="new-task-percentage" class="task-percentage" min="0" max="100" value="0" />
+              </div>
+              <div class="form-group">
+                <label>یادداشت</label>
+                <input type="text" id="new-task-notes" class="task-notes" placeholder="اختیاری" />
+              </div>
+            </div>
+
+            <button class="add-task-btn" onclick="addTaskFromCascade()" style="margin-top:10px;">
+              ➕ افزودن به لیست
+            </button>
+          </div>
+        `;
+      }
+
+           const typeLabels = {
+        mission: 'مأموریت',
+        program: 'برنامه',
+        service: 'خدمت',
+        plan: 'طرح',
+        activity: 'فعالیت',
+        project: 'پروژه'
+      };
+
+      return `
         <div class="section-divider">🎯 وظایف بر اساس طبقه‌بندی عملیاتی</div>
-        
-        <div class="info-banner">
-          💡 <b>راهنما:</b> درصد زمانی که صرف هر وظیفه می‌کنید را مشخص کنید.
-          <br>
-          • <b>شهردار و معاونت مالی</b> → مأموریت‌ها
-          • <b>معاونت‌ها</b> → مأموریت خودشان
-          • <b>مدیران</b> → برنامه‌ها و خدمت‌ها
-          • <b>سایر کارکنان</b> → فعالیت‌ها و پروژه‌ها
-        </div>
+
+        ${lockedTaskType ? `
+          <div class="info-banner" style="background: #fff3cd; border-right-color: #fd7e14; color: #856404;">
+            🔒 <b>سطح قفل‌شده:</b> همه وظایف باید در سطح «<b>${typeLabels[lockedTaskType]}</b>» باشند.
+            <br>
+            (چون اولین وظیفه در این سطح ثبت شده است)
+          </div>
+        ` : `
+          <div class="info-banner">
+            💡 <b>راهنما:</b> برای اولین وظیفه، سطح مورد نظر را از کشوها انتخاب کنید.
+            <br>
+            • می‌توانید در هر سطحی (مأموریت، برنامه، خدمت، فعالیت، طرح، پروژه) توقف کنید
+            • بعد از ثبت اولین وظیفه، سطح آن قفل می‌شود و بقیه وظایف باید هم‌سطح باشند
+          </div>
+        `}
+        ...
 
         <div class="tasks-container" id="tasks-container">
           ${tasksHtml}
         </div>
 
-        <button class="add-task-btn" onclick="addTask()">
-          ➕ افزودن وظیفه
-        </button>
+        ${cascadeHtml}
 
-        <div class="total-bar" style="border-color: ${totalColor};">
+        <div class="total-bar" style="border-color: ${totalColor}; margin-top: 20px;">
           <span>جمع درصدها:</span>
           <strong style="color: ${totalColor};">${totalPercentage}٪</strong>
-          ${
-            totalPercentage === 100
-              ? '<span style="color:#28a745;margin-right:10px;">✅ کامل</span>'
-              : totalPercentage > 100
+          ${totalPercentage === 100
+            ? '<span style="color:#28a745;margin-right:10px;">✅ کامل</span>'
+            : totalPercentage > 100
               ? '<span style="color:#dc3545;margin-right:10px;">❌ بیش از ۱۰۰٪</span>'
-              : '<span style="color:#fd7e14;margin-right:10px;">⚠️ کمتر از ۱۰۰٪</span>'
-          }
+              : '<span style="color:#fd7e14;margin-right:10px;">⚠️ کمتر از ۱۰۰٪</span>'}
         </div>
 
         <div class="actions-bar">
@@ -1825,8 +1920,242 @@
           </button>
         </div>
       `;
+    }
+    
+        // ============================================
+    // کشوی پویا
+    // ============================================
+    let cascadeState = {
+      levels: [], // [{ parentId, selected, options, type }]
+      selectedTask: null, // آخرین انتخاب (برای ذخیره)
+    };
+
+    async function initCascade() {
+      cascadeState = { levels: [], selectedTask: null };
+      await loadCascadeLevel(null, 0);
+      renderCascade();
+    }
+
+    // ============================================
+    // تشخیص سطح قفل‌شده از وظایف فعلی
+    // ============================================
+    function detectLockedType() {
+      if (employeeTasks.length > 0) {
+        // از اولین وظیفه، سطح رو بگیر
+        const firstType = employeeTasks[0].task_type;
+        if (firstType) {
+          lockedTaskType = firstType;
+        }
+      } else {
+        lockedTaskType = null;
+      }
+    }
+
+    async function loadCascadeLevel(parentId, level) {
+      try {
+        const url = parentId
+          ? `/api/operational-children?parent_id=${parentId}`
+          : `/api/operational-children?parent_id=null`;
+
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const options = await res.json();
+
+        cascadeState.levels[level] = {
+          parentId: parentId,
+          selected: null,
+          options: options,
+        };
+
+        // پاک کردن سطوح بعدی
+        cascadeState.levels = cascadeState.levels.slice(0, level + 1);
+      } catch (error) {
+        console.error('Load cascade level error:', error);
+      }
+    }
+
+       async function onCascadeChange(level, value) {
+      const optionId = value ? parseInt(value) : null;
+      cascadeState.levels[level].selected = optionId;
+
+      if (optionId) {
+        // پیدا کردن option انتخاب شده
+        const opt = cascadeState.levels[level].options.find(o => o.id === optionId);
+        cascadeState.selectedTask = opt;
+
+        // بارگذاری سطح بعدی
+        await loadCascadeLevel(optionId, level + 1);
+      } else {
+        cascadeState.selectedTask = null;
+        cascadeState.levels = cascadeState.levels.slice(0, level + 1);
       }
 
+      renderCascade();
+    }
+    
+    
+    
+    function renderCascade() {
+      const container = document.getElementById('cascade-container');
+      if (!container) return;
+
+      const typeLabels = {
+        mission: 'مأموریت',
+        program: 'برنامه',
+        service: 'خدمت',
+        plan: 'طرح',
+        activity: 'فعالیت',
+        project: 'پروژه'
+      };
+
+      const typeIcons = {
+        mission: '🎯',
+        program: '📋',
+        service: '⚙️',
+        plan: '📐',
+        activity: '🔧',
+        project: '🏗️'
+      };
+
+      let html = '';
+
+      cascadeState.levels.forEach((levelData, levelIndex) => {
+        if (!levelData) return;
+        if (levelData.options.length === 0) return;
+
+        // سطح ۱ (مأموریت) همیشه نمایش داده می‌شه
+        // فقط برای سطوح بالاتر (levelIndex > 0) چک کن که هم‌سطح قفل‌شده باشه
+        if (lockedTaskType && levelIndex > 0) {
+          const optionTypes = [...new Set(levelData.options.map(o => o.type))];
+          if (!optionTypes.includes(lockedTaskType)) {
+            return;
+          }
+        }
+
+        const levelNum = levelIndex + 1;
+        const levelLabel = levelIndex === 0 ? 'سطح ۱ - مأموریت' : `سطح ${toPersianNumbers(levelNum)}`;
+
+        // آیا این کشو انتخاب شده؟
+        const isSelected = levelData.selected !== null;
+        const isLastSelected = isSelected && (levelIndex === cascadeState.levels.length - 2 || 
+                                               !cascadeState.levels[levelIndex + 1] || 
+                                               cascadeState.levels[levelIndex + 1].selected === null);
+
+        html += `
+          <div class="form-group" style="position:relative;">
+            <label>
+              ${levelLabel}
+              ${isSelected ? '<span style="color:#28a745;font-size:11px;">✅</span>' : ''}
+              ${isLastSelected ? '<span style="color:#667eea;font-size:11px;margin-right:5px;">(این سطح می‌تواند وظیفه باشد)</span>' : ''}
+            </label>
+            <div style="display:flex; gap:8px;">
+              <select class="cascade-select" onchange="onCascadeChange(${levelIndex}, this.value)" style="flex:1;">
+                <option value="">— انتخاب کنید —</option>
+                ${levelData.options.map(opt => `
+                  <option value="${opt.id}" ${levelData.selected === opt.id ? 'selected' : ''}>
+                    ${typeIcons[opt.type] || '📄'} ${opt.code} - ${opt.title} (${typeLabels[opt.type] || opt.type})
+                  </option>
+                `).join("")}
+              </select>
+              ${isLastSelected ? `
+                <button class="btn-choose-level" onclick="chooseThisLevelAsTask(${levelIndex})" title="این سطح را به عنوان وظیفه انتخاب کن">
+                  ✅
+                </button>
+              ` : ""}
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function addTaskFromCascade() {
+      if (!cascadeState.selectedTask) {
+        showToast('لطفاً حداقل یک سطح انتخاب کنید', 'error');
+        return;
+      }
+
+      const percentage = parseInt(document.getElementById('new-task-percentage').value) || 0;
+      const notes = document.getElementById('new-task-notes').value.trim() || '';
+
+      if (percentage <= 0) {
+        showToast('درصد زمانی الزامی است', 'error');
+        return;
+      }
+
+      // چک هم‌سطح بودن
+      if (lockedTaskType && cascadeState.selectedTask.type !== lockedTaskType) {
+        const typeLabels = {
+          mission: 'مأموریت',
+          program: 'برنامه',
+          service: 'خدمت',
+          plan: 'طرح',
+          activity: 'فعالیت',
+          project: 'پروژه'
+        };
+        showToast(`همه وظایف باید در سطح «${typeLabels[lockedTaskType]}» باشند. سطح فعلی انتخاب: «${typeLabels[cascadeState.selectedTask.type]}»`, 'error');
+        return;
+      }
+
+      // اگه اولین وظیفه‌ست، سطح رو قفل کن
+      if (!lockedTaskType && employeeTasks.length === 0) {
+        lockedTaskType = cascadeState.selectedTask.type;
+      }
+
+      // ساخت breadcrumb از سطوح انتخاب‌شده
+      const breadcrumbParts = [];
+      cascadeState.levels.forEach(levelData => {
+        if (levelData && levelData.selected) {
+          const opt = levelData.options.find(o => o.id === levelData.selected);
+          if (opt) breadcrumbParts.push(`${opt.code} - ${opt.title}`);
+        }
+      });
+
+      const task = {
+        task_id: cascadeState.selectedTask.id,
+        task_type: cascadeState.selectedTask.type,
+        task_title: cascadeState.selectedTask.title,
+        breadcrumb: breadcrumbParts.join(' → '),
+        percentage: percentage,
+        notes: notes,
+      };
+
+      employeeTasks.push(task);
+
+      // ریست فرم
+      document.getElementById('new-task-percentage').value = 0;
+      document.getElementById('new-task-notes').value = '';
+      initCascade();
+
+      // رفرش تب
+      const panel = document.getElementById('panel-tasks');
+      if (panel) panel.innerHTML = renderTasksTab();
+      setTimeout(initCascade, 100);
+    }
+        // ============================================
+    // انتخاب سطح فعلی به عنوان وظیفه
+    // ============================================
+    function chooseThisLevelAsTask(levelIndex) {
+      const levelData = cascadeState.levels[levelIndex];
+      if (!levelData || !levelData.selected) {
+        showToast('لطفاً ابتدا یک گزینه انتخاب کنید', 'error');
+        return;
+      }
+
+      // اون option انتخاب‌شده رو بگیر
+      const opt = levelData.options.find(o => o.id === levelData.selected);
+      if (!opt) return;
+
+      // اون رو به عنوان تسک انتخاب کن
+      cascadeState.selectedTask = opt;
+
+      // درصد بده و اضافه کن
+      addTaskFromCascade();
+    }
+    
+    
     // ============================================
     // تب افراد تحت تکفل
     // ============================================
@@ -2980,18 +3309,24 @@
       // ============================================
       // حذف وظیفه
       // ============================================
-      function removeTask(index) {
-        if (!confirm("مطمئن هستید این وظیفه حذف شود؟")) return;
-
-        employeeTasks.splice(index, 1);
-
-        const panel = document.getElementById("panel-tasks");
-        if (panel) {
-          panel.innerHTML = renderTasksTab();
-        }
+    function removeTask(index) {
+      if (!confirm('مطمئن هستید این وظیفه حذف شود؟')) return;
+      
+      employeeTasks.splice(index, 1);
+      
+      // اگه دیگه وظیفه‌ای نیست، قفل رو باز کن
+      if (employeeTasks.length === 0) {
+        lockedTaskType = null;
       }
-
-      // ============================================
+      
+      const panel = document.getElementById('panel-tasks');
+      if (panel) {
+        panel.innerHTML = renderTasksTab();
+        setTimeout(initCascade, 100);
+      }
+    }
+    
+    // ============================================
       // تغییر وظیفه
       // ============================================
       function onTaskChange(index, taskId) {
@@ -3058,16 +3393,21 @@
       // ============================================
       // ذخیره وظایف
       // ============================================
-      async function saveTasks() {
-        const btn = document.getElementById("btn-save-tasks");
-        btn.disabled = true;
-        btn.textContent = "⏳ در حال ذخیره...";
+    async function saveTasks() {
+      const btn = document.getElementById('btn-save-tasks');
+      btn.disabled = true;
+      btn.textContent = '⏳ در حال ذخیره...';
 
-        try {
-          // فیلتر کردن وظایف خالی
-          let validTasks = employeeTasks.filter(
-            (t) => t.task_id && t.task_type
-          );
+      try {
+        let validTasks = employeeTasks
+          .filter(t => t.task_id && t.task_type)
+          .map(t => ({
+            task_id: t.task_id,
+            task_type: t.task_type,
+            task_title: t.task_title,
+            percentage: t.percentage || 0,
+            notes: t.notes || null,
+          }));
 
           // حذف تکراری‌ها (merge percentage)
           const mergedTasks = {};
@@ -3126,10 +3466,14 @@
         btn.classList.add("active");
         document.getElementById("panel-" + tabName).classList.add("active");
 
-        if (tabName === "employment") {
-          datePickersInitialized = false;
-          setTimeout(initDatePickers, 100);
-        }
+      if (tabName === 'employment') {
+        datePickersInitialized = false;
+        setTimeout(initDatePickers, 100);
+      }
+
+      if (tabName === 'tasks') {
+        setTimeout(initCascade, 100);
+      }
       }
 
       // ============================================
