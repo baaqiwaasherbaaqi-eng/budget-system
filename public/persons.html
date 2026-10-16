@@ -698,18 +698,30 @@
             </div>
 
             <!-- فیلدهای ویژه سطح ۴ (شخص واقعی) -->
-            <div id="person-fields" style="display:none;">
+                 <div id="person-fields" style="display:none;">
 
                 <!-- اطلاعات هویتی -->
                 <div class="section-divider">📋 اطلاعات هویتی</div>
 
+                <!-- ⚠️ کد ملی و موبایل اول -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>کد ملی <span class="required">*</span></label>
+                        <input type="text" id="input-national-id" maxlength="10" dir="ltr" />
+                    </div>
+                    <div class="form-group">
+                        <label>موبایل <span class="required">*</span></label>
+                        <input type="text" id="input-mobile" maxlength="11" dir="ltr" />
+                    </div>
+                </div>
+
                 <div class="form-row" id="row-name-fields">
                     <div class="form-group">
-                        <label>نام</label>
+                        <label>نام <span class="required">*</span></label>
                         <input type="text" id="input-first-name" />
                     </div>
                     <div class="form-group">
-                        <label>نام خانوادگی</label>
+                        <label>نام خانوادگی <span class="required">*</span></label>
                         <input type="text" id="input-last-name" />
                     </div>
                 </div>
@@ -730,24 +742,17 @@
                         <label>شماره شناسنامه</label>
                         <input type="text" id="input-id-number" />
                     </div>
-                    <div class="form-group">
-                        <label>کد ملی</label>
-                        <input type="text" id="input-national-id" maxlength="10" />
-                    </div>
-                </div>
-
-                <div class="form-row">
                     <div class="form-group" id="group-birth-date">
                         <label>تاریخ تولد</label>
                         <input type="text" id="input-birth-date" placeholder="۱۳۷۰/۰۱/۰۱" />
                     </div>
+                </div>
+
+                <div class="form-row">
                     <div class="form-group">
                         <label>محل تولد</label>
                         <input type="text" id="input-birth-place" />
                     </div>
-                </div>
-
-                <div class="form-row">
                     <div class="form-group">
                         <label>جنسیت</label>
                         <select id="input-gender">
@@ -756,11 +761,15 @@
                             <option value="female">زن</option>
                         </select>
                     </div>
+                </div>
+
+                <div class="form-row">
                     <div class="form-group">
                         <label>تابعیت</label>
                         <input type="text" id="input-nationality" value="ایرانی" />
                     </div>
                 </div>
+                ...
 
                 <!-- فیلدهای حقوقی -->
                 <div class="form-row" id="row-legal-fields" style="display:none;">
@@ -783,25 +792,21 @@
                         <input type="text" id="input-phone" />
                     </div>
                     <div class="form-group">
-                        <label>موبایل</label>
-                        <input type="text" id="input-mobile" maxlength="11" />
+                        <label>ایمیل</label>
+                        <input type="email" id="input-email" dir="ltr" />
+                    </div>
+                </div>
+
+                <div class="form-row"></div>
+                    <div class="form-group">
+                        <label>کد پستی</label>
+                        <input type="text" id="input-postal-code" maxlength="10" />
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label>آدرس</label>
                     <textarea id="input-address"></textarea>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>کد پستی</label>
-                        <input type="text" id="input-postal-code" maxlength="10" />
-                    </div>
-                    <div class="form-group">
-                        <label>ایمیل</label>
-                        <input type="email" id="input-email" dir="ltr" />
-                    </div>
                 </div>
 
                 <!-- اطلاعات بانکی -->
@@ -1453,6 +1458,22 @@
             if (!fullName) {
                 showToast('نام الزامی است', 'error');
                 return;
+            }
+
+            // چک اجباری برای سطح ۴
+            if (isPerson) {
+                const nationalId = document.getElementById('input-national-id').value.trim();
+                const mobile = document.getElementById('input-mobile').value.trim();
+
+                if (!nationalId || nationalId.length !== 10) {
+                    showToast('کد ملی الزامی است (۱۰ رقم)', 'error');
+                    return;
+                }
+
+                if (!mobile || mobile.length !== 11) {
+                    showToast('شماره موبایل الزامی است (۱۱ رقم)', 'error');
+                    return;
+                }
             }
 
             const btn = document.getElementById('btn-save');

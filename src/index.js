@@ -122,7 +122,41 @@ async function checkPermission(env, userId, permissionKey) {
   }
 }
 
+// ============================================
+// تعیین نقش کاربر بر اساس پست سازمانی
+// ============================================
+function getRoleFromPosition(position) {
+  if (!position) return "viewer";
+  
+  const pos = position.trim();
+  
+  // نقش‌های manager
+  const managerKeywords = ['شهردار', 'معاون', 'مدیر', 'رئیس', 'سرپرست'];
+  for (const kw of managerKeywords) {
+    if (pos.includes(kw)) return "manager";
+  }
+  
+  // نقش‌های expert
+  const expertKeywords = ['کارشناس', 'مسئول', 'کارشناس ارشد', 'مشاور'];
+  for (const kw of expertKeywords) {
+    if (pos.includes(kw)) return "expert";
+  }
+  
+  // سایر → viewer
+  return "viewer";
+}
 
+// ============================================
+// تولید پسورد تصادفی
+// ============================================
+function generateRandomPassword(length = 8) {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  let pass = "";
+  for (let i = 0; i < length; i++) {
+    pass += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return pass;
+}
 
 export default {
   async fetch(request, env, ctx) {
@@ -140,7 +174,309 @@ export default {
     }
 
     try {
+      // ============================================
+      // POST: درخواست کد لاگین (OTP)
+      // ============================================
+      if (
+        url.pathname === "/api/login/request-otp" &&
+        request.method === "POST"
+      ) {
+        try {
+          const body = await request.json();
+          const nationalId = body.national_id;
+
+          if (!nationalId) {
+            return new Response(
+              JSON.stringify({ error: "کد ملی الزامی است" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          // چک کاربر
+          const user = await env.DB.prepare(
+            `SELECT u.id, u.username, u.full_name, u.role, u.organization, 
+                    u.is_active, u.mobile,
+                    p.mobile as person_mobile
+             FROM users u
+             LEFT JOIN persons p ON p.user_id = u.id
+             WHERE u.username = ?`
+          )
+            .bind(nationalId)
+            .first();
+
+          if (!user) {
+            return new Response(
+              JSON.stringify({
+                error:
+                  "کاربری با این کد ملی یافت نشد. لطفاً با مدیر سیستم تماس بگیرید.",
+              }),
+              {
+                status: 404,
+                headers,
+              }
+            );
+          }
+
+          if (!user.is_active) {
+            return new Response(
+              JSON.stringify({ error: "حساب کاربری غیرفعال است" }),
+              {
+                status: 403,
+                headers,
+              }
+            );
+          }
+
+          // شماره موبایل
+          const mobile = user.mobile || user.person_mobile;
+
+          if (!mobile) {
+            return new Response(
+              JSON.stringify({
+                error:
+                  "شماره موبایل شما ثبت نشده است. لطفاً با مدیر سیستم تماس بگیرید.",
+              }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          // تولید کد ۶ رقمی
+          const otpCode = Math.floor(
+            100000 + Math.random() * 900000
+          ).toString();
+
+          // تاریخ انقضا: ۵ دقیقه بعد
+          const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
+          const nowShamsi = toShamsi(new Date());
+
+          // حذف OTP های قبلی pending
+          await env.DB.prepare(
+            "UPDATE login_otp SET status = 'expired' WHERE user_id = ? AND status = 'pending'"
+          )
+            .bind(user.id)
+            .run();
+
+          // ثبت OTP جدید
+          const result = await env.DB.prepare(
+            `INSERT INTO login_otp 
+             (user_id, username, mobile, otp_code, otp_expires_at, ip_address, status, created_at_shamsi)
+             VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)`
+          )
+            .bind(
+              user.id,
+              user.username,
+              mobile,
+              otpCode,
+              expiresAt,
+              request.headers.get("CF-Connecting-IP") || null,
+              nowShamsi
+            )
+            .run();
+
+          // ============================================
+          // Mock SMS
+          // ============================================
+          console.log(`📱 [MOCK SMS] کد لاگین به ${mobile}:`);
+          console.log(`   کد: ${otpCode}`);
+
+          return new Response(
+            JSON.stringify({
+              success: true,
+              otp_id: result.meta.last_row_id,
+              mobile_masked:
+                mobile.substring(0, 4) +
+                "***" +
+                mobile.substring(mobile.length - 3),
+              message: "کد تایید به موبایل شما ارسال شد",
+              // ⚠️ فقط در حالت mock
+              mock_otp: otpCode,
+              full_name: user.full_name,
+            }),
+            {
+              status: 200,
+              headers,
+            }
+          );
+        } catch (error) {
+          console.error("Request OTP error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // ============================================
+      // POST: تأیید OTP و ورود
+      // ============================================
+      if (
+        url.pathname === "/api/login/verify-otp" &&
+        request.method === "POST"
+      ) {
+        try {
+          const body = await request.json();
+          const { otp_id, otp_code } = body;
+
+          if (!otp_id || !otp_code) {
+            return new Response(
+              JSON.stringify({ error: "کد و شناسه الزامی است" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          const otp = await env.DB.prepare(
+            `SELECT * FROM login_otp WHERE id = ?`
+          )
+            .bind(otp_id)
+            .first();
+
+          if (!otp) {
+            return new Response(JSON.stringify({ error: "کد نامعتبر" }), {
+              status: 404,
+              headers,
+            });
+          }
+
+          if (otp.status !== "pending") {
+            return new Response(
+              JSON.stringify({ error: "این کد قبلاً استفاده یا منقضی شده" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          // چک انقضا
+          if (new Date(otp.otp_expires_at) < new Date()) {
+            await env.DB.prepare(
+              "UPDATE login_otp SET status = 'expired' WHERE id = ?"
+            )
+              .bind(otp_id)
+              .run();
+
+            return new Response(
+              JSON.stringify({ error: "کد منقضی شده است. دوباره تلاش کنید" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          // چک تعداد تلاش
+          if (otp.attempts >= 5) {
+            await env.DB.prepare(
+              "UPDATE login_otp SET status = 'failed' WHERE id = ?"
+            )
+              .bind(otp_id)
+              .run();
+
+            return new Response(
+              JSON.stringify({ error: "تعداد تلاش بیش از حد مجاز" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          // چک کد
+          if (otp.otp_code !== otp_code) {
+            await env.DB.prepare(
+              "UPDATE login_otp SET attempts = attempts + 1 WHERE id = ?"
+            )
+              .bind(otp_id)
+              .run();
+
+            return new Response(JSON.stringify({ error: "کد اشتباه است" }), {
+              status: 400,
+              headers,
+            });
+          }
+
+          // موفق → getUser
+          const user = await env.DB.prepare(
+            "SELECT * FROM users WHERE id = ? AND is_active = 1"
+          )
+            .bind(otp.user_id)
+            .first();
+
+          if (!user) {
+            return new Response(
+              JSON.stringify({ error: "کاربر یافت نشد یا غیرفعال است" }),
+              {
+                status: 404,
+                headers,
+              }
+            );
+          }
+
+          // آپدیت OTP
+          await env.DB.prepare(
+            "UPDATE login_otp SET status = 'verified', verified_at = CURRENT_TIMESTAMP WHERE id = ?"
+          )
+            .bind(otp_id)
+            .run();
+
+          // توکن
+          const token = await generateToken(
+            user.id,
+            user.username,
+            user.role,
+            env.JWT_SECRET
+          );
+
+          // لاگ
+          ctx.waitUntil(
+            logAction(
+              env,
+              request,
+              { userId: user.id, username: user.username },
+              "login",
+              "user",
+              user.id,
+              { method: "otp" }
+            )
+          );
+
+          return new Response(
+            JSON.stringify({
+              token,
+              user: {
+                id: user.id,
+                username: user.username,
+                full_name: user.full_name,
+                role: user.role,
+                organization: user.organization,
+              },
+            }),
+            {
+              status: 200,
+              headers,
+            }
+          );
+        } catch (error) {
+          console.error("Verify OTP error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
       // ========== ورود ==========
+
       if (url.pathname === "/api/login" && request.method === "POST") {
         // بررسی Rate Limit
         const ip = request.headers.get("CF-Connecting-IP") || "unknown";
@@ -477,12 +813,65 @@ export default {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(
-              JSON.stringify({ error: "احراز هویت لازم است" }),
-              {
-                status: 401,
-                headers,
+            const newPersonId = result.meta.last_row_id;
+
+            // ============================================
+            // ساخت خودکار کاربر (فقط برای سطح ۴ - اشخاص واقعی)
+            // ============================================
+            if (level === 4 && national_id) {
+              try {
+                // چک: کاربر قبلاً هست؟
+                const existingUser = await env.DB.prepare(
+                  "SELECT id FROM users WHERE username = ?"
+                )
+                  .bind(national_id)
+                  .first();
+
+                if (!existingUser) {
+                  // پیش‌فرض viewer
+                  const role = person_type === "employee" ? "viewer" : "viewer";
+
+                  const userResult = await env.DB.prepare(
+                    `INSERT INTO users 
+                   (username, password_hash, full_name, role, organization, is_active, mobile)
+                   VALUES (?, ?, ?, ?, ?, 1, ?)`
+                  )
+                    .bind(
+                      national_id,
+                      "OTP_ONLY", // پسورد نداره، فقط OTP
+                      full_name,
+                      role,
+                      null,
+                      mobile || null
+                    )
+                    .run();
+
+                  const userId = userResult.meta.last_row_id;
+
+                  // آپدیت person.user_id
+                  await env.DB.prepare(
+                    "UPDATE persons SET user_id = ? WHERE id = ?"
+                  )
+                    .bind(userId, newPersonId)
+                    .run();
+
+                  console.log(
+                    `✅ کاربر خودکار ساخته شد: ${national_id} (${role})`
+                  );
+                }
+              } catch (userError) {
+                console.error("Auto-create user error:", userError);
+                // ادامه بده، خطای کاربر نباید مانع ساخت شخص بشه
               }
+            }
+
+            return new Response(
+              JSON.stringify({
+                success: true,
+                id: newPersonId,
+                code: code,
+              }),
+              { status: 201, headers }
             );
           }
 
@@ -533,6 +922,10 @@ export default {
             );
           }
 
+          // ⚠️ برای اشخاص واقعی (سطح ۴)، کد ملی و موبایل اجباری
+          // (سطح ۴ = شخص نهایی، نه گروه)
+          // این چک در انتهای API بعد از محاسبه level انجام می‌شه
+
           const validTypes = ["employee", "citizen", "legal", "foreigner"];
           if (!validTypes.includes(person_type)) {
             return new Response(JSON.stringify({ error: "نوع شخص نامعتبر" }), {
@@ -554,6 +947,22 @@ export default {
               .bind(parent_id)
               .first();
             if (parent) level = parent.level + 1;
+          }
+
+          // چک اجباری بودن کد ملی و موبایل برای سطح ۴
+          if (level === 4) {
+            if (!national_id) {
+              return new Response(
+                JSON.stringify({ error: "کد ملی برای اشخاص الزامی است" }),
+                { status: 400, headers }
+              );
+            }
+            if (!mobile) {
+              return new Response(
+                JSON.stringify({ error: "شماره موبایل برای اشخاص الزامی است" }),
+                { status: 400, headers }
+              );
+            }
           }
 
           const nowShamsi = toShamsi(new Date());
@@ -602,10 +1011,46 @@ export default {
             )
             .run();
 
+          const newPersonId = result.meta.last_row_id;
+
+          // ساخت خودکار کاربر (فقط اشخاص واقعی سطح ۴)
+          if (level === 4 && national_id) {
+            try {
+              const existingUser = await env.DB.prepare(
+                "SELECT id FROM users WHERE username = ?"
+              )
+                .bind(national_id)
+                .first();
+
+              let userId;
+              if (existingUser) {
+                userId = existingUser.id;
+              } else {
+                const userResult = await env.DB.prepare(
+                  `INSERT INTO users 
+                   (username, password_hash, full_name, role, organization, is_active, mobile)
+                   VALUES (?, 'OTP_ONLY', ?, 'viewer', NULL, 1, ?)`
+                )
+                  .bind(national_id, full_name, mobile || null)
+                  .run();
+
+                userId = userResult.meta.last_row_id;
+              }
+
+              await env.DB.prepare(
+                "UPDATE persons SET user_id = ? WHERE id = ?"
+              )
+                .bind(userId, newPersonId)
+                .run();
+            } catch (userError) {
+              console.error("Auto-create user error:", userError);
+            }
+          }
+
           return new Response(
             JSON.stringify({
               success: true,
-              id: result.meta.last_row_id,
+              id: newPersonId,
               code: code,
             }),
             { status: 201, headers }
@@ -1012,12 +1457,44 @@ export default {
             )
             .run();
 
+          const newPoId = result.meta.last_row_id;
+
+          // ============================================
+          // آپدیت نقش کاربر (اگه سازمان اصلی بود)
+          // ============================================
+          if (is_primary && role) {
+            try {
+              const person = await env.DB.prepare(
+                "SELECT user_id FROM persons WHERE id = ?"
+              )
+                .bind(personId)
+                .first();
+
+              if (person && person.user_id) {
+                const newRole = getRoleFromPosition(role);
+
+                await env.DB.prepare(
+                  "UPDATE users SET role = ?, organization = ? WHERE id = ?"
+                )
+                  .bind(newRole, role, person.user_id)
+                  .run();
+
+                console.log(`✅ نقش کاربر آپدیت شد: ${newRole} (پست: ${role})`);
+              }
+            } catch (roleError) {
+              console.error("Update role error:", roleError);
+            }
+          }
+
           return new Response(
             JSON.stringify({
               success: true,
-              id: result.meta.last_row_id,
+              id: newPoId,
             }),
-            { status: 201, headers }
+            {
+              status: 201,
+              headers,
+            }
           );
         } catch (error) {
           return new Response(JSON.stringify({ error: "خطا در ثبت" }), {
@@ -6402,6 +6879,627 @@ export default {
           });
         } catch (error) {
           console.error("Council member DELETE error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // ============================================
+      // Person-Organization Link API
+      // ============================================
+
+      // GET: سازمان‌های یک شخص
+      if (
+        url.pathname.match(/^\/api\/persons\/\d+\/organizations$/) &&
+        request.method === "GET"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401,
+              headers,
+            });
+          }
+
+          const personId = url.pathname.split("/")[3];
+
+          const items = await env.DB.prepare(
+            `SELECT po.*, bd.title as organization_title, bd.code as organization_code
+             FROM person_organizations po
+             LEFT JOIN base_data bd ON po.organization_id = bd.id
+             WHERE po.person_id = ?
+             ORDER BY po.is_primary DESC, po.id DESC`
+          )
+            .bind(personId)
+            .all();
+
+          return new Response(JSON.stringify(items.results), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Person orgs GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // POST: اتصال شخص به سازمان
+      if (
+        url.pathname.match(/^\/api\/persons\/\d+\/organizations$/) &&
+        request.method === "POST"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const personId = url.pathname.split("/")[3];
+          const body = await request.json();
+          const {
+            id,
+            organization_id,
+            role,
+            is_primary,
+            start_date_shamsi,
+            end_date_shamsi,
+            notes,
+          } = body;
+
+          if (!organization_id) {
+            return new Response(
+              JSON.stringify({ error: "سازمان الزامی است" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          const nowShamsi = toShamsi(new Date());
+
+          // اگه is_primary = true، بقیه رو false کن
+          if (is_primary) {
+            await env.DB.prepare(
+              "UPDATE person_organizations SET is_primary = 0 WHERE person_id = ?"
+            )
+              .bind(personId)
+              .run();
+          }
+
+          if (id) {
+            // UPDATE
+            await env.DB.prepare(
+              `UPDATE person_organizations SET
+                organization_id = ?,
+                role = ?,
+                is_primary = ?,
+                start_date_shamsi = ?,
+                end_date_shamsi = ?,
+                notes = ?
+              WHERE id = ? AND person_id = ?`
+            )
+              .bind(
+                organization_id,
+                role || null,
+                is_primary ? 1 : 0,
+                start_date_shamsi || null,
+                end_date_shamsi || null,
+                notes || null,
+                id,
+                personId
+              )
+              .run();
+
+            // آپدیت نقش کاربر
+            if (is_primary && role) {
+              try {
+                const person = await env.DB.prepare(
+                  "SELECT user_id FROM persons WHERE id = ?"
+                )
+                  .bind(personId)
+                  .first();
+
+                if (person && person.user_id) {
+                  const newRole = getRoleFromPosition(role);
+                  await env.DB.prepare(
+                    "UPDATE users SET role = ?, organization = ? WHERE id = ?"
+                  )
+                    .bind(newRole, role, person.user_id)
+                    .run();
+                }
+              } catch (roleError) {
+                console.error("Update role error:", roleError);
+              }
+            }
+
+            return new Response(JSON.stringify({ success: true, id: id }), {
+              status: 200,
+              headers,
+            });
+          } else {
+            // INSERT
+            const result = await env.DB.prepare(
+              `INSERT INTO person_organizations
+               (person_id, organization_id, role, is_primary,
+                start_date_shamsi, end_date_shamsi, notes, created_at_shamsi)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+            )
+              .bind(
+                personId,
+                organization_id,
+                role || null,
+                is_primary ? 1 : 0,
+                start_date_shamsi || null,
+                end_date_shamsi || null,
+                notes || null,
+                nowShamsi
+              )
+              .run();
+
+            const newPoId = result.meta.last_row_id;
+
+            // آپدیت نقش کاربر
+            if (is_primary && role) {
+              try {
+                const person = await env.DB.prepare(
+                  "SELECT user_id FROM persons WHERE id = ?"
+                )
+                  .bind(personId)
+                  .first();
+
+                if (person && person.user_id) {
+                  const newRole = getRoleFromPosition(role);
+                  await env.DB.prepare(
+                    "UPDATE users SET role = ?, organization = ? WHERE id = ?"
+                  )
+                    .bind(newRole, role, person.user_id)
+                    .run();
+                }
+              } catch (roleError) {
+                console.error("Update role error:", roleError);
+              }
+            }
+
+            return new Response(
+              JSON.stringify({
+                success: true,
+                id: newPoId,
+              }),
+              {
+                status: 201,
+                headers,
+              }
+            );
+          }
+        } catch (error) {
+          console.error("Person org POST error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // DELETE: حذف اتصال
+      if (
+        url.pathname.match(/^\/api\/person-organizations\/\d+$/) &&
+        request.method === "DELETE"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const id = url.pathname.split("/").pop();
+
+          await env.DB.prepare("DELETE FROM person_organizations WHERE id = ?")
+            .bind(id)
+            .run();
+
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Person org DELETE error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // ============================================
+      // POST: ساخت کاربر برای شخص (Mock SMS)
+      // ============================================
+      if (
+        url.pathname.match(/^\/api\/persons\/\d+\/create-user$/) &&
+        request.method === "POST"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const personId = url.pathname.split("/")[3];
+
+          // لود شخص
+          const person = await env.DB.prepare(
+            "SELECT id, full_name, national_id, mobile FROM persons WHERE id = ?"
+          )
+            .bind(personId)
+            .first();
+
+          if (!person) {
+            return new Response(JSON.stringify({ error: "شخص یافت نشد" }), {
+              status: 404,
+              headers,
+            });
+          }
+
+          if (!person.national_id) {
+            return new Response(JSON.stringify({ error: "کد ملی ثبت نشده" }), {
+              status: 400,
+              headers,
+            });
+          }
+
+          if (!person.mobile) {
+            return new Response(
+              JSON.stringify({ error: "شماره موبایل ثبت نشده" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          // چک: کاربر قبلاً ساخته شده؟
+          const existingUser = await env.DB.prepare(
+            "SELECT id FROM users WHERE username = ?"
+          )
+            .bind(person.national_id)
+            .first();
+
+          if (existingUser) {
+            return new Response(
+              JSON.stringify({ error: "این کاربر قبلاً ساخته شده" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          // پست سازمانی اصلی
+          const primaryOrg = await env.DB.prepare(
+            `SELECT role FROM person_organizations 
+             WHERE person_id = ? AND is_primary = 1 LIMIT 1`
+          )
+            .bind(personId)
+            .first();
+
+          const position = primaryOrg ? primaryOrg.role : null;
+          const role = getRoleFromPosition(position);
+
+          // پسورد تصادفی
+          const tempPassword = generateRandomPassword(8);
+
+          // ساخت کاربر
+          const passwordHash = await hashPassword(tempPassword);
+
+          const nowShamsi = toShamsi(new Date());
+
+          const result = await env.DB.prepare(
+            `INSERT INTO users (username, password_hash, full_name, role, organization, is_active)
+             VALUES (?, ?, ?, ?, ?, 1)`
+          )
+            .bind(
+              person.national_id,
+              passwordHash,
+              person.full_name,
+              role,
+              position || null
+            )
+            .run();
+
+          const userId = result.meta.last_row_id;
+
+          // آپدیت person.user_id
+          await env.DB.prepare("UPDATE persons SET user_id = ? WHERE id = ?")
+            .bind(userId, personId)
+            .run();
+
+          // ثبت در log (mock SMS)
+          await env.DB.prepare(
+            `INSERT INTO user_creation_log
+             (person_id, national_id, username, temp_password, mobile, status, created_at_shamsi)
+             VALUES (?, ?, ?, ?, ?, 'created', ?)`
+          )
+            .bind(
+              personId,
+              person.national_id,
+              person.national_id,
+              tempPassword,
+              person.mobile,
+              nowShamsi
+            )
+            .run();
+
+          // ============================================
+          // Mock SMS: نمایش پسورد
+          // ============================================
+          console.log(`📱 [MOCK SMS] به ${person.mobile}:`);
+          console.log(`   نام کاربری: ${person.national_id}`);
+          console.log(`   رمز عبور: ${tempPassword}`);
+          console.log(`   نقش: ${role}`);
+
+          return new Response(
+            JSON.stringify({
+              success: true,
+              user_id: userId,
+              username: person.national_id,
+              temp_password: tempPassword, // ⚠️ فقط در حالت mock
+              role: role,
+              position: position,
+              mobile: person.mobile,
+              message: "کاربر ساخته شد و رمز (mock) به موبایل ارسال شد",
+            }),
+            {
+              status: 201,
+              headers,
+            }
+          );
+        } catch (error) {
+          console.error("Create user error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // ============================================
+      // GET: آیا این شخص کاربر داره؟
+      // ============================================
+      if (
+        url.pathname.match(/^\/api\/persons\/\d+\/user-status$/) &&
+        request.method === "GET"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401,
+              headers,
+            });
+          }
+
+          const personId = url.pathname.split("/")[3];
+
+          const person = await env.DB.prepare(
+            `SELECT p.id, p.national_id, p.user_id,
+                    u.username, u.role, u.is_active
+             FROM persons p
+             LEFT JOIN users u ON p.user_id = u.id
+             WHERE p.id = ?`
+          )
+            .bind(personId)
+            .first();
+
+          if (!person) {
+            return new Response(JSON.stringify({ error: "شخص یافت نشد" }), {
+              status: 404,
+              headers,
+            });
+          }
+
+          // آخرین log
+          const lastLog = await env.DB.prepare(
+            `SELECT * FROM user_creation_log 
+             WHERE person_id = ? 
+             ORDER BY id DESC LIMIT 1`
+          )
+            .bind(personId)
+            .first();
+
+          return new Response(
+            JSON.stringify({
+              has_user: !!person.user_id,
+              user_id: person.user_id,
+              username: person.username,
+              role: person.role,
+              is_active: person.is_active,
+              last_creation: lastLog,
+            }),
+            {
+              status: 200,
+              headers,
+            }
+          );
+        } catch (error) {
+          console.error("User status error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // ============================================
+      // ساخت کاربر برای یه شخص خاص
+      // ============================================
+      if (
+        url.pathname.match(/^\/api\/persons\/\d+\/fix-user$/) &&
+        request.method === "POST"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || userData.role !== "admin") {
+            return new Response(JSON.stringify({ error: "فقط مدیر سیستم" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const personId = url.pathname.split("/")[3];
+
+          const person = await env.DB.prepare(
+            "SELECT id, full_name, national_id, mobile FROM persons WHERE id = ?"
+          )
+            .bind(personId)
+            .first();
+
+          if (!person) {
+            return new Response(JSON.stringify({ error: "شخص یافت نشد" }), {
+              status: 404,
+              headers,
+            });
+          }
+
+          if (!person.national_id) {
+            return new Response(JSON.stringify({ error: "کد ملی ثبت نشده" }), {
+              status: 400,
+              headers,
+            });
+          }
+
+          // چک وجود کاربر
+          const existing = await env.DB.prepare(
+            "SELECT id FROM users WHERE username = ?"
+          )
+            .bind(person.national_id)
+            .first();
+
+          let userId;
+          if (existing) {
+            userId = existing.id;
+          } else {
+            const result = await env.DB.prepare(
+              `INSERT INTO users 
+               (username, password_hash, full_name, role, organization, is_active, mobile)
+               VALUES (?, 'OTP_ONLY', ?, 'viewer', NULL, 1, ?)`
+            )
+              .bind(person.national_id, person.full_name, person.mobile || null)
+              .run();
+
+            userId = result.meta.last_row_id;
+          }
+
+          // link
+          await env.DB.prepare("UPDATE persons SET user_id = ? WHERE id = ?")
+            .bind(userId, personId)
+            .run();
+
+          return new Response(
+            JSON.stringify({
+              success: true,
+              user_id: userId,
+              username: person.national_id,
+              message: "کاربر با موفقیت ساخته/لینک شد",
+            }),
+            {
+              status: 200,
+              headers,
+            }
+          );
+        } catch (error) {
           return new Response(JSON.stringify({ error: error.message }), {
             status: 500,
             headers,

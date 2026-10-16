@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// .wrangler/tmp/bundle-I2FkUl/checked-fetch.js
+// .wrangler/tmp/bundle-K0RVpN/checked-fetch.js
 var urls = /* @__PURE__ */ new Set();
 function checkURL(request, init) {
   const url = request instanceof URL ? request : new URL(
@@ -40,11 +40,11 @@ async function verifyPassword(password, hash) {
   return newHash === hash;
 }
 __name(verifyPassword, "verifyPassword");
-async function generateToken(userId, username, role, secret) {
+async function generateToken(userId, username, role2, secret) {
   const payload = JSON.stringify({
     userId,
     username,
-    role,
+    role: role2,
     exp: Date.now() + 24 * 60 * 60 * 1e3
     // 24 ساعت
   });
@@ -455,6 +455,29 @@ async function checkPermission(env, userId, permissionKey) {
   }
 }
 __name(checkPermission, "checkPermission");
+function getRoleFromPosition(position) {
+  if (!position) return "viewer";
+  const pos = position.trim();
+  const managerKeywords = ["\u0634\u0647\u0631\u062F\u0627\u0631", "\u0645\u0639\u0627\u0648\u0646", "\u0645\u062F\u06CC\u0631", "\u0631\u0626\u06CC\u0633", "\u0633\u0631\u067E\u0631\u0633\u062A"];
+  for (const kw of managerKeywords) {
+    if (pos.includes(kw)) return "manager";
+  }
+  const expertKeywords = ["\u06A9\u0627\u0631\u0634\u0646\u0627\u0633", "\u0645\u0633\u0626\u0648\u0644", "\u06A9\u0627\u0631\u0634\u0646\u0627\u0633 \u0627\u0631\u0634\u062F", "\u0645\u0634\u0627\u0648\u0631"];
+  for (const kw of expertKeywords) {
+    if (pos.includes(kw)) return "expert";
+  }
+  return "viewer";
+}
+__name(getRoleFromPosition, "getRoleFromPosition");
+function generateRandomPassword(length = 8) {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  let pass = "";
+  for (let i = 0; i < length; i++) {
+    pass += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return pass;
+}
+__name(generateRandomPassword, "generateRandomPassword");
 var src_default = {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -468,6 +491,225 @@ var src_default = {
       return new Response(null, { headers });
     }
     try {
+      if (url.pathname === "/api/login/request-otp" && request.method === "POST") {
+        try {
+          const body = await request.json();
+          const nationalId = body.national_id;
+          if (!nationalId) {
+            return new Response(
+              JSON.stringify({ error: "\u06A9\u062F \u0645\u0644\u06CC \u0627\u0644\u0632\u0627\u0645\u06CC \u0627\u0633\u062A" }),
+              {
+                status: 400,
+                headers
+              }
+            );
+          }
+          const user = await env.DB.prepare(
+            `SELECT u.id, u.username, u.full_name, u.role, u.organization, 
+                    u.is_active, u.mobile,
+                    p.mobile as person_mobile
+             FROM users u
+             LEFT JOIN persons p ON p.user_id = u.id
+             WHERE u.username = ?`
+          ).bind(nationalId).first();
+          if (!user) {
+            return new Response(
+              JSON.stringify({
+                error: "\u06A9\u0627\u0631\u0628\u0631\u06CC \u0628\u0627 \u0627\u06CC\u0646 \u06A9\u062F \u0645\u0644\u06CC \u06CC\u0627\u0641\u062A \u0646\u0634\u062F. \u0644\u0637\u0641\u0627\u064B \u0628\u0627 \u0645\u062F\u06CC\u0631 \u0633\u06CC\u0633\u062A\u0645 \u062A\u0645\u0627\u0633 \u0628\u06AF\u06CC\u0631\u06CC\u062F."
+              }),
+              {
+                status: 404,
+                headers
+              }
+            );
+          }
+          if (!user.is_active) {
+            return new Response(
+              JSON.stringify({ error: "\u062D\u0633\u0627\u0628 \u06A9\u0627\u0631\u0628\u0631\u06CC \u063A\u06CC\u0631\u0641\u0639\u0627\u0644 \u0627\u0633\u062A" }),
+              {
+                status: 403,
+                headers
+              }
+            );
+          }
+          const mobile = user.mobile || user.person_mobile;
+          if (!mobile) {
+            return new Response(
+              JSON.stringify({
+                error: "\u0634\u0645\u0627\u0631\u0647 \u0645\u0648\u0628\u0627\u06CC\u0644 \u0634\u0645\u0627 \u062B\u0628\u062A \u0646\u0634\u062F\u0647 \u0627\u0633\u062A. \u0644\u0637\u0641\u0627\u064B \u0628\u0627 \u0645\u062F\u06CC\u0631 \u0633\u06CC\u0633\u062A\u0645 \u062A\u0645\u0627\u0633 \u0628\u06AF\u06CC\u0631\u06CC\u062F."
+              }),
+              {
+                status: 400,
+                headers
+              }
+            );
+          }
+          const otpCode = Math.floor(
+            1e5 + Math.random() * 9e5
+          ).toString();
+          const expiresAt = new Date(Date.now() + 5 * 60 * 1e3).toISOString();
+          const nowShamsi = toShamsi(/* @__PURE__ */ new Date());
+          await env.DB.prepare(
+            "UPDATE login_otp SET status = 'expired' WHERE user_id = ? AND status = 'pending'"
+          ).bind(user.id).run();
+          const result = await env.DB.prepare(
+            `INSERT INTO login_otp 
+             (user_id, username, mobile, otp_code, otp_expires_at, ip_address, status, created_at_shamsi)
+             VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)`
+          ).bind(
+            user.id,
+            user.username,
+            mobile,
+            otpCode,
+            expiresAt,
+            request.headers.get("CF-Connecting-IP") || null,
+            nowShamsi
+          ).run();
+          console.log(`\u{1F4F1} [MOCK SMS] \u06A9\u062F \u0644\u0627\u06AF\u06CC\u0646 \u0628\u0647 ${mobile}:`);
+          console.log(`   \u06A9\u062F: ${otpCode}`);
+          return new Response(
+            JSON.stringify({
+              success: true,
+              otp_id: result.meta.last_row_id,
+              mobile_masked: mobile.substring(0, 4) + "***" + mobile.substring(mobile.length - 3),
+              message: "\u06A9\u062F \u062A\u0627\u06CC\u06CC\u062F \u0628\u0647 \u0645\u0648\u0628\u0627\u06CC\u0644 \u0634\u0645\u0627 \u0627\u0631\u0633\u0627\u0644 \u0634\u062F",
+              // ⚠️ فقط در حالت mock
+              mock_otp: otpCode,
+              full_name: user.full_name
+            }),
+            {
+              status: 200,
+              headers
+            }
+          );
+        } catch (error) {
+          console.error("Request OTP error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname === "/api/login/verify-otp" && request.method === "POST") {
+        try {
+          const body = await request.json();
+          const { otp_id, otp_code } = body;
+          if (!otp_id || !otp_code) {
+            return new Response(
+              JSON.stringify({ error: "\u06A9\u062F \u0648 \u0634\u0646\u0627\u0633\u0647 \u0627\u0644\u0632\u0627\u0645\u06CC \u0627\u0633\u062A" }),
+              {
+                status: 400,
+                headers
+              }
+            );
+          }
+          const otp = await env.DB.prepare(
+            `SELECT * FROM login_otp WHERE id = ?`
+          ).bind(otp_id).first();
+          if (!otp) {
+            return new Response(JSON.stringify({ error: "\u06A9\u062F \u0646\u0627\u0645\u0639\u062A\u0628\u0631" }), {
+              status: 404,
+              headers
+            });
+          }
+          if (otp.status !== "pending") {
+            return new Response(
+              JSON.stringify({ error: "\u0627\u06CC\u0646 \u06A9\u062F \u0642\u0628\u0644\u0627\u064B \u0627\u0633\u062A\u0641\u0627\u062F\u0647 \u06CC\u0627 \u0645\u0646\u0642\u0636\u06CC \u0634\u062F\u0647" }),
+              {
+                status: 400,
+                headers
+              }
+            );
+          }
+          if (new Date(otp.otp_expires_at) < /* @__PURE__ */ new Date()) {
+            await env.DB.prepare(
+              "UPDATE login_otp SET status = 'expired' WHERE id = ?"
+            ).bind(otp_id).run();
+            return new Response(
+              JSON.stringify({ error: "\u06A9\u062F \u0645\u0646\u0642\u0636\u06CC \u0634\u062F\u0647 \u0627\u0633\u062A. \u062F\u0648\u0628\u0627\u0631\u0647 \u062A\u0644\u0627\u0634 \u06A9\u0646\u06CC\u062F" }),
+              {
+                status: 400,
+                headers
+              }
+            );
+          }
+          if (otp.attempts >= 5) {
+            await env.DB.prepare(
+              "UPDATE login_otp SET status = 'failed' WHERE id = ?"
+            ).bind(otp_id).run();
+            return new Response(
+              JSON.stringify({ error: "\u062A\u0639\u062F\u0627\u062F \u062A\u0644\u0627\u0634 \u0628\u06CC\u0634 \u0627\u0632 \u062D\u062F \u0645\u062C\u0627\u0632" }),
+              {
+                status: 400,
+                headers
+              }
+            );
+          }
+          if (otp.otp_code !== otp_code) {
+            await env.DB.prepare(
+              "UPDATE login_otp SET attempts = attempts + 1 WHERE id = ?"
+            ).bind(otp_id).run();
+            return new Response(JSON.stringify({ error: "\u06A9\u062F \u0627\u0634\u062A\u0628\u0627\u0647 \u0627\u0633\u062A" }), {
+              status: 400,
+              headers
+            });
+          }
+          const user = await env.DB.prepare(
+            "SELECT * FROM users WHERE id = ? AND is_active = 1"
+          ).bind(otp.user_id).first();
+          if (!user) {
+            return new Response(
+              JSON.stringify({ error: "\u06A9\u0627\u0631\u0628\u0631 \u06CC\u0627\u0641\u062A \u0646\u0634\u062F \u06CC\u0627 \u063A\u06CC\u0631\u0641\u0639\u0627\u0644 \u0627\u0633\u062A" }),
+              {
+                status: 404,
+                headers
+              }
+            );
+          }
+          await env.DB.prepare(
+            "UPDATE login_otp SET status = 'verified', verified_at = CURRENT_TIMESTAMP WHERE id = ?"
+          ).bind(otp_id).run();
+          const token = await generateToken(
+            user.id,
+            user.username,
+            user.role,
+            env.JWT_SECRET
+          );
+          ctx.waitUntil(
+            logAction(
+              env,
+              request,
+              { userId: user.id, username: user.username },
+              "login",
+              "user",
+              user.id,
+              { method: "otp" }
+            )
+          );
+          return new Response(
+            JSON.stringify({
+              token,
+              user: {
+                id: user.id,
+                username: user.username,
+                full_name: user.full_name,
+                role: user.role,
+                organization: user.organization
+              }
+            }),
+            {
+              status: 200,
+              headers
+            }
+          );
+        } catch (error) {
+          console.error("Verify OTP error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
       if (url.pathname === "/api/login" && request.method === "POST") {
         const ip = request.headers.get("CF-Connecting-IP") || "unknown";
         const allowed = await checkRateLimit(env, ip, "login_attempt", 10, 60);
@@ -713,12 +955,46 @@ var src_default = {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(
-              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
-              {
-                status: 401,
-                headers
+            const newPersonId2 = result.meta.last_row_id;
+            if (level === 4 && national_id) {
+              try {
+                const existingUser = await env.DB.prepare(
+                  "SELECT id FROM users WHERE username = ?"
+                ).bind(national_id).first();
+                if (!existingUser) {
+                  const role2 = person_type === "employee" ? "viewer" : "viewer";
+                  const userResult = await env.DB.prepare(
+                    `INSERT INTO users 
+                   (username, password_hash, full_name, role, organization, is_active, mobile)
+                   VALUES (?, ?, ?, ?, ?, 1, ?)`
+                  ).bind(
+                    national_id,
+                    "OTP_ONLY",
+                    // پسورد نداره، فقط OTP
+                    full_name,
+                    role2,
+                    null,
+                    mobile || null
+                  ).run();
+                  const userId = userResult.meta.last_row_id;
+                  await env.DB.prepare(
+                    "UPDATE persons SET user_id = ? WHERE id = ?"
+                  ).bind(userId, newPersonId2).run();
+                  console.log(
+                    `\u2705 \u06A9\u0627\u0631\u0628\u0631 \u062E\u0648\u062F\u06A9\u0627\u0631 \u0633\u0627\u062E\u062A\u0647 \u0634\u062F: ${national_id} (${role2})`
+                  );
+                }
+              } catch (userError) {
+                console.error("Auto-create user error:", userError);
               }
+            }
+            return new Response(
+              JSON.stringify({
+                success: true,
+                id: newPersonId2,
+                code
+              }),
+              { status: 201, headers }
             );
           }
           const token = authHeader.replace("Bearer ", "");
@@ -782,6 +1058,20 @@ var src_default = {
             ).bind(parent_id).first();
             if (parent) level = parent.level + 1;
           }
+          if (level === 4) {
+            if (!national_id) {
+              return new Response(
+                JSON.stringify({ error: "\u06A9\u062F \u0645\u0644\u06CC \u0628\u0631\u0627\u06CC \u0627\u0634\u062E\u0627\u0635 \u0627\u0644\u0632\u0627\u0645\u06CC \u0627\u0633\u062A" }),
+                { status: 400, headers }
+              );
+            }
+            if (!mobile) {
+              return new Response(
+                JSON.stringify({ error: "\u0634\u0645\u0627\u0631\u0647 \u0645\u0648\u0628\u0627\u06CC\u0644 \u0628\u0631\u0627\u06CC \u0627\u0634\u062E\u0627\u0635 \u0627\u0644\u0632\u0627\u0645\u06CC \u0627\u0633\u062A" }),
+                { status: 400, headers }
+              );
+            }
+          }
           const nowShamsi = toShamsi(/* @__PURE__ */ new Date());
           const result = await env.DB.prepare(
             `INSERT INTO persons 
@@ -824,10 +1114,34 @@ var src_default = {
             nowShamsi,
             nowShamsi
           ).run();
+          const newPersonId = result.meta.last_row_id;
+          if (level === 4 && national_id) {
+            try {
+              const existingUser = await env.DB.prepare(
+                "SELECT id FROM users WHERE username = ?"
+              ).bind(national_id).first();
+              let userId;
+              if (existingUser) {
+                userId = existingUser.id;
+              } else {
+                const userResult = await env.DB.prepare(
+                  `INSERT INTO users 
+                   (username, password_hash, full_name, role, organization, is_active, mobile)
+                   VALUES (?, 'OTP_ONLY', ?, 'viewer', NULL, 1, ?)`
+                ).bind(national_id, full_name, mobile || null).run();
+                userId = userResult.meta.last_row_id;
+              }
+              await env.DB.prepare(
+                "UPDATE persons SET user_id = ? WHERE id = ?"
+              ).bind(userId, newPersonId).run();
+            } catch (userError) {
+              console.error("Auto-create user error:", userError);
+            }
+          }
           return new Response(
             JSON.stringify({
               success: true,
-              id: result.meta.last_row_id,
+              id: newPersonId,
               code
             }),
             { status: 201, headers }
@@ -1137,12 +1451,32 @@ var src_default = {
             parent_id || null,
             is_cost_center ? 1 : 0
           ).run();
+          const newPoId = result.meta.last_row_id;
+          if (is_primary && role) {
+            try {
+              const person = await env.DB.prepare(
+                "SELECT user_id FROM persons WHERE id = ?"
+              ).bind(personId).first();
+              if (person && person.user_id) {
+                const newRole = getRoleFromPosition(role);
+                await env.DB.prepare(
+                  "UPDATE users SET role = ?, organization = ? WHERE id = ?"
+                ).bind(newRole, role, person.user_id).run();
+                console.log(`\u2705 \u0646\u0642\u0634 \u06A9\u0627\u0631\u0628\u0631 \u0622\u067E\u062F\u06CC\u062A \u0634\u062F: ${newRole} (\u067E\u0633\u062A: ${role})`);
+              }
+            } catch (roleError) {
+              console.error("Update role error:", roleError);
+            }
+          }
           return new Response(
             JSON.stringify({
               success: true,
-              id: result.meta.last_row_id
+              id: newPoId
             }),
-            { status: 201, headers }
+            {
+              status: 201,
+              headers
+            }
           );
         } catch (error) {
           return new Response(JSON.stringify({ error: "\u062E\u0637\u0627 \u062F\u0631 \u062B\u0628\u062A" }), {
@@ -2069,13 +2403,13 @@ var src_default = {
               headers
             });
           }
-          const personId = url.pathname.split("/").pop();
+          const personId2 = url.pathname.split("/").pop();
           const employee = await env.DB.prepare(
             `SELECT * FROM employees WHERE person_id = ?`
-          ).bind(personId).first();
+          ).bind(personId2).first();
           const person = await env.DB.prepare(
             `SELECT * FROM persons WHERE id = ?`
-          ).bind(personId).first();
+          ).bind(personId2).first();
           if (!person) {
             return new Response(JSON.stringify({ error: "\u0634\u062E\u0635 \u06CC\u0627\u0641\u062A \u0646\u0634\u062F" }), {
               status: 404,
@@ -2120,7 +2454,7 @@ var src_default = {
               headers
             });
           }
-          const personId = url.pathname.split("/").pop();
+          const personId2 = url.pathname.split("/").pop();
           const body = await request.json();
           const {
             contract_type,
@@ -2151,7 +2485,7 @@ var src_default = {
           const nowShamsi = toShamsi(/* @__PURE__ */ new Date());
           const existing = await env.DB.prepare(
             `SELECT id FROM employees WHERE person_id = ?`
-          ).bind(personId).first();
+          ).bind(personId2).first();
           if (existing) {
             await env.DB.prepare(
               `UPDATE employees SET
@@ -2208,7 +2542,7 @@ var src_default = {
               other_occasion_title || null,
               notes || null,
               nowShamsi,
-              personId
+              personId2
             ).run();
           } else {
             await env.DB.prepare(
@@ -2223,7 +2557,7 @@ var src_default = {
                 notes, created_at_shamsi, updated_at_shamsi
               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
             ).bind(
-              personId,
+              personId2,
               contract_type || null,
               contract_start_shamsi || null,
               contract_end_shamsi || null,
@@ -2284,10 +2618,10 @@ var src_default = {
               headers
             });
           }
-          const personId = url.pathname.split("/")[3];
+          const personId2 = url.pathname.split("/")[3];
           const tasks = await env.DB.prepare(
             `SELECT * FROM employee_tasks WHERE person_id = ? ORDER BY id`
-          ).bind(personId).all();
+          ).bind(personId2).all();
           return new Response(JSON.stringify(tasks.results), {
             status: 200,
             headers
@@ -2320,7 +2654,7 @@ var src_default = {
               headers
             });
           }
-          const personId = url.pathname.split("/")[3];
+          const personId2 = url.pathname.split("/")[3];
           const { tasks } = await request.json();
           if (!Array.isArray(tasks)) {
             return new Response(
@@ -2347,7 +2681,7 @@ var src_default = {
             );
           }
           const nowShamsi = toShamsi(/* @__PURE__ */ new Date());
-          await env.DB.prepare("DELETE FROM employee_tasks WHERE person_id = ?").bind(personId).run();
+          await env.DB.prepare("DELETE FROM employee_tasks WHERE person_id = ?").bind(personId2).run();
           for (const t of tasks) {
             if (!t.task_id || !t.task_type) continue;
             await env.DB.prepare(
@@ -2355,7 +2689,7 @@ var src_default = {
                (person_id, task_type, task_id, task_title, percentage, notes, created_at_shamsi, updated_at_shamsi)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
             ).bind(
-              personId,
+              personId2,
               t.task_type,
               t.task_id,
               t.task_title || null,
@@ -2493,10 +2827,10 @@ var src_default = {
               headers
             });
           }
-          const personId = url.pathname.split("/")[3];
+          const personId2 = url.pathname.split("/")[3];
           const deps = await env.DB.prepare(
             `SELECT * FROM dependents WHERE employee_person_id = ? ORDER BY id`
-          ).bind(personId).all();
+          ).bind(personId2).all();
           return new Response(JSON.stringify(deps.results), {
             status: 200,
             headers
@@ -2529,7 +2863,7 @@ var src_default = {
               headers
             });
           }
-          const personId = url.pathname.split("/")[3];
+          const personId2 = url.pathname.split("/")[3];
           const body = await request.json();
           const {
             id,
@@ -2554,7 +2888,7 @@ var src_default = {
           if (national_id) {
             const existing = await env.DB.prepare(
               `SELECT id FROM dependents WHERE employee_person_id = ? AND national_id = ? AND id != ?`
-            ).bind(personId, national_id, id || 0).first();
+            ).bind(personId2, national_id, id || 0).first();
             if (existing) {
               return new Response(
                 JSON.stringify({
@@ -2596,7 +2930,7 @@ var src_default = {
               notes || null,
               nowShamsi,
               id,
-              personId
+              personId2
             ).run();
             return new Response(JSON.stringify({ success: true, id }), {
               status: 200,
@@ -2611,7 +2945,7 @@ var src_default = {
                 is_disabled, notes, created_at_shamsi, updated_at_shamsi)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
             ).bind(
-              personId,
+              personId2,
               national_id || null,
               relation_type,
               first_name || null,
@@ -2749,10 +3083,10 @@ var src_default = {
               headers
             });
           }
-          const personId = url.pathname.split("/")[3];
+          const personId2 = url.pathname.split("/")[3];
           const decrees = await env.DB.prepare(
             `SELECT * FROM decrees WHERE employee_person_id = ? ORDER BY id DESC`
-          ).bind(personId).all();
+          ).bind(personId2).all();
           return new Response(JSON.stringify(decrees.results), {
             status: 200,
             headers
@@ -2834,7 +3168,7 @@ var src_default = {
               headers
             });
           }
-          const personId = url.pathname.split("/")[3];
+          const personId2 = url.pathname.split("/")[3];
           const body = await request.json();
           const {
             id,
@@ -2976,7 +3310,7 @@ var src_default = {
               notes || null,
               nowShamsi,
               id,
-              personId
+              personId2
             ).run();
             return new Response(JSON.stringify({ success: true, id }), {
               status: 200,
@@ -3001,7 +3335,7 @@ var src_default = {
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
               )`
             ).bind(
-              personId,
+              personId2,
               decree_type,
               decree_number || null,
               decree_date_shamsi || null,
@@ -4305,10 +4639,10 @@ var src_default = {
               headers
             });
           }
-          const personId = url.pathname.split("/")[3];
+          const personId2 = url.pathname.split("/")[3];
           const loans = await env.DB.prepare(
             `SELECT * FROM loans WHERE employee_person_id = ? ORDER BY id DESC`
-          ).bind(personId).all();
+          ).bind(personId2).all();
           return new Response(JSON.stringify(loans.results), {
             status: 200,
             headers
@@ -4390,7 +4724,7 @@ var src_default = {
               headers
             });
           }
-          const personId = url.pathname.split("/")[3];
+          const personId2 = url.pathname.split("/")[3];
           const body = await request.json();
           const {
             id,
@@ -4446,7 +4780,7 @@ var src_default = {
               notes || null,
               nowShamsi,
               id,
-              personId
+              personId2
             ).run();
             return new Response(JSON.stringify({ success: true, id }), {
               status: 200,
@@ -4462,7 +4796,7 @@ var src_default = {
                 status, notes, created_at_shamsi, updated_at_shamsi)
                VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, 0, ?, ?, ?, 'active', ?, ?, ?)`
             ).bind(
-              personId,
+              personId2,
               loan_type || null,
               lender_name || null,
               loan_number || null,
@@ -4550,14 +4884,14 @@ var src_default = {
               headers
             });
           }
-          const personId = url.pathname.split("/")[3];
+          const personId2 = url.pathname.split("/")[3];
           const ded = await env.DB.prepare(
             `SELECT ed.*, dt.title as type_title, dt.code as type_code, dt.category as type_category
              FROM employee_deductions ed
              LEFT JOIN deduction_types dt ON ed.deduction_type_id = dt.id
              WHERE ed.employee_person_id = ?
              ORDER BY ed.id DESC`
-          ).bind(personId).all();
+          ).bind(personId2).all();
           return new Response(JSON.stringify(ded.results), {
             status: 200,
             headers
@@ -4590,7 +4924,7 @@ var src_default = {
               headers
             });
           }
-          const personId = url.pathname.split("/")[3];
+          const personId2 = url.pathname.split("/")[3];
           const body = await request.json();
           const {
             id,
@@ -4635,7 +4969,7 @@ var src_default = {
               notes || null,
               nowShamsi,
               id,
-              personId
+              personId2
             ).run();
             return new Response(JSON.stringify({ success: true, id }), {
               status: 200,
@@ -4649,7 +4983,7 @@ var src_default = {
                 status, notes, created_at_shamsi, updated_at_shamsi)
                VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`
             ).bind(
-              personId,
+              personId2,
               deduction_type_id || null,
               title,
               amount,
@@ -5349,6 +5683,466 @@ var src_default = {
           });
         }
       }
+      if (url.pathname.match(/^\/api\/persons\/\d+\/organizations$/) && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
+              {
+                status: 401,
+                headers
+              }
+            );
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "\u062A\u0648\u06A9\u0646 \u0646\u0627\u0645\u0639\u062A\u0628\u0631" }), {
+              status: 401,
+              headers
+            });
+          }
+          const personId2 = url.pathname.split("/")[3];
+          const items = await env.DB.prepare(
+            `SELECT po.*, bd.title as organization_title, bd.code as organization_code
+             FROM person_organizations po
+             LEFT JOIN base_data bd ON po.organization_id = bd.id
+             WHERE po.person_id = ?
+             ORDER BY po.is_primary DESC, po.id DESC`
+          ).bind(personId2).all();
+          return new Response(JSON.stringify(items.results), {
+            status: 200,
+            headers
+          });
+        } catch (error) {
+          console.error("Person orgs GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname.match(/^\/api\/persons\/\d+\/organizations$/) && request.method === "POST") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
+              {
+                status: 401,
+                headers
+              }
+            );
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "\u062F\u0633\u062A\u0631\u0633\u06CC \u063A\u06CC\u0631\u0645\u062C\u0627\u0632" }), {
+              status: 403,
+              headers
+            });
+          }
+          const personId2 = url.pathname.split("/")[3];
+          const body = await request.json();
+          const {
+            id,
+            organization_id,
+            role: role2,
+            is_primary: is_primary2,
+            start_date_shamsi,
+            end_date_shamsi,
+            notes
+          } = body;
+          if (!organization_id) {
+            return new Response(
+              JSON.stringify({ error: "\u0633\u0627\u0632\u0645\u0627\u0646 \u0627\u0644\u0632\u0627\u0645\u06CC \u0627\u0633\u062A" }),
+              {
+                status: 400,
+                headers
+              }
+            );
+          }
+          const nowShamsi = toShamsi(/* @__PURE__ */ new Date());
+          if (is_primary2) {
+            await env.DB.prepare(
+              "UPDATE person_organizations SET is_primary = 0 WHERE person_id = ?"
+            ).bind(personId2).run();
+          }
+          if (id) {
+            await env.DB.prepare(
+              `UPDATE person_organizations SET
+                organization_id = ?,
+                role = ?,
+                is_primary = ?,
+                start_date_shamsi = ?,
+                end_date_shamsi = ?,
+                notes = ?
+              WHERE id = ? AND person_id = ?`
+            ).bind(
+              organization_id,
+              role2 || null,
+              is_primary2 ? 1 : 0,
+              start_date_shamsi || null,
+              end_date_shamsi || null,
+              notes || null,
+              id,
+              personId2
+            ).run();
+            if (is_primary2 && role2) {
+              try {
+                const person = await env.DB.prepare(
+                  "SELECT user_id FROM persons WHERE id = ?"
+                ).bind(personId2).first();
+                if (person && person.user_id) {
+                  const newRole = getRoleFromPosition(role2);
+                  await env.DB.prepare(
+                    "UPDATE users SET role = ?, organization = ? WHERE id = ?"
+                  ).bind(newRole, role2, person.user_id).run();
+                }
+              } catch (roleError) {
+                console.error("Update role error:", roleError);
+              }
+            }
+            return new Response(JSON.stringify({ success: true, id }), {
+              status: 200,
+              headers
+            });
+          } else {
+            const result = await env.DB.prepare(
+              `INSERT INTO person_organizations
+               (person_id, organization_id, role, is_primary,
+                start_date_shamsi, end_date_shamsi, notes, created_at_shamsi)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+            ).bind(
+              personId2,
+              organization_id,
+              role2 || null,
+              is_primary2 ? 1 : 0,
+              start_date_shamsi || null,
+              end_date_shamsi || null,
+              notes || null,
+              nowShamsi
+            ).run();
+            const newPoId = result.meta.last_row_id;
+            if (is_primary2 && role2) {
+              try {
+                const person = await env.DB.prepare(
+                  "SELECT user_id FROM persons WHERE id = ?"
+                ).bind(personId2).first();
+                if (person && person.user_id) {
+                  const newRole = getRoleFromPosition(role2);
+                  await env.DB.prepare(
+                    "UPDATE users SET role = ?, organization = ? WHERE id = ?"
+                  ).bind(newRole, role2, person.user_id).run();
+                }
+              } catch (roleError) {
+                console.error("Update role error:", roleError);
+              }
+            }
+            return new Response(
+              JSON.stringify({
+                success: true,
+                id: newPoId
+              }),
+              {
+                status: 201,
+                headers
+              }
+            );
+          }
+        } catch (error) {
+          console.error("Person org POST error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname.match(/^\/api\/person-organizations\/\d+$/) && request.method === "DELETE") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
+              {
+                status: 401,
+                headers
+              }
+            );
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "\u062F\u0633\u062A\u0631\u0633\u06CC \u063A\u06CC\u0631\u0645\u062C\u0627\u0632" }), {
+              status: 403,
+              headers
+            });
+          }
+          const id = url.pathname.split("/").pop();
+          await env.DB.prepare("DELETE FROM person_organizations WHERE id = ?").bind(id).run();
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers
+          });
+        } catch (error) {
+          console.error("Person org DELETE error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname.match(/^\/api\/persons\/\d+\/create-user$/) && request.method === "POST") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
+              {
+                status: 401,
+                headers
+              }
+            );
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "\u062F\u0633\u062A\u0631\u0633\u06CC \u063A\u06CC\u0631\u0645\u062C\u0627\u0632" }), {
+              status: 403,
+              headers
+            });
+          }
+          const personId2 = url.pathname.split("/")[3];
+          const person = await env.DB.prepare(
+            "SELECT id, full_name, national_id, mobile FROM persons WHERE id = ?"
+          ).bind(personId2).first();
+          if (!person) {
+            return new Response(JSON.stringify({ error: "\u0634\u062E\u0635 \u06CC\u0627\u0641\u062A \u0646\u0634\u062F" }), {
+              status: 404,
+              headers
+            });
+          }
+          if (!person.national_id) {
+            return new Response(JSON.stringify({ error: "\u06A9\u062F \u0645\u0644\u06CC \u062B\u0628\u062A \u0646\u0634\u062F\u0647" }), {
+              status: 400,
+              headers
+            });
+          }
+          if (!person.mobile) {
+            return new Response(
+              JSON.stringify({ error: "\u0634\u0645\u0627\u0631\u0647 \u0645\u0648\u0628\u0627\u06CC\u0644 \u062B\u0628\u062A \u0646\u0634\u062F\u0647" }),
+              {
+                status: 400,
+                headers
+              }
+            );
+          }
+          const existingUser = await env.DB.prepare(
+            "SELECT id FROM users WHERE username = ?"
+          ).bind(person.national_id).first();
+          if (existingUser) {
+            return new Response(
+              JSON.stringify({ error: "\u0627\u06CC\u0646 \u06A9\u0627\u0631\u0628\u0631 \u0642\u0628\u0644\u0627\u064B \u0633\u0627\u062E\u062A\u0647 \u0634\u062F\u0647" }),
+              {
+                status: 400,
+                headers
+              }
+            );
+          }
+          const primaryOrg = await env.DB.prepare(
+            `SELECT role FROM person_organizations 
+             WHERE person_id = ? AND is_primary = 1 LIMIT 1`
+          ).bind(personId2).first();
+          const position = primaryOrg ? primaryOrg.role : null;
+          const role2 = getRoleFromPosition(position);
+          const tempPassword = generateRandomPassword(8);
+          const passwordHash = await hashPassword(tempPassword);
+          const nowShamsi = toShamsi(/* @__PURE__ */ new Date());
+          const result = await env.DB.prepare(
+            `INSERT INTO users (username, password_hash, full_name, role, organization, is_active)
+             VALUES (?, ?, ?, ?, ?, 1)`
+          ).bind(
+            person.national_id,
+            passwordHash,
+            person.full_name,
+            role2,
+            position || null
+          ).run();
+          const userId = result.meta.last_row_id;
+          await env.DB.prepare("UPDATE persons SET user_id = ? WHERE id = ?").bind(userId, personId2).run();
+          await env.DB.prepare(
+            `INSERT INTO user_creation_log
+             (person_id, national_id, username, temp_password, mobile, status, created_at_shamsi)
+             VALUES (?, ?, ?, ?, ?, 'created', ?)`
+          ).bind(
+            personId2,
+            person.national_id,
+            person.national_id,
+            tempPassword,
+            person.mobile,
+            nowShamsi
+          ).run();
+          console.log(`\u{1F4F1} [MOCK SMS] \u0628\u0647 ${person.mobile}:`);
+          console.log(`   \u0646\u0627\u0645 \u06A9\u0627\u0631\u0628\u0631\u06CC: ${person.national_id}`);
+          console.log(`   \u0631\u0645\u0632 \u0639\u0628\u0648\u0631: ${tempPassword}`);
+          console.log(`   \u0646\u0642\u0634: ${role2}`);
+          return new Response(
+            JSON.stringify({
+              success: true,
+              user_id: userId,
+              username: person.national_id,
+              temp_password: tempPassword,
+              // ⚠️ فقط در حالت mock
+              role: role2,
+              position,
+              mobile: person.mobile,
+              message: "\u06A9\u0627\u0631\u0628\u0631 \u0633\u0627\u062E\u062A\u0647 \u0634\u062F \u0648 \u0631\u0645\u0632 (mock) \u0628\u0647 \u0645\u0648\u0628\u0627\u06CC\u0644 \u0627\u0631\u0633\u0627\u0644 \u0634\u062F"
+            }),
+            {
+              status: 201,
+              headers
+            }
+          );
+        } catch (error) {
+          console.error("Create user error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname.match(/^\/api\/persons\/\d+\/user-status$/) && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
+              {
+                status: 401,
+                headers
+              }
+            );
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "\u062A\u0648\u06A9\u0646 \u0646\u0627\u0645\u0639\u062A\u0628\u0631" }), {
+              status: 401,
+              headers
+            });
+          }
+          const personId2 = url.pathname.split("/")[3];
+          const person = await env.DB.prepare(
+            `SELECT p.id, p.national_id, p.user_id,
+                    u.username, u.role, u.is_active
+             FROM persons p
+             LEFT JOIN users u ON p.user_id = u.id
+             WHERE p.id = ?`
+          ).bind(personId2).first();
+          if (!person) {
+            return new Response(JSON.stringify({ error: "\u0634\u062E\u0635 \u06CC\u0627\u0641\u062A \u0646\u0634\u062F" }), {
+              status: 404,
+              headers
+            });
+          }
+          const lastLog = await env.DB.prepare(
+            `SELECT * FROM user_creation_log 
+             WHERE person_id = ? 
+             ORDER BY id DESC LIMIT 1`
+          ).bind(personId2).first();
+          return new Response(
+            JSON.stringify({
+              has_user: !!person.user_id,
+              user_id: person.user_id,
+              username: person.username,
+              role: person.role,
+              is_active: person.is_active,
+              last_creation: lastLog
+            }),
+            {
+              status: 200,
+              headers
+            }
+          );
+        } catch (error) {
+          console.error("User status error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
+      if (url.pathname.match(/^\/api\/persons\/\d+\/fix-user$/) && request.method === "POST") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "\u0627\u062D\u0631\u0627\u0632 \u0647\u0648\u06CC\u062A \u0644\u0627\u0632\u0645 \u0627\u0633\u062A" }),
+              {
+                status: 401,
+                headers
+              }
+            );
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData || userData.role !== "admin") {
+            return new Response(JSON.stringify({ error: "\u0641\u0642\u0637 \u0645\u062F\u06CC\u0631 \u0633\u06CC\u0633\u062A\u0645" }), {
+              status: 403,
+              headers
+            });
+          }
+          const personId2 = url.pathname.split("/")[3];
+          const person = await env.DB.prepare(
+            "SELECT id, full_name, national_id, mobile FROM persons WHERE id = ?"
+          ).bind(personId2).first();
+          if (!person) {
+            return new Response(JSON.stringify({ error: "\u0634\u062E\u0635 \u06CC\u0627\u0641\u062A \u0646\u0634\u062F" }), {
+              status: 404,
+              headers
+            });
+          }
+          if (!person.national_id) {
+            return new Response(JSON.stringify({ error: "\u06A9\u062F \u0645\u0644\u06CC \u062B\u0628\u062A \u0646\u0634\u062F\u0647" }), {
+              status: 400,
+              headers
+            });
+          }
+          const existing = await env.DB.prepare(
+            "SELECT id FROM users WHERE username = ?"
+          ).bind(person.national_id).first();
+          let userId;
+          if (existing) {
+            userId = existing.id;
+          } else {
+            const result = await env.DB.prepare(
+              `INSERT INTO users 
+               (username, password_hash, full_name, role, organization, is_active, mobile)
+               VALUES (?, 'OTP_ONLY', ?, 'viewer', NULL, 1, ?)`
+            ).bind(person.national_id, person.full_name, person.mobile || null).run();
+            userId = result.meta.last_row_id;
+          }
+          await env.DB.prepare("UPDATE persons SET user_id = ? WHERE id = ?").bind(userId, personId2).run();
+          return new Response(
+            JSON.stringify({
+              success: true,
+              user_id: userId,
+              username: person.national_id,
+              message: "\u06A9\u0627\u0631\u0628\u0631 \u0628\u0627 \u0645\u0648\u0641\u0642\u06CC\u062A \u0633\u0627\u062E\u062A\u0647/\u0644\u06CC\u0646\u06A9 \u0634\u062F"
+            }),
+            {
+              status: 200,
+              headers
+            }
+          );
+        } catch (error) {
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers
+          });
+        }
+      }
       if (url.pathname === "/api/users" && request.method === "GET") {
         const authHeader = request.headers.get("Authorization");
         if (!authHeader) {
@@ -5406,8 +6200,8 @@ var src_default = {
             headers
           });
         }
-        const { username, password, full_name, role, organization } = await request.json();
-        if (!username || !password || !full_name || !role) {
+        const { username, password, full_name, role: role2, organization } = await request.json();
+        if (!username || !password || !full_name || !role2) {
           return new Response(
             JSON.stringify({ error: "\u0647\u0645\u0647 \u0641\u06CC\u0644\u062F\u0647\u0627\u06CC \u0627\u0644\u0632\u0627\u0645\u06CC \u0631\u0627 \u067E\u0631 \u06A9\u0646\u06CC\u062F" }),
             {
@@ -5427,7 +6221,7 @@ var src_default = {
             username,
             password_hash,
             full_name,
-            role,
+            role2,
             organization || null
           ).run();
           return new Response(
@@ -5467,7 +6261,7 @@ var src_default = {
           });
         }
         const id = url.pathname.split("/").pop();
-        const { full_name, role, organization, is_active, password } = await request.json();
+        const { full_name, role: role2, organization, is_active, password } = await request.json();
         if (password) {
           const password_hash = await hashPassword(password);
           await env.DB.prepare(
@@ -5477,7 +6271,7 @@ var src_default = {
           `
           ).bind(
             full_name,
-            role,
+            role2,
             organization || null,
             is_active ? 1 : 0,
             password_hash,
@@ -5489,7 +6283,7 @@ var src_default = {
             UPDATE users SET full_name = ?, role = ?, organization = ?, is_active = ?
             WHERE id = ?
           `
-          ).bind(full_name, role, organization || null, is_active ? 1 : 0, id).run();
+          ).bind(full_name, role2, organization || null, is_active ? 1 : 0, id).run();
         }
         return new Response(JSON.stringify({ success: true }), {
           status: 200,
@@ -6684,7 +7478,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-I2FkUl/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-K0RVpN/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -6716,7 +7510,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-I2FkUl/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-K0RVpN/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

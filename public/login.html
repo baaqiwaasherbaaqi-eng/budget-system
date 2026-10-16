@@ -36,17 +36,39 @@
             font-size: 20px;
         }
 
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #444;
+            font-size: 13px;
+        }
+
         input {
             font-family: 'Vazirmatn', Tahoma, sans-serif;
             width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
             border-radius: 8px;
             box-sizing: border-box;
-            font-size: 14px;
+            font-size: 16px;
             transition: all 0.2s;
             background: #fafafa;
+            text-align: center;
+            letter-spacing: 2px;
+            direction: ltr;
         }
 
         input:focus {
@@ -56,17 +78,23 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
+        input.otp-input {
+            font-size: 24px;
+            letter-spacing: 8px;
+            font-weight: bold;
+            font-family: 'Sahel', 'Vazirmatn', Tahoma, sans-serif;
+        }
+
         button {
             font-family: 'Vazirmatn', Tahoma, sans-serif;
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 16px;
-            margin-top: 20px;
+            font-size: 15px;
             transition: all 0.2s;
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
@@ -76,17 +104,93 @@
             box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
         }
 
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
         .error {
             color: #e74c3c;
             text-align: center;
             display: none;
-            margin-top: 10px;
+            margin-top: 15px;
             font-size: 13px;
+            padding: 10px;
+            background: #fee;
+            border-radius: 6px;
         }
 
-        /* Footer مخصوص صفحه لاگین */
-        #site-footer {
-            border-top-color: rgba(102, 126, 234, 0.15) !important;
+        .success {
+            color: #28a745;
+            text-align: center;
+            display: none;
+            margin-top: 15px;
+            font-size: 13px;
+            padding: 10px;
+            background: #efe;
+            border-radius: 6px;
+        }
+
+        .info {
+            background: #e7f3ff;
+            border-right: 4px solid #17a2b8;
+            padding: 12px 15px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #0c5460;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        .user-greeting {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .user-greeting b {
+            color: #667eea;
+            font-size: 16px;
+        }
+
+        .mobile-info {
+            text-align: center;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .mobile-info b {
+            color: #333;
+            direction: ltr;
+            display: inline-block;
+        }
+
+        .back-btn {
+            background: #e9ecef;
+            color: #333;
+            box-shadow: none;
+            margin-top: 10px;
+        }
+
+        .back-btn:hover {
+            background: #dee2e6;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .mock-badge {
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 11px;
+            color: #fd7e14;
+            background: #fff3cd;
+            padding: 8px;
+            border-radius: 6px;
         }
     </style>
 </head>
@@ -94,41 +198,192 @@
 <body>
     <div class="login-container">
         <h2>سامانه بودجه شهرداری</h2>
+
         <div class="error" id="error-message"></div>
-        <input type="text" id="username" placeholder="نام کاربری">
-        <input type="password" id="password" placeholder="رمز عبور">
-        <button onclick="login()">ورود</button>
+        <div class="success" id="success-message"></div>
+
+        <!-- مرحله ۱: کد ملی -->
+        <div class="step active" id="step-national-id">
+            <div class="info">
+                🔐 <b>ورود با کد ملی</b><br>
+                کد ملی خود را وارد کنید، کد تایید به موبایل شما ارسال خواهد شد.
+            </div>
+
+            <div class="form-group">
+                <label>کد ملی</label>
+                <input type="text" id="national_id" placeholder="۰۰۰۰۰۰۰۰۰۰" maxlength="10" />
+            </div>
+
+            <button onclick="requestOtp()" id="btn-request-otp">
+                دریافت کد تایید
+            </button>
+        </div>
+
+        <!-- مرحله ۲: OTP -->
+        <div class="step" id="step-otp">
+            <div class="user-greeting">
+                خوش آمدید، <b id="user-name-display"></b>
+            </div>
+            <div class="mobile-info">
+                کد تایید به شماره <b id="mobile-display"></b> ارسال شد
+            </div>
+
+            <div class="form-group">
+                <label>کد تایید (۶ رقمی)</label>
+                <input type="text" id="otp_code" class="otp-input" placeholder="------" maxlength="6" />
+            </div>
+
+            <button onclick="verifyOtp()" id="btn-verify-otp">
+                ورود
+            </button>
+            <button class="back-btn" onclick="goBack()">
+                ← تغییر کد ملی
+            </button>
+
+            <span class="mock-badge" id="mock-otp-display"></span>
+        </div>
     </div>
 
     <script>
-        async function login() {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            
+        let currentOtpId = null;
+
+        function showError(msg) {
+            const el = document.getElementById('error-message');
+            el.textContent = msg;
+            el.style.display = 'block';
+            document.getElementById('success-message').style.display = 'none';
+
+            setTimeout(() => {
+                el.style.display = 'none';
+            }, 5000);
+        }
+
+        function showSuccess(msg) {
+            const el = document.getElementById('success-message');
+            el.textContent = msg;
+            el.style.display = 'block';
+            document.getElementById('error-message').style.display = 'none';
+        }
+
+        function showStep(stepId) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById(stepId).classList.add('active');
+        }
+
+        async function requestOtp() {
+            const nationalId = document.getElementById('national_id').value.trim();
+
+            // تبدیل اعداد فارسی
+            const normalizedId = nationalId.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
+
+            if (!normalizedId || normalizedId.length !== 10) {
+                showError('کد ملی باید ۱۰ رقم باشد');
+                return;
+            }
+
+            const btn = document.getElementById('btn-request-otp');
+            btn.disabled = true;
+            btn.textContent = '⏳ در حال ارسال...';
+
             try {
-                const response = await fetch('/api/login', {
+                const res = await fetch('/api/login/request-otp', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ username, password })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ national_id: normalizedId })
                 });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    localStorage.setItem('token', data.token);
-                    localStorage.setItem('user', JSON.stringify(data.user));
-                    window.location.href = '/dashboard.html';
-                } else {
-                    document.getElementById('error-message').textContent = data.error;
-                    document.getElementById('error-message').style.display = 'block';
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.error || 'خطا');
                 }
+
+                currentOtpId = data.otp_id;
+
+                // نمایش مرحله ۲
+                document.getElementById('user-name-display').textContent = data.full_name;
+                document.getElementById('mobile-display').textContent = data.mobile_masked;
+                document.getElementById('otp_code').value = '';
+                
+                // نمایش کد mock
+                if (data.mock_otp) {
+                    document.getElementById('mock-otp-display').textContent = 
+                        `⚠️ حالت Mock - کد: ${data.mock_otp}`;
+                }
+
+                showStep('step-otp');
+                document.getElementById('otp_code').focus();
             } catch (error) {
-                document.getElementById('error-message').textContent = 'خطا در ارتباط با سرور';
-                document.getElementById('error-message').style.display = 'block';
+                showError(error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'دریافت کد تایید';
             }
         }
+
+        async function verifyOtp() {
+            const otpCode = document.getElementById('otp_code').value.trim();
+            const normalizedOtp = otpCode.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
+
+            if (!normalizedOtp || normalizedOtp.length !== 6) {
+                showError('کد تایید باید ۶ رقم باشد');
+                return;
+            }
+
+            const btn = document.getElementById('btn-verify-otp');
+            btn.disabled = true;
+            btn.textContent = '⏳ در حال بررسی...';
+
+            try {
+                const res = await fetch('/api/login/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        otp_id: currentOtpId,
+                        otp_code: normalizedOtp
+                    })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.error || 'خطا');
+                }
+
+                // ذخیره توکن
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+
+                showSuccess('ورود موفق! در حال انتقال...');
+
+                setTimeout(() => {
+                    window.location.href = '/dashboard.html';
+                }, 500);
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'ورود';
+            }
+        }
+
+        function goBack() {
+            currentOtpId = null;
+            document.getElementById('otp_code').value = '';
+            document.getElementById('mock-otp-display').textContent = '';
+            showStep('step-national-id');
+            document.getElementById('error-message').style.display = 'none';
+        }
+
+        // Enter برای OTP
+        document.getElementById('otp_code')?.addEventListener('keydown', e => {
+            if (e.key === 'Enter') verifyOtp();
+        });
+
+        // Enter برای کد ملی
+        document.getElementById('national_id')?.addEventListener('keydown', e => {
+            if (e.key === 'Enter') requestOtp();
+        });
     </script>
     <script src="/footer.js"></script>
 </body>

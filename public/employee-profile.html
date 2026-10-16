@@ -519,560 +519,715 @@
         color: #90cdf4;
       }
 
-    /* ============ Dependents ============ */
-    .dependents-container {
-      margin-bottom: 20px;
-    }
-
-    .dependent-item {
-      background: #f8f9fa;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 12px;
-      border-right: 4px solid #28a745;
-      transition: all 0.2s;
-    }
-
-    .dependent-item:hover {
-      background: #eef9f0;
-    }
-
-    .dependent-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .dependent-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .dependent-icon {
-      font-size: 20px;
-    }
-
-    .dependent-name {
-      font-weight: bold;
-      font-size: 15px;
-      color: #333;
-    }
-
-    .dependent-badge {
-      background: #28a745;
-      color: white;
-      padding: 3px 12px;
-      border-radius: 12px;
-      font-size: 11px;
-    }
-
-    .dependent-actions {
-      display: flex;
-      gap: 5px;
-    }
-
-    .dep-btn {
-      width: 32px;
-      height: 32px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .dep-edit-btn {
-      background: #ffc107;
-      color: #333;
-    }
-
-    .dep-edit-btn:hover {
-      background: #e0a800;
-      transform: scale(1.05);
-    }
-
-    .dep-delete-btn {
-      background: #dc3545;
-      color: white;
-    }
-
-    .dep-delete-btn:hover {
-      background: #c82333;
-      transform: scale(1.05);
-    }
-
-    .dependent-info {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-
-    .info-row {
-      display: flex;
-      gap: 5px;
-      font-size: 12px;
-    }
-
-    .info-label {
-      color: #666;
-      min-width: 80px;
-    }
-
-    .info-value {
-      color: #333;
-      font-weight: 500;
-    }
-
-    .dependent-badges {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .badge-allowance {
-      background: #fff3cd;
-      color: #856404;
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 11px;
-    }
-
-    .badge-insurance {
-      background: #d1ecf1;
-      color: #0c5460;
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 11px;
-    }
-
-    .badge-disabled {
-      background: #f8d7da;
-      color: #721c24;
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 11px;
-    }
-
-    .dependents-summary {
-      background: #f8f9fa;
-      border-radius: 8px;
-      padding: 12px 18px;
-      margin-bottom: 20px;
-      font-size: 13px;
-      display: flex;
-      gap: 15px;
-      flex-wrap: wrap;
-      border-right: 4px solid #28a745;
-    }
-
-    .summary-item {
-      color: #333;
-    }
-
-    /* Modal */
-    .dependent-modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 10001;
-      padding: 20px;
-    }
-
-    .dependent-modal-overlay.open {
-      display: flex;
-    }
-
-    .dependent-modal {
-      background: white;
-      border-radius: 12px;
-      max-width: 700px;
-      width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-      animation: slideUp 0.2s;
-    }
-
-    .dependent-modal-header {
-      padding: 20px 25px;
-      border-bottom: 1px solid #e9ecef;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .dependent-modal-header h3 {
-      margin: 0;
-      font-size: 16px;
-      color: #333;
-    }
-
-    .dep-modal-close {
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      font-size: 20px;
-      color: #999;
-      width: 30px;
-      height: 30px;
-      border-radius: 6px;
-      transition: all 0.2s;
-    }
-
-    .dep-modal-close:hover {
-      background: #f0f2f5;
-      color: #333;
-    }
-
-    .dependent-modal-body {
-      padding: 25px;
-    }
-
-    .dependent-modal-footer {
-      padding: 20px 25px;
-      border-top: 1px solid #e9ecef;
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-    }
-
-    .btn-lookup {
-      background: #17a2b8;
-      color: white;
-      border: none;
-      width: 40px;
-      height: 40px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: all 0.2s;
-      flex-shrink: 0;
-    }
-
-    .btn-lookup:hover {
-      background: #138496;
-      transform: scale(1.05);
-    }
-
-    @keyframes slideUp {
-      from {
-        transform: translateY(20px);
-        opacity: 0;
+      /* ============ Dependents ============ */
+      .dependents-container {
+        margin-bottom: 20px;
       }
-      to {
-        transform: translateY(0);
-        opacity: 1;
+
+      .dependent-item {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 12px;
+        border-right: 4px solid #28a745;
+        transition: all 0.2s;
       }
-    }
 
-    /* Dark Mode */
-    body.dark .dependent-item {
-      background: #374151;
-    }
-    body.dark .dependent-item:hover {
-      background: #4a5568;
-    }
-    body.dark .dependent-name {
-      color: #e2e8f0;
-    }
-    body.dark .info-label {
-      color: #a0aec0;
-    }
-    body.dark .info-value {
-      color: #e2e8f0;
-    }
-    body.dark .dependents-summary {
-      background: #374151;
-      color: #e2e8f0;
-    }
-    body.dark .dependent-modal {
-      background: #2d3748;
-    }
-    body.dark .dependent-modal-header {
-      border-bottom-color: #4a5568;
-    }
-    body.dark .dependent-modal-header h3 {
-      color: #e2e8f0;
-    }
-    body.dark .dependent-modal-footer {
-      border-top-color: #4a5568;
-    }
+      .dependent-item:hover {
+        background: #eef9f0;
+      }
 
-    /* ============ Decrees ============ */
-    .decrees-container {
-      margin-bottom: 20px;
-    }
+      .dependent-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
 
-    .decree-item {
-      background: #f8f9fa;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 12px;
-      border-right: 4px solid #667eea;
-      transition: all 0.2s;
-    }
+      .dependent-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
 
-    .decree-item:hover {
-      background: #eef1ff;
-    }
+      .dependent-icon {
+        font-size: 20px;
+      }
 
-    .decree-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
+      .dependent-name {
+        font-weight: bold;
+        font-size: 15px;
+        color: #333;
+      }
 
-    .decree-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
+      .dependent-badge {
+        background: #28a745;
+        color: white;
+        padding: 3px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+      }
 
-    .decree-icon {
-      font-size: 20px;
-    }
+      .dependent-actions {
+        display: flex;
+        gap: 5px;
+      }
 
-    .decree-type {
-      font-weight: bold;
-      font-size: 15px;
-      color: #333;
-    }
+      .dep-btn {
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
 
-    .decree-number {
-      font-family: monospace;
-      font-size: 11px;
-      background: white;
-      padding: 3px 10px;
-      border-radius: 12px;
-      color: #667eea;
-    }
+      .dep-edit-btn {
+        background: #ffc107;
+        color: #333;
+      }
 
-    .decree-status {
-      color: white;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 11px;
-    }
+      .dep-edit-btn:hover {
+        background: #e0a800;
+        transform: scale(1.05);
+      }
 
-    .decree-actions {
-      display: flex;
-      gap: 5px;
-    }
+      .dep-delete-btn {
+        background: #dc3545;
+        color: white;
+      }
 
-    .decree-info {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 8px;
-      margin-bottom: 10px;
-    }
+      .dep-delete-btn:hover {
+        background: #c82333;
+        transform: scale(1.05);
+      }
 
-    .decree-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-top: 10px;
-      border-top: 1px solid #e9ecef;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
+      .dependent-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 8px;
+        margin-bottom: 10px;
+      }
 
-    .decree-total {
-      font-size: 13px;
-      color: #333;
-    }
+      .info-row {
+        display: flex;
+        gap: 5px;
+        font-size: 12px;
+      }
 
-    .decree-total strong {
-      color: #28a745;
-      font-size: 15px;
-    }
+      .info-label {
+        color: #666;
+        min-width: 80px;
+      }
 
-    .decree-items-count {
-      font-size: 12px;
-      color: #667eea;
-    }
+      .info-value {
+        color: #333;
+        font-weight: 500;
+      }
 
-    body.dark .decree-item {
-      background: #374151;
-    }
-    body.dark .decree-item:hover {
-      background: #4a5568;
-    }
-    body.dark .decree-type {
-      color: #e2e8f0;
-    }
-    body.dark .decree-number {
-      background: #1a202c;
-    }
-    body.dark .decree-footer {
-      border-top-color: #4a5568;
-    }
-    body.dark .decree-total {
-      color: #e2e8f0;
-    }
+      .dependent-badges {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
 
+      .badge-allowance {
+        background: #fff3cd;
+        color: #856404;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+      }
 
-    /* ============ Decree Items (داخل Modal) ============ */
-    .decree-item-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 12px;
-      background: #f8f9fa;
-      border-radius: 6px;
-      margin-bottom: 6px;
-      gap: 10px;
-    }
+      .badge-insurance {
+        background: #d1ecf1;
+        color: #0c5460;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+      }
 
-    .decree-item-label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      color: #333;
-      flex: 1;
-    }
+      .badge-disabled {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+      }
 
-    .decree-item-code {
-      font-weight: bold;
-      color: #667eea;
-      font-family: monospace;
-      min-width: 30px;
-    }
+      .dependents-summary {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 12px 18px;
+        margin-bottom: 20px;
+        font-size: 13px;
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        border-right: 4px solid #28a745;
+      }
 
-    .decree-item-input {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      flex-shrink: 0;
-    }
+      .summary-item {
+        color: #333;
+      }
 
-    .decree-item-input input {
-      width: 150px;
-      padding: 6px 10px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      font-family: 'Vazirmatn', Tahoma, sans-serif;
-      font-size: 13px;
-      text-align: left;
-      direction: ltr;
-    }
+      /* Modal */
+      .dependent-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10001;
+        padding: 20px;
+      }
 
-    .decree-item-input input:focus {
-      outline: none;
-      border-color: #667eea;
-    }
+      .dependent-modal-overlay.open {
+        display: flex;
+      }
 
-    .currency {
-      font-size: 11px;
-      color: #999;
-    }
+      .dependent-modal {
+        background: white;
+        border-radius: 12px;
+        max-width: 700px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        animation: slideUp 0.2s;
+      }
 
-    .decree-total-box {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 15px 20px;
-      border-radius: 8px;
-      margin: 15px 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 15px;
-    }
+      .dependent-modal-header {
+        padding: 20px 25px;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
 
-    .decree-total-box strong {
-      font-size: 22px;
-    }
+      .dependent-modal-header h3 {
+        margin: 0;
+        font-size: 16px;
+        color: #333;
+      }
 
-    body.dark .decree-item-row {
-      background: #374151;
-    }
-    body.dark .decree-item-label {
-      color: #e2e8f0;
-    }
-    body.dark .decree-item-input input {
-      background: #1a202c;
-      border-color: #4a5568;
-      color: #e2e8f0;
-    }
+      .dep-modal-close {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        font-size: 20px;
+        color: #999;
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        transition: all 0.2s;
+      }
 
+      .dep-modal-close:hover {
+        background: #f0f2f5;
+        color: #333;
+      }
 
-    /* ============ Task Cascade ============ */
-    .task-cascade {
-      margin-bottom: 20px;
-    }
+      .dependent-modal-body {
+        padding: 25px;
+      }
 
-    .task-breadcrumb {
-      background: #eef1ff;
-      padding: 10px 15px;
-      border-radius: 8px;
-      font-size: 12px;
-      color: #667eea;
-      line-height: 1.8;
-      direction: rtl;
-      word-wrap: break-word;
-    }
+      .dependent-modal-footer {
+        padding: 20px 25px;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
 
-    .cascade-select {
-      font-family: 'Vazirmatn', Tahoma, sans-serif;
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      font-size: 13px;
-      background: white;
-      margin-bottom: 10px;
-    }
+      .btn-lookup {
+        background: #17a2b8;
+        color: white;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: all 0.2s;
+        flex-shrink: 0;
+      }
 
-    .cascade-select:focus {
-      outline: none;
-      border-color: #667eea;
-    }
+      .btn-lookup:hover {
+        background: #138496;
+        transform: scale(1.05);
+      }
 
-    body.dark .task-breadcrumb {
-      background: #374151;
-      color: #90cdf4;
-    }
+      @keyframes slideUp {
+        from {
+          transform: translateY(20px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
 
-    body.dark .cascade-select {
-      background: #1a202c;
-      border-color: #4a5568;
-      color: #e2e8f0;
-    }
+      /* Dark Mode */
+      body.dark .dependent-item {
+        background: #374151;
+      }
+      body.dark .dependent-item:hover {
+        background: #4a5568;
+      }
+      body.dark .dependent-name {
+        color: #e2e8f0;
+      }
+      body.dark .info-label {
+        color: #a0aec0;
+      }
+      body.dark .info-value {
+        color: #e2e8f0;
+      }
+      body.dark .dependents-summary {
+        background: #374151;
+        color: #e2e8f0;
+      }
+      body.dark .dependent-modal {
+        background: #2d3748;
+      }
+      body.dark .dependent-modal-header {
+        border-bottom-color: #4a5568;
+      }
+      body.dark .dependent-modal-header h3 {
+        color: #e2e8f0;
+      }
+      body.dark .dependent-modal-footer {
+        border-top-color: #4a5568;
+      }
 
-    .btn-choose-level {
-      background: #28a745;
-      color: white;
-      border: none;
-      width: 40px;
-      height: 40px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 18px;
-      transition: all 0.2s;
-      flex-shrink: 0;
-    }
+      /* ============ Decrees ============ */
+      .decrees-container {
+        margin-bottom: 20px;
+      }
 
-    .btn-choose-level:hover {
-      background: #218838;
-      transform: scale(1.05);
-    }
+      .decree-item {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 12px;
+        border-right: 4px solid #667eea;
+        transition: all 0.2s;
+      }
 
+      .decree-item:hover {
+        background: #eef1ff;
+      }
+
+      .decree-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .decree-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .decree-icon {
+        font-size: 20px;
+      }
+
+      .decree-type {
+        font-weight: bold;
+        font-size: 15px;
+        color: #333;
+      }
+
+      .decree-number {
+        font-family: monospace;
+        font-size: 11px;
+        background: white;
+        padding: 3px 10px;
+        border-radius: 12px;
+        color: #667eea;
+      }
+
+      .decree-status {
+        color: white;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+      }
+
+      .decree-actions {
+        display: flex;
+        gap: 5px;
+      }
+
+      .decree-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .decree-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 10px;
+        border-top: 1px solid #e9ecef;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .decree-total {
+        font-size: 13px;
+        color: #333;
+      }
+
+      .decree-total strong {
+        color: #28a745;
+        font-size: 15px;
+      }
+
+      .decree-items-count {
+        font-size: 12px;
+        color: #667eea;
+      }
+
+      body.dark .decree-item {
+        background: #374151;
+      }
+      body.dark .decree-item:hover {
+        background: #4a5568;
+      }
+      body.dark .decree-type {
+        color: #e2e8f0;
+      }
+      body.dark .decree-number {
+        background: #1a202c;
+      }
+      body.dark .decree-footer {
+        border-top-color: #4a5568;
+      }
+      body.dark .decree-total {
+        color: #e2e8f0;
+      }
+
+      /* ============ Decree Items (داخل Modal) ============ */
+      .decree-item-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        margin-bottom: 6px;
+        gap: 10px;
+      }
+
+      .decree-item-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #333;
+        flex: 1;
+      }
+
+      .decree-item-code {
+        font-weight: bold;
+        color: #667eea;
+        font-family: monospace;
+        min-width: 30px;
+      }
+
+      .decree-item-input {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex-shrink: 0;
+      }
+
+      .decree-item-input input {
+        width: 150px;
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-family: "Vazirmatn", Tahoma, sans-serif;
+        font-size: 13px;
+        text-align: left;
+        direction: ltr;
+      }
+
+      .decree-item-input input:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .currency {
+        font-size: 11px;
+        color: #999;
+      }
+
+      .decree-total-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin: 15px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 15px;
+      }
+
+      .decree-total-box strong {
+        font-size: 22px;
+      }
+
+      body.dark .decree-item-row {
+        background: #374151;
+      }
+      body.dark .decree-item-label {
+        color: #e2e8f0;
+      }
+      body.dark .decree-item-input input {
+        background: #1a202c;
+        border-color: #4a5568;
+        color: #e2e8f0;
+      }
+
+      /* ============ Task Cascade ============ */
+      .task-cascade {
+        margin-bottom: 20px;
+      }
+
+      .task-breadcrumb {
+        background: #eef1ff;
+        padding: 10px 15px;
+        border-radius: 8px;
+        font-size: 12px;
+        color: #667eea;
+        line-height: 1.8;
+        direction: rtl;
+        word-wrap: break-word;
+      }
+
+      .cascade-select {
+        font-family: "Vazirmatn", Tahoma, sans-serif;
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 13px;
+        background: white;
+        margin-bottom: 10px;
+      }
+
+      .cascade-select:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      body.dark .task-breadcrumb {
+        background: #374151;
+        color: #90cdf4;
+      }
+
+      body.dark .cascade-select {
+        background: #1a202c;
+        border-color: #4a5568;
+        color: #e2e8f0;
+      }
+
+      .btn-choose-level {
+        background: #28a745;
+        color: white;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 18px;
+        transition: all 0.2s;
+        flex-shrink: 0;
+      }
+
+      .btn-choose-level:hover {
+        background: #218838;
+        transform: scale(1.05);
+      }
+
+      /* ============ Organizations (تب واحد سازمانی) ============ */
+      .orgs-container {
+        margin-bottom: 20px;
+      }
+
+      .org-item {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 12px;
+        border-right: 4px solid #6c757d;
+        transition: all 0.2s;
+      }
+
+      .org-item.primary {
+        border-right-color: #28a745;
+        background: #f0f9f4;
+      }
+
+      .org-item:hover {
+        background: #eef1ff;
+      }
+
+      .org-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .org-item-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+      }
+
+      .org-item-icon {
+        font-size: 24px;
+        flex-shrink: 0;
+      }
+
+      .org-item-title {
+        font-size: 14px;
+        font-weight: bold;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .org-item-meta {
+        font-size: 12px;
+        color: #666;
+        margin-top: 4px;
+      }
+
+      .org-item-dates {
+        font-size: 11px;
+        color: #999;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px dashed #e0e0e0;
+      }
+
+      .primary-badge {
+        background: #28a745;
+        color: white;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 10px;
+      }
+
+      .org-item-actions {
+        display: flex;
+        gap: 5px;
+        flex-shrink: 0;
+      }
+
+      /* User Status Card */
+      .user-status-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        border-right: 4px solid #6c757d;
+      }
+
+      .user-status-card.success {
+        background: #d4edda;
+        border-right-color: #28a745;
+      }
+
+      .user-status-card.warning {
+        background: #fff3cd;
+        border-right-color: #ffc107;
+      }
+
+      .user-status-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+        font-size: 15px;
+        font-weight: bold;
+      }
+
+      .user-status-icon {
+        font-size: 22px;
+      }
+
+      .user-status-title {
+        color: #333;
+      }
+
+      .user-status-info {
+        font-size: 13px;
+        color: #333;
+        line-height: 1.8;
+      }
+
+      .user-status-warning {
+        margin-top: 10px;
+        padding: 8px 12px;
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+        border-radius: 6px;
+        font-size: 12px;
+      }
+
+      body.dark .org-item {
+        background: #374151;
+      }
+      body.dark .org-item.primary {
+        background: #2d4a3e;
+      }
+      body.dark .org-item:hover {
+        background: #4a5568;
+      }
+      body.dark .org-item-title {
+        color: #e2e8f0;
+      }
+      body.dark .user-status-card {
+        background: #2d3748;
+      }
+      body.dark .user-status-card.success {
+        background: #2d4a3e;
+      }
+      body.dark .user-status-card.warning {
+        background: #4a3f1e;
+      }
+      body.dark .user-status-title {
+        color: #e2e8f0;
+      }
+      body.dark .user-status-info {
+        color: #e2e8f0;
+      }
     </style>
   </head>
 
@@ -1089,6 +1244,10 @@
     <script src="/common.js"></script>
 
     <script>
+      let personOrganizations = [];
+      let userStatus = null;
+      let allOrganizations = [];
+
       // ============================================
       // بررسی احراز هویت
       // ============================================
@@ -1110,11 +1269,11 @@
       let decreeTypes = [];
       let organizations = [];
       let datePickersInitialized = false;
-    let employeeTasks = [];
-    let operationalItems = [];
-    let dependents = [];
-    let decrees = [];
-    let lockedTaskType = null; // ← سطح قفل‌شده
+      let employeeTasks = [];
+      let operationalItems = [];
+      let dependents = [];
+      let decrees = [];
+      let lockedTaskType = null; // ← سطح قفل‌شده
       // ============================================
       // توابع کمکی
       // ============================================
@@ -1232,39 +1391,61 @@
           organizations = await orgRes.json();
 
           // لود وظایف کارمند
-        const tasksRes = await fetch(`/api/employees/${personId}/tasks`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        employeeTasks = await tasksRes.json();
+          const tasksRes = await fetch(`/api/employees/${personId}/tasks`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          employeeTasks = await tasksRes.json();
 
-        // تشخیص سطح قفل‌شده
-        detectLockedType();
+          // تشخیص سطح قفل‌شده
+          detectLockedType();
 
+          // لود طبقه‌بندی عملیاتی
+          const opRes = await fetch("/api/operational-tree", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          operationalItems = await opRes.json();
 
-        // لود طبقه‌بندی عملیاتی
-        const opRes = await fetch('/api/operational-tree', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        operationalItems = await opRes.json();
+          // لود افراد تحت تکفل
+          const depsRes = await fetch(`/api/employees/${personId}/dependents`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          dependents = await depsRes.json();
 
-        // لود افراد تحت تکفل
-        const depsRes = await fetch(`/api/employees/${personId}/dependents`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        dependents = await depsRes.json();
+          // لود احکام کارگزینی
+          const decreesRes = await fetch(`/api/employees/${personId}/decrees`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          decrees = await decreesRes.json();
 
-        // لود احکام کارگزینی
-        const decreesRes = await fetch(`/api/employees/${personId}/decrees`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        decrees = await decreesRes.json();
+          // لود سازمان‌های شخص
+          const orgsRes = await fetch(
+            `/api/persons/${personId}/organizations`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          personOrganizations = await orgsRes.json();
 
-      
-                renderPage();
-                 setTimeout(initCascade, 200);
-        setTimeout(initDatePickers, 200);
-        setTimeout(initBasicDatePickers, 200);
-        setTimeout(initCascade, 300); // ← اضافه کن
+          // لود وضعیت کاربر
+          const userRes = await fetch(`/api/persons/${personId}/user-status`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          userStatus = await userRes.json();
+
+          // لود لیست سازمان‌ها (برای dropdown)
+          const allOrgsRes = await fetch(
+            "/api/base-data?section=organization",
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          allOrganizations = await allOrgsRes.json();
+
+          renderPage();
+          setTimeout(initCascade, 200);
+          setTimeout(initDatePickers, 200);
+          setTimeout(initBasicDatePickers, 200);
+          setTimeout(initCascade, 300); // ← اضافه کن
         } catch (error) {
           console.error("Load error:", error);
           document.getElementById("main-container").innerHTML = `
@@ -1324,7 +1505,7 @@
             ${renderDependentsTab()}
           </div>
           <div class="tab-panel" id="panel-organization">
-            <div class="placeholder"><div class="icon">🏢</div><h3>واحد سازمانی</h3><p>به زودی</p></div>
+            ${renderOrganizationTab()}
           </div>
           <div class="tab-panel" id="panel-tasks">
             ${renderTasksTab()}
@@ -1358,51 +1539,67 @@
       // ============================================
       // تب اطلاعات پایه
       // ============================================
-     function renderBasicTab() {
-      return `
+      function renderBasicTab() {
+        return `
         <div class="section-divider">📋 اطلاعات سجلی</div>
 
         <div class="form-row">
           <div class="form-group">
             <label>کد ملی <span class="required">*</span></label>
-            <input type="text" id="basic-national-id" value="${person.national_id || ''}" maxlength="10" dir="ltr" />
+            <input type="text" id="basic-national-id" value="${
+              person.national_id || ""
+            }" maxlength="10" dir="ltr" />
           </div>
           <div class="form-group">
             <label>شماره شناسنامه</label>
-            <input type="text" id="basic-id-number" value="${person.id_number || ''}" />
+            <input type="text" id="basic-id-number" value="${
+              person.id_number || ""
+            }" />
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
             <label>نام <span class="required">*</span></label>
-            <input type="text" id="basic-first-name" value="${person.first_name || ''}" />
+            <input type="text" id="basic-first-name" value="${
+              person.first_name || ""
+            }" />
           </div>
           <div class="form-group">
             <label>نام خانوادگی <span class="required">*</span></label>
-            <input type="text" id="basic-last-name" value="${person.last_name || ''}" />
+            <input type="text" id="basic-last-name" value="${
+              person.last_name || ""
+            }" />
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
             <label>نام پدر</label>
-            <input type="text" id="basic-father-name" value="${person.father_name || ''}" />
+            <input type="text" id="basic-father-name" value="${
+              person.father_name || ""
+            }" />
           </div>
           <div class="form-group">
             <label>نام مادر</label>
-            <input type="text" id="basic-mother-name" value="${person.mother_name || ''}" />
+            <input type="text" id="basic-mother-name" value="${
+              person.mother_name || ""
+            }" />
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
             <label>تاریخ تولد</label>
-            <input type="text" id="basic-birth-date" value="${toPersianDate(person.birth_date_shamsi)}" placeholder="۱۳۷۰/۰۱/۰۱" />
+            <input type="text" id="basic-birth-date" value="${toPersianDate(
+              person.birth_date_shamsi
+            )}" placeholder="۱۳۷۰/۰۱/۰۱" />
           </div>
           <div class="form-group">
             <label>محل تولد</label>
-            <input type="text" id="basic-birth-place" value="${person.birth_place || ''}" />
+            <input type="text" id="basic-birth-place" value="${
+              person.birth_place || ""
+            }" />
           </div>
         </div>
 
@@ -1411,13 +1608,19 @@
             <label>جنسیت</label>
             <select id="basic-gender">
               <option value="">— انتخاب کنید —</option>
-              <option value="male" ${person.gender === 'male' ? 'selected' : ''}>مرد</option>
-              <option value="female" ${person.gender === 'female' ? 'selected' : ''}>زن</option>
+              <option value="male" ${
+                person.gender === "male" ? "selected" : ""
+              }>مرد</option>
+              <option value="female" ${
+                person.gender === "female" ? "selected" : ""
+              }>زن</option>
             </select>
           </div>
           <div class="form-group">
             <label>تابعیت</label>
-            <input type="text" id="basic-nationality" value="${person.nationality || 'ایرانی'}" />
+            <input type="text" id="basic-nationality" value="${
+              person.nationality || "ایرانی"
+            }" />
           </div>
         </div>
 
@@ -1426,28 +1629,34 @@
         <div class="form-row">
           <div class="form-group">
             <label>موبایل</label>
-            <input type="text" id="basic-mobile" value="${person.mobile || ''}" maxlength="11" dir="ltr" />
+            <input type="text" id="basic-mobile" value="${
+              person.mobile || ""
+            }" maxlength="11" dir="ltr" />
           </div>
           <div class="form-group">
             <label>تلفن ثابت</label>
-            <input type="text" id="basic-phone" value="${person.phone || ''}" />
+            <input type="text" id="basic-phone" value="${person.phone || ""}" />
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
             <label>کد پستی</label>
-            <input type="text" id="basic-postal-code" value="${person.postal_code || ''}" maxlength="10" />
+            <input type="text" id="basic-postal-code" value="${
+              person.postal_code || ""
+            }" maxlength="10" />
           </div>
           <div class="form-group">
             <label>ایمیل</label>
-            <input type="email" id="basic-email" value="${person.email || ''}" dir="ltr" />
+            <input type="email" id="basic-email" value="${
+              person.email || ""
+            }" dir="ltr" />
           </div>
         </div>
 
         <div class="form-group">
           <label>آدرس</label>
-          <textarea id="basic-address">${person.address || ''}</textarea>
+          <textarea id="basic-address">${person.address || ""}</textarea>
         </div>
 
         <div class="section-divider">🏦 اطلاعات بانکی</div>
@@ -1455,17 +1664,23 @@
         <div class="form-row">
           <div class="form-group">
             <label>نام بانک</label>
-            <input type="text" id="basic-bank-name" value="${person.bank_name || ''}" />
+            <input type="text" id="basic-bank-name" value="${
+              person.bank_name || ""
+            }" />
           </div>
           <div class="form-group">
             <label>شماره حساب</label>
-            <input type="text" id="basic-bank-account" value="${person.bank_account || ''}" dir="ltr" />
+            <input type="text" id="basic-bank-account" value="${
+              person.bank_account || ""
+            }" dir="ltr" />
           </div>
         </div>
 
         <div class="form-group">
           <label>شبا (IR)</label>
-          <input type="text" id="basic-iban" value="${person.iban || ''}" dir="ltr" placeholder="IR..." />
+          <input type="text" id="basic-iban" value="${
+            person.iban || ""
+          }" dir="ltr" placeholder="IR..." />
         </div>
 
         <div class="actions-bar">
@@ -1474,97 +1689,118 @@
           </button>
         </div>
       `;
-    }
-
-    // ============================================
-    // ذخیره اطلاعات پایه
-    // ============================================
-    async function saveBasicInfo() {
-      const btn = document.getElementById('btn-save-basic');
-      btn.disabled = true;
-      btn.textContent = '⏳ در حال ذخیره...';
-
-      try {
-        const firstName = document.getElementById('basic-first-name').value.trim();
-        const lastName = document.getElementById('basic-last-name').value.trim();
-        const fullName = `${firstName} ${lastName}`.trim();
-
-        if (!fullName) {
-          throw new Error('نام و نام خانوادگی الزامی است');
-        }
-
-        const data = {
-          full_name: fullName,
-          first_name: firstName || null,
-          last_name: lastName || null,
-          father_name: document.getElementById('basic-father-name').value.trim() || null,
-          mother_name: document.getElementById('basic-mother-name').value.trim() || null,
-          national_id: document.getElementById('basic-national-id').value.trim() || null,
-          id_number: document.getElementById('basic-id-number').value.trim() || null,
-          birth_date_shamsi: cleanDate(document.getElementById('basic-birth-date').value),
-          birth_place: document.getElementById('basic-birth-place').value.trim() || null,
-          gender: document.getElementById('basic-gender').value || null,
-          nationality: document.getElementById('basic-nationality').value.trim() || 'ایرانی',
-          mobile: document.getElementById('basic-mobile').value.trim() || null,
-          phone: document.getElementById('basic-phone').value.trim() || null,
-          address: document.getElementById('basic-address').value.trim() || null,
-          postal_code: document.getElementById('basic-postal-code').value.trim() || null,
-          email: document.getElementById('basic-email').value.trim() || null,
-          bank_name: document.getElementById('basic-bank-name').value.trim() || null,
-          bank_account: document.getElementById('basic-bank-account').value.trim() || null,
-          iban: document.getElementById('basic-iban').value.trim() || null,
-          is_active: person.is_active,
-        };
-
-        const res = await fetch(`/api/persons/${personId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(data)
-        });
-
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.error || 'خطا');
-
-        showToast('اطلاعات پایه با موفقیت ذخیره شد');
-
-        // ریلود اطلاعات
-        const res2 = await fetch(`/api/employees/${personId}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data2 = await res2.json();
-        person = data2.person;
-
-        // رفرش تب
-        const panel = document.getElementById('panel-basic');
-        if (panel) {
-          panel.innerHTML = renderBasicTab();
-          setTimeout(initBasicDatePickers, 100);
-        }
-      } catch (error) {
-        showToast(error.message, 'error');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = '💾 ذخیره اطلاعات پایه';
       }
-    }
 
-    // ============================================
-    // DatePicker برای تب اطلاعات پایه
-    // ============================================
-    function initBasicDatePickers() {
-      const el = document.getElementById('basic-birth-date');
-      if (!el) return;
-      try { $("#basic-birth-date").persianDatepicker('destroy'); } catch (e) {}
-      $("#basic-birth-date").persianDatepicker({
-        format: 'YYYY/MM/DD',
-        autoClose: true,
-        persianDigit: true,
-        initialValue: !!el.value
-      });
-    }
+      // ============================================
+      // ذخیره اطلاعات پایه
+      // ============================================
+      async function saveBasicInfo() {
+        const btn = document.getElementById("btn-save-basic");
+        btn.disabled = true;
+        btn.textContent = "⏳ در حال ذخیره...";
+
+        try {
+          const firstName = document
+            .getElementById("basic-first-name")
+            .value.trim();
+          const lastName = document
+            .getElementById("basic-last-name")
+            .value.trim();
+          const fullName = `${firstName} ${lastName}`.trim();
+
+          if (!fullName) {
+            throw new Error("نام و نام خانوادگی الزامی است");
+          }
+
+          const data = {
+            full_name: fullName,
+            first_name: firstName || null,
+            last_name: lastName || null,
+            father_name:
+              document.getElementById("basic-father-name").value.trim() || null,
+            mother_name:
+              document.getElementById("basic-mother-name").value.trim() || null,
+            national_id:
+              document.getElementById("basic-national-id").value.trim() || null,
+            id_number:
+              document.getElementById("basic-id-number").value.trim() || null,
+            birth_date_shamsi: cleanDate(
+              document.getElementById("basic-birth-date").value
+            ),
+            birth_place:
+              document.getElementById("basic-birth-place").value.trim() || null,
+            gender: document.getElementById("basic-gender").value || null,
+            nationality:
+              document.getElementById("basic-nationality").value.trim() ||
+              "ایرانی",
+            mobile:
+              document.getElementById("basic-mobile").value.trim() || null,
+            phone: document.getElementById("basic-phone").value.trim() || null,
+            address:
+              document.getElementById("basic-address").value.trim() || null,
+            postal_code:
+              document.getElementById("basic-postal-code").value.trim() || null,
+            email: document.getElementById("basic-email").value.trim() || null,
+            bank_name:
+              document.getElementById("basic-bank-name").value.trim() || null,
+            bank_account:
+              document.getElementById("basic-bank-account").value.trim() ||
+              null,
+            iban: document.getElementById("basic-iban").value.trim() || null,
+            is_active: person.is_active,
+          };
+
+          const res = await fetch(`/api/persons/${personId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(data),
+          });
+
+          const result = await res.json();
+          if (!res.ok) throw new Error(result.error || "خطا");
+
+          showToast("اطلاعات پایه با موفقیت ذخیره شد");
+
+          // ریلود اطلاعات
+          const res2 = await fetch(`/api/employees/${personId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data2 = await res2.json();
+          person = data2.person;
+
+          // رفرش تب
+          const panel = document.getElementById("panel-basic");
+          if (panel) {
+            panel.innerHTML = renderBasicTab();
+            setTimeout(initBasicDatePickers, 100);
+          }
+        } catch (error) {
+          showToast(error.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "💾 ذخیره اطلاعات پایه";
+        }
+      }
+
+      // ============================================
+      // DatePicker برای تب اطلاعات پایه
+      // ============================================
+      function initBasicDatePickers() {
+        const el = document.getElementById("basic-birth-date");
+        if (!el) return;
+        try {
+          $("#basic-birth-date").persianDatepicker("destroy");
+        } catch (e) {}
+        $("#basic-birth-date").persianDatepicker({
+          format: "YYYY/MM/DD",
+          autoClose: true,
+          persianDigit: true,
+          initialValue: !!el.value,
+        });
+      }
 
       // ============================================
       // تب اطلاعات استخدامی
@@ -1793,56 +2029,66 @@
       `;
       }
 
-    // ============================================
-    // تب وظایف (درخت کشویی پویا)
-    // ============================================
-    let taskLevels = []; // [{parent_id, selected, options, type, title, code}]
+      // ============================================
+      // تب وظایف (درخت کشویی پویا)
+      // ============================================
+      let taskLevels = []; // [{parent_id, selected, options, type, title, code}]
 
-    function renderTasksTab() {
-      const totalPercentage = employeeTasks.reduce((sum, t) => sum + (t.percentage || 0), 0);
+      function renderTasksTab() {
+        const totalPercentage = employeeTasks.reduce(
+          (sum, t) => sum + (t.percentage || 0),
+          0
+        );
 
-      let totalColor = '#28a745';
-      if (totalPercentage > 100) totalColor = '#dc3545';
-      else if (totalPercentage < 100) totalColor = '#fd7e14';
+        let totalColor = "#28a745";
+        if (totalPercentage > 100) totalColor = "#dc3545";
+        else if (totalPercentage < 100) totalColor = "#fd7e14";
 
-      let tasksHtml = '';
+        let tasksHtml = "";
 
-      if (employeeTasks.length === 0) {
-        tasksHtml = `
+        if (employeeTasks.length === 0) {
+          tasksHtml = `
           <div style="text-align:center; padding:30px; color:#999;">
             هنوز وظیفه‌ای ثبت نشده
           </div>
         `;
-      } else {
-        employeeTasks.forEach((task, index) => {
-          tasksHtml += `
+        } else {
+          employeeTasks.forEach((task, index) => {
+            tasksHtml += `
             <div class="task-item" data-index="${index}">
               <div class="task-row" style="align-items: flex-start;">
                 <div class="form-group" style="flex:1;">
                   <label>وظیفه</label>
-                  <div class="task-breadcrumb">${task.breadcrumb || task.task_title || '—'}</div>
+                  <div class="task-breadcrumb">${
+                    task.breadcrumb || task.task_title || "—"
+                  }</div>
                 </div>
                 <div class="form-group" style="flex:0.5;">
                   <label>درصد</label>
-                  <input type="number" class="task-percentage" min="0" max="100" value="${task.percentage || 0}" 
+                  <input type="number" class="task-percentage" min="0" max="100" value="${
+                    task.percentage || 0
+                  }" 
                          onchange="onPercentageChange(${index}, this.value)" />
                 </div>
                 <button class="task-remove-btn" onclick="removeTask(${index})" title="حذف" style="margin-top:24px;">🗑️</button>
               </div>
               <div class="form-group" style="margin-top:10px;">
-                <input type="text" class="task-notes" placeholder="یادداشت (اختیاری)" value="${task.notes || ''}" 
+                <input type="text" class="task-notes" placeholder="یادداشت (اختیاری)" value="${
+                  task.notes || ""
+                }" 
                        onchange="onNotesChange(${index}, this.value)" />
               </div>
             </div>
           `;
-        });
-      }
+          });
+        }
 
-      // فرم افزودن وظیفه (کشوهای پویا)
-      let cascadeHtml = '';
+        // فرم افزودن وظیفه (کشوهای پویا)
+        let cascadeHtml = "";
 
-      if (employeeTasks.length === 0 || true) { // همیشه نمایش داده بشه
-        cascadeHtml = `
+        if (employeeTasks.length === 0 || true) {
+          // همیشه نمایش داده بشه
+          cascadeHtml = `
           <div class="task-cascade" style="border: 2px dashed #ddd; border-radius: 10px; padding: 15px; margin-top: 15px; background: #fafbff;">
             <div style="font-size: 13px; font-weight: bold; color: #667eea; margin-bottom: 10px;">
               ➕ افزودن وظیفه جدید
@@ -1868,36 +2114,40 @@
             </button>
           </div>
         `;
-      }
+        }
 
-      const typeLabels = {
-        mission: 'مأموریت',
-        program: 'برنامه',
-        service: 'خدمت',
-        plan: 'طرح',
-        activity: 'فعالیت',
-        project: 'پروژه',
-        project_capital: 'پروژه (سرمایه‌ای)',
-        project_financial: 'پروژه (مالی)'
-      };
+        const typeLabels = {
+          mission: "مأموریت",
+          program: "برنامه",
+          service: "خدمت",
+          plan: "طرح",
+          activity: "فعالیت",
+          project: "پروژه",
+          project_capital: "پروژه (سرمایه‌ای)",
+          project_financial: "پروژه (مالی)",
+        };
 
-      return `
+        return `
         <div class="section-divider">🎯 وظایف بر اساس طبقه‌بندی عملیاتی</div>
 
-        ${lockedTaskType ? `
+        ${
+          lockedTaskType
+            ? `
           <div class="info-banner" style="background: #fff3cd; border-right-color: #fd7e14; color: #856404;">
             🔒 <b>سطح قفل‌شده:</b> همه وظایف باید در سطح «<b>${typeLabels[lockedTaskType]}</b>» باشند.
             <br>
             (چون اولین وظیفه در این سطح ثبت شده است)
           </div>
-        ` : `
+        `
+            : `
           <div class="info-banner">
             💡 <b>راهنما:</b> برای اولین وظیفه، سطح مورد نظر را از کشوها انتخاب کنید.
             <br>
             • می‌توانید در هر سطحی (مأموریت، برنامه، خدمت، فعالیت، طرح، پروژه) توقف کنید
             • بعد از ثبت اولین وظیفه، سطح آن قفل می‌شود و بقیه وظایف باید هم‌سطح باشند
           </div>
-        `}
+        `
+        }
         ...
 
         <div class="tasks-container" id="tasks-container">
@@ -1909,11 +2159,13 @@
         <div class="total-bar" style="border-color: ${totalColor}; margin-top: 20px;">
           <span>جمع درصدها:</span>
           <strong style="color: ${totalColor};">${totalPercentage}٪</strong>
-          ${totalPercentage === 100
-            ? '<span style="color:#28a745;margin-right:10px;">✅ کامل</span>'
-            : totalPercentage > 100
+          ${
+            totalPercentage === 100
+              ? '<span style="color:#28a745;margin-right:10px;">✅ کامل</span>'
+              : totalPercentage > 100
               ? '<span style="color:#dc3545;margin-right:10px;">❌ بیش از ۱۰۰٪</span>'
-              : '<span style="color:#fd7e14;margin-right:10px;">⚠️ کمتر از ۱۰۰٪</span>'}
+              : '<span style="color:#fd7e14;margin-right:10px;">⚠️ کمتر از ۱۰۰٪</span>'
+          }
         </div>
 
         <div class="actions-bar">
@@ -1922,304 +2174,762 @@
           </button>
         </div>
       `;
-    }
-    
-        // ============================================
-    // کشوی پویا
-    // ============================================
-    let cascadeState = {
-      levels: [], // [{ parentId, selected, options, type }]
-      selectedTask: null, // آخرین انتخاب (برای ذخیره)
-    };
-
-    async function initCascade() {
-      cascadeState = { levels: [], selectedTask: null };
-      await loadCascadeLevel(null, 0);
-      renderCascade();
-    }
-
-    // ============================================
-    // تشخیص سطح قفل‌شده از وظایف فعلی
-    // ============================================
-    function detectLockedType() {
-      if (employeeTasks.length > 0) {
-        // از اولین وظیفه، سطح رو بگیر
-        const firstType = employeeTasks[0].task_type;
-        if (firstType) {
-          lockedTaskType = firstType;
-        }
-      } else {
-        lockedTaskType = null;
       }
-    }
 
-    async function loadCascadeLevel(parentId, level) {
-      try {
-        const url = parentId
-          ? `/api/operational-children?parent_id=${parentId}`
-          : `/api/operational-children?parent_id=null`;
+      // ============================================
+      // تب واحد سازمانی
+      // ============================================
+      function renderOrganizationTab() {
+        // لیست سازمان‌ها (آکاردئون)
+        let orgsHtml = "";
 
-        const res = await fetch(url, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const options = await res.json();
+        if (personOrganizations.length === 0) {
+          orgsHtml = `
+          <div class="empty-state" style="padding:30px;">
+            <div class="icon">🏢</div>
+            <div>هنوز سازمانی برای این شخص ثبت نشده</div>
+          </div>
+        `;
+        } else {
+          personOrganizations.forEach((po, index) => {
+            const isPrimary = po.is_primary;
+            orgsHtml += `
+            <div class="org-item ${
+              isPrimary ? "primary" : ""
+            }" data-index="${index}">
+              <div class="org-item-header">
+                <div class="org-item-info">
+                  <span class="org-item-icon">🏢</span>
+                  <div>
+                    <div class="org-item-title">
+                      ${po.organization_title || "—"}
+                      ${
+                        isPrimary
+                          ? '<span class="primary-badge">اصلی</span>'
+                          : ""
+                      }
+                    </div>
+                    <div class="org-item-meta">
+                      ${po.role ? `پست: ${po.role}` : "بدون پست"}
+                      ${
+                        po.organization_code
+                          ? ` | کد: ${po.organization_code}`
+                          : ""
+                      }
+                    </div>
+                  </div>
+                </div>
+                <div class="org-item-actions">
+                  <button class="dep-btn dep-edit-btn" onclick="openOrgModal(${
+                    po.id
+                  })" title="ویرایش">✏️</button>
+                  <button class="dep-btn dep-delete-btn" onclick="deleteOrg(${
+                    po.id
+                  })" title="حذف">🗑️</button>
+                </div>
+              </div>
+              ${
+                po.start_date_shamsi
+                  ? `<div class="org-item-dates">📆 از ${toPersianNumbers(
+                      po.start_date_shamsi
+                    )}${
+                      po.end_date_shamsi
+                        ? ` تا ${toPersianNumbers(po.end_date_shamsi)}`
+                        : " (فعلی)"
+                    }</div>`
+                  : ""
+              }
+            </div>
+          `;
+          });
+        }
 
-        cascadeState.levels[level] = {
-          parentId: parentId,
-          selected: null,
-          options: options,
+        // بخش کاربر
+        let userHtml = "";
+
+        if (userStatus && userStatus.has_user) {
+          const roleLabels = {
+            admin: "مدیر سیستم",
+            manager: "مدیر",
+            expert: "کارشناس",
+            viewer: "بازدیدکننده",
+            province: "استانداری",
+            ministry: "وزارت کشور",
+          };
+
+          userHtml = `
+          <div class="user-status-card success">
+            <div class="user-status-header">
+              <span class="user-status-icon">✅</span>
+              <span class="user-status-title">کاربر ساخته شده</span>
+            </div>
+            <div class="user-status-info">
+              <div><b>نام کاربری:</b> <span dir="ltr">${
+                userStatus.username || "—"
+              }</span></div>
+              <div><b>نقش:</b> ${
+                roleLabels[userStatus.role] || userStatus.role || "—"
+              }</div>
+              <div><b>وضعیت:</b> ${
+                userStatus.is_active ? "فعال" : "غیرفعال"
+              }</div>
+              ${
+                userStatus.last_creation
+                  ? `<div><b>تاریخ ساخت:</b> ${toPersianNumbers(
+                      userStatus.last_creation.created_at_shamsi || "—"
+                    )}</div>`
+                  : ""
+              }
+              ${
+                userStatus.last_creation && userStatus.last_creation.mobile
+                  ? `<div><b>موبایل:</b> <span dir="ltr">${toPersianNumbers(
+                      userStatus.last_creation.mobile
+                    )}</span></div>`
+                  : ""
+              }
+            </div>
+          </div>
+        `;
+        } else {
+          const hasPrimaryOrg = personOrganizations.some((po) => po.is_primary);
+          const hasNationalId = person && person.national_id;
+          const hasMobile = person && person.mobile;
+
+          let errorMsg = "";
+          if (!hasPrimaryOrg)
+            errorMsg = "ابتدا باید یک سازمان اصلی برای شخص ثبت کنید";
+          else if (!hasNationalId) errorMsg = "کد ملی شخص ثبت نشده است";
+          else if (!hasMobile) errorMsg = "شماره موبایل شخص ثبت نشده است";
+
+          userHtml = `
+          <div class="user-status-card warning">
+            <div class="user-status-header">
+              <span class="user-status-icon">⚠️</span>
+              <span class="user-status-title">کاربر ساخته نشده</span>
+            </div>
+            <div class="user-status-info">
+              نام کاربری بر اساس <b>کد ملی</b> ساخته می‌شود و رمز عبور به صورت <b>SMS (mock)</b> به موبایل شخص ارسال می‌شود.
+            </div>
+            <div class="user-status-info" style="color:#dc3545; margin-top:8px;">
+              نقش کاربر بر اساس <b>پست سازمانی اصلی</b> تعیین می‌شود.
+            </div>
+            ${
+              errorMsg
+                ? `<div class="user-status-warning">⚠️ ${errorMsg}</div>`
+                : ""
+            }
+            <button class="btn btn-success" onclick="createUserForPerson()" style="margin-top:12px;" ${
+              errorMsg ? "disabled" : ""
+            }>
+              🔑 ساخت کاربر
+            </button>
+          </div>
+        `;
+        }
+
+        return `
+        <div class="section-divider">🏢 واحدهای سازمانی</div>
+
+        <div class="info-banner">
+          💡 <b>راهنما:</b> شخص را به یک یا چند سازمان متصل کنید.
+          <br>
+          • سازمان <b>اصلی</b> = محل خدمت فعلی شخص
+          • پست سازمانی = نقش و سطح دسترسی کاربر
+        </div>
+
+        <div class="orgs-container" id="orgs-container">
+          ${orgsHtml}
+        </div>
+
+        <button class="add-task-btn" onclick="openOrgModal()">
+          ➕ افزودن سازمان
+        </button>
+
+        <div class="section-divider" style="margin-top:30px;">👤 حساب کاربری</div>
+        
+        ${userHtml}
+      `;
+      }
+
+      // ============================================
+      // Modal سازمان
+      // ============================================
+      async function openOrgModal(poId = null) {
+        const po = poId ? personOrganizations.find((o) => o.id === poId) : null;
+        const isEdit = !!po;
+        const title = isEdit ? "✏️ ویرایش سازمان" : "➕ افزودن سازمان";
+
+        const orgOptions = allOrganizations
+          .map(
+            (org) =>
+              `<option value="${org.id}" ${
+                po && po.organization_id === org.id ? "selected" : ""
+              }>${org.code} - ${org.title}</option>`
+          )
+          .join("");
+
+        const modalHtml = `
+        <div class="dependent-modal-overlay open" id="org-modal">
+          <div class="dependent-modal" style="max-width:600px;">
+            <div class="dependent-modal-header">
+              <h3>${title}</h3>
+              <button class="dep-modal-close" onclick="closeOrgModal()">✕</button>
+            </div>
+
+            <div class="dependent-modal-body">
+              <div class="form-group">
+                <label>سازمان <span class="required">*</span></label>
+                <select id="org-organization-id">
+                  <option value="">— انتخاب کنید —</option>
+                  ${orgOptions}
+                </select>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>پست سازمانی</label>
+                  <input type="text" id="org-role" value="${
+                    po?.role || ""
+                  }" placeholder="مثلاً کارشناس، رئیس اداره" />
+                </div>
+                <div class="form-group">
+                  <label>سازمان اصلی؟</label>
+                  <select id="org-is-primary">
+                    <option value="0" ${
+                      !po?.is_primary ? "selected" : ""
+                    }>خیر</option>
+                    <option value="1" ${
+                      po?.is_primary ? "selected" : ""
+                    }>بله</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>تاریخ شروع</label>
+                  <input type="text" id="org-start-date" value="${
+                    po?.start_date_shamsi
+                      ? toPersianNumbers(po.start_date_shamsi)
+                      : ""
+                  }" placeholder="۱۴۰۴/۰۱/۰۱" />
+                </div>
+                <div class="form-group">
+                  <label>تاریخ پایان</label>
+                  <input type="text" id="org-end-date" value="${
+                    po?.end_date_shamsi
+                      ? toPersianNumbers(po.end_date_shamsi)
+                      : ""
+                  }" placeholder="اختیاری" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>یادداشت</label>
+                <textarea id="org-notes">${po?.notes || ""}</textarea>
+              </div>
+            </div>
+
+            <div class="dependent-modal-footer">
+              <button class="btn btn-cancel" onclick="closeOrgModal()">انصراف</button>
+              <button class="btn btn-save" id="btn-save-org" onclick="saveOrg(${
+                poId || "null"
+              })">
+                💾 ذخیره
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+        const existing = document.getElementById("org-modal");
+        if (existing) existing.remove();
+        document.body.insertAdjacentHTML("beforeend", modalHtml);
+
+        // DatePicker
+        setTimeout(() => {
+          ["org-start-date", "org-end-date"].forEach((id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            try {
+              $("#" + id).persianDatepicker("destroy");
+            } catch (e) {}
+            $("#" + id).persianDatepicker({
+              format: "YYYY/MM/DD",
+              autoClose: true,
+              persianDigit: true,
+              initialValue: !!el.value,
+            });
+          });
+        }, 100);
+      }
+
+      function closeOrgModal() {
+        const modal = document.getElementById("org-modal");
+        if (modal) modal.remove();
+      }
+
+      async function saveOrg(poId) {
+        const btn = document.getElementById("btn-save-org");
+        btn.disabled = true;
+        btn.textContent = "⏳ در حال ذخیره...";
+
+        try {
+          const organizationId = document.getElementById(
+            "org-organization-id"
+          ).value;
+          if (!organizationId) {
+            throw new Error("سازمان الزامی است");
+          }
+
+          const data = {
+            id: poId || null,
+            organization_id: parseInt(organizationId),
+            role: document.getElementById("org-role").value.trim() || null,
+            is_primary: document.getElementById("org-is-primary").value === "1",
+            start_date_shamsi: cleanDate(
+              document.getElementById("org-start-date").value
+            ),
+            end_date_shamsi: cleanDate(
+              document.getElementById("org-end-date").value
+            ),
+            notes: document.getElementById("org-notes").value.trim() || null,
+          };
+
+          const res = await fetch(`/api/persons/${personId}/organizations`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(data),
+          });
+
+          const result = await res.json();
+          if (!res.ok) throw new Error(result.error || "خطا");
+
+          showToast(poId ? "با موفقیت ویرایش شد" : "با موفقیت ثبت شد");
+          closeOrgModal();
+          await reloadOrgData();
+        } catch (error) {
+          showToast(error.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "💾 ذخیره";
+        }
+      }
+
+      async function deleteOrg(poId) {
+        if (!confirm("مطمئن هستید این سازمان حذف شود؟")) return;
+
+        try {
+          const res = await fetch(`/api/person-organizations/${poId}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (!res.ok) throw new Error("خطا در حذف");
+
+          showToast("با موفقیت حذف شد");
+          await reloadOrgData();
+        } catch (error) {
+          showToast(error.message, "error");
+        }
+      }
+
+      async function reloadOrgData() {
+        try {
+          const [orgsRes, userRes] = await Promise.all([
+            fetch(`/api/persons/${personId}/organizations`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }),
+            fetch(`/api/persons/${personId}/user-status`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }),
+          ]);
+          personOrganizations = await orgsRes.json();
+          userStatus = await userRes.json();
+
+          const panel = document.getElementById("panel-organization");
+          if (panel) panel.innerHTML = renderOrganizationTab();
+        } catch (error) {
+          console.error("Reload org data error:", error);
+        }
+      }
+
+      // ============================================
+      // ساخت کاربر برای شخص
+      // ============================================
+      async function createUserForPerson() {
+        if (
+          !confirm(
+            "آیا مطمئن هستید؟\n\nنام کاربری بر اساس کد ملی ساخته می‌شود و رمز عبور به موبایل شخص ارسال می‌شود."
+          )
+        ) {
+          return;
+        }
+
+        try {
+          const res = await fetch(`/api/persons/${personId}/create-user`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({}),
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "خطا");
+
+          // نمایش پیام موفقیت با پسورد (mock)
+          alert(
+            `✅ کاربر با موفقیت ساخته شد.\n\nنام کاربری: ${data.username}\nرمز عبور (mock): ${data.temp_password}\nنقش: ${data.role}\n\n⚠️ رمز عبور به موبایل ${data.mobile} ارسال شد.`
+          );
+
+          await reloadOrgData();
+        } catch (error) {
+          showToast(error.message, "error");
+        }
+      }
+
+      // ============================================
+      // کشوی پویا
+      // ============================================
+      let cascadeState = {
+        levels: [], // [{ parentId, selected, options, type }]
+        selectedTask: null, // آخرین انتخاب (برای ذخیره)
+      };
+
+      async function initCascade() {
+        cascadeState = { levels: [], selectedTask: null };
+        await loadCascadeLevel(null, 0);
+        renderCascade();
+      }
+
+      // ============================================
+      // تشخیص سطح قفل‌شده از وظایف فعلی
+      // ============================================
+      function detectLockedType() {
+        if (employeeTasks.length > 0) {
+          // از اولین وظیفه، سطح رو بگیر
+          const firstType = employeeTasks[0].task_type;
+          if (firstType) {
+            lockedTaskType = firstType;
+          }
+        } else {
+          lockedTaskType = null;
+        }
+      }
+
+      async function loadCascadeLevel(parentId, level) {
+        try {
+          const url = parentId
+            ? `/api/operational-children?parent_id=${parentId}`
+            : `/api/operational-children?parent_id=null`;
+
+          const res = await fetch(url, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const options = await res.json();
+
+          cascadeState.levels[level] = {
+            parentId: parentId,
+            selected: null,
+            options: options,
+          };
+
+          // پاک کردن سطوح بعدی
+          cascadeState.levels = cascadeState.levels.slice(0, level + 1);
+        } catch (error) {
+          console.error("Load cascade level error:", error);
+        }
+      }
+
+      async function onCascadeChange(level, value) {
+        const optionId = value ? parseInt(value) : null;
+        cascadeState.levels[level].selected = optionId;
+
+        if (optionId) {
+          // پیدا کردن option انتخاب شده
+          const opt = cascadeState.levels[level].options.find(
+            (o) => o.id === optionId
+          );
+          cascadeState.selectedTask = opt;
+
+          // بارگذاری سطح بعدی
+          await loadCascadeLevel(optionId, level + 1);
+        } else {
+          cascadeState.selectedTask = null;
+          cascadeState.levels = cascadeState.levels.slice(0, level + 1);
+        }
+
+        renderCascade();
+      }
+
+      function renderCascade() {
+        const container = document.getElementById("cascade-container");
+        if (!container) return;
+
+        const typeLabels = {
+          mission: "مأموریت",
+          program: "برنامه",
+          service: "خدمت",
+          plan: "طرح",
+          activity: "فعالیت",
+          project: "پروژه",
         };
 
-        // پاک کردن سطوح بعدی
-        cascadeState.levels = cascadeState.levels.slice(0, level + 1);
-      } catch (error) {
-        console.error('Load cascade level error:', error);
-      }
-    }
+        const typeIcons = {
+          mission: "🎯",
+          program: "📋",
+          service: "⚙️",
+          plan: "📐",
+          activity: "🔧",
+          project: "🏗️",
+          project_capital: "🏗️",
+          project_financial: "💰",
+        };
 
-       async function onCascadeChange(level, value) {
-      const optionId = value ? parseInt(value) : null;
-      cascadeState.levels[level].selected = optionId;
+        let html = "";
 
-      if (optionId) {
-        // پیدا کردن option انتخاب شده
-        const opt = cascadeState.levels[level].options.find(o => o.id === optionId);
-        cascadeState.selectedTask = opt;
+        cascadeState.levels.forEach((levelData, levelIndex) => {
+          if (!levelData) return;
+          if (levelData.options.length === 0) return;
 
-        // بارگذاری سطح بعدی
-        await loadCascadeLevel(optionId, level + 1);
-      } else {
-        cascadeState.selectedTask = null;
-        cascadeState.levels = cascadeState.levels.slice(0, level + 1);
-      }
-
-      renderCascade();
-    }
-    
-    
-    
-    function renderCascade() {
-      const container = document.getElementById('cascade-container');
-      if (!container) return;
-
-      const typeLabels = {
-        mission: 'مأموریت',
-        program: 'برنامه',
-        service: 'خدمت',
-        plan: 'طرح',
-        activity: 'فعالیت',
-        project: 'پروژه'
-      };
-
-      const typeIcons = {
-        mission: '🎯',
-        program: '📋',
-        service: '⚙️',
-        plan: '📐',
-        activity: '🔧',
-        project: '🏗️',
-        project_capital: '🏗️',
-        project_financial: '💰'
-      };
-
-      let html = '';
-
-      cascadeState.levels.forEach((levelData, levelIndex) => {
-        if (!levelData) return;
-        if (levelData.options.length === 0) return;
-
-        // سطح ۱ (مأموریت) همیشه نمایش داده می‌شه
-        // فقط برای سطوح بالاتر (levelIndex > 0) چک کن که هم‌سطح قفل‌شده باشه
-        if (lockedTaskType && levelIndex > 0) {
-          const optionTypes = [...new Set(levelData.options.map(o => o.type))];
-          if (!optionTypes.includes(lockedTaskType)) {
-            return;
+          // سطح ۱ (مأموریت) همیشه نمایش داده می‌شه
+          // فقط برای سطوح بالاتر (levelIndex > 0) چک کن که هم‌سطح قفل‌شده باشه
+          if (lockedTaskType && levelIndex > 0) {
+            const optionTypes = [
+              ...new Set(levelData.options.map((o) => o.type)),
+            ];
+            if (!optionTypes.includes(lockedTaskType)) {
+              return;
+            }
           }
-        }
 
-        const levelNum = levelIndex + 1;
-        const levelLabel = levelIndex === 0 ? 'سطح ۱ - مأموریت' : `سطح ${toPersianNumbers(levelNum)}`;
+          const levelNum = levelIndex + 1;
+          const levelLabel =
+            levelIndex === 0
+              ? "سطح ۱ - مأموریت"
+              : `سطح ${toPersianNumbers(levelNum)}`;
 
-        // آیا این کشو انتخاب شده؟
-        const isSelected = levelData.selected !== null;
-        const isLastSelected = isSelected && (levelIndex === cascadeState.levels.length - 2 || 
-                                               !cascadeState.levels[levelIndex + 1] || 
-                                               cascadeState.levels[levelIndex + 1].selected === null);
+          // آیا این کشو انتخاب شده؟
+          const isSelected = levelData.selected !== null;
+          const isLastSelected =
+            isSelected &&
+            (levelIndex === cascadeState.levels.length - 2 ||
+              !cascadeState.levels[levelIndex + 1] ||
+              cascadeState.levels[levelIndex + 1].selected === null);
 
-        html += `
+          html += `
           <div class="form-group" style="position:relative;">
             <label>
               ${levelLabel}
-              ${isSelected ? '<span style="color:#28a745;font-size:11px;">✅</span>' : ''}
-              ${isLastSelected ? '<span style="color:#667eea;font-size:11px;margin-right:5px;">(این سطح می‌تواند وظیفه باشد)</span>' : ''}
+              ${
+                isSelected
+                  ? '<span style="color:#28a745;font-size:11px;">✅</span>'
+                  : ""
+              }
+              ${
+                isLastSelected
+                  ? '<span style="color:#667eea;font-size:11px;margin-right:5px;">(این سطح می‌تواند وظیفه باشد)</span>'
+                  : ""
+              }
             </label>
             <div style="display:flex; gap:8px;">
               <select class="cascade-select" onchange="onCascadeChange(${levelIndex}, this.value)" style="flex:1;">
                 <option value="">— انتخاب کنید —</option>
-                ${levelData.options.map(opt => `
-                  <option value="${opt.id}" ${levelData.selected === opt.id ? 'selected' : ''}>
-                    ${typeIcons[opt.type] || '📄'} ${opt.code} - ${opt.title} (${typeLabels[opt.type] || opt.type})
+                ${levelData.options
+                  .map(
+                    (opt) => `
+                  <option value="${opt.id}" ${
+                      levelData.selected === opt.id ? "selected" : ""
+                    }>
+                    ${typeIcons[opt.type] || "📄"} ${opt.code} - ${
+                      opt.title
+                    } (${typeLabels[opt.type] || opt.type})
                   </option>
-                `).join("")}
+                `
+                  )
+                  .join("")}
               </select>
-              ${isLastSelected ? `
+              ${
+                isLastSelected
+                  ? `
                 <button class="btn-choose-level" onclick="chooseThisLevelAsTask(${levelIndex})" title="این سطح را به عنوان وظیفه انتخاب کن">
                   ✅
                 </button>
-              ` : ""}
+              `
+                  : ""
+              }
             </div>
           </div>
         `;
-      });
+        });
 
-      container.innerHTML = html;
-    }
-
-    function addTaskFromCascade() {
-      if (!cascadeState.selectedTask) {
-        showToast('لطفاً حداقل یک سطح انتخاب کنید', 'error');
-        return;
+        container.innerHTML = html;
       }
 
-      const percentage = parseInt(document.getElementById('new-task-percentage').value) || 0;
-      const notes = document.getElementById('new-task-notes').value.trim() || '';
-
-      if (percentage <= 0) {
-        showToast('درصد زمانی الزامی است', 'error');
-        return;
-      }
-
-      // چک هم‌سطح بودن
-      if (lockedTaskType && cascadeState.selectedTask.type !== lockedTaskType) {
-        const typeLabels = {
-          mission: 'مأموریت',
-          program: 'برنامه',
-          service: 'خدمت',
-          plan: 'طرح',
-          activity: 'فعالیت',
-          project: 'پروژه'
-        };
-        showToast(`همه وظایف باید در سطح «${typeLabels[lockedTaskType]}» باشند. سطح فعلی انتخاب: «${typeLabels[cascadeState.selectedTask.type]}»`, 'error');
-        return;
-      }
-
-      // اگه اولین وظیفه‌ست، سطح رو قفل کن
-      if (!lockedTaskType && employeeTasks.length === 0) {
-        lockedTaskType = cascadeState.selectedTask.type;
-      }
-
-      // ساخت breadcrumb از سطوح انتخاب‌شده
-      const breadcrumbParts = [];
-      cascadeState.levels.forEach(levelData => {
-        if (levelData && levelData.selected) {
-          const opt = levelData.options.find(o => o.id === levelData.selected);
-          if (opt) breadcrumbParts.push(`${opt.code} - ${opt.title}`);
+      function addTaskFromCascade() {
+        if (!cascadeState.selectedTask) {
+          showToast("لطفاً حداقل یک سطح انتخاب کنید", "error");
+          return;
         }
-      });
 
-      const task = {
-        task_id: cascadeState.selectedTask.id,
-        task_type: cascadeState.selectedTask.type,
-        task_title: cascadeState.selectedTask.title,
-        breadcrumb: breadcrumbParts.join(' → '),
-        percentage: percentage,
-        notes: notes,
-      };
+        const percentage =
+          parseInt(document.getElementById("new-task-percentage").value) || 0;
+        const notes =
+          document.getElementById("new-task-notes").value.trim() || "";
 
-      employeeTasks.push(task);
+        if (percentage <= 0) {
+          showToast("درصد زمانی الزامی است", "error");
+          return;
+        }
 
-      // ریست فرم
-      document.getElementById('new-task-percentage').value = 0;
-      document.getElementById('new-task-notes').value = '';
-      initCascade();
+        // چک هم‌سطح بودن
+        if (
+          lockedTaskType &&
+          cascadeState.selectedTask.type !== lockedTaskType
+        ) {
+          const typeLabels = {
+            mission: "مأموریت",
+            program: "برنامه",
+            service: "خدمت",
+            plan: "طرح",
+            activity: "فعالیت",
+            project: "پروژه",
+          };
+          showToast(
+            `همه وظایف باید در سطح «${
+              typeLabels[lockedTaskType]
+            }» باشند. سطح فعلی انتخاب: «${
+              typeLabels[cascadeState.selectedTask.type]
+            }»`,
+            "error"
+          );
+          return;
+        }
 
-      // رفرش تب
-      const panel = document.getElementById('panel-tasks');
-      if (panel) panel.innerHTML = renderTasksTab();
-      setTimeout(initCascade, 100);
-    }
-        // ============================================
-    // انتخاب سطح فعلی به عنوان وظیفه
-    // ============================================
-    function chooseThisLevelAsTask(levelIndex) {
-      const levelData = cascadeState.levels[levelIndex];
-      if (!levelData || !levelData.selected) {
-        showToast('لطفاً ابتدا یک گزینه انتخاب کنید', 'error');
-        return;
+        // اگه اولین وظیفه‌ست، سطح رو قفل کن
+        if (!lockedTaskType && employeeTasks.length === 0) {
+          lockedTaskType = cascadeState.selectedTask.type;
+        }
+
+        // ساخت breadcrumb از سطوح انتخاب‌شده
+        const breadcrumbParts = [];
+        cascadeState.levels.forEach((levelData) => {
+          if (levelData && levelData.selected) {
+            const opt = levelData.options.find(
+              (o) => o.id === levelData.selected
+            );
+            if (opt) breadcrumbParts.push(`${opt.code} - ${opt.title}`);
+          }
+        });
+
+        const task = {
+          task_id: cascadeState.selectedTask.id,
+          task_type: cascadeState.selectedTask.type,
+          task_title: cascadeState.selectedTask.title,
+          breadcrumb: breadcrumbParts.join(" → "),
+          percentage: percentage,
+          notes: notes,
+        };
+
+        employeeTasks.push(task);
+
+        // ریست فرم
+        document.getElementById("new-task-percentage").value = 0;
+        document.getElementById("new-task-notes").value = "";
+        initCascade();
+
+        // رفرش تب
+        const panel = document.getElementById("panel-tasks");
+        if (panel) panel.innerHTML = renderTasksTab();
+        setTimeout(initCascade, 100);
+      }
+      // ============================================
+      // انتخاب سطح فعلی به عنوان وظیفه
+      // ============================================
+      function chooseThisLevelAsTask(levelIndex) {
+        const levelData = cascadeState.levels[levelIndex];
+        if (!levelData || !levelData.selected) {
+          showToast("لطفاً ابتدا یک گزینه انتخاب کنید", "error");
+          return;
+        }
+
+        // اون option انتخاب‌شده رو بگیر
+        const opt = levelData.options.find((o) => o.id === levelData.selected);
+        if (!opt) return;
+
+        // اون رو به عنوان تسک انتخاب کن
+        cascadeState.selectedTask = opt;
+
+        // درصد بده و اضافه کن
+        addTaskFromCascade();
       }
 
-      // اون option انتخاب‌شده رو بگیر
-      const opt = levelData.options.find(o => o.id === levelData.selected);
-      if (!opt) return;
+      // ============================================
+      // تب افراد تحت تکفل
+      // ============================================
+      function renderDependentsTab() {
+        const relationLabels = {
+          spouse: "همسر",
+          son: "فرزند پسر",
+          daughter: "فرزند دختر",
+          father: "پدر",
+          mother: "مادر",
+        };
 
-      // اون رو به عنوان تسک انتخاب کن
-      cascadeState.selectedTask = opt;
+        const relationIcons = {
+          spouse: "💑",
+          son: "👦",
+          daughter: "👧",
+          father: "👨",
+          mother: "👩",
+        };
 
-      // درصد بده و اضافه کن
-      addTaskFromCascade();
-    }
-    
-    
-    // ============================================
-    // تب افراد تحت تکفل
-    // ============================================
-    function renderDependentsTab() {
-      const relationLabels = {
-        spouse: 'همسر',
-        son: 'فرزند پسر',
-        daughter: 'فرزند دختر',
-        father: 'پدر',
-        mother: 'مادر'
-      };
+        // شمارش بر اساس نسبت
+        const counts = {};
+        dependents.forEach((d) => {
+          counts[d.relation_type] = (counts[d.relation_type] || 0) + 1;
+        });
 
-      const relationIcons = {
-        spouse: '💑',
-        son: '👦',
-        daughter: '👧',
-        father: '👨',
-        mother: '👩'
-      };
+        let dependentsHtml = "";
 
-      // شمارش بر اساس نسبت
-      const counts = {};
-      dependents.forEach(d => {
-        counts[d.relation_type] = (counts[d.relation_type] || 0) + 1;
-      });
-
-      let dependentsHtml = '';
-
-      if (dependents.length === 0) {
-        dependentsHtml = `
+        if (dependents.length === 0) {
+          dependentsHtml = `
           <div style="text-align:center; padding:40px; color:#999;">
             <div style="font-size:40px; margin-bottom:10px;">👨‍👩‍👧</div>
             <div>هنوز فرد تحت تکفلی ثبت نشده</div>
           </div>
         `;
-      } else {
-        dependents.forEach((dep) => {
-          const relationIcon = relationIcons[dep.relation_type] || '👤';
-          const relationLabel = relationLabels[dep.relation_type] || dep.relation_type;
+        } else {
+          dependents.forEach((dep) => {
+            const relationIcon = relationIcons[dep.relation_type] || "👤";
+            const relationLabel =
+              relationLabels[dep.relation_type] || dep.relation_type;
 
-          // وضعیت‌ها
-          const educationLabels = {
-            student: '🎓 محصل',
-            graduated: '🎓 فارغ‌التحصیل',
-            dropout: '❌ ترک تحصیل'
-          };
-          const militaryLabels = {
-            serving: '🎖️ در حال خدمت',
-            exempt: '✅ معاف',
-            completed: '✅ پایان خدمت',
-            not_applicable: '—'
-          };
-          const maritalLabels = {
-            single: 'مجرد',
-            married: 'متأهل',
-            divorced: 'مطلقه',
-            widowed: 'بیوه'
-          };
+            // وضعیت‌ها
+            const educationLabels = {
+              student: "🎓 محصل",
+              graduated: "🎓 فارغ‌التحصیل",
+              dropout: "❌ ترک تحصیل",
+            };
+            const militaryLabels = {
+              serving: "🎖️ در حال خدمت",
+              exempt: "✅ معاف",
+              completed: "✅ پایان خدمت",
+              not_applicable: "—",
+            };
+            const maritalLabels = {
+              single: "مجرد",
+              married: "متأهل",
+              divorced: "مطلقه",
+              widowed: "بیوه",
+            };
 
-          dependentsHtml += `
+            dependentsHtml += `
             <div class="dependent-item">
               <div class="dependent-header">
                 <div class="dependent-title">
@@ -2228,47 +2938,109 @@
                   <span class="dependent-badge">${relationLabel}</span>
                 </div>
                 <div class="dependent-actions">
-                  <button class="dep-btn dep-edit-btn" onclick="openDependentModal(${dep.id})" title="ویرایش">✏️</button>
-                  <button class="dep-btn dep-delete-btn" onclick="deleteDependent(${dep.id})" title="حذف">🗑️</button>
+                  <button class="dep-btn dep-edit-btn" onclick="openDependentModal(${
+                    dep.id
+                  })" title="ویرایش">✏️</button>
+                  <button class="dep-btn dep-delete-btn" onclick="deleteDependent(${
+                    dep.id
+                  })" title="حذف">🗑️</button>
                 </div>
               </div>
 
               <div class="dependent-info">
-                ${dep.national_id ? `<div class="info-row"><span class="info-label">کد ملی:</span><span class="info-value" dir="ltr">${dep.national_id}</span></div>` : ''}
-                ${dep.birth_date_shamsi ? `<div class="info-row"><span class="info-label">تاریخ تولد:</span><span class="info-value">${toPersianNumbers(dep.birth_date_shamsi)}</span></div>` : ''}
-                ${dep.mobile ? `<div class="info-row"><span class="info-label">موبایل:</span><span class="info-value" dir="ltr">${dep.mobile}</span></div>` : ''}
-                ${dep.education_status ? `<div class="info-row"><span class="info-label">وضعیت تحصیل:</span><span class="info-value">${educationLabels[dep.education_status] || dep.education_status}</span></div>` : ''}
-                ${dep.military_status && dep.military_status !== 'not_applicable' ? `<div class="info-row"><span class="info-label">وضعیت سربازی:</span><span class="info-value">${militaryLabels[dep.military_status] || dep.military_status}</span></div>` : ''}
-                ${dep.marital_status ? `<div class="info-row"><span class="info-label">وضعیت تأهل:</span><span class="info-value">${maritalLabels[dep.marital_status] || dep.marital_status}</span></div>` : ''}
-                ${dep.marriage_date_shamsi ? `<div class="info-row"><span class="info-label">تاریخ ازدواج:</span><span class="info-value">${toPersianNumbers(dep.marriage_date_shamsi)}</span></div>` : ''}
+                ${
+                  dep.national_id
+                    ? `<div class="info-row"><span class="info-label">کد ملی:</span><span class="info-value" dir="ltr">${dep.national_id}</span></div>`
+                    : ""
+                }
+                ${
+                  dep.birth_date_shamsi
+                    ? `<div class="info-row"><span class="info-label">تاریخ تولد:</span><span class="info-value">${toPersianNumbers(
+                        dep.birth_date_shamsi
+                      )}</span></div>`
+                    : ""
+                }
+                ${
+                  dep.mobile
+                    ? `<div class="info-row"><span class="info-label">موبایل:</span><span class="info-value" dir="ltr">${dep.mobile}</span></div>`
+                    : ""
+                }
+                ${
+                  dep.education_status
+                    ? `<div class="info-row"><span class="info-label">وضعیت تحصیل:</span><span class="info-value">${
+                        educationLabels[dep.education_status] ||
+                        dep.education_status
+                      }</span></div>`
+                    : ""
+                }
+                ${
+                  dep.military_status &&
+                  dep.military_status !== "not_applicable"
+                    ? `<div class="info-row"><span class="info-label">وضعیت سربازی:</span><span class="info-value">${
+                        militaryLabels[dep.military_status] ||
+                        dep.military_status
+                      }</span></div>`
+                    : ""
+                }
+                ${
+                  dep.marital_status
+                    ? `<div class="info-row"><span class="info-label">وضعیت تأهل:</span><span class="info-value">${
+                        maritalLabels[dep.marital_status] || dep.marital_status
+                      }</span></div>`
+                    : ""
+                }
+                ${
+                  dep.marriage_date_shamsi
+                    ? `<div class="info-row"><span class="info-label">تاریخ ازدواج:</span><span class="info-value">${toPersianNumbers(
+                        dep.marriage_date_shamsi
+                      )}</span></div>`
+                    : ""
+                }
               </div>
 
               <div class="dependent-badges">
-                ${dep.is_eligible_for_allowance ? '<span class="badge-allowance">💰 مشمول حق عائله مندی</span>' : ''}
-                ${dep.is_eligible_for_insurance ? '<span class="badge-insurance">🏥 مشمول بیمه تکمیل درمان</span>' : ''}
-                ${dep.is_disabled ? '<span class="badge-disabled">♿ معلول</span>' : ''}
+                ${
+                  dep.is_eligible_for_allowance
+                    ? '<span class="badge-allowance">💰 مشمول حق عائله مندی</span>'
+                    : ""
+                }
+                ${
+                  dep.is_eligible_for_insurance
+                    ? '<span class="badge-insurance">🏥 مشمول بیمه تکمیل درمان</span>'
+                    : ""
+                }
+                ${
+                  dep.is_disabled
+                    ? '<span class="badge-disabled">♿ معلول</span>'
+                    : ""
+                }
               </div>
             </div>
           `;
-        });
-      }
+          });
+        }
 
-      // خلاصه
-      let summaryHtml = '';
-      if (dependents.length > 0) {
-        const summaryItems = Object.entries(counts).map(([type, count]) => 
-          `<span class="summary-item">${relationIcons[type] || '👤'} ${relationLabels[type] || type}: <b>${toPersianNumbers(count)}</b></span>`
-        ).join('');
-        
-        summaryHtml = `
+        // خلاصه
+        let summaryHtml = "";
+        if (dependents.length > 0) {
+          const summaryItems = Object.entries(counts)
+            .map(
+              ([type, count]) =>
+                `<span class="summary-item">${relationIcons[type] || "👤"} ${
+                  relationLabels[type] || type
+                }: <b>${toPersianNumbers(count)}</b></span>`
+            )
+            .join("");
+
+          summaryHtml = `
           <div class="dependents-summary">
             <span>جمع کل: <b>${toPersianNumbers(dependents.length)}</b></span>
             ${summaryItems}
           </div>
         `;
-      }
+        }
 
-      return `
+        return `
         <div class="section-divider">👨‍👩‍👧 افراد تحت تکفل</div>
 
         <div class="info-banner">
@@ -2289,88 +3061,133 @@
           ➕ افزودن فرد تحت تکفل
         </button>
       `;
-    }
-    // ============================================
-    // تب احکام کارگزینی
-    // ============================================
-    function renderDecreesTab() {
-      const typeLabels = {
-        official: 'رسمی',
-        official_worker: 'رسمی کارگری',
-        contractual: 'پیمانی',
-        corporate: 'شرکتی',
-        specific_task: 'کارمعین',
-        worker_jobs: 'مشاغل کارگری',
-        temporary: 'موقت',
-        tasri: 'تسری'
-      };
+      }
+      // ============================================
+      // تب احکام کارگزینی
+      // ============================================
+      function renderDecreesTab() {
+        const typeLabels = {
+          official: "رسمی",
+          official_worker: "رسمی کارگری",
+          contractual: "پیمانی",
+          corporate: "شرکتی",
+          specific_task: "کارمعین",
+          worker_jobs: "مشاغل کارگری",
+          temporary: "موقت",
+          tasri: "تسری",
+        };
 
-      const typeIcons = {
-        official: '🎖️',
-        official_worker: '👷',
-        contractual: '📝',
-        corporate: '🏢',
-        specific_task: '📋',
-        worker_jobs: '🔧',
-        temporary: '⏱️',
-        tasri: '📜'
-      };
+        const typeIcons = {
+          official: "🎖️",
+          official_worker: "👷",
+          contractual: "📝",
+          corporate: "🏢",
+          specific_task: "📋",
+          worker_jobs: "🔧",
+          temporary: "⏱️",
+          tasri: "📜",
+        };
 
-      const statusLabels = {
-        draft: { label: 'پیش‌نویس', color: '#6c757d' },
-        issued: { label: 'صادر شده', color: '#17a2b8' },
-        signed: { label: 'امضا شده', color: '#28a745' },
-        active: { label: 'فعال', color: '#28a745' },
-        expired: { label: 'منقضی', color: '#fd7e14' },
-        cancelled: { label: 'لغو شده', color: '#dc3545' }
-      };
+        const statusLabels = {
+          draft: { label: "پیش‌نویس", color: "#6c757d" },
+          issued: { label: "صادر شده", color: "#17a2b8" },
+          signed: { label: "امضا شده", color: "#28a745" },
+          active: { label: "فعال", color: "#28a745" },
+          expired: { label: "منقضی", color: "#fd7e14" },
+          cancelled: { label: "لغو شده", color: "#dc3545" },
+        };
 
-      let decreesHtml = '';
+        let decreesHtml = "";
 
-      if (decrees.length === 0) {
-        decreesHtml = `
+        if (decrees.length === 0) {
+          decreesHtml = `
           <div style="text-align:center; padding:40px; color:#999;">
             <div style="font-size:40px; margin-bottom:10px;">📋</div>
             <div>هنوز حکمی ثبت نشده</div>
           </div>
         `;
-      } else {
-        decrees.forEach((decree) => {
-          const icon = typeIcons[decree.decree_type] || '📋';
-          const typeLabel = typeLabels[decree.decree_type] || decree.decree_type;
-          const status = statusLabels[decree.status] || statusLabels.draft;
+        } else {
+          decrees.forEach((decree) => {
+            const icon = typeIcons[decree.decree_type] || "📋";
+            const typeLabel =
+              typeLabels[decree.decree_type] || decree.decree_type;
+            const status = statusLabels[decree.status] || statusLabels.draft;
 
-          // جمع مبلغ
-          let totalAmount = decree.total_amount || 0;
-          let itemsCount = 0;
-          try {
-            const items = decree.items ? JSON.parse(decree.items) : [];
-            itemsCount = items.length;
-          } catch (e) {}
+            // جمع مبلغ
+            let totalAmount = decree.total_amount || 0;
+            let itemsCount = 0;
+            try {
+              const items = decree.items ? JSON.parse(decree.items) : [];
+              itemsCount = items.length;
+            } catch (e) {}
 
-          decreesHtml += `
+            decreesHtml += `
             <div class="decree-item">
               <div class="decree-header">
                 <div class="decree-title">
                   <span class="decree-icon">${icon}</span>
                   <span class="decree-type">${typeLabel}</span>
-                  ${decree.decree_number ? `<span class="decree-number">شماره: ${decree.decree_number}</span>` : ''}
-                  <span class="decree-status" style="background:${status.color};">${status.label}</span>
+                  ${
+                    decree.decree_number
+                      ? `<span class="decree-number">شماره: ${decree.decree_number}</span>`
+                      : ""
+                  }
+                  <span class="decree-status" style="background:${
+                    status.color
+                  };">${status.label}</span>
                 </div>
                 <div class="decree-actions">
-                  <button class="dep-btn dep-edit-btn" onclick="openDecreeModal(${decree.id})" title="ویرایش">✏️</button>
-                  <button class="dep-btn" onclick="sendDecreeForSignature(${decree.id})" title="ارسال برای امضا" style="background:#17a2b8;">📱</button>
-                  <button class="dep-btn dep-delete-btn" onclick="deleteDecree(${decree.id})" title="حذف">🗑️</button>
+                  <button class="dep-btn dep-edit-btn" onclick="openDecreeModal(${
+                    decree.id
+                  })" title="ویرایش">✏️</button>
+                  <button class="dep-btn" onclick="sendDecreeForSignature(${
+                    decree.id
+                  })" title="ارسال برای امضا" style="background:#17a2b8;">📱</button>
+                  <button class="dep-btn dep-delete-btn" onclick="deleteDecree(${
+                    decree.id
+                  })" title="حذف">🗑️</button>
                 </div>
               </div>
 
               <div class="decree-info">
-                ${decree.decree_date_shamsi ? `<div class="info-row"><span class="info-label">تاریخ صدور:</span><span class="info-value">${toPersianNumbers(decree.decree_date_shamsi)}</span></div>` : ''}
-                ${decree.execution_date_shamsi ? `<div class="info-row"><span class="info-label">تاریخ اجرا:</span><span class="info-value">${toPersianNumbers(decree.execution_date_shamsi)}</span></div>` : ''}
-                ${decree.contract_start_shamsi ? `<div class="info-row"><span class="info-label">شروع قرارداد:</span><span class="info-value">${toPersianNumbers(decree.contract_start_shamsi)}</span></div>` : ''}
-                ${decree.contract_end_shamsi ? `<div class="info-row"><span class="info-label">پایان قرارداد:</span><span class="info-value">${toPersianNumbers(decree.contract_end_shamsi)}</span></div>` : ''}
-                ${decree.organization_unit ? `<div class="info-row"><span class="info-label">واحد سازمانی:</span><span class="info-value">${decree.organization_unit}</span></div>` : ''}
-                ${decree.position_title ? `<div class="info-row"><span class="info-label">پست سازمانی:</span><span class="info-value">${decree.position_title}</span></div>` : ''}
+                ${
+                  decree.decree_date_shamsi
+                    ? `<div class="info-row"><span class="info-label">تاریخ صدور:</span><span class="info-value">${toPersianNumbers(
+                        decree.decree_date_shamsi
+                      )}</span></div>`
+                    : ""
+                }
+                ${
+                  decree.execution_date_shamsi
+                    ? `<div class="info-row"><span class="info-label">تاریخ اجرا:</span><span class="info-value">${toPersianNumbers(
+                        decree.execution_date_shamsi
+                      )}</span></div>`
+                    : ""
+                }
+                ${
+                  decree.contract_start_shamsi
+                    ? `<div class="info-row"><span class="info-label">شروع قرارداد:</span><span class="info-value">${toPersianNumbers(
+                        decree.contract_start_shamsi
+                      )}</span></div>`
+                    : ""
+                }
+                ${
+                  decree.contract_end_shamsi
+                    ? `<div class="info-row"><span class="info-label">پایان قرارداد:</span><span class="info-value">${toPersianNumbers(
+                        decree.contract_end_shamsi
+                      )}</span></div>`
+                    : ""
+                }
+                ${
+                  decree.organization_unit
+                    ? `<div class="info-row"><span class="info-label">واحد سازمانی:</span><span class="info-value">${decree.organization_unit}</span></div>`
+                    : ""
+                }
+                ${
+                  decree.position_title
+                    ? `<div class="info-row"><span class="info-label">پست سازمانی:</span><span class="info-value">${decree.position_title}</span></div>`
+                    : ""
+                }
               </div>
 
               <div class="decree-footer">
@@ -2379,15 +3196,19 @@
                   <strong>${formatAmount(totalAmount)} ریال</strong>
                 </div>
                 <div class="decree-items-count">
-                  ${itemsCount > 0 ? `${toPersianNumbers(itemsCount)} آیتم حقوق` : 'بدون آیتم'}
+                  ${
+                    itemsCount > 0
+                      ? `${toPersianNumbers(itemsCount)} آیتم حقوق`
+                      : "بدون آیتم"
+                  }
                 </div>
               </div>
             </div>
           `;
-        });
-      }
+          });
+        }
 
-      return `
+        return `
         <div class="section-divider">📋 احکام کارگزینی</div>
 
         <div class="info-banner">
@@ -2405,33 +3226,38 @@
           ➕ افزودن حکم جدید
         </button>
       `;
-    }
-    
-        // ============================================
-    // Modal حکم کارگزینی
-    // ============================================
-    let currentDecreeItems = [];
-    let currentDecreeType = 'official';
-
-    async function openDecreeModal(decreeId = null) {
-      const decree = decreeId ? decrees.find(d => d.id === decreeId) : null;
-      const isEdit = !!decree;
-      const title = isEdit ? '✏️ ویرایش حکم' : '➕ افزودن حکم جدید';
-
-      // لیست آیتم‌ها
-      let items = [];
-      if (decree?.items) {
-        try {
-          items = typeof decree.items === 'string' ? JSON.parse(decree.items) : decree.items;
-        } catch (e) { items = []; }
       }
-      currentDecreeItems = items;
-      currentDecreeType = decree?.decree_type || 'official';
 
-      // اطلاعات شخص از person
-      const p = person || {};
+      // ============================================
+      // Modal حکم کارگزینی
+      // ============================================
+      let currentDecreeItems = [];
+      let currentDecreeType = "official";
 
-      const modalHtml = `
+      async function openDecreeModal(decreeId = null) {
+        const decree = decreeId ? decrees.find((d) => d.id === decreeId) : null;
+        const isEdit = !!decree;
+        const title = isEdit ? "✏️ ویرایش حکم" : "➕ افزودن حکم جدید";
+
+        // لیست آیتم‌ها
+        let items = [];
+        if (decree?.items) {
+          try {
+            items =
+              typeof decree.items === "string"
+                ? JSON.parse(decree.items)
+                : decree.items;
+          } catch (e) {
+            items = [];
+          }
+        }
+        currentDecreeItems = items;
+        currentDecreeType = decree?.decree_type || "official";
+
+        // اطلاعات شخص از person
+        const p = person || {};
+
+        const modalHtml = `
         <div class="dependent-modal-overlay open" id="decree-modal">
           <div class="dependent-modal" style="max-width: 900px;">
             <div class="dependent-modal-header">
@@ -2448,47 +3274,77 @@
                   <label>نوع حکم <span class="required">*</span></label>
                   <select id="decree-type" onchange="onDecreeTypeChange()">
                     <option value="">— انتخاب کنید —</option>
-                    <option value="official" ${decree?.decree_type === 'official' ? 'selected' : ''}>رسمی</option>
-                    <option value="official_worker" ${decree?.decree_type === 'official_worker' ? 'selected' : ''}>رسمی کارگری</option>
-                    <option value="contractual" ${decree?.decree_type === 'contractual' ? 'selected' : ''}>پیمانی</option>
-                    <option value="corporate" ${decree?.decree_type === 'corporate' ? 'selected' : ''}>شرکتی</option>
-                    <option value="specific_task" ${decree?.decree_type === 'specific_task' ? 'selected' : ''}>کارمعین</option>
-                    <option value="worker_jobs" ${decree?.decree_type === 'worker_jobs' ? 'selected' : ''}>مشاغل کارگری</option>
-                    <option value="temporary" ${decree?.decree_type === 'temporary' ? 'selected' : ''}>موقت</option>
-                    <option value="tasri" ${decree?.decree_type === 'tasri' ? 'selected' : ''}>تسری</option>
+                    <option value="official" ${
+                      decree?.decree_type === "official" ? "selected" : ""
+                    }>رسمی</option>
+                    <option value="official_worker" ${
+                      decree?.decree_type === "official_worker"
+                        ? "selected"
+                        : ""
+                    }>رسمی کارگری</option>
+                    <option value="contractual" ${
+                      decree?.decree_type === "contractual" ? "selected" : ""
+                    }>پیمانی</option>
+                    <option value="corporate" ${
+                      decree?.decree_type === "corporate" ? "selected" : ""
+                    }>شرکتی</option>
+                    <option value="specific_task" ${
+                      decree?.decree_type === "specific_task" ? "selected" : ""
+                    }>کارمعین</option>
+                    <option value="worker_jobs" ${
+                      decree?.decree_type === "worker_jobs" ? "selected" : ""
+                    }>مشاغل کارگری</option>
+                    <option value="temporary" ${
+                      decree?.decree_type === "temporary" ? "selected" : ""
+                    }>موقت</option>
+                    <option value="tasri" ${
+                      decree?.decree_type === "tasri" ? "selected" : ""
+                    }>تسری</option>
                   </select>
                 </div>
                 <div class="form-group">
                   <label>شماره حکم</label>
-                  <input type="text" id="decree-number" value="${decree?.decree_number || ''}" />
+                  <input type="text" id="decree-number" value="${
+                    decree?.decree_number || ""
+                  }" />
                 </div>
               </div>
 
               <div class="form-row">
                 <div class="form-group">
                   <label>تاریخ صدور</label>
-                  <input type="text" id="decree-date" value="${toPersianDate(decree?.decree_date_shamsi)}" placeholder="۱۴۰۵/۰۱/۰۱" />
+                  <input type="text" id="decree-date" value="${toPersianDate(
+                    decree?.decree_date_shamsi
+                  )}" placeholder="۱۴۰۵/۰۱/۰۱" />
                 </div>
                 <div class="form-group">
                   <label>تاریخ اجرا</label>
-                  <input type="text" id="decree-execution-date" value="${toPersianDate(decree?.execution_date_shamsi)}" placeholder="۱۴۰۵/۰۱/۰۱" />
+                  <input type="text" id="decree-execution-date" value="${toPersianDate(
+                    decree?.execution_date_shamsi
+                  )}" placeholder="۱۴۰۵/۰۱/۰۱" />
                 </div>
               </div>
 
               <div class="form-row">
                 <div class="form-group">
                   <label>تاریخ شروع قرارداد</label>
-                  <input type="text" id="decree-contract-start" value="${toPersianDate(decree?.contract_start_shamsi)}" placeholder="اختیاری" />
+                  <input type="text" id="decree-contract-start" value="${toPersianDate(
+                    decree?.contract_start_shamsi
+                  )}" placeholder="اختیاری" />
                 </div>
                 <div class="form-group">
                   <label>تاریخ پایان قرارداد</label>
-                  <input type="text" id="decree-contract-end" value="${toPersianDate(decree?.contract_end_shamsi)}" placeholder="اختیاری" />
+                  <input type="text" id="decree-contract-end" value="${toPersianDate(
+                    decree?.contract_end_shamsi
+                  )}" placeholder="اختیاری" />
                 </div>
               </div>
 
               <div class="form-group">
                 <label>شرح حکم</label>
-                <textarea id="decree-description">${decree?.description || ''}</textarea>
+                <textarea id="decree-description">${
+                  decree?.description || ""
+                }</textarea>
               </div>
 
               <!-- اطلاعات شغلی -->
@@ -2497,44 +3353,60 @@
               <div class="form-row">
                 <div class="form-group">
                   <label>واحد سازمانی</label>
-                  <input type="text" id="decree-org-unit" value="${decree?.organization_unit || ''}" />
+                  <input type="text" id="decree-org-unit" value="${
+                    decree?.organization_unit || ""
+                  }" />
                 </div>
                 <div class="form-group">
                   <label>محل خدمت</label>
-                  <input type="text" id="decree-service-location" value="${decree?.service_location || ''}" />
+                  <input type="text" id="decree-service-location" value="${
+                    decree?.service_location || ""
+                  }" />
                 </div>
               </div>
 
               <div class="form-row">
                 <div class="form-group">
                   <label>پست سازمانی</label>
-                  <input type="text" id="decree-position" value="${decree?.position_title || ''}" />
+                  <input type="text" id="decree-position" value="${
+                    decree?.position_title || ""
+                  }" />
                 </div>
                 <div class="form-group">
                   <label>گروه شغلی</label>
-                  <input type="text" id="decree-job-group" value="${decree?.job_group || ''}" />
+                  <input type="text" id="decree-job-group" value="${
+                    decree?.job_group || ""
+                  }" />
                 </div>
               </div>
 
               <div class="form-row">
                 <div class="form-group">
                   <label>رتبه</label>
-                  <input type="text" id="decree-job-rank" value="${decree?.job_rank || ''}" />
+                  <input type="text" id="decree-job-rank" value="${
+                    decree?.job_rank || ""
+                  }" />
                 </div>
                 <div class="form-group">
                   <label>طبقه شغلی</label>
-                  <input type="text" id="decree-job-class" value="${decree?.job_class || ''}" />
+                  <input type="text" id="decree-job-class" value="${
+                    decree?.job_class || ""
+                  }" />
                 </div>
               </div>
 
               <div class="form-row">
                 <div class="form-group">
                   <label>نوع استخدام</label>
-                  <input type="text" id="decree-employment-type" value="${decree?.employment_type || ''}" />
+                  <input type="text" id="decree-employment-type" value="${
+                    decree?.employment_type || ""
+                  }" />
                 </div>
                 <div class="form-group">
                   <label>مدت اجرای قرارداد</label>
-                  <input type="text" id="decree-employment-duration" value="${decree?.employment_duration || ''}" />
+                  <input type="text" id="decree-employment-duration" value="${
+                    decree?.employment_duration || ""
+                  }" />
                 </div>
               </div>
 
@@ -2544,30 +3416,42 @@
               <div class="form-row-3">
                 <div class="form-group">
                   <label>سابقه خدمت (سال)</label>
-                  <input type="number" id="decree-service-years" value="${decree?.service_history_years || 0}" min="0" />
+                  <input type="number" id="decree-service-years" value="${
+                    decree?.service_history_years || 0
+                  }" min="0" />
                 </div>
                 <div class="form-group">
                   <label>سابقه خدمت (ماه)</label>
-                  <input type="number" id="decree-service-months" value="${decree?.service_history_months || 0}" min="0" />
+                  <input type="number" id="decree-service-months" value="${
+                    decree?.service_history_months || 0
+                  }" min="0" />
                 </div>
                 <div class="form-group">
                   <label>سابقه خدمت (روز)</label>
-                  <input type="number" id="decree-service-days" value="${decree?.service_history_days || 0}" min="0" />
+                  <input type="number" id="decree-service-days" value="${
+                    decree?.service_history_days || 0
+                  }" min="0" />
                 </div>
               </div>
 
               <div class="form-row-3">
                 <div class="form-group">
                   <label>سابقه تجربی (سال)</label>
-                  <input type="number" id="decree-exp-years" value="${decree?.experience_years || 0}" min="0" />
+                  <input type="number" id="decree-exp-years" value="${
+                    decree?.experience_years || 0
+                  }" min="0" />
                 </div>
                 <div class="form-group">
                   <label>سابقه تجربی (ماه)</label>
-                  <input type="number" id="decree-exp-months" value="${decree?.experience_months || 0}" min="0" />
+                  <input type="number" id="decree-exp-months" value="${
+                    decree?.experience_months || 0
+                  }" min="0" />
                 </div>
                 <div class="form-group">
                   <label>سابقه تجربی (روز)</label>
-                  <input type="number" id="decree-exp-days" value="${decree?.experience_days || 0}" min="0" />
+                  <input type="number" id="decree-exp-days" value="${
+                    decree?.experience_days || 0
+                  }" min="0" />
                 </div>
               </div>
 
@@ -2586,18 +3470,22 @@
 
               <div class="form-group">
                 <label>جمع کل (به حروف)</label>
-                <input type="text" id="decree-total-words" value="${decree?.total_in_words || ''}" placeholder="مثلاً: ده میلیون ریال" />
+                <input type="text" id="decree-total-words" value="${
+                  decree?.total_in_words || ""
+                }" placeholder="مثلاً: ده میلیون ریال" />
               </div>
 
               <div class="form-group">
                 <label>یادداشت</label>
-                <textarea id="decree-notes">${decree?.notes || ''}</textarea>
+                <textarea id="decree-notes">${decree?.notes || ""}</textarea>
               </div>
             </div>
 
             <div class="dependent-modal-footer">
               <button class="btn btn-cancel" onclick="closeDecreeModal()">انصراف</button>
-              <button class="btn btn-save" id="btn-save-decree" onclick="saveDecree(${decreeId || 'null'})">
+              <button class="btn btn-save" id="btn-save-decree" onclick="saveDecree(${
+                decreeId || "null"
+              })">
                 💾 ذخیره
               </button>
             </div>
@@ -2605,90 +3493,102 @@
         </div>
       `;
 
-      // اضافه به body
-      const existing = document.getElementById('decree-modal');
-      if (existing) existing.remove();
+        // اضافه به body
+        const existing = document.getElementById("decree-modal");
+        if (existing) existing.remove();
 
-      document.body.insertAdjacentHTML('beforeend', modalHtml);
+        document.body.insertAdjacentHTML("beforeend", modalHtml);
 
-      // راه‌اندازی date picker
-      setTimeout(() => {
-        ['decree-date', 'decree-execution-date', 'decree-contract-start', 'decree-contract-end'].forEach(id => {
-          const el = document.getElementById(id);
-          if (!el) return;
-          try { $("#" + id).persianDatepicker('destroy'); } catch (e) {}
-          $("#" + id).persianDatepicker({
-            format: 'YYYY/MM/DD',
-            autoClose: true,
-            persianDigit: true,
-            initialValue: !!el.value
+        // راه‌اندازی date picker
+        setTimeout(() => {
+          [
+            "decree-date",
+            "decree-execution-date",
+            "decree-contract-start",
+            "decree-contract-end",
+          ].forEach((id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            try {
+              $("#" + id).persianDatepicker("destroy");
+            } catch (e) {}
+            $("#" + id).persianDatepicker({
+              format: "YYYY/MM/DD",
+              autoClose: true,
+              persianDigit: true,
+              initialValue: !!el.value,
+            });
           });
-        });
 
-        // بارگذاری آیتم‌ها
-        if (currentDecreeType) {
-          loadDecreeItems(currentDecreeType);
+          // بارگذاری آیتم‌ها
+          if (currentDecreeType) {
+            loadDecreeItems(currentDecreeType);
+          }
+        }, 100);
+      }
+
+      function closeDecreeModal() {
+        const modal = document.getElementById("decree-modal");
+        if (modal) modal.remove();
+      }
+
+      // ============================================
+      // تغییر نوع حکم
+      // ============================================
+      async function onDecreeTypeChange() {
+        const type = document.getElementById("decree-type").value;
+        if (!type) return;
+        currentDecreeType = type;
+        await loadDecreeItems(type);
+      }
+
+      // ============================================
+      // بارگذاری آیتم‌های حقوق
+      // ============================================
+      async function loadDecreeItems(decreeType) {
+        try {
+          const res = await fetch(
+            `/api/decree-items?decree_type=${decreeType}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          const templateItems = await res.json();
+
+          // merge با آیتم‌های فعلی
+          const merged = templateItems.map((t) => {
+            const existing = currentDecreeItems.find(
+              (ci) => ci.code === t.code
+            );
+            return {
+              code: t.code,
+              title: t.title,
+              amount: existing ? existing.amount : 0,
+            };
+          });
+
+          currentDecreeItems = merged;
+          renderDecreeItems();
+        } catch (error) {
+          console.error("Load items error:", error);
         }
-      }, 100);
-    }
-
-    function closeDecreeModal() {
-      const modal = document.getElementById('decree-modal');
-      if (modal) modal.remove();
-    }
-
-    // ============================================
-    // تغییر نوع حکم
-    // ============================================
-    async function onDecreeTypeChange() {
-      const type = document.getElementById('decree-type').value;
-      if (!type) return;
-      currentDecreeType = type;
-      await loadDecreeItems(type);
-    }
-
-    // ============================================
-    // بارگذاری آیتم‌های حقوق
-    // ============================================
-    async function loadDecreeItems(decreeType) {
-      try {
-        const res = await fetch(`/api/decree-items?decree_type=${decreeType}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const templateItems = await res.json();
-
-        // merge با آیتم‌های فعلی
-        const merged = templateItems.map(t => {
-          const existing = currentDecreeItems.find(ci => ci.code === t.code);
-          return {
-            code: t.code,
-            title: t.title,
-            amount: existing ? existing.amount : 0
-          };
-        });
-
-        currentDecreeItems = merged;
-        renderDecreeItems();
-      } catch (error) {
-        console.error('Load items error:', error);
-      }
-    }
-
-    // ============================================
-    // رندر آیتم‌های حقوق
-    // ============================================
-    function renderDecreeItems() {
-      const container = document.getElementById('decree-items-container');
-      if (!container) return;
-
-      if (currentDecreeItems.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding:20px; color:#999;">آیتمی برای این نوع حکم یافت نشد</div>`;
-        return;
       }
 
-      let html = '';
-      currentDecreeItems.forEach((item, index) => {
-        html += `
+      // ============================================
+      // رندر آیتم‌های حقوق
+      // ============================================
+      function renderDecreeItems() {
+        const container = document.getElementById("decree-items-container");
+        if (!container) return;
+
+        if (currentDecreeItems.length === 0) {
+          container.innerHTML = `<div style="text-align:center; padding:20px; color:#999;">آیتمی برای این نوع حکم یافت نشد</div>`;
+          return;
+        }
+
+        let html = "";
+        currentDecreeItems.forEach((item, index) => {
+          html += `
           <div class="decree-item-row">
             <div class="decree-item-label">
               <span class="decree-item-code">${item.code})</span>
@@ -2697,255 +3597,298 @@
             <div class="decree-item-input">
               <input type="text" 
                      class="amount-input" 
-                     value="${item.amount ? formatAmount(item.amount) : ''}" 
+                     value="${item.amount ? formatAmount(item.amount) : ""}" 
                      placeholder="۰"
                      oninput="onDecreeAmountChange(${index}, this)" />
               <span class="currency">ریال</span>
             </div>
           </div>
         `;
-      });
-
-      container.innerHTML = html;
-
-      // راه‌اندازی فرمت مبلغ
-      container.querySelectorAll('.amount-input').forEach((input, idx) => {
-        input.addEventListener('input', function() {
-          let value = toEnglishNumbers(this.value);
-          value = value.replace(/,/g, '').replace(/[^\d]/g, '');
-          if (value === '') {
-            this.value = '';
-            return;
-          }
-          this.value = toPersianNumbers(value.replace(/\B(?=(\d{3})+(?!\d))/g, ','));
-        });
-      });
-
-      updateDecreeTotal();
-    }
-
-    // ============================================
-    // تغییر مبلغ آیتم
-    // ============================================
-    function onDecreeAmountChange(index, input) {
-      let value = toEnglishNumbers(input.value);
-      value = value.replace(/,/g, '').replace(/[^\d]/g, '');
-      currentDecreeItems[index].amount = value === '' ? 0 : parseInt(value);
-      updateDecreeTotal();
-    }
-
-    // ============================================
-    // محاسبه جمع کل
-    // ============================================
-    function updateDecreeTotal() {
-      const total = currentDecreeItems.reduce((sum, item) => sum + (item.amount || 0), 0);
-      const totalEl = document.getElementById('decree-total-amount');
-      if (totalEl) {
-        totalEl.textContent = formatAmount(total);
-      }
-      return total;
-    }
-
-    // ============================================
-    // ذخیره حکم
-    // ============================================
-    async function saveDecree(decreeId) {
-      const btn = document.getElementById('btn-save-decree');
-      btn.disabled = true;
-      btn.textContent = '⏳ در حال ذخیره...';
-
-      try {
-        const decreeType = document.getElementById('decree-type').value;
-        if (!decreeType) {
-          throw new Error('نوع حکم الزامی است');
-        }
-
-        const total = updateDecreeTotal();
-
-        const data = {
-          id: decreeId || null,
-          decree_type: decreeType,
-          decree_number: document.getElementById('decree-number').value.trim() || null,
-          decree_date_shamsi: cleanDate(document.getElementById('decree-date').value),
-          execution_date_shamsi: cleanDate(document.getElementById('decree-execution-date').value),
-          contract_start_shamsi: cleanDate(document.getElementById('decree-contract-start').value),
-          contract_end_shamsi: cleanDate(document.getElementById('decree-contract-end').value),
-          description: document.getElementById('decree-description').value.trim() || null,
-          organization_unit: document.getElementById('decree-org-unit').value.trim() || null,
-          service_location: document.getElementById('decree-service-location').value.trim() || null,
-          position_title: document.getElementById('decree-position').value.trim() || null,
-          job_group: document.getElementById('decree-job-group').value.trim() || null,
-          job_rank: document.getElementById('decree-job-rank').value.trim() || null,
-          job_class: document.getElementById('decree-job-class').value.trim() || null,
-          employment_type: document.getElementById('decree-employment-type').value.trim() || null,
-          employment_duration: document.getElementById('decree-employment-duration').value.trim() || null,
-          service_history_years: parseInt(document.getElementById('decree-service-years').value) || 0,
-          service_history_months: parseInt(document.getElementById('decree-service-months').value) || 0,
-          service_history_days: parseInt(document.getElementById('decree-service-days').value) || 0,
-          experience_years: parseInt(document.getElementById('decree-exp-years').value) || 0,
-          experience_months: parseInt(document.getElementById('decree-exp-months').value) || 0,
-          experience_days: parseInt(document.getElementById('decree-exp-days').value) || 0,
-          items: currentDecreeItems.filter(i => i.amount > 0),
-          total_amount: total,
-          total_in_words: document.getElementById('decree-total-words').value.trim() || null,
-          notes: document.getElementById('decree-notes').value.trim() || null,
-        };
-
-        const res = await fetch(`/api/employees/${personId}/decrees`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(data)
         });
 
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.error || 'خطا');
+        container.innerHTML = html;
 
-        showToast(decreeId ? 'با موفقیت ویرایش شد' : 'با موفقیت ثبت شد');
-        closeDecreeModal();
-
-        // ریلود
-        const decreesRes = await fetch(`/api/employees/${personId}/decrees`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        decrees = await decreesRes.json();
-
-        const panel = document.getElementById('panel-decrees');
-        if (panel) panel.innerHTML = renderDecreesTab();
-      } catch (error) {
-        showToast(error.message, 'error');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = '💾 ذخیره';
-      }
-    }
-
-    // ============================================
-    // حذف حکم
-    // ============================================
-    async function deleteDecree(decreeId) {
-      if (!confirm('مطمئن هستید این حکم حذف شود؟')) return;
-
-      try {
-        const res = await fetch(`/api/decrees/${decreeId}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (!res.ok) throw new Error('خطا در حذف');
-
-        showToast('با موفقیت حذف شد');
-
-        const decreesRes = await fetch(`/api/employees/${personId}/decrees`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        decrees = await decreesRes.json();
-
-        const panel = document.getElementById('panel-decrees');
-        if (panel) panel.innerHTML = renderDecreesTab();
-      } catch (error) {
-        showToast(error.message, 'error');
-      }
-    }
-
-    // ============================================
-    // ارسال برای امضا (Mock SMS)
-    // ============================================
-    async function sendDecreeForSignature(decreeId) {
-      const decree = decrees.find(d => d.id === decreeId);
-      if (!decree) return;
-
-      // چک موبایل
-      const mobile = person.mobile;
-      if (!mobile) {
-        showToast('شماره موبایل کارمند ثبت نشده است', 'error');
-        return;
-      }
-
-      if (!confirm(`ارسال کد تایید به موبایل ${mobile}؟`)) return;
-
-      try {
-        const res = await fetch('/api/signatures/send-otp', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            entity_type: 'decree',
-            entity_id: decreeId,
-            employee_person_id: personId,
-            mobile: mobile
-          })
-        });
-
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'خطا در ارسال');
-
-        // نمایش OTP در حالت mock
-        if (data.mock_otp) {
-          showToast(`کد تایید (mock): ${data.mock_otp}`, 'success');
-          
-          // پرامپت برای وارد کردن OTP
-          setTimeout(() => {
-            const otp = prompt(`کد تایید ارسال شده به ${mobile} را وارد کنید:\n(Mock: ${data.mock_otp})`);
-            if (otp) {
-              verifySignature(data.signature_id, otp);
+        // راه‌اندازی فرمت مبلغ
+        container.querySelectorAll(".amount-input").forEach((input, idx) => {
+          input.addEventListener("input", function () {
+            let value = toEnglishNumbers(this.value);
+            value = value.replace(/,/g, "").replace(/[^\d]/g, "");
+            if (value === "") {
+              this.value = "";
+              return;
             }
-          }, 500);
+            this.value = toPersianNumbers(
+              value.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+            );
+          });
+        });
+
+        updateDecreeTotal();
+      }
+
+      // ============================================
+      // تغییر مبلغ آیتم
+      // ============================================
+      function onDecreeAmountChange(index, input) {
+        let value = toEnglishNumbers(input.value);
+        value = value.replace(/,/g, "").replace(/[^\d]/g, "");
+        currentDecreeItems[index].amount = value === "" ? 0 : parseInt(value);
+        updateDecreeTotal();
+      }
+
+      // ============================================
+      // محاسبه جمع کل
+      // ============================================
+      function updateDecreeTotal() {
+        const total = currentDecreeItems.reduce(
+          (sum, item) => sum + (item.amount || 0),
+          0
+        );
+        const totalEl = document.getElementById("decree-total-amount");
+        if (totalEl) {
+          totalEl.textContent = formatAmount(total);
         }
-      } catch (error) {
-        showToast(error.message, 'error');
+        return total;
       }
-    }
 
-    // ============================================
-    // تایید امضا
-    // ============================================
-    async function verifySignature(signatureId, otpCode) {
-      try {
-        const res = await fetch('/api/signatures/verify', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            signature_id: signatureId,
-            otp_code: otpCode
-          })
-        });
+      // ============================================
+      // ذخیره حکم
+      // ============================================
+      async function saveDecree(decreeId) {
+        const btn = document.getElementById("btn-save-decree");
+        btn.disabled = true;
+        btn.textContent = "⏳ در حال ذخیره...";
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'کد اشتباه');
+        try {
+          const decreeType = document.getElementById("decree-type").value;
+          if (!decreeType) {
+            throw new Error("نوع حکم الزامی است");
+          }
 
-        showToast('✅ امضا با موفقیت ثبت شد');
+          const total = updateDecreeTotal();
 
-        // ریلود
-        const decreesRes = await fetch(`/api/employees/${personId}/decrees`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        decrees = await decreesRes.json();
+          const data = {
+            id: decreeId || null,
+            decree_type: decreeType,
+            decree_number:
+              document.getElementById("decree-number").value.trim() || null,
+            decree_date_shamsi: cleanDate(
+              document.getElementById("decree-date").value
+            ),
+            execution_date_shamsi: cleanDate(
+              document.getElementById("decree-execution-date").value
+            ),
+            contract_start_shamsi: cleanDate(
+              document.getElementById("decree-contract-start").value
+            ),
+            contract_end_shamsi: cleanDate(
+              document.getElementById("decree-contract-end").value
+            ),
+            description:
+              document.getElementById("decree-description").value.trim() ||
+              null,
+            organization_unit:
+              document.getElementById("decree-org-unit").value.trim() || null,
+            service_location:
+              document.getElementById("decree-service-location").value.trim() ||
+              null,
+            position_title:
+              document.getElementById("decree-position").value.trim() || null,
+            job_group:
+              document.getElementById("decree-job-group").value.trim() || null,
+            job_rank:
+              document.getElementById("decree-job-rank").value.trim() || null,
+            job_class:
+              document.getElementById("decree-job-class").value.trim() || null,
+            employment_type:
+              document.getElementById("decree-employment-type").value.trim() ||
+              null,
+            employment_duration:
+              document
+                .getElementById("decree-employment-duration")
+                .value.trim() || null,
+            service_history_years:
+              parseInt(document.getElementById("decree-service-years").value) ||
+              0,
+            service_history_months:
+              parseInt(
+                document.getElementById("decree-service-months").value
+              ) || 0,
+            service_history_days:
+              parseInt(document.getElementById("decree-service-days").value) ||
+              0,
+            experience_years:
+              parseInt(document.getElementById("decree-exp-years").value) || 0,
+            experience_months:
+              parseInt(document.getElementById("decree-exp-months").value) || 0,
+            experience_days:
+              parseInt(document.getElementById("decree-exp-days").value) || 0,
+            items: currentDecreeItems.filter((i) => i.amount > 0),
+            total_amount: total,
+            total_in_words:
+              document.getElementById("decree-total-words").value.trim() ||
+              null,
+            notes: document.getElementById("decree-notes").value.trim() || null,
+          };
 
-        const panel = document.getElementById('panel-decrees');
-        if (panel) panel.innerHTML = renderDecreesTab();
-      } catch (error) {
-        showToast(error.message, 'error');
+          const res = await fetch(`/api/employees/${personId}/decrees`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(data),
+          });
+
+          const result = await res.json();
+          if (!res.ok) throw new Error(result.error || "خطا");
+
+          showToast(decreeId ? "با موفقیت ویرایش شد" : "با موفقیت ثبت شد");
+          closeDecreeModal();
+
+          // ریلود
+          const decreesRes = await fetch(`/api/employees/${personId}/decrees`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          decrees = await decreesRes.json();
+
+          const panel = document.getElementById("panel-decrees");
+          if (panel) panel.innerHTML = renderDecreesTab();
+        } catch (error) {
+          showToast(error.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "💾 ذخیره";
+        }
       }
-    }
-    
-    
-    // ============================================
-    // Modal فرد تحت تکفل
-    // ============================================
-    function openDependentModal(depId = null) {
-      const dep = depId ? dependents.find(d => d.id === depId) : null;
-      const isEdit = !!dep;
-      const title = isEdit ? '✏️ ویرایش فرد تحت تکفل' : '➕ افزودن فرد تحت تکفل';
 
-      const modalHtml = `
+      // ============================================
+      // حذف حکم
+      // ============================================
+      async function deleteDecree(decreeId) {
+        if (!confirm("مطمئن هستید این حکم حذف شود؟")) return;
+
+        try {
+          const res = await fetch(`/api/decrees/${decreeId}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (!res.ok) throw new Error("خطا در حذف");
+
+          showToast("با موفقیت حذف شد");
+
+          const decreesRes = await fetch(`/api/employees/${personId}/decrees`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          decrees = await decreesRes.json();
+
+          const panel = document.getElementById("panel-decrees");
+          if (panel) panel.innerHTML = renderDecreesTab();
+        } catch (error) {
+          showToast(error.message, "error");
+        }
+      }
+
+      // ============================================
+      // ارسال برای امضا (Mock SMS)
+      // ============================================
+      async function sendDecreeForSignature(decreeId) {
+        const decree = decrees.find((d) => d.id === decreeId);
+        if (!decree) return;
+
+        // چک موبایل
+        const mobile = person.mobile;
+        if (!mobile) {
+          showToast("شماره موبایل کارمند ثبت نشده است", "error");
+          return;
+        }
+
+        if (!confirm(`ارسال کد تایید به موبایل ${mobile}؟`)) return;
+
+        try {
+          const res = await fetch("/api/signatures/send-otp", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              entity_type: "decree",
+              entity_id: decreeId,
+              employee_person_id: personId,
+              mobile: mobile,
+            }),
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "خطا در ارسال");
+
+          // نمایش OTP در حالت mock
+          if (data.mock_otp) {
+            showToast(`کد تایید (mock): ${data.mock_otp}`, "success");
+
+            // پرامپت برای وارد کردن OTP
+            setTimeout(() => {
+              const otp = prompt(
+                `کد تایید ارسال شده به ${mobile} را وارد کنید:\n(Mock: ${data.mock_otp})`
+              );
+              if (otp) {
+                verifySignature(data.signature_id, otp);
+              }
+            }, 500);
+          }
+        } catch (error) {
+          showToast(error.message, "error");
+        }
+      }
+
+      // ============================================
+      // تایید امضا
+      // ============================================
+      async function verifySignature(signatureId, otpCode) {
+        try {
+          const res = await fetch("/api/signatures/verify", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              signature_id: signatureId,
+              otp_code: otpCode,
+            }),
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "کد اشتباه");
+
+          showToast("✅ امضا با موفقیت ثبت شد");
+
+          // ریلود
+          const decreesRes = await fetch(`/api/employees/${personId}/decrees`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          decrees = await decreesRes.json();
+
+          const panel = document.getElementById("panel-decrees");
+          if (panel) panel.innerHTML = renderDecreesTab();
+        } catch (error) {
+          showToast(error.message, "error");
+        }
+      }
+
+      // ============================================
+      // Modal فرد تحت تکفل
+      // ============================================
+      function openDependentModal(depId = null) {
+        const dep = depId ? dependents.find((d) => d.id === depId) : null;
+        const isEdit = !!dep;
+        const title = isEdit
+          ? "✏️ ویرایش فرد تحت تکفل"
+          : "➕ افزودن فرد تحت تکفل";
+
+        const modalHtml = `
         <div class="dependent-modal-overlay open" id="dependent-modal">
           <div class="dependent-modal">
             <div class="dependent-modal-header">
@@ -2959,17 +3902,29 @@
                   <label>نسبت <span class="required">*</span></label>
                   <select id="dep-relation-type" onchange="onRelationChange()">
                     <option value="">— انتخاب کنید —</option>
-                    <option value="spouse" ${dep?.relation_type === 'spouse' ? 'selected' : ''}>همسر</option>
-                    <option value="son" ${dep?.relation_type === 'son' ? 'selected' : ''}>فرزند پسر</option>
-                    <option value="daughter" ${dep?.relation_type === 'daughter' ? 'selected' : ''}>فرزند دختر</option>
-                    <option value="father" ${dep?.relation_type === 'father' ? 'selected' : ''}>پدر</option>
-                    <option value="mother" ${dep?.relation_type === 'mother' ? 'selected' : ''}>مادر</option>
+                    <option value="spouse" ${
+                      dep?.relation_type === "spouse" ? "selected" : ""
+                    }>همسر</option>
+                    <option value="son" ${
+                      dep?.relation_type === "son" ? "selected" : ""
+                    }>فرزند پسر</option>
+                    <option value="daughter" ${
+                      dep?.relation_type === "daughter" ? "selected" : ""
+                    }>فرزند دختر</option>
+                    <option value="father" ${
+                      dep?.relation_type === "father" ? "selected" : ""
+                    }>پدر</option>
+                    <option value="mother" ${
+                      dep?.relation_type === "mother" ? "selected" : ""
+                    }>مادر</option>
                   </select>
                 </div>
                 <div class="form-group">
                   <label>کد ملی</label>
                   <div style="display:flex; gap:8px;">
-                    <input type="text" id="dep-national-id" value="${dep?.national_id || ''}" maxlength="10" dir="ltr" />
+                    <input type="text" id="dep-national-id" value="${
+                      dep?.national_id || ""
+                    }" maxlength="10" dir="ltr" />
                     <button class="btn-lookup" onclick="lookupNationalId()" title="استعلام از ثبت احوال">🔍</button>
                   </div>
                 </div>
@@ -2978,27 +3933,37 @@
               <div class="form-row">
                 <div class="form-group">
                   <label>نام <span class="required">*</span></label>
-                  <input type="text" id="dep-first-name" value="${dep?.first_name || ''}" />
+                  <input type="text" id="dep-first-name" value="${
+                    dep?.first_name || ""
+                  }" />
                 </div>
                 <div class="form-group">
                   <label>نام خانوادگی</label>
-                  <input type="text" id="dep-last-name" value="${dep?.last_name || ''}" />
+                  <input type="text" id="dep-last-name" value="${
+                    dep?.last_name || ""
+                  }" />
                 </div>
               </div>
 
               <div class="form-group">
                 <label>نام پدر</label>
-                <input type="text" id="dep-father-name" value="${dep?.father_name || ''}" />
+                <input type="text" id="dep-father-name" value="${
+                  dep?.father_name || ""
+                }" />
               </div>
 
               <div class="form-row">
                 <div class="form-group">
                   <label>شماره شناسنامه</label>
-                  <input type="text" id="dep-id-number" value="${dep?.id_number || ''}" />
+                  <input type="text" id="dep-id-number" value="${
+                    dep?.id_number || ""
+                  }" />
                 </div>
                 <div class="form-group">
                   <label>تاریخ تولد</label>
-                  <input type="text" id="dep-birth-date" value="${toPersianDate(dep?.birth_date_shamsi)}" placeholder="۱۳۷۰/۰۱/۰۱" />
+                  <input type="text" id="dep-birth-date" value="${toPersianDate(
+                    dep?.birth_date_shamsi
+                  )}" placeholder="۱۳۷۰/۰۱/۰۱" />
                 </div>
               </div>
 
@@ -3007,13 +3972,19 @@
                   <label>جنسیت</label>
                   <select id="dep-gender">
                     <option value="">— انتخاب کنید —</option>
-                    <option value="male" ${dep?.gender === 'male' ? 'selected' : ''}>مرد</option>
-                    <option value="female" ${dep?.gender === 'female' ? 'selected' : ''}>زن</option>
+                    <option value="male" ${
+                      dep?.gender === "male" ? "selected" : ""
+                    }>مرد</option>
+                    <option value="female" ${
+                      dep?.gender === "female" ? "selected" : ""
+                    }>زن</option>
                   </select>
                 </div>
                 <div class="form-group">
                   <label>موبایل</label>
-                  <input type="text" id="dep-mobile" value="${dep?.mobile || ''}" maxlength="11" dir="ltr" />
+                  <input type="text" id="dep-mobile" value="${
+                    dep?.mobile || ""
+                  }" maxlength="11" dir="ltr" />
                 </div>
               </div>
 
@@ -3022,18 +3993,30 @@
                   <label>وضعیت تحصیل</label>
                   <select id="dep-education-status">
                     <option value="">— انتخاب کنید —</option>
-                    <option value="student" ${dep?.education_status === 'student' ? 'selected' : ''}>محصل</option>
-                    <option value="graduated" ${dep?.education_status === 'graduated' ? 'selected' : ''}>فارغ‌التحصیل</option>
-                    <option value="dropout" ${dep?.education_status === 'dropout' ? 'selected' : ''}>ترک تحصیل</option>
+                    <option value="student" ${
+                      dep?.education_status === "student" ? "selected" : ""
+                    }>محصل</option>
+                    <option value="graduated" ${
+                      dep?.education_status === "graduated" ? "selected" : ""
+                    }>فارغ‌التحصیل</option>
+                    <option value="dropout" ${
+                      dep?.education_status === "dropout" ? "selected" : ""
+                    }>ترک تحصیل</option>
                   </select>
                 </div>
                 <div class="form-group" id="group-military">
                   <label>وضعیت سربازی</label>
                   <select id="dep-military-status">
                     <option value="">— انتخاب کنید —</option>
-                    <option value="serving" ${dep?.military_status === 'serving' ? 'selected' : ''}>در حال خدمت</option>
-                    <option value="exempt" ${dep?.military_status === 'exempt' ? 'selected' : ''}>معاف</option>
-                    <option value="completed" ${dep?.military_status === 'completed' ? 'selected' : ''}>پایان خدمت</option>
+                    <option value="serving" ${
+                      dep?.military_status === "serving" ? "selected" : ""
+                    }>در حال خدمت</option>
+                    <option value="exempt" ${
+                      dep?.military_status === "exempt" ? "selected" : ""
+                    }>معاف</option>
+                    <option value="completed" ${
+                      dep?.military_status === "completed" ? "selected" : ""
+                    }>پایان خدمت</option>
                   </select>
                 </div>
               </div>
@@ -3043,34 +4026,48 @@
                   <label>وضعیت تأهل</label>
                   <select id="dep-marital-status">
                     <option value="">— انتخاب کنید —</option>
-                    <option value="single" ${dep?.marital_status === 'single' ? 'selected' : ''}>مجرد</option>
-                    <option value="married" ${dep?.marital_status === 'married' ? 'selected' : ''}>متأهل</option>
-                    <option value="divorced" ${dep?.marital_status === 'divorced' ? 'selected' : ''}>مطلقه</option>
-                    <option value="widowed" ${dep?.marital_status === 'widowed' ? 'selected' : ''}>بیوه</option>
+                    <option value="single" ${
+                      dep?.marital_status === "single" ? "selected" : ""
+                    }>مجرد</option>
+                    <option value="married" ${
+                      dep?.marital_status === "married" ? "selected" : ""
+                    }>متأهل</option>
+                    <option value="divorced" ${
+                      dep?.marital_status === "divorced" ? "selected" : ""
+                    }>مطلقه</option>
+                    <option value="widowed" ${
+                      dep?.marital_status === "widowed" ? "selected" : ""
+                    }>بیوه</option>
                   </select>
                 </div>
                 <div class="form-group">
                   <label>تاریخ ازدواج</label>
-                  <input type="text" id="dep-marriage-date" value="${toPersianDate(dep?.marriage_date_shamsi)}" placeholder="اختیاری" />
+                  <input type="text" id="dep-marriage-date" value="${toPersianDate(
+                    dep?.marriage_date_shamsi
+                  )}" placeholder="اختیاری" />
                 </div>
               </div>
 
               <div class="form-group">
                 <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" id="dep-is-disabled" ${dep?.is_disabled ? 'checked' : ''} style="width:auto;" />
+                  <input type="checkbox" id="dep-is-disabled" ${
+                    dep?.is_disabled ? "checked" : ""
+                  } style="width:auto;" />
                   <span>♿ دارای معلولیت</span>
                 </label>
               </div>
 
               <div class="form-group">
                 <label>یادداشت</label>
-                <textarea id="dep-notes">${dep?.notes || ''}</textarea>
+                <textarea id="dep-notes">${dep?.notes || ""}</textarea>
               </div>
             </div>
 
             <div class="dependent-modal-footer">
               <button class="btn btn-cancel" onclick="closeDependentModal()">انصراف</button>
-              <button class="btn btn-save" id="btn-save-dependent" onclick="saveDependent(${depId || 'null'})">
+              <button class="btn btn-save" id="btn-save-dependent" onclick="saveDependent(${
+                depId || "null"
+              })">
                 💾 ذخیره
               </button>
             </div>
@@ -3078,190 +4075,213 @@
         </div>
       `;
 
-      // اضافه به body
-      const existing = document.getElementById('dependent-modal');
-      if (existing) existing.remove();
+        // اضافه به body
+        const existing = document.getElementById("dependent-modal");
+        if (existing) existing.remove();
 
-      document.body.insertAdjacentHTML('beforeend', modalHtml);
+        document.body.insertAdjacentHTML("beforeend", modalHtml);
 
-      // راه‌اندازی date picker
-      setTimeout(() => {
+        // راه‌اندازی date picker
+        setTimeout(() => {
+          try {
+            $("#dep-birth-date").persianDatepicker("destroy");
+          } catch (e) {}
+          $("#dep-birth-date").persianDatepicker({
+            format: "YYYY/MM/DD",
+            autoClose: true,
+            persianDigit: true,
+            initialValue: false,
+            observer: true,
+          });
+
+          // اگه مقدار داشت، برگردون
+          if (dep?.birth_date_shamsi) {
+            document.getElementById("dep-birth-date").value = toPersianNumbers(
+              dep.birth_date_shamsi
+            );
+          }
+
+          try {
+            $("#dep-marriage-date").persianDatepicker("destroy");
+          } catch (e) {}
+          $("#dep-birth-date").persianDatepicker({
+            format: "YYYY/MM/DD",
+            autoClose: true,
+            persianDigit: true,
+            initialValue: false,
+            observer: true,
+          });
+
+          // اگه مقدار داشت، برگردون
+          if (dep?.birth_date_shamsi) {
+            document.getElementById("dep-birth-date").value = toPersianNumbers(
+              dep.birth_date_shamsi
+            );
+          }
+
+          onRelationChange();
+        }, 100);
+      }
+
+      function closeDependentModal() {
+        const modal = document.getElementById("dependent-modal");
+        if (modal) modal.remove();
+      }
+
+      function onRelationChange() {
+        const relation = document.getElementById("dep-relation-type").value;
+        const groupEducation = document.getElementById("group-education");
+        const groupMilitary = document.getElementById("group-military");
+
+        // تحصیل: فقط برای فرزندان
+        if (relation === "son" || relation === "daughter") {
+          groupEducation.style.display = "block";
+        } else {
+          groupEducation.style.display = "none";
+        }
+
+        // سربازی: فقط برای فرزند پسر
+        if (relation === "son") {
+          groupMilitary.style.display = "block";
+        } else {
+          groupMilitary.style.display = "none";
+        }
+      }
+
+      function lookupNationalId() {
+        const nationalId = document
+          .getElementById("dep-national-id")
+          .value.trim();
+
+        if (!nationalId || nationalId.length !== 10) {
+          showToast("کد ملی باید ۱۰ رقم باشد", "error");
+          return;
+        }
+
+        // Mock استعلام
+        showToast("استعلام از ثبت احوال (mock) — این قابلیت بعداً فعال می‌شود");
+
+        // TODO: اتصال به ثبت احوال
+        // fetch(`/api/registry/lookup?national_id=${nationalId}`)
+      }
+
+      async function saveDependent(depId) {
+        const btn = document.getElementById("btn-save-dependent");
+        btn.disabled = true;
+        btn.textContent = "⏳ در حال ذخیره...";
+
         try {
-          $("#dep-birth-date").persianDatepicker('destroy');
-        } catch (e) {}
-        $("#dep-birth-date").persianDatepicker({
-          format: 'YYYY/MM/DD',
-          autoClose: true,
-          persianDigit: true,
-          initialValue: false,
-          observer: true
-        });
-        
-        // اگه مقدار داشت، برگردون
-        if (dep?.birth_date_shamsi) {
-          document.getElementById('dep-birth-date').value = toPersianNumbers(dep.birth_date_shamsi);
+          const firstName = document
+            .getElementById("dep-first-name")
+            .value.trim();
+          const lastName = document
+            .getElementById("dep-last-name")
+            .value.trim();
+          const fullName = `${firstName} ${lastName}`.trim();
+
+          if (!fullName) {
+            throw new Error("نام الزامی است");
+          }
+
+          const relationType =
+            document.getElementById("dep-relation-type").value;
+          if (!relationType) {
+            throw new Error("نسبت الزامی است");
+          }
+
+          const data = {
+            id: depId || null,
+            national_id:
+              document.getElementById("dep-national-id").value.trim() || null,
+            relation_type: relationType,
+            first_name: firstName || null,
+            last_name: lastName || null,
+            full_name: fullName,
+            father_name:
+              document.getElementById("dep-father-name").value.trim() || null,
+            id_number:
+              document.getElementById("dep-id-number").value.trim() || null,
+            birth_date_shamsi: cleanDate(
+              document.getElementById("dep-birth-date").value
+            ),
+            gender: document.getElementById("dep-gender").value || null,
+            mobile: document.getElementById("dep-mobile").value.trim() || null,
+            education_status:
+              document.getElementById("dep-education-status")?.value || null,
+            military_status:
+              document.getElementById("dep-military-status")?.value || null,
+            marital_status:
+              document.getElementById("dep-marital-status").value || null,
+            marriage_date_shamsi: cleanDate(
+              document.getElementById("dep-marriage-date").value
+            ),
+            is_disabled: document.getElementById("dep-is-disabled").checked
+              ? 1
+              : 0,
+            notes: document.getElementById("dep-notes").value.trim() || null,
+          };
+
+          const res = await fetch(`/api/employees/${personId}/dependents`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(data),
+          });
+
+          const result = await res.json();
+          if (!res.ok) throw new Error(result.error || "خطا");
+
+          showToast(depId ? "با موفقیت ویرایش شد" : "با موفقیت ثبت شد");
+          closeDependentModal();
+
+          // ریلود
+          const depsRes = await fetch(`/api/employees/${personId}/dependents`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          dependents = await depsRes.json();
+
+          const panel = document.getElementById("panel-dependents");
+          if (panel) {
+            panel.innerHTML = renderDependentsTab();
+          }
+        } catch (error) {
+          showToast(error.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "💾 ذخیره";
         }
+      }
+
+      async function deleteDependent(depId) {
+        if (!confirm("مطمئن هستید این فرد تحت تکفل حذف شود؟")) return;
 
         try {
-          $("#dep-marriage-date").persianDatepicker('destroy');
-        } catch (e) {}
-        $("#dep-birth-date").persianDatepicker({
-          format: 'YYYY/MM/DD',
-          autoClose: true,
-          persianDigit: true,
-          initialValue: false,
-          observer: true
-        });
-        
-        // اگه مقدار داشت، برگردون
-        if (dep?.birth_date_shamsi) {
-          document.getElementById('dep-birth-date').value = toPersianNumbers(dep.birth_date_shamsi);
+          const res = await fetch(`/api/dependents/${depId}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          const result = await res.json();
+          if (!res.ok) throw new Error(result.error || "خطا");
+
+          showToast("با موفقیت حذف شد");
+
+          // ریلود
+          const depsRes = await fetch(`/api/employees/${personId}/dependents`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          dependents = await depsRes.json();
+
+          const panel = document.getElementById("panel-dependents");
+          if (panel) {
+            panel.innerHTML = renderDependentsTab();
+          }
+        } catch (error) {
+          showToast(error.message, "error");
         }
-
-        onRelationChange();
-      }, 100);
-    }
-
-    function closeDependentModal() {
-      const modal = document.getElementById('dependent-modal');
-      if (modal) modal.remove();
-    }
-
-    function onRelationChange() {
-      const relation = document.getElementById('dep-relation-type').value;
-      const groupEducation = document.getElementById('group-education');
-      const groupMilitary = document.getElementById('group-military');
-
-      // تحصیل: فقط برای فرزندان
-      if (relation === 'son' || relation === 'daughter') {
-        groupEducation.style.display = 'block';
-      } else {
-        groupEducation.style.display = 'none';
       }
-
-      // سربازی: فقط برای فرزند پسر
-      if (relation === 'son') {
-        groupMilitary.style.display = 'block';
-      } else {
-        groupMilitary.style.display = 'none';
-      }
-    }
-
-    function lookupNationalId() {
-      const nationalId = document.getElementById('dep-national-id').value.trim();
-      
-      if (!nationalId || nationalId.length !== 10) {
-        showToast('کد ملی باید ۱۰ رقم باشد', 'error');
-        return;
-      }
-
-      // Mock استعلام
-      showToast('استعلام از ثبت احوال (mock) — این قابلیت بعداً فعال می‌شود');
-      
-      // TODO: اتصال به ثبت احوال
-      // fetch(`/api/registry/lookup?national_id=${nationalId}`)
-    }
-
-    async function saveDependent(depId) {
-      const btn = document.getElementById('btn-save-dependent');
-      btn.disabled = true;
-      btn.textContent = '⏳ در حال ذخیره...';
-
-      try {
-        const firstName = document.getElementById('dep-first-name').value.trim();
-        const lastName = document.getElementById('dep-last-name').value.trim();
-        const fullName = `${firstName} ${lastName}`.trim();
-
-        if (!fullName) {
-          throw new Error('نام الزامی است');
-        }
-
-        const relationType = document.getElementById('dep-relation-type').value;
-        if (!relationType) {
-          throw new Error('نسبت الزامی است');
-        }
-
-        const data = {
-          id: depId || null,
-          national_id: document.getElementById('dep-national-id').value.trim() || null,
-          relation_type: relationType,
-          first_name: firstName || null,
-          last_name: lastName || null,
-          full_name: fullName,
-          father_name: document.getElementById('dep-father-name').value.trim() || null,
-          id_number: document.getElementById('dep-id-number').value.trim() || null,
-          birth_date_shamsi: cleanDate(document.getElementById('dep-birth-date').value),
-          gender: document.getElementById('dep-gender').value || null,
-          mobile: document.getElementById('dep-mobile').value.trim() || null,
-          education_status: document.getElementById('dep-education-status')?.value || null,
-          military_status: document.getElementById('dep-military-status')?.value || null,
-          marital_status: document.getElementById('dep-marital-status').value || null,
-          marriage_date_shamsi: cleanDate(document.getElementById('dep-marriage-date').value),
-          is_disabled: document.getElementById('dep-is-disabled').checked ? 1 : 0,
-          notes: document.getElementById('dep-notes').value.trim() || null,
-        };
-
-        const res = await fetch(`/api/employees/${personId}/dependents`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(data)
-        });
-
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.error || 'خطا');
-
-        showToast(depId ? 'با موفقیت ویرایش شد' : 'با موفقیت ثبت شد');
-        closeDependentModal();
-
-        // ریلود
-        const depsRes = await fetch(`/api/employees/${personId}/dependents`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        dependents = await depsRes.json();
-
-        const panel = document.getElementById('panel-dependents');
-        if (panel) {
-          panel.innerHTML = renderDependentsTab();
-        }
-      } catch (error) {
-        showToast(error.message, 'error');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = '💾 ذخیره';
-      }
-    }
-
-    async function deleteDependent(depId) {
-      if (!confirm('مطمئن هستید این فرد تحت تکفل حذف شود؟')) return;
-
-      try {
-        const res = await fetch(`/api/dependents/${depId}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.error || 'خطا');
-
-        showToast('با موفقیت حذف شد');
-
-        // ریلود
-        const depsRes = await fetch(`/api/employees/${personId}/dependents`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        dependents = await depsRes.json();
-
-        const panel = document.getElementById('panel-dependents');
-        if (panel) {
-          panel.innerHTML = renderDependentsTab();
-        }
-      } catch (error) {
-        showToast(error.message, 'error');
-      }
-    }
 
       // ============================================
       // رندر گزینه‌های طبقه‌بندی عملیاتی
@@ -3283,7 +4303,7 @@
           const indent = "　".repeat(item.level);
           const selected = item.id == selectedId ? "selected" : "";
 
-        html += `<option value="${item.id}" data-type="${item.type}" data-title="${item.title}" ${selected}>
+          html += `<option value="${item.id}" data-type="${item.type}" data-title="${item.title}" ${selected}>
           ${indent}${icon} ${item.code} - ${item.title}
         </option>`;
         });
@@ -3313,24 +4333,24 @@
       // ============================================
       // حذف وظیفه
       // ============================================
-    function removeTask(index) {
-      if (!confirm('مطمئن هستید این وظیفه حذف شود؟')) return;
-      
-      employeeTasks.splice(index, 1);
-      
-      // اگه دیگه وظیفه‌ای نیست، قفل رو باز کن
-      if (employeeTasks.length === 0) {
-        lockedTaskType = null;
+      function removeTask(index) {
+        if (!confirm("مطمئن هستید این وظیفه حذف شود؟")) return;
+
+        employeeTasks.splice(index, 1);
+
+        // اگه دیگه وظیفه‌ای نیست، قفل رو باز کن
+        if (employeeTasks.length === 0) {
+          lockedTaskType = null;
+        }
+
+        const panel = document.getElementById("panel-tasks");
+        if (panel) {
+          panel.innerHTML = renderTasksTab();
+          setTimeout(initCascade, 100);
+        }
       }
-      
-      const panel = document.getElementById('panel-tasks');
-      if (panel) {
-        panel.innerHTML = renderTasksTab();
-        setTimeout(initCascade, 100);
-      }
-    }
-    
-    // ============================================
+
+      // ============================================
       // تغییر وظیفه
       // ============================================
       function onTaskChange(index, taskId) {
@@ -3397,21 +4417,21 @@
       // ============================================
       // ذخیره وظایف
       // ============================================
-    async function saveTasks() {
-      const btn = document.getElementById('btn-save-tasks');
-      btn.disabled = true;
-      btn.textContent = '⏳ در حال ذخیره...';
+      async function saveTasks() {
+        const btn = document.getElementById("btn-save-tasks");
+        btn.disabled = true;
+        btn.textContent = "⏳ در حال ذخیره...";
 
-      try {
-        let validTasks = employeeTasks
-          .filter(t => t.task_id && t.task_type)
-          .map(t => ({
-            task_id: t.task_id,
-            task_type: t.task_type,
-            task_title: t.task_title,
-            percentage: t.percentage || 0,
-            notes: t.notes || null,
-          }));
+        try {
+          let validTasks = employeeTasks
+            .filter((t) => t.task_id && t.task_type)
+            .map((t) => ({
+              task_id: t.task_id,
+              task_type: t.task_type,
+              task_title: t.task_title,
+              percentage: t.percentage || 0,
+              notes: t.notes || null,
+            }));
 
           // حذف تکراری‌ها (merge percentage)
           const mergedTasks = {};
@@ -3470,14 +4490,18 @@
         btn.classList.add("active");
         document.getElementById("panel-" + tabName).classList.add("active");
 
-      if (tabName === 'employment') {
-        datePickersInitialized = false;
-        setTimeout(initDatePickers, 100);
-      }
+        if (tabName === "employment") {
+          datePickersInitialized = false;
+          setTimeout(initDatePickers, 100);
+        }
 
-      if (tabName === 'tasks') {
-        setTimeout(initCascade, 100);
-      }
+        if (tabName === "tasks") {
+          setTimeout(initCascade, 100);
+        }
+
+        if (tabName === "organization") {
+          reloadOrgData();
+        }
       }
 
       // ============================================
