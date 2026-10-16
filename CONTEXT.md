@@ -1,8 +1,8 @@
 # پروژه: سامانه بودجه شهرداری
 
-## تاریخ آخرین آپدیت: 1405/07/08
+## تاریخ آخرین آپدیت: 1405/07/16
 
-## وضعیت: بخش ۸ (سیستم Permission) — تکمیل شد ✅
+## وضعیت: بخش ۸ (سیستم Permission) — تکمیل شد ✅ + مرحله ۴ (محاسبات حقوق) — تکمیل شد ✅
 
 ## کارهای انجام شده:
 - [x] فاز ۰ تا ۱۸
@@ -38,11 +38,7 @@
 - [x] حذف `status` از کارت‌های `base-info.html` (هاید شده)
 - [x] تمیزکاری CSSهای تکراری از صفحات
 - [x] دکمه بازگشت در top-bar
-- [x] **بخش ۷ (مرحله ۱): بازسازی پایه اشخاص**
-- [x] Migration 023: جدول persons جدید با کد ملی
-- [x] person_type جدید: employee, citizen, foreigner, legal
-- [x] حذف floating
-- [x] persons.html با ۴ تب جدید + فیلدهای سجلی جدید
+
 ## صفحات موجود:
 ### احراز هویت
 - /login.html
@@ -62,6 +58,7 @@
 - /budget-types.html
 - /goods.html
 - /persons.html
+- /payroll-settings.html
 
 ### بودجه
 - /budget-proposals.html
@@ -76,8 +73,14 @@
 
 ### مدیریت
 - /users.html
-- /permissions.html  ← جدید
+- /permissions.html
 - /audit-log.html
+
+### حقوق و دستمزد
+- /employee-profile.html
+- /payroll-calculate.html
+- /employee-deductions.html
+- /attendance.html
 
 ## کاربران پیش‌فرض:
 - admin / Admin123!
@@ -85,40 +88,116 @@
 ## نقش‌ها:
 - admin, manager, expert, viewer, province, ministry
 
-## کارهای بعدی:
-- [ ] بخش ۸: تکمیل Permission در بقیه APIها (`users` POST/PUT/DELETE)
-- [ ] بخش ۸: چک دسترسی در بقیه صفحات
-- [ ] بخش ۷: اتصال اشخاص به سازمان (`person_organizations`)
-- [ ] بخش ۷: اتصال اشخاص به بودجه پیشنهادی
-- [ ] بخش ۷: استعلام کد ملی
-- [ ] بخش ۷: گزارش‌گیری از اشخاص
-- [ ] بخش ۶: فهرست بهای کالا و خدمات
-- [ ] بخش ۶: استهلاک دارایی‌های ثابت
-- [ ] بخش ۶: احکام حقوقی
-- [ ] اتصال کالا/خدمات به `budget-proposals.html`
-- [ ] تدوین و تصویب بودجه
-- [ ] بخش ۷ (مرحله ۲): اطلاعات استخدامی (جدول employees + فرم کامل)
-- [ ] بخش ۷ (مرحله ۳): افراد تحت تکفل
-- [ ] بخش ۷ (مرحله ۴): محاسبات بیمه/مالیات
-- [ ] بخش ۷ (مرحله ۵): کسورات
-- [ ] بخش ۷ (مرحله ۶): حضور و غیاب + محاسبه حقوق
-- [ ] بخش ۷ (مرحله ۷): امضای دیجیتال (mock SMS)
-- [ ] بخش ۷ (مرحله ۸): auto-generate بودجه
-- [ ] بخش ۷ (مرحله ۹): شهروند + خارج شهروند
-## ساختار `base_data`:
-- `section`: 'organization', 'economic', 'strategic', 'operational', 'accounting', 'budget_type', 'goods'
-- `type`: انواع مختلف
-- `extra_data`: JSON string
+---
 
-## ساختار `persons`:
-- `person_type`: 'employee', 'natural', 'legal', 'floating'
-- `code`, `parent_id`, `level`, `level_name`
-- اطلاعات هویتی، تماس، استخدامی، بانکی
-- `national_id_verified`, `notes`, `extra_data`, `is_active`
+## بخش ۷: اشخاص (Persons)
 
-## ساختار `permissions`:
-- `role_permissions`: (role, permission_key, granted)
-- `user_permissions`: (user_id, permission_key, granted, granted_by)
+### ساختار کدینگ (۱۰ رقمی):
+- **کدینگ:** `[۱ رقم گروه][۳ رقم زیرگروه][۳ رقم دسته][۳ رقم شخص]`
+- **سطح ۱:** `X000000000` — گروه اصلی
+- **سطح ۲:** `XYYY000000` — زیرگروه
+- **سطح ۳:** `XYYYZZZ000` — دسته
+- **سطح ۴:** `XYYYZZZWWW` — شخص
+- **prefix ها:** 1=کارکنان، 2=شهروندان، 3=اشخاص حقوقی، 4=خارج شهروندان
+
+### مراحل انجام‌شده:
+- [x] **مرحله ۱:** Migration 023 — جدول `persons` جدید با کد ملی
+- [x] person_type: employee, citizen, foreigner, legal (حذف floating)
+- [x] `persons.html` با ۴ تب + فیلدهای سجلی جدید
+- [x] `generatePersonCode` با prefix per type
+- [x] DatePicker شمسی + indent توی جدول
+
+- [x] **مرحله ۲.۱:** Migration 024 — جدول `employees` + صفحه پایه
+- [x] Migration 025 — Seed ۸ نوع حکم
+- [x] API: `GET/POST /api/employees/:person_id`
+- [x] صفحه `employee-profile.html` با ۱۱ تب
+- [x] Breadcrumb در `employee-profile.html`
+
+- [x] **مرحله ۲.۲:** Migration 026 — Seed ۱۷ سازمان نمونه
+- [x] dropdown واحد سازمانی در `employee-profile.html`
+- [x] DatePicker شمسی (۶ فیلد)
+
+### مراحل بعدی:
+- [ ] **مرحله ۲.۳:** تب مدرک تحصیلی + تخصص + تجربه (تکمیل‌تر)
+- [ ] **مرحله ۳:** افراد تحت تکفل + استعلام کد ملی (mock)
+- [ ] **مرحله ۴:** محاسبات بیمه/مالیات
+- [ ] **مرحله ۵:** کسورات (وام‌ها)
+- [ ] **مرحله ۶:** حضور و غیاب + محاسبه حقوق
+- [ ] **مرحله ۷:** امضای دیجیتال (mock SMS)
+- [ ] **مرحله ۸:** auto-generate بودجه
+- [ ] **مرحله ۹:** شهروند + خارج شهروند (حساب + گردش حساب)
+
+---
+
+## بخش ۷ (مرحله ۷): احکام کارگزینی — تکمیل شد ✅
+
+- [x] Migration 031 — جدول `decrees` (احکام کارگزینی)
+- [x] Migration 032 — جدول `decree_items` + Seed (۸ نوع حکم × آیتم‌ها)
+- [x] Migration 033 — جدول `signatures` + `sms_log`
+- [x] API: `GET/POST/DELETE /api/employees/:id/decrees`
+- [x] API: `GET /api/decree-items?decree_type=...`
+- [x] API: `POST /api/signatures/send-otp` (mock SMS)
+- [x] API: `POST /api/signatures/verify`
+- [x] تب «احکام کارگزینی» توی `employee-profile.html`
+- [x] Modal افزودن/ویرایش حکم
+- [x] آیتم‌های حقوق داینامیک بر اساس نوع حکم
+- [x] Mock SMS + امضای دیجیتال
+
+### اصلاحات:
+- [x] تب «اطلاعات پایه» توی پرونده پرسنلی قابل ویرایش شد
+- [x] API `PUT /api/persons/:id` آپدیت شد (first_name, last_name, mother_name, birth_place, gender, nationality)
+
+### ۸ نوع حکم:
+رسمی، رسمی کارگری، پیمانی، شرکتی، کارمعین، مشاغل کارگری، موقت، تسری
+
+---
+
+## بخش ۷ (مرحله ۴ + ۵ + ۶): محاسبات حقوق، کسورات، حضور و غیاب — تکمیل شد ✅
+
+### مرحله ۴ — محاسبات حقوق:
+- [x] Migration 034 — `payroll_items` + `payroll_settings`
+- [x] Seed ۳۱ آیتم حقوق + ۱۶ تنظیم
+- [x] API: `GET/PUT /api/payroll-settings` + `payroll-items`
+- [x] صفحه `payroll-settings.html` با ۶ تب
+- [x] نمایش فارسی اعداد (ریال با کاما، درصد، عدد)
+- [x] ویرایش مشمولیت‌های آیتم‌های حقوق
+- [x] Migration 035 — `payroll_calculations`
+- [x] API: `payroll-calculations` (calculate, list, view, delete)
+- [x] API: `employees/list` (کارکنان با حکم)
+- [x] صفحه `payroll-calculate.html`
+- [x] محاسبه خودکار: بیمه (۷٪ کارمند، ۲۳٪ کارفرما) + مالیات
+- [x] فیش حقوقی با چاپ + تاریخچه محاسبات
+- [x] فونت `Sahel` برای اعداد فارسی
+
+### مرحله ۵ — کسورات:
+- [x] Migration 036 — `deduction_types` + `loans` + `loan_payments` + `employee_deductions`
+- [x] Seed ۸ نوع کسور
+- [x] صفحه `employee-deductions.html`
+- [x] مدیریت وام + اقساط + کسورات غیر وام
+
+### مرحله ۶ — حضور و غیاب:
+- [x] Migration 037 — جدول `attendance`
+- [x] API: `GET/POST/PUT/DELETE /api/attendance`
+- [x] API: تأیید مدیر/شهردار
+- [x] صفحه `attendance.html` با جستجوی کارمند
+- [x] ورود اطلاعات: کارکرد، غیبت، مرخصی، اضافه‌کاری، تعطیل‌کاری، نوبت‌کاری، مأموریت
+- [x] اتصال به محاسبه حقوق (اضافه‌کاری، مأموریت، کسور غیبت)
+- [x] Migration 038 — `cancelled_at`, `cancelled_by`, `cancelled_reason`
+- [x] API `POST /cancel` با بازگشت اقساط وام
+- [x] `DELETE` فقط admin + cancelled
+
+### اصلاحات:
+- [x] فونت `Sahel` برای اعداد فارسی
+- [x] یکدست‌سازی `code` (فارسی)
+- [x] حذف محاسبات تستی قدیمی
+
+---
+
+## بخش ۸ (مرحله ۲): نقش‌ها و Permission — تکمیل شد ✅
+
+### ساختار:
+- `role_permissions`: (role, permission_key, granted) — پیش‌فرض per role
+- `user_permissions`: (user_id, permission_key, granted, granted_by) — override per user
 
 ### کلیدهای Permission:
 - `base_info.view`, `base_info.edit`
@@ -132,102 +211,35 @@
 - `audit_log.view`
 - `municipality_info.view`, `municipality_info.edit`
 
-## قوانین کدینگ بخش ۷ (اشخاص):
-- **کدینگ ۱۰ رقمی:** `[۱ رقم گروه][۳ رقم زیرگروه][۳ رقم دسته][۳ رقم شخص]`
-- **سطح ۱:** `X000000000`
-- **سطح ۲:** `XYYY000000`
-- **سطح ۳:** `XYYYZZZ000`
-- **سطح ۴:** `XYYYZZZWWW`
+### منطق:
+1. **admin** همیشه دسترسی داره (بدون چک)
+2. **user_permissions** (override) → اگه وجود داشت، اعمال میشه
+3. **role_permissions** (پیش‌فرض) → اگه وجود داشت، اعمال میشه
+4. **هیچکدام** → دسترسی نمیده
 
+### کارهای انجام‌شده:
+- [x] Migration 022 — `role_permissions` + `user_permissions`
+- [x] Seed پیش‌فرض برای ۶ نقش (admin, manager, expert, viewer, province, ministry)
+- [x] API: `GET /api/permissions/keys` (لیست کلیدها گروه‌بندی‌شده)
+- [x] API: `GET/POST /api/users/:id/permissions`
+- [x] API: `GET /api/me/permissions` (permission های کاربر فعلی)
+- [x] صفحه `permissions.html` (UI پیش‌فرض/اجازه/عدم اجازه)
+- [x] اتصال `sidebar.js` به Permission (فیلتر منو)
+- [x] اتصال `dashboard.html` به Permission (فیلتر کارت‌ها)
+- [x] اتصال `users.html` به Permission
 
-## بخش ۷: اشخاص (Persons) — در حال بازسازی
+### کارهای باقی‌مانده:
+- [ ] چک Permission در بقیه APIها (فقط role چک میشه نه permission)
+- [ ] چک Permission در بقیه صفحات
 
-### مرحله ۱ (انجام شد):
-- [x] Migration 023: جدول persons جدید با کد ملی
-- [x] person_type: employee, citizen, foreigner, legal
-- [x] حذف floating
-- [x] persons.html با ۴ تب + فیلدهای سجلی جدید
-- [x] generatePersonCode با prefix per type
-- [x] DatePicker شمسی
-- [x] indent توی جدول
-### مرحله ۲ (در حال انجام):
-- [x] **مرحله ۲.۱: جدول `employees` + صفحه پایه**
-- [x] Migration 024: جدول `employees`
-- [x] Migration 025: Seed ۸ نوع حکم
-- [x] API: `GET/POST /api/employees/:person_id`
-- [x] صفحه `employee-profile.html` با ۱۱ تب
-- [x] Breadcrumb در `employee-profile.html`
+---
 
-- [x] **مرحله ۲.۲: تکمیل تب استخدامی + واحد سازمانی**
-- [x] Migration 026: Seed ۱۷ سازمان نمونه
-- [x] `employee-profile.html` → dropdown واحد سازمانی
-- [x] DatePicker شمسی (۶ فیلد)
-### مراحل بعدی (بعداً):
-- [ ] **مرحله ۲: صفحه `employee-profile.html`** (پرونده پرسنلی)
-  - [ ] تب اطلاعات استخدامی (نوع قرارداد، تاریخ استخدام، ۹ نوع حکم)
-  - [ ] تب قرارداد + امضای دیجیتال (mock SMS)
-  - [ ] تب احکام کارگزینی + سنوات + بیمه
-  - [ ] تب افراد تحت تکفل
-  - [ ] تب محاسبات بیمه/مالیات
-  - [ ] تب کسورات
-  - [ ] تب حضور و غیاب
-  - [ ] تب واحد سازمانی + روز مناسبتی
-  - [ ] تب وظایف (طبقه‌بندی عملیاتی)
-  - [ ] تب مدرک تحصیلی + تخصص + تجربه
-- [ ] **مرحله ۳: استعلام کد ملی (mock)**
-- [ ] **مرحله ۴: auto-generate بودجه**
-- [ ] **مرحله ۵: شهروند + خارج شهروند (حساب + گردش حساب)**
-### مثال:
-- [ ] **مرحله ۲.۲: تکمیل تب واحد سازمانی + مدرک تحصیلی**
-- [ ] **مرحله ۲.۳: تب وظایف (طبقه‌بندی عملیاتی)**
-- [ ] **مرحله ۳: افراد تحت تکفل**
-- [ ] **مرحله ۴: محاسبات بیمه/مالیات**
-- [ ] **مرحله ۵: کسورات**
-- [ ] **مرحله ۶: حضور و غیاب + محاسبه حقوق**
-- [ ] **مرحله ۷: امضای دیجیتال (mock SMS)**
-- [ ] **مرحله ۸: auto-generate بودجه**
-- [ ] **مرحله ۹: شهروند + خارج شهروند (حساب + گردش حساب)**
+## ساختار `base_data`:
+- `section`: 'organization', 'economic', 'strategic', 'operational', 'accounting', 'budget_type', 'goods', 'decree_type'
+- `type`: انواع مختلف
+- `extra_data`: JSON string
 
-### مرحله ۲ (در حال انجام):
-- [x] **مرحله ۲.۱: جدول `employees` + صفحه پایه**
-- [x] Migration 024: جدول `employees`
-- [x] Migration 025: Seed ۸ نوع حکم (`base_data` section=`decree_type`)
-- [x] API: `GET/POST /api/employees/:person_id`
-- [x] صفحه `employee-profile.html` با ۱۱ تب
-- [x] تب اطلاعات پایه (نمایش)
-- [x] تب اطلاعات استخدامی (فرم کامل + DatePicker)
-- [x] دکمه «پرونده پرسنلی» توی `persons.html`
-- [x] Breadcrumb
-### مرحله ۷ (تکمیل شد):
-- [x] Migration 031: جدول `decrees` (احکام کارگزینی)
-- [x] Migration 032: جدول `decree_items` + Seed (۸ نوع حکم × آیتم‌ها)
-- [x] Migration 033: جدول `signatures` + `sms_log`
-- [x] API: `GET/POST/DELETE /api/employees/:id/decrees`
-- [x] API: `GET /api/decree-items?decree_type=...`
-- [x] API: `POST /api/signatures/send-otp` (mock SMS)
-- [x] API: `POST /api/signatures/verify`
-- [x] تب «احکام کارگزینی» توی `employee-profile.html`
-- [x] Modal افزودن/ویرایش حکم
-- [x] آیتم‌های حقوق داینامیک بر اساس نوع حکم
-- [x] Mock SMS + امضای دیجیتال
-
-### مراحل بعدی:
-- [ ] **مرحله ۴: محاسبات بیمه/مالیات**
-- [ ] **مرحله ۵: کسورات (وام‌ها)**
-- [ ] **مرحله ۶: حضور و غیاب + محاسبه حقوق**
-- [ ] **مرحله ۸: auto-generate بودجه**
-- [ ] **مرحله ۹: شهروند + خارج شهروند (حساب + گردش حساب)**
-- [ ] **مرحله ۲.۳: تب وظایف (طبقه‌بندی عملیاتی)**
-- [ ] **مرحله ۲.۴: تب مدرک تحصیلی (تکمیل‌تر)**
-- [ ] **مرحله ۳: افراد تحت تکفل**
-- [ ] **مرحله ۴: محاسبات بیمه/مالیات**
-- [ ] **مرحله ۵: کسورات**
-- [ ] **مرحله ۶: حضور و غیاب + محاسبه حقوق**
-- [ ] **مرحله ۷: امضای دیجیتال (mock SMS)**
-- [ ] **مرحله ۸: auto-generate بودجه**
-- [ ] **مرحله ۹: شهروند + خارج شهروند**
-
-## ساختار سازمانی (base_data section='organization'):
+### ساختار سازمانی (base_data section='organization'):
 - `س-001` — حوزه شهردار
 - `س-002` — معاونت مالی و اداری
   - `س-002001` — اداره منابع انسانی
@@ -245,96 +257,73 @@
 - `س-005` — معاونت فرهنگی و اجتماعی
 - `س-006` — معاونت برنامه‌ریزی و توسعه
 
+---
 
+## ساختار `persons`:
+- `person_type`: 'employee', 'citizen', 'foreigner', 'legal'
+- `code`, `parent_id`, `level`, `level_name`
+- اطلاعات هویتی، تماس، استخدامی، بانکی
+- `national_id_verified`, `notes`, `extra_data`, `is_active`
+- `user_id` (لینک به کاربر، اگه سطح ۴ باشه)
 
-### مرحله ۷ (تکمیل شد):
-- [x] Migration 031: جدول `decrees` (احکام کارگزینی)
-- [x] Migration 032: جدول `decree_items` + Seed (۸ نوع حکم × آیتم‌ها)
-- [x] Migration 033: جدول `signatures` + `sms_log`
-- [x] API: `GET/POST/DELETE /api/employees/:id/decrees`
-- [x] API: `GET /api/decree-items?decree_type=...`
-- [x] API: `POST /api/signatures/send-otp` (mock SMS)
-- [x] API: `POST /api/signatures/verify`
-- [x] تب «احکام کارگزینی» توی `employee-profile.html`
-- [x] Modal افزودن/ویرایش حکم
-- [x] آیتم‌های حقوق داینامیک بر اساس نوع حکم
-- [x] Mock SMS + امضای دیجیتال
+---
 
-### اصلاحات:
-- [x] **تب «اطلاعات پایه» توی پرونده پرسنلی قابل ویرایش شد**
-- [x] API `PUT /api/persons/:id` آپدیت شد (first_name, last_name, mother_name, birth_place, gender, nationality)
+## قوانین کدینگ بخش ۷ (اشخاص):
+- **کدینگ ۱۰ رقمی:** `[۱ رقم گروه][۳ رقم زیرگروه][۳ رقم دسته][۳ رقم شخص]`
+- **سطح ۱:** `X000000000`
+- **سطح ۲:** `XYYY000000`
+- **سطح ۳:** `XYYYZZZ000`
+- **سطح ۴:** `XYYYZZZWWW`
 
+---
 
-### مرحله ۴ (در حال انجام):
-- [x] **مرحله ۴.۱: جداول محاسبات**
-- [x] Migration 034: `payroll_items` + `payroll_settings`
-- [x] Seed ۳۱ آیتم حقوق + ۱۶ تنظیم
-- [x] API: `GET/PUT /api/payroll-settings`
-- [x] API: `GET/PUT /api/payroll-items`
+## اصلاحات اخیر (1405/07/16):
 
-- [x] **مرحله ۴.۲: صفحه تنظیمات محاسبات**
-- [x] صفحه `payroll-settings.html` با ۶ تب
-- [x] نمایش فارسی اعداد (ریال با کاما، درصد، عدد)
-- [x] ویرایش مشمولیت‌های آیتم‌های حقوق
+### رفع باگ `persons.html`:
+- [x] اضافه شدن دکمه «📁 مشاهده پرونده» به Context Menu (فقط برای کارکنان سطح ۴)
+- [x] رفع باگ ساختار HTML توی modal (دکمه‌های modal بیرون می‌افتادن)
+- [x] تبدیل خودکار اعداد فارسی → انگلیسی برای کد ملی، موبایل، کد پستی
 
-### مراحل بعدی:
-- [ ] **مرحله ۴.۳: صفحه محاسبه حقوق (`payroll-calculate.html`)**
-- [ ] **مرحله ۴.۴: جدول `payroll_calculations`**
-- [ ] **مرحله ۵: کسورات (وام‌ها)**
-- [ ] **مرحله ۶: حضور و غیاب**
-- [ ] **مرحله ۸: auto-generate بودجه**
-- [ ] **مرحله ۹: شهروند + خارج شهروند**
+### باگ‌های شناسایی‌شده (باید رفع بشن):
+- [ ] `/api/reports/*` — از جدول‌های `organizations` و `economic_classifications` استفاده می‌کنه (باید `base_data` باشه)
+- [ ] `POST /api/persons` — بلاک کد ناقص توی خط ~370 (`if (!authHeader)`)
+- [ ] `/api/organizations` — به جدول ناموجود `organizations` اشاره می‌کنه
+- [ ] `JWT_SECRET` توی `wrangler.toml` (باید Secret بشه)
+- [ ] امضای توکن با HMAC (به‌جای SHA-256 ساده)
+- [ ] `bcryptjs` و `jsonwebtoken` بلااستفاده توی dependencies
+- [ ] `schema1.json` و `schema2.json` (مرده)
+- [ ] محاسبه مالیات فقط پله اول (باید پله‌ای کامل بشه)
+- [ ] `index.js` خیلی بزرگ (~5000 خط)
+- [ ] دو بار تعریف `renderBreadcrumb` توی `sidebar.js`
+- [ ] فایل‌های `-old.html` (organizations, economic-classifications)
+- [ ] تکرار `common.js` و `sidebar.js` توی `municipality-info.html`
+- [ ] `deleteCalculation` دو بار توی `payroll-calculate.html`
+- [ ] `renderOperationalOptions` بلااستفاده در `employee-profile.html`
+- [ ] `getSettingHint` بلااستفاده در `payroll-settings.html`
 
+---
 
-### مرحله ۴ (تکمیل شد):
-- [x] **مرحله ۴.۱: جداول محاسبات**
-- [x] Migration 034: `payroll_items` + `payroll_settings`
-- [x] Seed ۳۱ آیتم حقوق + ۱۶ تنظیم
-- [x] API: `GET/PUT /api/payroll-settings` + `payroll-items`
+## کارهای بعدی (اولویت‌دار):
+- [ ] بخش ۷: استعلام کد ملی (mock)
+- [ ] بخش ۷: گزارش‌گیری از اشخاص
+- [ ] بخش ۶: فهرست بهای کالا و خدمات
+- [ ] بخش ۶: استهلاک دارایی‌های ثابت
+- [ ] بخش ۶: احکام حقوقی
+- [ ] اتصال کالا/خدمات به `budget-proposals.html`
+- [ ] تدوین و تصویب بودجه
+- [ ] بخش ۷ (مرحله ۸): auto-generate بودجه
+- [ ] بخش ۷ (مرحله ۹): شهروند + خارج شهروند (حساب + گردش حساب)
 
-- [x] **مرحله ۴.۲: صفحه تنظیمات محاسبات**
-- [x] صفحه `payroll-settings.html` با ۶ تب
-- [x] نمایش فارسی اعداد (ریال با کاما، درصد، عدد)
-- [x] ویرایش مشمولیت‌های آیتم‌های حقوق
+---
 
-- [x] **مرحله ۴.۳: صفحه محاسبه حقوق**
-- [x] Migration 035: `payroll_calculations`
-- [x] API: `payroll-calculations` (calculate, list, view, delete)
-- [x] API: `employees/list` (کارکنان با حکم)
-- [x] صفحه `payroll-calculate.html`
-- [x] محاسبه خودکار: بیمه (۷٪ کارمند، ۲۳٪ کارفرما) + مالیات
-- [x] فیش حقوقی با چاپ
-- [x] تاریخچه محاسبات
-- [x] فونت `Sahel` برای اعداد فارسی
+## محیط توسعه:
+- **Backend:** Cloudflare Workers
+- **Database:** Cloudflare D1
+- **Static Assets:** `./public` directory
+- **Local Dev:** `wrangler dev`
+- **Deploy:** `wrangler deploy`
+- **Repo:** https://github.com/baaqiwaasherbaaqi-eng/budget-system
 
-### اصلاحات:
-- [x] فونت `Sahel` برای نمایش اعداد فارسی
-- [x] `font-feature-settings` برای `amount-cell`
-
-### مرحله ۶ (تکمیل شد):
-- [x] **مرحله ۶.۱: جداول حضور و غیاب**
-- [x] Migration 037: جدول `attendance`
-- [x] API: `GET/POST/PUT/DELETE /api/attendance`
-- [x] API: تأیید مدیر/شهردار
-
-- [x] **مرحله ۶.۲: صفحه حضور و غیاب**
-- [x] صفحه `attendance.html` با جستجوی کارمند
-- [x] ورود اطلاعات: کارکرد، غیبت، مرخصی، اضافه‌کاری، تعطیل‌کاری، نوبت‌کاری، مأموریت
-- [x] تاریخچه
-
-- [x] **مرحله ۶.۳: اتصال به محاسبه حقوق**
-- [x] محاسبه اضافه‌کاری (ساعت × نرخ × ضریب)
-- [x] محاسبه تعطیل‌کاری، نوبت‌کاری
-- [x] محاسبه مأموریت
-- [x] کسور غیبت
-
-- [x] **مرحله ۶.۴: لغو و حذف محاسبه**
-- [x] Migration 038: `cancelled_at`, `cancelled_by`, `cancelled_reason`
-- [x] API `POST /cancel` با بازگشت اقساط وام
-- [x] `DELETE` فقط admin + cancelled
-
-### اصلاحات:
-- [x] فونت `Sahel` برای اعداد فارسی
-- [x] یکدست‌سازی `code` (فارسی)
-- [x] حذف محاسبات تستی قدیمی
-
+## آدرس‌ها:
+- **Production:** https://budget-system.baaqiwaasherbaaqi.workers.dev
+- **Local:** http://localhost:8787
