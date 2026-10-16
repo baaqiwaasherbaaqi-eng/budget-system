@@ -6,7 +6,7 @@
     <title>طبقه‌بندی عملیاتی</title>
     <link rel="stylesheet" href="/sidebar.css">
     <script src="/sidebar.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <style>
         * { box-sizing: border-box; }
@@ -673,47 +673,53 @@
 
             if (!node) return;
 
-            // دکمه‌های داینامیک
-            const allowedChildren = getAllowedChildTypes(node.type);
-
             let menuHtml = '';
 
-            // دکمه‌های افزودن زیرشاخه
+            // افزودن زیرشاخه (اگه توی برنامه یا خدمت نباشه)
+            const allowedChildren = getAllowedChildTypes(node.type);
             allowedChildren.forEach(child => {
                 menuHtml += `<button onclick="ctxAction('add', '${child.type}')">${child.label}</button>`;
             });
 
-            // اگه دکمه افزودن داشتیم، جداکننده
-            if (allowedChildren.length > 0) {
+            // ✅ افزودن هم‌سطح (اگه والد داره)
+            if (node.parent_id) {
+                // والد رو بگیر
+                const parent = flatData.find(n => n.id === node.parent_id);
+                if (parent) {
+                    // تعیین نوع هم‌سطح
+                    const siblingTypes = getAllowedChildTypes(parent.type);
+                    siblingTypes.forEach(child => {
+                        menuHtml += `<button onclick="ctxAction('add-sibling', '${child.type}')">➕ افزودن هم‌سطح (${child.label.replace('➕ ', '')})</button>`;
+                    });
+                }
+            }
+
+            if (menuHtml !== '') {
                 menuHtml += '<div class="divider"></div>';
             }
 
-            // ویرایش
             menuHtml += `<button onclick="ctxAction('edit')">✏️ ویرایش</button>`;
-
-            // تغییر وضعیت
             menuHtml += `<button onclick="ctxAction('toggle')">${node.is_active ? '🔄 غیرفعال کردن' : '🔄 فعال کردن'}</button>`;
-
-            // حذف
             menuHtml += '<div class="divider"></div>';
             menuHtml += `<button class="danger" onclick="ctxAction('delete')">🗑️ حذف</button>`;
 
             menu.innerHTML = menuHtml;
             menu.classList.add('open');
 
-            // موقعیت
-            const menuWidth = 200;
-            const menuHeight = menu.offsetHeight || 200;
-            let x = event.clientX;
-            let y = event.clientY;
+            // ⚠️ موقعیت رو با requestAnimationFrame محاسبه کن
+            requestAnimationFrame(() => {
+                const menuWidth = menu.offsetWidth || 250;
+                const menuHeight = menu.offsetHeight || 250;
+                let x = event.clientX;
+                let y = event.clientY;
 
-            if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
-            if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
+                if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
+                if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
 
-            menu.style.left = x + 'px';
-            menu.style.top = y + 'px';
+                menu.style.left = x + 'px';
+                menu.style.top = y + 'px';
+            });
         }
-
         function closeContextMenu() {
             document.getElementById('context-menu').classList.remove('open');
         }
@@ -726,6 +732,12 @@
 
             if (action === 'add') {
                 openAddModal(node, childType);
+            } else if (action === 'add-sibling') {
+                // والد رو بگیر، همون رو به عنوان parent بده
+                const parent = node.parent_id 
+                    ? flatData.find(n => n.id === node.parent_id) 
+                    : null;
+                openAddModal(parent, childType);
             } else if (action === 'edit') {
                 openEditModal(node);
             } else if (action === 'delete') {
@@ -734,7 +746,6 @@
                 await toggleNode(node);
             }
         }
-
         // ============================================
         // Modal: افزودن
         // ============================================

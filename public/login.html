@@ -202,20 +202,41 @@
         <div class="error" id="error-message"></div>
         <div class="success" id="success-message"></div>
 
-        <!-- مرحله ۱: کد ملی -->
+
+        <!-- مرحله ۱: کد ملی یا نام کاربری -->
         <div class="step active" id="step-national-id">
             <div class="info">
-                🔐 <b>ورود با کد ملی</b><br>
-                کد ملی خود را وارد کنید، کد تایید به موبایل شما ارسال خواهد شد.
+                🔐 <b>ورود به سامانه</b><br>
+                • <b>کارکنان:</b> کد ملی خود را وارد کنید (کد تایید پیامک می‌شود)<br>
+                • <b>مدیران سیستم:</b> نام کاربری خود را وارد کنید (ورود با رمز عبور)
             </div>
 
             <div class="form-group">
-                <label>کد ملی</label>
-                <input type="text" id="national_id" placeholder="۰۰۰۰۰۰۰۰۰۰" maxlength="10" />
+                <label>کد ملی یا نام کاربری</label>
+                <input type="text" id="national_id" placeholder="۰۰۰۰۰۰۰۰۰۰ یا admin" />
             </div>
 
             <button onclick="requestOtp()" id="btn-request-otp">
-                دریافت کد تایید
+                ادامه
+            </button>
+        </div>
+
+        <!-- مرحله ۱.۵: پسورد (فقط برای admin/manager) -->
+        <div class="step" id="step-password">
+            <div class="user-greeting">
+                خوش آمدید، <b id="password-username"></b>
+            </div>
+
+            <div class="form-group">
+                <label>رمز عبور</label>
+                <input type="password" id="password-input" placeholder="رمز عبور خود را وارد کنید" />
+            </div>
+
+            <button onclick="loginWithPassword()" id="btn-password-login">
+                ورود
+            </button>
+            <button class="back-btn" onclick="goBack()">
+                ← تغییر نام کاربری
             </button>
         </div>
 
@@ -252,10 +273,7 @@
             el.textContent = msg;
             el.style.display = 'block';
             document.getElementById('success-message').style.display = 'none';
-
-            setTimeout(() => {
-                el.style.display = 'none';
-            }, 5000);
+            setTimeout(() => { el.style.display = 'none'; }, 5000);
         }
 
         function showSuccess(msg) {
@@ -270,17 +288,33 @@
             document.getElementById(stepId).classList.add('active');
         }
 
+        // ============================================
+        // درخواست کد (تشخیص خودکار)
+        // ============================================
         async function requestOtp() {
-            const nationalId = document.getElementById('national_id').value.trim();
+            const rawInput = document.getElementById('national_id').value.trim();
 
-            // تبدیل اعداد فارسی
-            const normalizedId = nationalId.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
-
-            if (!normalizedId || normalizedId.length !== 10) {
-                showError('کد ملی باید ۱۰ رقم باشد');
+            if (!rawInput) {
+                showError('کد ملی یا نام کاربری را وارد کنید');
                 return;
             }
 
+            // تبدیل اعداد فارسی به انگلیسی
+            const normalizedInput = rawInput.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
+
+            // اگه فقط رقم و ۱۰ رقم بود → OTP
+            // وگرنه → لاگین با پسورد (admin, manager, ...)
+            const isNumeric = /^\d{10}$/.test(normalizedInput);
+
+            if (isNumeric) {
+                await requestOtpForNationalId(normalizedInput);
+            } else {
+                // نمایش فرم پسورد
+                showPasswordStep(normalizedInput);
+            }
+        }
+
+        async function requestOtpForNationalId(nationalId) {
             const btn = document.getElementById('btn-request-otp');
             btn.disabled = true;
             btn.textContent = '⏳ در حال ارسال...';
@@ -289,23 +323,18 @@
                 const res = await fetch('/api/login/request-otp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ national_id: normalizedId })
+                    body: JSON.stringify({ national_id: nationalId })
                 });
 
                 const data = await res.json();
-
-                if (!res.ok) {
-                    throw new Error(data.error || 'خطا');
-                }
+                if (!res.ok) throw new Error(data.error || 'خطا');
 
                 currentOtpId = data.otp_id;
 
-                // نمایش مرحله ۲
                 document.getElementById('user-name-display').textContent = data.full_name;
                 document.getElementById('mobile-display').textContent = data.mobile_masked;
                 document.getElementById('otp_code').value = '';
-                
-                // نمایش کد mock
+
                 if (data.mock_otp) {
                     document.getElementById('mock-otp-display').textContent = 
                         `⚠️ حالت Mock - کد: ${data.mock_otp}`;
@@ -317,10 +346,60 @@
                 showError(error.message);
             } finally {
                 btn.disabled = false;
-                btn.textContent = 'دریافت کد تایید';
+                btn.textContent = 'ادامه';
             }
         }
 
+        // ============================================
+        // لاگین با پسورد (admin, manager)
+        // ============================================
+        function showPasswordStep(username) {
+            document.getElementById('password-username').textContent = username;
+            document.getElementById('password-input').value = '';
+
+            showStep('step-password');
+            document.getElementById('password-input').focus();
+        }
+
+        async function loginWithPassword() {
+            const username = document.getElementById('password-username').textContent;
+            const password = document.getElementById('password-input').value;
+
+            if (!password) {
+                showError('رمز عبور الزامی است');
+                return;
+            }
+
+            const btn = document.getElementById('btn-password-login');
+            btn.disabled = true;
+            btn.textContent = '⏳ در حال ورود...';
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'خطا');
+
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+
+                showSuccess('ورود موفق!');
+                setTimeout(() => { window.location.href = '/dashboard.html'; }, 500);
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'ورود';
+            }
+        }
+
+        // ============================================
+        // OTP
+        // ============================================
         async function verifyOtp() {
             const otpCode = document.getElementById('otp_code').value.trim();
             const normalizedOtp = otpCode.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
@@ -345,20 +424,13 @@
                 });
 
                 const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'خطا');
 
-                if (!res.ok) {
-                    throw new Error(data.error || 'خطا');
-                }
-
-                // ذخیره توکن
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('user', JSON.stringify(data.user));
 
-                showSuccess('ورود موفق! در حال انتقال...');
-
-                setTimeout(() => {
-                    window.location.href = '/dashboard.html';
-                }, 500);
+                showSuccess('ورود موفق!');
+                setTimeout(() => { window.location.href = '/dashboard.html'; }, 500);
             } catch (error) {
                 showError(error.message);
             } finally {
@@ -371,16 +443,18 @@
             currentOtpId = null;
             document.getElementById('otp_code').value = '';
             document.getElementById('mock-otp-display').textContent = '';
+            document.getElementById('national_id').value = '';
             showStep('step-national-id');
             document.getElementById('error-message').style.display = 'none';
         }
 
-        // Enter برای OTP
+        // Enter
         document.getElementById('otp_code')?.addEventListener('keydown', e => {
             if (e.key === 'Enter') verifyOtp();
         });
-
-        // Enter برای کد ملی
+        document.getElementById('password-input')?.addEventListener('keydown', e => {
+            if (e.key === 'Enter') loginWithPassword();
+        });
         document.getElementById('national_id')?.addEventListener('keydown', e => {
             if (e.key === 'Enter') requestOtp();
         });

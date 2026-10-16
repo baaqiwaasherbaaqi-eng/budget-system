@@ -551,13 +551,12 @@
 
     <!-- Context Menu -->
     <div class="context-menu" id="context-menu">
-      <button onclick="ctxAction('add')">➕ افزودن زیرشاخه</button>
-      <button onclick="ctxAction('edit')">✏️ ویرایش</button>
-      <div class="divider"></div>
-      <button onclick="ctxAction('toggle')" id="ctx-toggle">
-        🔄 تغییر وضعیت
-      </button>
-      <button class="danger" onclick="ctxAction('delete')">🗑️ حذف</button>
+        <button onclick="ctxAction('add')">➕ افزودن زیرشاخه</button>
+        <button onclick="ctxAction('add-sibling')">➕ افزودن هم‌سطح</button>
+        <button onclick="ctxAction('edit')">✏️ ویرایش</button>
+        <div class="divider"></div>
+        <button onclick="ctxAction('toggle')" id="ctx-toggle">🔄 تغییر وضعیت</button>
+        <button class="danger" onclick="ctxAction('delete')">🗑️ حذف</button>
     </div>
 
     <!-- Modal -->
@@ -886,52 +885,68 @@
       // ============================================
       // Context Menu
       // ============================================
-      function openContextMenu(event, nodeId) {
-        ctxNodeId = nodeId;
-        const menu = document.getElementById("context-menu");
-        const node = flatData.find((n) => n.id === nodeId);
+        function openContextMenu(event, nodeId) {
+            ctxNodeId = nodeId;
+            const menu = document.getElementById('context-menu');
+            const node = flatData.find(n => n.id === nodeId);
 
-        const toggleBtn = document.getElementById("ctx-toggle");
-        toggleBtn.textContent =
-          node && node.is_active ? "🔄 غیرفعال کردن" : "🔄 فعال کردن";
+            if (!node) return;
 
-        menu.classList.add("open");
+            let menuHtml = '';
 
-        const menuWidth = 200;
-        const menuHeight = 200;
-        let x = event.clientX;
-        let y = event.clientY;
+            // افزودن زیرشاخه
+            menuHtml += `<button onclick="ctxAction('add')">➕ افزودن زیرشاخه</button>`;
 
-        if (x + menuWidth > window.innerWidth)
-          x = window.innerWidth - menuWidth - 10;
-        if (y + menuHeight > window.innerHeight)
-          y = window.innerHeight - menuHeight - 10;
+            // ✅ افزودن هم‌سطح (اگه والد داره)
+            if (node.parent_id) {
+                menuHtml += `<button onclick="ctxAction('add-sibling')">➕ افزودن هم‌سطح</button>`;
+            }
 
-        menu.style.left = x + "px";
-        menu.style.top = y + "px";
-      }
+            menuHtml += '<div class="divider"></div>';
+            menuHtml += `<button onclick="ctxAction('edit')">✏️ ویرایش</button>`;
+            menuHtml += `<button onclick="ctxAction('toggle')">${node.is_active ? '🔄 غیرفعال کردن' : '🔄 فعال کردن'}</button>`;
+            menuHtml += '<div class="divider"></div>';
+            menuHtml += `<button class="danger" onclick="ctxAction('delete')">🗑️ حذف</button>`;
 
+            menu.innerHTML = menuHtml;
+            menu.classList.add('open');
+
+            const menuWidth = 220;
+            const menuHeight = menu.offsetHeight || 220;
+            let x = event.clientX;
+            let y = event.clientY;
+
+            if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
+            if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
+
+            menu.style.left = x + 'px';
+            menu.style.top = y + 'px';
+        }
       function closeContextMenu() {
         document.getElementById("context-menu").classList.remove("open");
       }
 
-      async function ctxAction(action) {
-        const node = flatData.find((n) => n.id === ctxNodeId);
-        closeContextMenu();
+         async function ctxAction(action) {
+            const node = flatData.find(n => n.id === ctxNodeId);
+            closeContextMenu();
 
-        if (!node) return;
+            if (!node) return;
 
-        if (action === "add") {
-          openAddModal(node);
-        } else if (action === "edit") {
-          openEditModal(node);
-        } else if (action === "delete") {
-          await deleteNode(node);
-        } else if (action === "toggle") {
-          await toggleNode(node);
+            if (action === 'add') {
+                openAddModal(node);
+            } else if (action === 'add-sibling') {
+                const parent = node.parent_id 
+                    ? flatData.find(n => n.id === node.parent_id) 
+                    : null;
+                openAddModal(parent);
+            } else if (action === 'edit') {
+                openEditModal(node);
+            } else if (action === 'delete') {
+                await deleteNode(node);
+            } else if (action === 'toggle') {
+                await toggleNode(node);
+            }
         }
-      }
-
       // ============================================
       // Modal: پر کردن dropdown سطح
       // ============================================

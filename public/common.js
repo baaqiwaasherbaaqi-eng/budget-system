@@ -93,6 +93,57 @@ function isTokenValid() {
 }
 
 // ============================================
+// ساخت HTML Context Menu برای اطلاعات پایه
+// ============================================
+function buildContextMenuHTML(node, options = {}) {
+    const {
+        maxLevel = 99,
+        hasAddChild = true,
+        hasAddSibling = true,
+    } = options;
+
+    let html = '';
+
+    // افزودن زیرشاخه (اگه عمق مجاز باشه)
+    if (hasAddChild && node.level < maxLevel) {
+        html += `<button onclick="ctxAction('add-child')">➕ افزودن زیرشاخه</button>`;
+    }
+
+    // افزودن هم‌سطح (اگه والد داره)
+    if (hasAddSibling && node.parent_id) {
+        html += `<button onclick="ctxAction('add-sibling')">➕ افزودن هم‌سطح</button>`;
+    }
+
+    // خط جداکننده (اگه دکمه افزودن داشتیم)
+    if (html !== '') {
+        html += '<div class="divider"></div>';
+    }
+
+    // ویرایش
+    html += `<button onclick="ctxAction('edit')">✏️ ویرایش</button>`;
+
+    // تغییر وضعیت
+    html += `<button onclick="ctxAction('toggle')">${node.is_active ? '🔄 غیرفعال کردن' : '🔄 فعال کردن'}</button>`;
+
+    // حذف
+    html += '<div class="divider"></div>';
+    html += `<button class="danger" onclick="ctxAction('delete')">🗑️ حذف</button>`;
+
+    return html;
+}
+
+// ============================================
+// جابجایی هم‌سطح (در ctxAction استفاده بشه)
+// ============================================
+function getParentForSibling(node, flatData) {
+    if (!node.parent_id) return null;
+    return flatData.find(n => n.id === node.parent_id) || null;
+}
+
+window.buildContextMenuHTML = buildContextMenuHTML;
+window.getParentForSibling = getParentForSibling;
+
+// ============================================
 // اتصال توابع به window (برای دسترسی global)
 // ============================================
 window.toEnglishNumbers = toEnglishNumbers;

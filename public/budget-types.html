@@ -409,6 +409,9 @@
 
     <!-- Context Menu -->
     <div class="context-menu" id="context-menu">
+        <button onclick="ctxAction('add')">➕ افزودن ردیف</button>
+        <button onclick="ctxAction('add-sibling')">➕ افزودن هم‌سطح</button>
+        <div class="divider"></div>
         <button onclick="ctxAction('edit')">✏️ ویرایش</button>
         <div class="divider"></div>
         <button onclick="ctxAction('toggle')" id="ctx-toggle">🔄 تغییر وضعیت</button>
@@ -656,7 +659,11 @@
 
             if (!node) return;
 
-            if (action === 'edit') {
+            if (action === 'add') {
+                openAddModal(null); // سطح ۰
+            } else if (action === 'add-sibling') {
+                openAddModal(null); // سطح ۰
+            } else if (action === 'edit') {
                 openEditModal(node);
             } else if (action === 'delete') {
                 await deleteNode(node);
@@ -664,7 +671,6 @@
                 await toggleNode(node);
             }
         }
-
         // ============================================
         // Modal: افزودن
         // ============================================
