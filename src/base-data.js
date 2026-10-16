@@ -186,25 +186,45 @@ async function generateOperationalCode(env, { type, parent_id }) {
     return parentCode + nextNum.toString().padStart(3, "0");
   }
 
-  // ۵. زیر طرح: پروژه
+  // ۵. زیر طرح: پروژه (دو نوع: سرمایه‌ای و مالی)
   if (parent.type === "plan") {
-    if (type !== "project") {
-      throw new Error("زیر طرح فقط پروژه مجاز است");
+    if (type !== "project_capital" && type !== "project_financial") {
+      throw new Error("زیر طرح فقط پروژه سرمایه‌ای یا مالی مجاز است");
     }
 
-    const last = await env.DB.prepare(
-      `SELECT code FROM base_data 
-             WHERE parent_id = ? AND type = 'project'
-             ORDER BY code DESC LIMIT 1`
-    )
-      .bind(parent_id)
-      .first();
+    if (type === "project_capital") {
+      // پروژه تملک دارایی سرمایه‌ای: از 001 شروع
+      const last = await env.DB.prepare(
+        `SELECT code FROM base_data 
+               WHERE parent_id = ? AND type = 'project_capital'
+               ORDER BY code DESC LIMIT 1`
+      )
+        .bind(parent_id)
+        .first();
 
-    const nextNum = last
-      ? parseInt(last.code.substring(parentCode.length), 10) + 1
-      : 1;
+      const nextNum = last
+        ? parseInt(last.code.substring(parentCode.length), 10) + 1
+        : 1;
 
-    return parentCode + nextNum.toString().padStart(3, "0");
+      return parentCode + nextNum.toString().padStart(3, "0");
+    }
+
+    if (type === "project_financial") {
+      // پروژه تملک دارایی مالی: از 50000 شروع
+      const last = await env.DB.prepare(
+        `SELECT code FROM base_data 
+               WHERE parent_id = ? AND type = 'project_financial'
+               ORDER BY code DESC LIMIT 1`
+      )
+        .bind(parent_id)
+        .first();
+
+      const nextNum = last
+        ? parseInt(last.code.substring(parentCode.length), 10) + 1
+        : 50000;
+
+      return parentCode + nextNum.toString().padStart(3, "0");
+    }
   }
 
   // ۶. زیر مأموریت: برنامه

@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// .wrangler/tmp/bundle-MDvAui/checked-fetch.js
+// .wrangler/tmp/bundle-I2FkUl/checked-fetch.js
 var urls = /* @__PURE__ */ new Set();
 function checkURL(request, init) {
   const url = request instanceof URL ? request : new URL(
@@ -197,16 +197,27 @@ async function generateOperationalCode(env, { type, parent_id }) {
     return parentCode + nextNum.toString().padStart(3, "0");
   }
   if (parent.type === "plan") {
-    if (type !== "project") {
-      throw new Error("\u0632\u06CC\u0631 \u0637\u0631\u062D \u0641\u0642\u0637 \u067E\u0631\u0648\u0698\u0647 \u0645\u062C\u0627\u0632 \u0627\u0633\u062A");
+    if (type !== "project_capital" && type !== "project_financial") {
+      throw new Error("\u0632\u06CC\u0631 \u0637\u0631\u062D \u0641\u0642\u0637 \u067E\u0631\u0648\u0698\u0647 \u0633\u0631\u0645\u0627\u06CC\u0647\u200C\u0627\u06CC \u06CC\u0627 \u0645\u0627\u0644\u06CC \u0645\u062C\u0627\u0632 \u0627\u0633\u062A");
     }
-    const last = await env.DB.prepare(
-      `SELECT code FROM base_data 
-             WHERE parent_id = ? AND type = 'project'
-             ORDER BY code DESC LIMIT 1`
-    ).bind(parent_id).first();
-    const nextNum = last ? parseInt(last.code.substring(parentCode.length), 10) + 1 : 1;
-    return parentCode + nextNum.toString().padStart(3, "0");
+    if (type === "project_capital") {
+      const last = await env.DB.prepare(
+        `SELECT code FROM base_data 
+               WHERE parent_id = ? AND type = 'project_capital'
+               ORDER BY code DESC LIMIT 1`
+      ).bind(parent_id).first();
+      const nextNum = last ? parseInt(last.code.substring(parentCode.length), 10) + 1 : 1;
+      return parentCode + nextNum.toString().padStart(3, "0");
+    }
+    if (type === "project_financial") {
+      const last = await env.DB.prepare(
+        `SELECT code FROM base_data 
+               WHERE parent_id = ? AND type = 'project_financial'
+               ORDER BY code DESC LIMIT 1`
+      ).bind(parent_id).first();
+      const nextNum = last ? parseInt(last.code.substring(parentCode.length), 10) + 1 : 5e4;
+      return parentCode + nextNum.toString().padStart(3, "0");
+    }
   }
   if (parent.type === "mission") {
     if (type !== "program") {
@@ -6673,7 +6684,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-MDvAui/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-I2FkUl/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -6705,7 +6716,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-MDvAui/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-I2FkUl/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

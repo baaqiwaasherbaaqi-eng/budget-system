@@ -1870,13 +1870,15 @@
         `;
       }
 
-           const typeLabels = {
+      const typeLabels = {
         mission: 'مأموریت',
         program: 'برنامه',
         service: 'خدمت',
         plan: 'طرح',
         activity: 'فعالیت',
-        project: 'پروژه'
+        project: 'پروژه',
+        project_capital: 'پروژه (سرمایه‌ای)',
+        project_financial: 'پروژه (مالی)'
       };
 
       return `
@@ -2015,7 +2017,9 @@
         service: '⚙️',
         plan: '📐',
         activity: '🔧',
-        project: '🏗️'
+        project: '🏗️',
+        project_capital: '🏗️',
+        project_financial: '💰'
       };
 
       let html = '';

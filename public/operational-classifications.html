@@ -439,7 +439,9 @@
             service: 'خدمت',
             plan: 'طرح',
             activity: 'فعالیت',
-            project: 'پروژه'
+            project: 'پروژه',
+            project_capital: 'پروژه (تملک دارایی سرمایه‌ای)',
+            project_financial: 'پروژه (تملک دارایی مالی)'
         };
 
         function getLevelName(type) {
@@ -472,12 +474,14 @@
                 return [{ type: 'activity', label: '➕ افزودن فعالیت' }];
             }
             if (parentType === 'plan') {
-                return [{ type: 'project', label: '➕ افزودن پروژه' }];
+                return [
+                    { type: 'project_capital', label: '➕ پروژه (تملک دارایی سرمایه‌ای)' },
+                    { type: 'project_financial', label: '➕ پروژه (تملک دارایی مالی)' }
+                ];
             }
-            // activity یا project: زیرشاخه ندارن
+            // activity یا project_capital یا project_financial: زیرشاخه ندارن
             return [];
         }
-
         // ============================================
         // توابع کمکی
         // ============================================
