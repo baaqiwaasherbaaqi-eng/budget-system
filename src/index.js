@@ -168,6 +168,13 @@ export default {
       "Content-Type": "application/json; charset=utf-8",
     };
 
+
+// هدایت خودکار مسیر ریشه به صفحه لاگین
+if (url.pathname === "/" || url.pathname === "") {
+  return Response.redirect(url.origin + "/login", 302);
+}
+
+
     // CORS preflight
     if (request.method === "OPTIONS") {
       return new Response(null, { headers });
@@ -3528,6 +3535,84 @@ export default {
       // ============================================
       // Decrees API (احکام کارگزینی)
       // ============================================
+
+      // ============================================
+      // POST: امضای مدیر
+      // ============================================
+      if (
+        url.pathname.match(/^\/api\/decrees\/\d+\/sign-manager$/) &&
+        request.method === "POST"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const decreeId = url.pathname.split("/")[3];
+
+          await env.DB.prepare(
+            `UPDATE decrees SET signed_by_manager = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+          )
+            .bind(decreeId)
+            .run();
+
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // ============================================
+      // POST: امضای شهردار
+      // ============================================
+      if (
+        url.pathname.match(/^\/api\/decrees\/\d+\/sign-mayor$/) &&
+        request.method === "POST"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || userData.role !== "admin") {
+            return new Response(
+              JSON.stringify({ error: "فقط شهردار (مدیر سیستم) دسترسی دارد" }),
+              { status: 403, headers }
+            );
+          }
+
+          const decreeId = url.pathname.split("/")[3];
+
+          await env.DB.prepare(
+            `UPDATE decrees SET signed_by_mayor = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+          )
+            .bind(decreeId)
+            .run();
+
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
 
       // GET: آیتم‌های حقوق بر اساس نوع حکم
       if (url.pathname === "/api/decree-items" && request.method === "GET") {
@@ -6974,6 +7059,7 @@ export default {
           const {
             id,
             organization_id,
+            position_id,
             role,
             is_primary,
             start_date_shamsi,
@@ -7007,6 +7093,7 @@ export default {
             await env.DB.prepare(
               `UPDATE person_organizations SET
                 organization_id = ?,
+                position_id = ?,
                 role = ?,
                 is_primary = ?,
                 start_date_shamsi = ?,
@@ -7016,6 +7103,7 @@ export default {
             )
               .bind(
                 organization_id,
+                position_id || null,
                 role || null,
                 is_primary ? 1 : 0,
                 start_date_shamsi || null,
@@ -7056,13 +7144,14 @@ export default {
             // INSERT
             const result = await env.DB.prepare(
               `INSERT INTO person_organizations
-               (person_id, organization_id, role, is_primary,
+               (person_id, organization_id, position_id, role, is_primary,
                 start_date_shamsi, end_date_shamsi, notes, created_at_shamsi)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
             )
               .bind(
                 personId,
                 organization_id,
+                position_id || null,
                 role || null,
                 is_primary ? 1 : 0,
                 start_date_shamsi || null,
@@ -7500,6 +7589,556 @@ export default {
             }
           );
         } catch (error) {
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // ============================================
+      // Org Positions API (پست‌های سازمانی)
+      // ============================================
+
+      // GET: پست‌های یک سازمان
+      if (url.pathname === "/api/org-positions" && request.method === "GET") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401,
+              headers,
+            });
+          }
+
+          const orgId = url.searchParams.get("organization_id");
+
+          let query = `SELECT op.*, bd.title as org_title, bd.code as org_code
+                       FROM org_positions op
+                       LEFT JOIN base_data bd ON op.organization_id = bd.id
+                       WHERE op.is_active = 1`;
+          const params = [];
+
+          if (orgId) {
+            query += " AND op.organization_id = ?";
+            params.push(orgId);
+          }
+
+          query += " ORDER BY op.organization_id, op.position_order, op.id";
+
+          const items = await env.DB.prepare(query)
+            .bind(...params)
+            .all();
+
+          // برای هر پست، شخص متصل رو بگیر
+          const enriched = [];
+          for (const pos of items.results) {
+            const assignment = await env.DB.prepare(
+              `SELECT po.id as po_id, po.person_id, p.full_name, p.national_id
+               FROM person_organizations po
+               LEFT JOIN persons p ON po.person_id = p.id
+               WHERE po.organization_id = ? AND po.position_id = ?
+               LIMIT 1`
+            )
+              .bind(pos.organization_id, pos.id)
+              .first();
+
+            enriched.push({
+              ...pos,
+              assigned_person: assignment || null,
+            });
+          }
+
+          return new Response(JSON.stringify(enriched), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Org positions GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // POST: افزودن/ویرایش پست
+      if (url.pathname === "/api/org-positions" && request.method === "POST") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const body = await request.json();
+          const {
+            id,
+            organization_id,
+            position_code,
+            position_title,
+            position_level,
+            position_order,
+            is_primary,
+            description,
+            is_active,
+          } = body;
+
+          if (!organization_id || !position_title) {
+            return new Response(
+              JSON.stringify({ error: "سازمان و عنوان پست الزامی است" }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          const nowShamsi = toShamsi(new Date());
+
+          if (id) {
+            await env.DB.prepare(
+              `UPDATE org_positions SET
+                organization_id = ?,
+                position_code = ?,
+                position_title = ?,
+                position_level = ?,
+                position_order = ?,
+                is_primary = ?,
+                description = ?,
+                is_active = ?,
+                updated_at = CURRENT_TIMESTAMP,
+                updated_at_shamsi = ?
+              WHERE id = ?`
+            )
+              .bind(
+                organization_id,
+                position_code || null,
+                position_title,
+                position_level || 0,
+                position_order || 0,
+                is_primary ? 1 : 0,
+                description || null,
+                is_active !== undefined ? (is_active ? 1 : 0) : 1,
+                nowShamsi,
+                id
+              )
+              .run();
+
+            return new Response(JSON.stringify({ success: true, id: id }), {
+              status: 200,
+              headers,
+            });
+          } else {
+            const result = await env.DB.prepare(
+              `INSERT INTO org_positions 
+               (organization_id, position_code, position_title, position_level,
+                position_order, is_primary, description, is_active, created_at_shamsi)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            )
+              .bind(
+                organization_id,
+                position_code || null,
+                position_title,
+                position_level || 0,
+                position_order || 0,
+                is_primary ? 1 : 0,
+                description || null,
+                is_active !== undefined ? (is_active ? 1 : 0) : 1,
+                nowShamsi
+              )
+              .run();
+
+            return new Response(
+              JSON.stringify({
+                success: true,
+                id: result.meta.last_row_id,
+              }),
+              {
+                status: 201,
+                headers,
+              }
+            );
+          }
+        } catch (error) {
+          console.error("Org position POST error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // DELETE: حذف پست
+      if (
+        url.pathname.match(/^\/api\/org-positions\/\d+$/) &&
+        request.method === "DELETE"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const id = url.pathname.split("/").pop();
+
+          // چک: شخصی به این پست وصله؟
+          const assigned = await env.DB.prepare(
+            "SELECT COUNT(*) as cnt FROM person_organizations WHERE position_id = ?"
+          )
+            .bind(id)
+            .first();
+
+          if (assigned.cnt > 0) {
+            return new Response(
+              JSON.stringify({
+                error: `این پست ${assigned.cnt} شخص متصل دارد. ابتدا اتصال‌ها را حذف کنید.`,
+              }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          await env.DB.prepare("DELETE FROM org_positions WHERE id = ?")
+            .bind(id)
+            .run();
+
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Org position DELETE error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // ============================================
+      // GET: فلوچارت سازمانی (کامل)
+      // ============================================
+      if (
+        url.pathname === "/api/organizations-chart" &&
+        request.method === "GET"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+              status: 401,
+              headers,
+            });
+          }
+
+          // ۱. همه سازمان‌ها
+          const orgs = await env.DB.prepare(
+            `SELECT id, code, title, parent_id, level, level_name, sort_order
+             FROM base_data 
+             WHERE section = 'organization' AND is_active = 1
+             ORDER BY code`
+          ).all();
+
+          // ۲. همه پست‌ها
+          const positions = await env.DB.prepare(
+            `SELECT * FROM org_positions WHERE is_active = 1 ORDER BY position_order, id`
+          ).all();
+
+          // ۳. همه اتصالات (شخص به سازمان+پست)
+          const assignments = await env.DB.prepare(
+            `SELECT po.id as po_id, po.person_id, po.organization_id, po.position_id,
+                    po.role, po.is_primary,
+                    p.full_name, p.national_id, p.mobile, p.code as person_code
+             FROM person_organizations po
+             LEFT JOIN persons p ON po.person_id = p.id`
+          ).all();
+
+          // ۴. ساختار درختی + پست‌ها
+          const orgMap = {};
+          const roots = [];
+
+          orgs.results.forEach((org) => {
+            orgMap[org.id] = {
+              ...org,
+              positions: [],
+              children: [],
+            };
+          });
+
+          // تخصیص پست‌ها به سازمان‌ها
+          positions.results.forEach((pos) => {
+            if (orgMap[pos.organization_id]) {
+              // شخص متصل به این پست
+              const assigned = assignments.results.find(
+                (a) =>
+                  a.organization_id === pos.organization_id &&
+                  a.position_id === pos.id
+              );
+
+              orgMap[pos.organization_id].positions.push({
+                id: pos.id,
+                position_code: pos.position_code,
+                position_title: pos.position_title,
+                position_level: pos.position_level,
+                position_order: pos.position_order,
+                is_primary: pos.is_primary,
+                assigned_person: assigned
+                  ? {
+                      person_id: assigned.person_id,
+                      full_name: assigned.full_name,
+                      national_id: assigned.national_id,
+                      person_code: assigned.person_code,
+                      mobile: assigned.mobile,
+                    }
+                  : null,
+              });
+            }
+          });
+
+          // ساخت درخت
+          orgs.results.forEach((org) => {
+            if (org.parent_id && orgMap[org.parent_id]) {
+              orgMap[org.parent_id].children.push(orgMap[org.id]);
+            } else {
+              roots.push(orgMap[org.id]);
+            }
+          });
+
+          return new Response(JSON.stringify(roots), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Org chart error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // ============================================
+      // PUT: اتصال شخص به پست خاص
+      // ============================================
+      if (
+        url.pathname === "/api/person-organizations/assign-position" &&
+        request.method === "PUT"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const body = await request.json();
+          const { person_id, organization_id, position_id, role } = body;
+
+          if (!person_id || !organization_id || !position_id) {
+            return new Response(JSON.stringify({ error: "اطلاعات ناقص" }), {
+              status: 400,
+              headers,
+            });
+          }
+
+          // چک: پست قبلاً به کسی داده شده؟
+          const existing = await env.DB.prepare(
+            `SELECT id FROM person_organizations 
+             WHERE organization_id = ? AND position_id = ? AND person_id != ?`
+          )
+            .bind(organization_id, position_id, person_id)
+            .first();
+
+          if (existing) {
+            return new Response(
+              JSON.stringify({
+                error: "این پست قبلاً به شخص دیگری اختصاص یافته است",
+              }),
+              {
+                status: 400,
+                headers,
+              }
+            );
+          }
+
+          // چک: این شخص قبلاً به این سازمان+پست وصله؟
+          const already = await env.DB.prepare(
+            `SELECT id FROM person_organizations 
+             WHERE person_id = ? AND organization_id = ? AND position_id = ?`
+          )
+            .bind(person_id, organization_id, position_id)
+            .first();
+
+          if (already) {
+            // فقط role رو آپدیت کن
+            await env.DB.prepare(
+              "UPDATE person_organizations SET role = ? WHERE id = ?"
+            )
+              .bind(role || null, already.id)
+              .run();
+
+            return new Response(
+              JSON.stringify({ success: true, id: already.id }),
+              {
+                status: 200,
+                headers,
+              }
+            );
+          }
+
+          const nowShamsi = toShamsi(new Date());
+
+          const result = await env.DB.prepare(
+            `INSERT INTO person_organizations 
+             (person_id, organization_id, position_id, role, is_primary, created_at_shamsi)
+             VALUES (?, ?, ?, ?, 0, ?)`
+          )
+            .bind(
+              person_id,
+              organization_id,
+              position_id,
+              role || null,
+              nowShamsi
+            )
+            .run();
+
+          return new Response(
+            JSON.stringify({
+              success: true,
+              id: result.meta.last_row_id,
+            }),
+            {
+              status: 201,
+              headers,
+            }
+          );
+        } catch (error) {
+          console.error("Assign position error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // ============================================
+      // PUT: حذف اتصال شخص از پست
+      // ============================================
+      if (
+        url.pathname.match(/^\/api\/person-organizations\/\d+\/unassign$/) &&
+        request.method === "PUT"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              {
+                status: 401,
+                headers,
+              }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const poId = url.pathname.split("/")[3];
+
+          await env.DB.prepare(
+            "UPDATE person_organizations SET position_id = NULL WHERE id = ?"
+          )
+            .bind(poId)
+            .run();
+
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("Unassign error:", error);
           return new Response(JSON.stringify({ error: error.message }), {
             status: 500,
             headers,
