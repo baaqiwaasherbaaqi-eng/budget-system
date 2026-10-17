@@ -1,0 +1,17 @@
+# Node.js
+node_modules/
+npm-debug.log*
+
+# Wrangler / Cloudflare
+.wrangler/
+.dev.vars
+.env
+
+# Backup / Temp
+migrations-backup/
+*.bak
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
