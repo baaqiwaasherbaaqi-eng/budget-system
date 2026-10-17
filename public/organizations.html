@@ -453,6 +453,288 @@
           min-width: 600px;
         }
       }
+
+
+      /* ============ Chart View (فلوچارت سازمانی) ============ */
+      .chart-container {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        min-height: 400px;
+        overflow-x: auto;
+      }
+
+      .org-chart {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+        min-width: 100%;
+      }
+
+      /* باکس سازمان */
+      .org-box {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        border: 2px solid #e0e0e0;
+        min-width: 260px;
+        max-width: 320px;
+        margin-bottom: 10px;
+        transition: all 0.2s;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .org-box:hover {
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+        border-color: #667eea;
+      }
+
+      .org-box.level-0 {
+        border-color: #667eea;
+        background: linear-gradient(135deg, #ffffff 0%, #f0f2ff 100%);
+      }
+
+      .org-box.level-1 {
+        border-color: #764ba2;
+        background: linear-gradient(135deg, #ffffff 0%, #f5f0ff 100%);
+      }
+
+      .org-box.level-2 {
+        border-color: #17a2b8;
+      }
+
+      /* هدر باکس */
+      .org-box-header {
+        padding: 12px 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        user-select: none;
+        background: rgba(255,255,255,0.5);
+      }
+
+      .org-box-header:hover {
+        background: rgba(102, 126, 234, 0.08);
+      }
+
+      .org-box-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .org-box-title-icon {
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+
+      .org-box-title-text {
+        font-size: 14px;
+        font-weight: bold;
+        color: #333;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .org-box-code {
+        font-family: monospace;
+        font-size: 11px;
+        color: #667eea;
+        background: #eef1ff;
+        padding: 2px 8px;
+        border-radius: 10px;
+        flex-shrink: 0;
+      }
+
+      .org-box-toggle {
+        font-size: 11px;
+        color: #999;
+        transition: transform 0.25s;
+        flex-shrink: 0;
+      }
+
+      .org-box.open .org-box-toggle {
+        transform: rotate(180deg);
+      }
+
+      /* بدنه باکس (پست‌ها) */
+      .org-box-body {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.35s ease;
+        background: rgba(255,255,255,0.3);
+      }
+
+      .org-box.open .org-box-body {
+        max-height: 1000px;
+        padding: 8px 12px 12px;
+        border-top: 1px dashed #e0e0e0;
+      }
+
+      /* پست */
+      .position-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 8px 10px;
+        background: white;
+        border-radius: 6px;
+        margin-bottom: 6px;
+        border-right: 3px solid #ccc;
+        font-size: 12px;
+      }
+
+      .position-item.filled {
+        border-right-color: #28a745;
+        background: #f0f9f4;
+      }
+
+      .position-item.empty {
+        border-right-color: #fd7e14;
+        background: #fff8f0;
+      }
+
+      .position-title {
+        font-weight: bold;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .position-title-icon {
+        font-size: 14px;
+      }
+
+      .position-person {
+        font-size: 11px;
+        color: #667eea;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 12px;
+        background: #eef1ff;
+        transition: all 0.2s;
+        white-space: nowrap;
+        max-width: 130px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 0;
+      }
+
+      .position-person:hover {
+        background: #667eea;
+        color: white;
+      }
+
+      .position-person.empty-text {
+        color: #999;
+        background: transparent;
+        cursor: default;
+      }
+
+      .position-person.empty-text:hover {
+        background: transparent;
+        color: #999;
+      }
+
+      /* فرزندان */
+      .org-children {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 20px;
+        position: relative;
+        padding-top: 20px;
+      }
+
+      .org-children::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 2px;
+        height: 20px;
+        background: #ccc;
+        transform: translateX(-50%);
+      }
+
+      .org-child-wrapper {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .org-child-wrapper::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 2px;
+        height: 20px;
+        background: #ccc;
+      }
+
+      /* وقتی فرزندان جابجا می‌شن */
+      .org-children:has(> .org-child-wrapper:not(:only-child))::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        height: 2px;
+        background: #ccc;
+        /* خط افقی بین فرزندان */
+      }
+
+      /* Dark mode */
+      body.dark .chart-container {
+        background: #1a202c;
+      }
+      body.dark .org-box {
+        background: #2d3748;
+        border-color: #4a5568;
+      }
+      body.dark .org-box.level-0 {
+        background: linear-gradient(135deg, #2d3748 0%, #37415b 100%);
+        border-color: #667eea;
+      }
+      body.dark .org-box.level-1 {
+        background: linear-gradient(135deg, #2d3748 0%, #3b3054 100%);
+        border-color: #764ba2;
+      }
+      body.dark .org-box-title-text {
+        color: #e2e8f0;
+      }
+      body.dark .org-box-body {
+        background: rgba(0,0,0,0.1);
+      }
+      body.dark .position-item {
+        background: #374151;
+      }
+      body.dark .position-item.filled {
+        background: #2d4a3e;
+      }
+      body.dark .position-item.empty {
+        background: #4a3f1e;
+      }
+      body.dark .position-title {
+        color: #e2e8f0;
+      }
+
     </style>
   </head>
   <body>
@@ -467,12 +749,12 @@
             🌳 درختی
           </button>
           <button id="btn-table" onclick="switchView('table')">📋 جدولی</button>
+          <button id="btn-chart" onclick="switchView('chart')">📊 فلوچارت</button>
         </div>
         <button class="add-root-btn" onclick="openAddModal(null)">
           ➕ افزودن ریشه
         </button>
       </div>
-
       <div id="tree-view" class="tree-container">
         <div class="loading">
           <div class="spinner"></div>
@@ -492,12 +774,25 @@
           <tbody id="table-body"></tbody>
         </table>
       </div>
+
+
+      <div id="chart-view" class="chart-container" style="display: none;">
+        <div id="chart-loading" class="loading">
+          <div class="spinner"></div>
+          <div>در حال بارگذاری فلوچارت...</div>
+        </div>
+        <div id="org-chart-tree"></div>
+      </div>
+
+
     </div>
 
     <!-- Context Menu -->
     <div class="context-menu" id="context-menu">
         <button onclick="ctxAction('add')">➕ افزودن زیرشاخه</button>
         <button onclick="ctxAction('add-sibling')">➕ افزودن هم‌سطح</button>
+        <div class="divider"></div>
+        <button onclick="ctxAction('manage-positions')">💼 مدیریت پست‌ها</button>
         <button onclick="ctxAction('edit')">✏️ ویرایش</button>
         <div class="divider"></div>
         <button onclick="ctxAction('toggle')" id="ctx-toggle">🔄 تغییر وضعیت</button>
@@ -774,25 +1069,182 @@
         });
       }
 
+
+              // ============================================
+        // فلوچارت سازمانی
+        // ============================================
+        let chartData = [];
+        let chartLoaded = false;
+
+        async function loadChartData() {
+          const loading = document.getElementById('chart-loading');
+          const container = document.getElementById('org-chart-tree');
+
+          loading.style.display = 'block';
+          container.innerHTML = '';
+
+          try {
+            const res = await fetch('/api/organizations-chart', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!res.ok) throw new Error('خطا در دریافت فلوچارت');
+
+            chartData = await res.json();
+            chartLoaded = true;
+
+            loading.style.display = 'none';
+            renderChart();
+          } catch (error) {
+            loading.innerHTML = `<div style="color:#dc3545;">❌ ${error.message}</div>`;
+          }
+        }
+
+        function renderChart() {
+          const container = document.getElementById('org-chart-tree');
+          container.innerHTML = '';
+
+          if (!chartData || chartData.length === 0) {
+            container.innerHTML = `
+              <div style="text-align:center; padding:40px; color:#999;">
+                هنوز سازمانی ثبت نشده
+              </div>`;
+            return;
+          }
+
+          const tree = document.createElement('div');
+          tree.className = 'org-chart';
+
+          chartData.forEach(rootOrg => {
+            tree.appendChild(renderOrgBox(rootOrg, 0));
+          });
+
+          container.appendChild(tree);
+        }
+
+        function renderOrgBox(org, depth) {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'org-child-wrapper';
+          wrapper.style.marginTop = depth === 0 ? '0' : '20px';
+
+          const box = document.createElement('div');
+          box.className = `org-box level-${Math.min(org.level, 2)}`;
+          box.dataset.orgId = org.id;
+
+          // آیا پست داره؟
+          const hasPositions = org.positions && org.positions.length > 0;
+          const hasChildren = org.children && org.children.length > 0;
+          const isOpen = false;
+
+          // هدر باکس
+          const header = document.createElement('div');
+          header.className = 'org-box-header';
+
+          let positionsHtml = '';
+          if (hasPositions) {
+            org.positions.forEach(pos => {
+              const isFilled = pos.assigned_person && pos.assigned_person.full_name;
+              
+              let personHtml;
+              if (isFilled) {
+                personHtml = `
+                  <a href="/employee-profile.html?id=${pos.assigned_person.person_id}" 
+                     class="position-person" 
+                     title="مشاهده پرونده"
+                     onclick="event.stopPropagation()">
+                    👤 ${pos.assigned_person.full_name}
+                  </a>
+                `;
+              } else {
+                personHtml = `<span class="position-person empty-text">تعیین نشده</span>`;
+              }
+
+              positionsHtml += `
+                <div class="position-item ${isFilled ? 'filled' : 'empty'}">
+                  <span class="position-title">
+                    <span class="position-title-icon">${getPositionIcon(pos.position_level)}</span>
+                    ${pos.position_title}
+                  </span>
+                  ${personHtml}
+                </div>
+              `;
+            });
+          }
+
+          header.innerHTML = `
+            <div class="org-box-title">
+              <span class="org-box-title-icon">🏢</span>
+              <span class="org-box-title-text">${org.title}</span>
+              <span class="org-box-code">${org.code}</span>
+            </div>
+            <span class="org-box-toggle">${hasChildren || hasPositions ? '▼' : ''}</span>
+          `;
+
+          // کلیک روی هدر → باز/بسته
+          if (hasPositions || hasChildren) {
+            header.addEventListener('click', () => {
+              box.classList.toggle('open');
+            });
+          }
+
+          box.appendChild(header);
+
+          // بدنه (پست‌ها)
+          if (hasPositions) {
+            const body = document.createElement('div');
+            body.className = 'org-box-body';
+            body.innerHTML = positionsHtml;
+            box.appendChild(body);
+          }
+
+          wrapper.appendChild(box);
+
+          // فرزندان
+          if (hasChildren) {
+            const childrenContainer = document.createElement('div');
+            childrenContainer.className = 'org-children';
+
+            org.children.forEach(child => {
+              childrenContainer.appendChild(renderOrgBox(child, depth + 1));
+            });
+
+            wrapper.appendChild(childrenContainer);
+          }
+
+          return wrapper;
+        }
+
+        function getPositionIcon(level) {
+          const icons = {
+            0: '👔', // شهردار
+            1: '⭐', // معاون
+            2: '📋', // رئیس
+            3: '💼', // کارشناس
+            4: '👤', // کارمند
+          };
+          return icons[level] || '💼';
+        }
+
       // ============================================
       // سوئیچ نما
       // ============================================
-      function switchView(view) {
-        currentView = view;
-        localStorage.setItem("org-view", view);
+            function switchView(view) {
+            currentView = view;
+            localStorage.setItem("org-view", view);
 
-        document
-          .getElementById("btn-tree")
-          .classList.toggle("active", view === "tree");
-        document
-          .getElementById("btn-table")
-          .classList.toggle("active", view === "table");
-        document.getElementById("tree-view").style.display =
-          view === "tree" ? "block" : "none";
-        document.getElementById("table-view").style.display =
-          view === "table" ? "block" : "none";
-      }
+            document.getElementById("btn-tree").classList.toggle("active", view === "tree");
+            document.getElementById("btn-table").classList.toggle("active", view === "table");
+            document.getElementById("btn-chart").classList.toggle("active", view === "chart");
 
+            document.getElementById("tree-view").style.display = view === "tree" ? "block" : "none";
+            document.getElementById("table-view").style.display = view === "table" ? "block" : "none";
+            document.getElementById("chart-view").style.display = view === "chart" ? "block" : "none";
+
+            // لود فلوچارت (فقط اولین بار)
+            if (view === 'chart') {
+                loadChartData();
+            }
+        }
       // ============================================
       // Context Menu
       // ============================================
@@ -845,6 +1297,8 @@
                     ? flatData.find(n => n.id === node.parent_id) 
                     : null;
                 openAddModal(parent);
+            } else if (action === 'manage-positions') {
+                openPositionsModal(node);
             } else if (action === 'edit') {
                 openEditModal(node);
             } else if (action === 'delete') {
@@ -853,7 +1307,9 @@
                 await toggleNode(node);
             }
         }
-      // ============================================
+     
+     
+        // ============================================
       // Modal: افزودن
       // ============================================
       async function openAddModal(parent) {
@@ -1082,11 +1538,273 @@
         }
       });
 
+              // ============================================
+        // مدیریت پست‌ها
+        // ============================================
+        let currentPositionsOrgId = null;
+        let currentPositions = [];
+        let editingPositionId = null;
+
+        async function openPositionsModal(node) {
+            currentPositionsOrgId = node.id;
+
+            document.getElementById('positions-org-title').textContent = `${node.title} (${node.code})`;
+            document.getElementById('positions-list').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            document.getElementById('positions-modal-overlay').classList.add('open');
+
+            await loadPositions();
+        }
+
+        function closePositionsModal() {
+            document.getElementById('positions-modal-overlay').classList.remove('open');
+            currentPositionsOrgId = null;
+            currentPositions = [];
+        }
+
+        async function loadPositions() {
+            try {
+                const res = await fetch(`/api/org-positions?organization_id=${currentPositionsOrgId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!res.ok) throw new Error('خطا');
+
+                currentPositions = await res.json();
+                renderPositions();
+            } catch (error) {
+                document.getElementById('positions-list').innerHTML = `<div style="color:red; text-align:center; padding:20px;">${error.message}</div>`;
+            }
+        }
+
+        function renderPositions() {
+            const container = document.getElementById('positions-list');
+
+            if (currentPositions.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:30px; color:#999;">
+                        هنوز پستی تعریف نشده
+                    </div>`;
+                return;
+            }
+
+            const levelLabels = {
+                0: 'شهردار',
+                1: 'معاون',
+                2: 'رئیس',
+                3: 'کارشناس',
+                4: 'کارمند'
+            };
+
+            let html = '';
+            currentPositions.forEach(pos => {
+                const assigned = pos.assigned_person;
+                const hasAssigned = assigned && assigned.full_name;
+
+                html += `
+                    <div class="position-row" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:#f8f9fa; border-radius:8px; margin-bottom:8px; border-right:4px solid ${hasAssigned ? '#28a745' : '#fd7e14'};">
+                        <div style="flex:1;">
+                            <div style="font-weight:bold; font-size:13px; color:#333;">
+                                ${pos.position_title}
+                                <span style="font-size:10px; background:#e9ecef; padding:2px 8px; border-radius:8px; color:#666; margin-right:5px;">${levelLabels[pos.position_level] || '—'}</span>
+                                ${pos.is_primary ? '<span style="font-size:10px; background:#667eea; color:white; padding:2px 8px; border-radius:8px;">اصلی</span>' : ''}
+                            </div>
+                            <div style="font-size:11px; color:#666; margin-top:3px;">
+                                ${hasAssigned 
+                                    ? `👤 متصل به: <b>${assigned.full_name}</b>` 
+                                    : '<span style="color:#fd7e14;">تعیین نشده</span>'}
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:5px;">
+                            <button class="dep-btn dep-edit-btn" onclick="editPosition(${pos.id})" title="ویرایش">✏️</button>
+                            <button class="dep-btn dep-delete-btn" onclick="deletePosition(${pos.id})" title="حذف">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function openPositionForm(posId = null) {
+            editingPositionId = posId;
+
+            const title = posId ? '✏️ ویرایش پست' : '➕ افزودن پست';
+            document.getElementById('position-form-title').textContent = title;
+
+            if (posId) {
+                const pos = currentPositions.find(p => p.id === posId);
+                if (pos) {
+                    document.getElementById('position-form-title-input').value = pos.position_title || '';
+                    document.getElementById('position-form-level').value = pos.position_level || 3;
+                    document.getElementById('position-form-code').value = pos.position_code || '';
+                    document.getElementById('position-form-order').value = pos.position_order || 0;
+                    document.getElementById('position-form-primary').checked = !!pos.is_primary;
+                    document.getElementById('position-form-description').value = pos.description || '';
+                }
+            } else {
+                document.getElementById('position-form-title-input').value = '';
+                document.getElementById('position-form-level').value = 3;
+                document.getElementById('position-form-code').value = '';
+                document.getElementById('position-form-order').value = 0;
+                document.getElementById('position-form-primary').checked = false;
+                document.getElementById('position-form-description').value = '';
+            }
+
+            document.getElementById('position-form-overlay').classList.add('open');
+            setTimeout(() => document.getElementById('position-form-title-input').focus(), 100);
+        }
+
+        function closePositionForm() {
+            document.getElementById('position-form-overlay').classList.remove('open');
+            editingPositionId = null;
+        }
+
+        function editPosition(posId) {
+            openPositionForm(posId);
+        }
+
+        async function savePosition() {
+            const titleInput = document.getElementById('position-form-title-input');
+            const title = titleInput.value.trim();
+
+            if (!title) {
+                alert('عنوان پست الزامی است');
+                return;
+            }
+
+            const data = {
+                id: editingPositionId || null,
+                organization_id: currentPositionsOrgId,
+                position_title: title,
+                position_level: parseInt(document.getElementById('position-form-level').value),
+                position_code: document.getElementById('position-form-code').value.trim() || null,
+                position_order: parseInt(document.getElementById('position-form-order').value) || 0,
+                is_primary: document.getElementById('position-form-primary').checked,
+                description: document.getElementById('position-form-description').value.trim() || null,
+            };
+
+            const btn = document.getElementById('btn-save-position');
+            btn.disabled = true;
+            btn.textContent = '⏳ در حال ذخیره...';
+
+            try {
+                const res = await fetch('/api/org-positions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.error || 'خطا');
+
+                closePositionForm();
+                await loadPositions();
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '💾 ذخیره';
+            }
+        }
+
+        async function deletePosition(posId) {
+            if (!confirm('مطمئن هستید این پست حذف شود؟')) return;
+
+            try {
+                const res = await fetch(`/api/org-positions/${posId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'خطا');
+
+                await loadPositions();
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
       // ============================================
       // شروع
       // ============================================
       switchView(currentView);
       loadData();
     </script>
+
+
+    <!-- Modal مدیریت پست‌ها -->
+    <div class="modal-overlay" id="positions-modal-overlay">
+        <div class="modal" style="max-width: 700px;">
+            <h3 id="positions-modal-title">💼 مدیریت پست‌ها</h3>
+
+            <div class="info-row" style="display: flex;">
+                <span>سازمان: <b id="positions-org-title">—</b></span>
+            </div>
+
+            <div id="positions-list" style="max-height: 400px; overflow-y: auto; margin-bottom: 15px;"></div>
+
+            <button class="add-position-btn" onclick="openPositionForm()" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 13px;">
+                ➕ افزودن پست جدید
+            </button>
+
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button class="btn-cancel" onclick="closePositionsModal()">بستن</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal فرم پست -->
+    <div class="modal-overlay" id="position-form-overlay">
+        <div class="modal" style="max-width: 500px;">
+            <h3 id="position-form-title">➕ افزودن پست</h3>
+
+            <div class="form-group">
+                <label>عنوان پست <span style="color:#e74c3c;">*</span></label>
+                <input type="text" id="position-form-title-input" placeholder="مثلاً رئیس، کارشناس، شهردار" />
+            </div>
+
+            <div class="form-group">
+                <label>سطح پست</label>
+                <select id="position-form-level">
+                    <option value="0">شهردار</option>
+                    <option value="1">معاون</option>
+                    <option value="2">رئیس</option>
+                    <option value="3" selected>کارشناس</option>
+                    <option value="4">کارمند</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>کد پست (اختیاری)</label>
+                <input type="text" id="position-form-code" dir="ltr" placeholder="P001" />
+            </div>
+
+            <div class="form-group">
+                <label>ترتیب نمایش</label>
+                <input type="number" id="position-form-order" value="0" min="0" />
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="position-form-primary" style="width: auto;" />
+                    پست اصلی سازمان
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label>توضیحات</label>
+                <textarea id="position-form-description"></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closePositionForm()">انصراف</button>
+                <button class="btn-save" id="btn-save-position" onclick="savePosition()">💾 ذخیره</button>
+            </div>
+        </div>
+    </div>
   </body>
 </html>
