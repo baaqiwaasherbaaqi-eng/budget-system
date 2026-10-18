@@ -663,3 +663,12 @@ body.dark .sidebar-sublink.active {
   background: #4a5568;
   color: #90cdf4;
 }
+
+.sidebar-link.disabled-link {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.sidebar-link.disabled-link:hover {
+    background: transparent;
+    color: #333;
+}

@@ -124,43 +124,51 @@ async function renderSidebar() {
       title: "بودجه پیشنهادی",
       url: "/budget-proposals.html",
       permission: "budget.view",
+      isDisabled: true, // ← این خط رو اضافه کن
     },
     {
       icon: "💳",
       title: "تخصیص اعتبار",
       url: "/allocations.html",
       permission: "allocations.view",
+      isDisabled: true, // ← این خط رو اضافه کن
     },
     {
       icon: "💸",
       title: "تامین اعتبار",
       url: "/executions.html",
       permission: "executions.view",
+      isDisabled: true, // ← این خط رو اضافه کن
     },
     {
       icon: "🔄",
       title: "اصلاح بودجه",
       url: "/revisions.html",
       permission: "budget.view",
-    },
-    {
-      icon: "📈",
-      title: "گزارشات",
-      url: "/reports.html",
-      permission: "reports.view",
-    },
-    {
-      icon: "📊",
-      title: "گزارش پیشرفته",
-      url: "/advanced-reports.html",
-      permission: "reports.view",
+      isDisabled: true, // ← این خط رو اضافه کن
     },
     {
       icon: "📋",
       title: "تفریغ بودجه",
       url: "/tafriq.html",
       permission: "reports.view",
+      isDisabled: true, // ← این خط رو اضافه کن
     },
+    {
+      icon: "📈",
+      title: "گزارشات",
+      url: "/reports.html",
+      permission: "reports.view",
+      isDisabled: true, // ← این خط رو اضافه کن
+    },
+    {
+      icon: "📊",
+      title: "گزارش پیشرفته",
+      url: "/advanced-reports.html",
+      permission: "reports.view",
+      isDisabled: true, // ← این خط رو اضافه کن
+    },
+
     {
       icon: "📅",
       title: "سال مالی",
@@ -253,6 +261,16 @@ async function renderSidebar() {
                     }
 
                     // آیتم معمولی
+                    if (menu.isDisabled) {
+                      return `
+          <a href="#" class="sidebar-link disabled-link" onclick="event.preventDefault(); showDisabledMessage();" title="به‌زودی فعال می‌شود">
+            <span class="sidebar-icon">${menu.icon}</span>
+            <span class="sidebar-text">${menu.title}</span>
+            <span style="margin-right: auto; font-size: 12px; color: #999;">🔒</span>
+          </a>
+        `;
+                    }
+
                     return `
           <a href="${menu.url}" class="sidebar-link ${
                       currentPath === menu.url ? "active" : ""
@@ -912,3 +930,18 @@ function renderTopBar() {
 
 
 
+// ============================================
+// پیام برای بخش‌های غیرفعال
+// ============================================
+function showDisabledMessage() {
+    // ایجاد یک Toast موقت
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #ffc107; color: #333; padding: 12px 24px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 10002; font-family: "Vazirmatn", Tahoma, sans-serif; transition: opacity 0.3s;';
+    toast.textContent = '⚠️ این بخش در حال توسعه است و به‌زودی فعال می‌شود.';
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}

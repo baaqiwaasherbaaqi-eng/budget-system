@@ -455,6 +455,7 @@
         desc: "ثبت و مدیریت بودجه",
         url: "/budget-proposals.html",
         permission: "budget.view",
+                isDisabled: true, // ← اینجا
       },
       {
         icon: "💳",
@@ -462,6 +463,7 @@
         desc: "تخصیص به سازمان‌ها",
         url: "/allocations.html",
         permission: "allocations.view",
+                isDisabled: true, // ← اینجا
       },
       {
         icon: "💸",
@@ -469,6 +471,7 @@
         desc: "ثبت هزینه‌ها",
         url: "/executions.html",
         permission: "executions.view",
+                isDisabled: true, // ← اینجا
       },
       {
         icon: "🔄",
@@ -476,6 +479,15 @@
         desc: "اصلاحات و متمم",
         url: "/revisions.html",
         permission: "budget.view",
+                isDisabled: true, // ← اینجا
+      },
+            {
+        icon: "📋",
+        title: "تفریغ بودجه",
+        desc: "مقایسه مصوب و عملکرد",
+        url: "/tafriq.html",
+        permission: "reports.view",
+                isDisabled: true, // ← اینجا
       },
       {
         icon: "📈",
@@ -483,6 +495,7 @@
         desc: "گزارش‌های مالی",
         url: "/reports.html",
         permission: "reports.view",
+                isDisabled: true, // ← اینجا
       },
       {
         icon: "📊",
@@ -490,14 +503,9 @@
         desc: "گزارشات جامع",
         url: "/advanced-reports.html",
         permission: "reports.view",
+                isDisabled: true, // ← اینجا
       },
-      {
-        icon: "📋",
-        title: "تفریغ بودجه",
-        desc: "مقایسه مصوب و عملکرد",
-        url: "/tafriq.html",
-        permission: "reports.view",
-      },
+
       {
         icon: "📅",
         title: "سال مالی",
@@ -554,19 +562,23 @@
     initDashboard();
 
       function createMenuCard(menu) {
-
         const card = document.createElement("div");
         card.className = "menu-card";
 
-        // اگه children داره → دکمه منو
-        if (menu.children && menu.children.length > 0) {
+        if (menu.isDisabled) {
+            card.style.opacity = '0.6';
+            card.style.cursor = 'not-allowed';
+            card.onclick = (e) => {
+                e.stopPropagation();
+                showToast('⚠️ این بخش در حال توسعه است و به‌زودی فعال می‌شود.');
+            };
+        } else if (menu.children && menu.children.length > 0) {
           card.classList.add('has-children');
           card.onclick = (e) => {
             e.stopPropagation();
             openCardMenu(card, menu.children);
           };
         } else {
-          // آیتم معمولی
           card.onclick = () => (window.location.href = menu.url);
         }
 
@@ -574,11 +586,11 @@
           <div class="icon">${menu.icon}</div>
           <h3>${menu.title}</h3>
           <p>${menu.desc}</p>
+          ${menu.isDisabled ? '<span style="font-size: 20px; margin-top: 5px;">🔒</span>' : ''}
           ${menu.children ? '<span class="card-arrow">▼</span>' : ''}
         `;
         menuGrid.appendChild(card);
       }
-
       // ============================================
       // باز کردن منوی کارت
       // ============================================
