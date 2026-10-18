@@ -36,17 +36,10 @@
             font-size: 20px;
         }
 
-        .step {
-            display: none;
-        }
+        .step { display: none; }
+        .step.active { display: block; }
 
-        .step.active {
-            display: block;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
+        .form-group { margin-bottom: 20px; }
 
         label {
             display: block;
@@ -192,6 +185,50 @@
             padding: 8px;
             border-radius: 6px;
         }
+
+        /* استایل کپچا */
+        .captcha-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px dashed #ccc;
+        }
+        .captcha-question {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            letter-spacing: 2px;
+            user-select: none;
+            direction: ltr;
+            min-width: 60px;
+            text-align: center;
+        }
+        .captcha-refresh {
+            background: transparent;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 20px;
+            margin-right: auto;
+            padding: 0 10px;
+            box-shadow: none;
+            width: auto;
+        }
+        .captcha-refresh:hover {
+            transform: scale(1.1);
+            background: transparent;
+            box-shadow: none;
+        }
+        #captcha-input {
+            width: 80px !important;
+            padding: 8px !important;
+            font-size: 16px !important;
+            text-align: center;
+            letter-spacing: 0;
+        }
     </style>
 </head>
 
@@ -201,7 +238,6 @@
 
         <div class="error" id="error-message"></div>
         <div class="success" id="success-message"></div>
-
 
         <!-- مرحله ۱: کد ملی یا نام کاربری -->
         <div class="step active" id="step-national-id">
@@ -213,12 +249,10 @@
 
             <div class="form-group">
                 <label>کد ملی یا نام کاربری</label>
-                <input type="text" id="national_id" placeholder="" />
+                <input type="text" id="national_id" placeholder="مثلاً ۰۰۰۰۰۰۰۰۰۰ یا admin" />
             </div>
 
-            <button onclick="requestOtp()" id="btn-request-otp">
-                ادامه
-            </button>
+            <button onclick="requestOtp()" id="btn-request-otp">ادامه</button>
         </div>
 
         <!-- مرحله ۱.۵: پسورد (فقط برای admin/manager) -->
@@ -232,12 +266,18 @@
                 <input type="password" id="password-input" placeholder="رمز عبور خود را وارد کنید" />
             </div>
 
-            <button onclick="loginWithPassword()" id="btn-password-login">
-                ورود
-            </button>
-            <button class="back-btn" onclick="goBack()">
-                ← تغییر نام کاربری
-            </button>
+            <!-- کپچای مشترک -->
+            <div class="form-group">
+                <label>کد امنیتی (حاصل جمع زیر را وارد کنید) <span style="color:#e74c3c;">*</span></label>
+                <div class="captcha-container">
+                    <span class="captcha-question" id="captcha-question-pwd">۳ + ۴ =</span>
+                    <button class="captcha-refresh" onclick="generateCaptcha('pwd')" type="button" title="تغییر کد امنیتی">🔄</button>
+                    <input type="text" id="captcha-input-pwd" placeholder="پاسخ" dir="ltr" />
+                </div>
+            </div>
+
+            <button onclick="loginWithPassword()" id="btn-password-login">ورود</button>
+            <button class="back-btn" onclick="goBack()">← تغییر نام کاربری</button>
         </div>
 
         <!-- مرحله ۲: OTP -->
@@ -254,12 +294,18 @@
                 <input type="text" id="otp_code" class="otp-input" placeholder="------" maxlength="6" />
             </div>
 
-            <button onclick="verifyOtp()" id="btn-verify-otp">
-                ورود
-            </button>
-            <button class="back-btn" onclick="goBack()">
-                ← تغییر کد ملی
-            </button>
+            <!-- کپچای مشترک -->
+            <div class="form-group">
+                <label>کد امنیتی (حاصل جمع زیر را وارد کنید) <span style="color:#e74c3c;">*</span></label>
+                <div class="captcha-container">
+                    <span class="captcha-question" id="captcha-question-otp">۳ + ۴ =</span>
+                    <button class="captcha-refresh" onclick="generateCaptcha('otp')" type="button" title="تغییر کد امنیتی">🔄</button>
+                    <input type="text" id="captcha-input-otp" placeholder="پاسخ" dir="ltr" />
+                </div>
+            </div>
+
+            <button onclick="verifyOtp()" id="btn-verify-otp">ورود</button>
+            <button class="back-btn" onclick="goBack()">← تغییر کد ملی</button>
 
             <span class="mock-badge" id="mock-otp-display"></span>
         </div>
@@ -267,6 +313,18 @@
 
     <script>
         let currentOtpId = null;
+        let captchaAnswers = { pwd: 0, otp: 0 };
+
+        // توابع کمکی (از common.js استفاده می‌کند اگر لود شده باشد)
+        function toPersianNumbers(str) {
+            const persianDigits = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+            return str.toString().replace(/\d/g, function(d) { return persianDigits[parseInt(d)]; });
+        }
+        function toEnglishNumbers(str) {
+            return str.toString().replace(/[۰-۹]/g, function (d) {
+                return "۰۱۲۳۴۵۶۷۸۹".indexOf(d);
+            });
+        }
 
         function showError(msg) {
             const el = document.getElementById('error-message');
@@ -289,6 +347,32 @@
         }
 
         // ============================================
+        // کپچا
+        // ============================================
+        function generateCaptcha(type) {
+            const num1 = Math.floor(Math.random() * 10) + 1;
+            const num2 = Math.floor(Math.random() * 10) + 1;
+            captchaAnswers[type] = num1 + num2;
+            
+            const el = document.getElementById(`captcha-question-${type}`);
+            const inputEl = document.getElementById(`captcha-input-${type}`);
+            
+            if (el) el.textContent = `${toPersianNumbers(num1)} + ${toPersianNumbers(num2)} =`;
+            if (inputEl) inputEl.value = '';
+        }
+
+        function validateCaptcha(type) {
+            const inputEl = document.getElementById(`captcha-input-${type}`);
+            const userAnswer = toEnglishNumbers(inputEl.value.trim());
+            if (parseInt(userAnswer) !== captchaAnswers[type]) {
+                showError('کد امنیتی اشتباه است. لطفاً دوباره تلاش کنید.');
+                generateCaptcha(type); // عوض کردن کپچا
+                return false;
+            }
+            return true;
+        }
+
+        // ============================================
         // درخواست کد (تشخیص خودکار)
         // ============================================
         async function requestOtp() {
@@ -299,22 +383,18 @@
                 return;
             }
 
-            // تبدیل اعداد فارسی به انگلیسی
-            const normalizedInput = rawInput.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
-
-            // اگه فقط رقم و ۱۰ رقم بود → OTP
-            // وگرنه → لاگین با پسورد (admin, manager, ...)
+            const normalizedInput = toEnglishNumbers(rawInput);
             const isNumeric = /^\d{10}$/.test(normalizedInput);
 
             if (isNumeric) {
                 await requestOtpForNationalId(normalizedInput);
             } else {
-                // نمایش فرم پسورد
                 showPasswordStep(normalizedInput);
             }
         }
 
         async function requestOtpForNationalId(nationalId) {
+            // کپچا در این مرحله وجود ندارد (چون هنوز به مرحله OTP نرفته‌ایم)
             const btn = document.getElementById('btn-request-otp');
             btn.disabled = true;
             btn.textContent = '⏳ در حال ارسال...';
@@ -340,6 +420,9 @@
                         `⚠️ حالت Mock - کد: ${data.mock_otp}`;
                 }
 
+                // تولید کپچا برای مرحله OTP
+                generateCaptcha('otp');
+                
                 showStep('step-otp');
                 document.getElementById('otp_code').focus();
             } catch (error) {
@@ -357,6 +440,9 @@
             document.getElementById('password-username').textContent = username;
             document.getElementById('password-input').value = '';
 
+            // تولید کپچا برای مرحله پسورد
+            generateCaptcha('pwd');
+
             showStep('step-password');
             document.getElementById('password-input').focus();
         }
@@ -369,6 +455,9 @@
                 showError('رمز عبور الزامی است');
                 return;
             }
+
+            // چک کردن کپچا
+            if (!validateCaptcha('pwd')) return;
 
             const btn = document.getElementById('btn-password-login');
             btn.disabled = true;
@@ -402,12 +491,15 @@
         // ============================================
         async function verifyOtp() {
             const otpCode = document.getElementById('otp_code').value.trim();
-            const normalizedOtp = otpCode.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
+            const normalizedOtp = toEnglishNumbers(otpCode);
 
             if (!normalizedOtp || normalizedOtp.length !== 6) {
                 showError('کد تایید باید ۶ رقم باشد');
                 return;
             }
+
+            // چک کردن کپچا
+            if (!validateCaptcha('otp')) return;
 
             const btn = document.getElementById('btn-verify-otp');
             btn.disabled = true;
@@ -458,6 +550,15 @@
         document.getElementById('national_id')?.addEventListener('keydown', e => {
             if (e.key === 'Enter') requestOtp();
         });
+        
+        // کلیک روی اینتر در فیلد کپچا
+        document.getElementById('captcha-input-pwd')?.addEventListener('keydown', e => {
+            if (e.key === 'Enter') loginWithPassword();
+        });
+        document.getElementById('captcha-input-otp')?.addEventListener('keydown', e => {
+            if (e.key === 'Enter') verifyOtp();
+        });
+
     </script>
     <script src="/footer.js"></script>
 </body>
