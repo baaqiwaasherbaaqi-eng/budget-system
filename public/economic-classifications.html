@@ -145,6 +145,52 @@
         background: #218838;
       }
 
+      /* ============ Info Banner ============ */
+.info-banner {
+    background: #fff3cd;
+    border-right: 4px solid #ffc107;
+    border-radius: 6px;
+    padding: 12px 18px;
+    margin-bottom: 15px;
+    font-size: 12px;
+    color: #856404;
+    line-height: 1.7;
+}
+
+.info-banner b {
+    color: #664d03;
+}
+
+/* ============ Toolbar ============ */
+.toolbar {
+    background: white;
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Dark mode */
+body.dark .info-banner {
+    background: #4a3f1e;
+    color: #ffc107;
+}
+
+body.dark .info-banner b {
+    color: #ffd966;
+}
 
       /* ============ Context Menu ============ */
       .context-menu {
@@ -516,37 +562,39 @@
         </button>
       </div>
 
-      <div class="toolbar">
+<!-- راهنمای ایمپورت (بیرون از toolbar) -->
+<div class="info-banner">
+    💡 <b>راهنمای ایمپورت:</b> لطفاً حتماً از فایل نمونه (دکمه آبی رنگ) استفاده کنید. فایل شما باید شامل شیت‌هایی با نام «منابع» یا «مصارف» باشد و ستون اول آن «کد طبقه‌بندی» و ستون دوم آن «عنوان» باشد.
+</div>
 
-        <div style="margin-top: 15px; padding: 10px 15px; background: #fff3cd; border-right: 4px solid #ffc107; border-radius: 6px; font-size: 12px; color: #856404; margin-bottom: 15px;">
-          💡 <b>راهنمای ایمپورت:</b> لطفاً حتماً از فایل نمونه (دکمه آبی رنگ) استفاده کنید. فایل شما باید شامل شیت‌هایی با نام «منابع» یا «مصارف» باشد و ستون اول آن «کد طبقه‌بندی» و ستون دوم آن «عنوان» باشد.
-        </div>
-
-        <div class="view-switch">
-          <button id="btn-tree" class="active" onclick="switchView('tree')">
+<!-- Toolbar (فقط دکمه‌ها) -->
+<div class="toolbar">
+    <div class="view-switch">
+        <button id="btn-tree" class="active" onclick="switchView('tree')">
             🌳 درختی
-          </button>
-          <button id="btn-table" onclick="switchView('table')">📋 جدولی</button>
-        </div>
+        </button>
+        <button id="btn-table" onclick="switchView('table')">📋 جدولی</button>
+    </div>
 
+    <div class="toolbar-actions">
         <button class="add-root-btn" disabled style="background:#ccc; cursor:not-allowed;" title="گروه‌های اصلی ثابت هستند و قابل افزودن نیستند">
-          🔒 گروه اصلی
+            🔒 گروه اصلی
         </button>
 
-        <!-- ✅ دکمه ایمپورت به شکل لیبل (بدون نیاز به جاوااسکریپت اضافی) -->
-        <label class="add-root-btn" style="background: #6f42c1; cursor: pointer; margin-right: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 5px;">
-          📥 ایمپورت از اکسل
-          <input type="file" id="excel-file" accept=".xlsx, .xls" style="display: none;" onchange="handleExcelImport(this)">
+        <!-- دکمه ایمپورت -->
+        <label class="add-root-btn" style="background: #6f42c1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 5px; margin: 0;">
+            📥 ایمپورت از اکسل
+            <input type="file" id="excel-file" accept=".xlsx, .xls" style="display: none;" onchange="handleExcelImport(this)">
         </label>
 
-
-        <!-- ✅ لینک دانلود فایل نمونه و راهنما -->
-        <a href="/import-template.xlsx" download class="add-root-btn" style="background: #17a2b8; text-decoration: none; margin-right: 10px; display: inline-flex; align-items: center; gap: 5px;">
-          📄 دانلود فایل نمونه
+        <!-- لینک دانلود فایل نمونه -->
+        <a href="/import-template.xlsx" download class="add-root-btn" style="background: #17a2b8; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; margin: 0;">
+            📄 دانلود فایل نمونه
         </a>
+    </div>
+</div>
 
 
-      </div>
       <div id="tree-view" class="tree-container">
         <div class="loading">
           <div class="spinner"></div>
