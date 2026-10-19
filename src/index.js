@@ -9,6 +9,8 @@ import { toShamsi } from "./date.js";
 import { generateNextCode, buildTree, logBaseDataAction } from "./base-data.js";
 import { generatePersonCode } from "./base-data.js";
 
+import * as XLSX from 'xlsx';
+
 // تبدیل اعداد فارسی به انگلیسی
 function toEnglishNumbers(str) {
   if (!str) return str;
@@ -9425,6 +9427,166 @@ if (url.pathname === "/" || url.pathname === "") {
             status: 400,
             headers,
           });
+        }
+      }
+
+      // ============================================
+      // POST: ایمپورت فایل اکسل مستقیم
+      // ============================================
+      if (url.pathname === "/api/base-data/import-excel" && request.method === "POST") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+          }
+
+          const formData = await request.formData();
+          const file = formData.get("file");
+          const section = formData.get("section");
+          const type = formData.get("type"); // 'resource' یا 'expense'
+
+          if (!file || !section || !type) {
+            return new Response(JSON.stringify({ error: "فایل یا اطلاعات ناقص است" }), { status: 400, headers });
+          }
+
+          const arrayBuffer = await file.arrayBuffer();
+          const workbook = XLSX.read(arrayBuffer, { type: "array" });
+
+          let sheetsToRead = [];
+          if (type === "resource") {
+            sheetsToRead = workbook.SheetNames.filter(n => n.includes("منابع"));
+          } else {
+            sheetsToRead = workbook.SheetNames.filter(n => n.includes("مصارف"));
+          }
+
+          if (sheetsToRead.length === 0) {
+            return new Response(JSON.stringify({ error: "هیچ شیت مرتبطی با نوع انتخاب شده پیدا نشد" }), { status: 400, headers });
+          }
+
+          let rawItems = [];
+          for (const sheetName of sheetsToRead) {
+            const ws = workbook.Sheets[sheetName];
+            const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+            for (let i = 1; i < rows.length; i++) {
+              const row = rows[i];
+              if (row && row.length >= 2 && row[0] && row[1]) {
+                let code = row[0].toString().trim();
+                if (code.includes("جمع") || code === "" || isNaN(parseInt(toEnglishNumbers(code)))) continue;
+                
+                code = toEnglishNumbers(code);
+                const title = row[1].toString().trim();
+                if (code !== "" && title !== "") {
+                  rawItems.push({ code, title });
+                }
+              }
+            }
+          }
+
+          if (rawItems.length === 0) {
+            return new Response(JSON.stringify({ error: "هیچ داده معتبری در فایل یافت نشد" }), { status: 400, headers });
+          }
+
+          const nowShamsi = toShamsi(new Date());
+
+          // مرتب‌سازی بر اساس طول کد
+          rawItems.sort((a, b) => a.code.length - b.code.length);
+
+          // پاک کردن داده‌های قبلی
+          await env.DB.prepare("DELETE FROM base_data WHERE section = ? AND type = ?")
+            .bind(section, type)
+            .run();
+
+          let insertedCount = 0;
+          const insertedNodes = {}; 
+          const siblingCounters = {};
+
+          for (const item of rawItems) {
+              let parentId = null;
+              let parentLevel = -1;
+              let parentCode = "";
+              
+              // پیدا کردن والد بر اساس پیشوند عددی
+              let bestMatchCode = "";
+              let bestMatchLength = 0;
+
+              for (const existingExcelCode in insertedNodes) {
+                  let commonLength = 0;
+                  const minLength = Math.min(item.code.length, existingExcelCode.length);
+                  
+                  for (let i = 0; i < minLength; i++) {
+                      if (item.code[i] === existingExcelCode[i]) {
+                          commonLength++;
+                      } else {
+                          break;
+                      }
+                  }
+
+                  if (commonLength > 0 && commonLength < item.code.length) {
+                      if (commonLength > bestMatchLength) {
+                          bestMatchLength = commonLength;
+                          bestMatchCode = existingExcelCode;
+                      }
+                  }
+              }
+
+              if (bestMatchCode) {
+                  parentId = insertedNodes[bestMatchCode].id;
+                  parentLevel = insertedNodes[bestMatchCode].level;
+                  parentCode = insertedNodes[bestMatchCode].code;
+              }
+
+              let level = parentLevel === -1 ? 0 : parentLevel + 1;
+              let levelName = 'گروه';
+              if (level === 0) levelName = 'گروه';
+              else if (level === 1) levelName = 'سرفصل';
+              else if (level === 2) levelName = 'بند';
+              else if (level === 3) levelName = 'جزء';
+
+              let newCode = "";
+              
+              if (level === 0) {
+                  const key = "ROOT_" + type;
+                  if (!siblingCounters[key]) siblingCounters[key] = 1;
+                  newCode = siblingCounters[key].toString().padStart(3, '0');
+                  siblingCounters[key]++;
+              } else {
+                  const key = parentId;
+                  if (!siblingCounters[key]) siblingCounters[key] = 1;
+                  newCode = parentCode + siblingCounters[key].toString().padStart(3, '0');
+                  siblingCounters[key]++;
+              }
+
+              const result = await env.DB.prepare(`
+                  INSERT INTO base_data 
+                  (section, type, code, title, parent_id, level, level_name, digit_count, extra_data, created_at_shamsi, updated_at_shamsi)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              `).bind(
+                  section, type, newCode, item.title, parentId, level, levelName, 3,
+                  JSON.stringify({ original_excel_code: item.code }),
+                  nowShamsi, nowShamsi
+              ).run();
+
+              insertedNodes[item.code] = {
+                  id: result.meta.last_row_id,
+                  level: level,
+                  code: newCode
+              };
+              insertedCount++;
+          }
+
+          return new Response(JSON.stringify({ success: true, count: insertedCount }), { status: 200, headers });
+
+        } catch (error) {
+          console.error("Import error:", error);
+          return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
         }
       }
 

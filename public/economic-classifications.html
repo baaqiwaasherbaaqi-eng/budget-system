@@ -490,6 +490,7 @@
         }
       }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   </head>
   <body>
     <div class="container">
@@ -522,11 +523,18 @@
           </button>
           <button id="btn-table" onclick="switchView('table')">📋 جدولی</button>
         </div>
-<button class="add-root-btn" disabled style="background:#ccc; cursor:not-allowed;" title="گروه‌های اصلی ثابت هستند و قابل افزودن نیستند">
-    🔒 گروه اصلی
-</button>
-      </div>
 
+        <button class="add-root-btn" disabled style="background:#ccc; cursor:not-allowed;" title="گروه‌های اصلی ثابت هستند و قابل افزودن نیستند">
+          🔒 گروه اصلی
+        </button>
+
+        <!-- ✅ دکمه ایمپورت به شکل لیبل (بدون نیاز به جاوااسکریپت اضافی) -->
+        <label class="add-root-btn" style="background: #6f42c1; cursor: pointer; margin-right: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 5px;">
+          📥 ایمپورت از اکسل
+          <input type="file" id="excel-file" accept=".xlsx, .xls" style="display: none;" onchange="handleExcelImport(this)">
+        </label>
+
+      </div>
       <div id="tree-view" class="tree-container">
         <div class="loading">
           <div class="spinner"></div>
@@ -1216,6 +1224,117 @@
         }
       });
 
+
+// تابع کمکی برای تبدیل اعداد و کدها
+function normalizeNumber(num) {
+    if (!num) return "";
+    return toEnglishNumbers(num.toString().trim());
+}
+
+async function handleExcelImport(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    // چک کردن تب فعال
+    const isExpense = document.getElementById('tab-expense').classList.contains('active');
+    const isResource = document.getElementById('tab-resource').classList.contains('active');
+
+    if (!isResource && !isExpense) {
+        showToast('لطفاً ابتدا تب منابع یا مصارف را انتخاب کنید.', 'error');
+        input.value = '';
+        return;
+    }
+
+    const targetType = isExpense ? 'expense' : 'resource';
+    const section = 'economic';
+
+    if (!confirm(`آیا از ایمپورت فایل «${file.name}» در بخش ${isExpense ? 'مصارف' : 'منابع'} مطمئن هستید؟`)) {
+        input.value = '';
+        return;
+    }
+
+    const btn = document.querySelector('label.add-root-btn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ در حال پردازش...';
+    btn.style.pointerEvents = 'none';
+
+    try {
+        // ارسال فایل به صورت FormData
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('section', section);
+        formData.append('type', targetType);
+
+        const res = await fetch(`/api/base-data/import-excel`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'خطا در سرور');
+
+        showToast(`تعداد ${toPersianNumbers(result.count)} ردیف با موفقیت ایمپورت شد.`);
+        await loadData(); // رفرش درخت
+
+    } catch (error) {
+        console.error("Import error:", error);
+        showToast(error.message, 'error');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.style.pointerEvents = 'auto';
+        input.value = '';
+    }
+}
+
+async function submitImportData(items, type) {
+    const res = await fetch(`/api/base-data/import`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ section: 'economic', type: type, items: items })
+    });
+
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'خطا در ذخیره اطلاعات');
+}
+async function submitImportData(items, type) {
+    const res = await fetch(`/api/base-data/import`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ section: 'economic', type: type, items: items })
+    });
+
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'خطا در ذخیره اطلاعات');
+}
+async function submitImportData(items, isResource) {
+    const type = isResource ? 'resource' : 'expense';
+    
+    const res = await fetch(`/api/base-data/import`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ section: 'economic', type: type, items: items })
+    });
+
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'خطا در ذخیره اطلاعات');
+
+    showToast(`تعداد ${toPersianNumbers(result.count)} ردیف با موفقیت ایمپورت شد.`);
+    await loadData(); // رفرش درخت
+}
+
+
       // ============================================
       // شروع
       // ============================================
@@ -1228,6 +1347,8 @@
         .getElementById("tab-expense")
         .classList.toggle("active", currentType === "expense");
       loadData();
+
+
     </script>
   </body>
 </html>
