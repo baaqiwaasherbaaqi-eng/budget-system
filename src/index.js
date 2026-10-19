@@ -9433,6 +9433,9 @@ if (url.pathname === "/" || url.pathname === "") {
       // ============================================
       // POST: ایمپورت فایل اکسل مستقیم
       // ============================================
+      // ============================================
+      // POST: ایمپورت فایل اکسل مستقیم
+      // ============================================
       if (url.pathname === "/api/base-data/import-excel" && request.method === "POST") {
         try {
           const authHeader = request.headers.get("Authorization");
@@ -9459,6 +9462,12 @@ if (url.pathname === "/" || url.pathname === "") {
           const arrayBuffer = await file.arrayBuffer();
           const workbook = XLSX.read(arrayBuffer, { type: "array" });
 
+          // ✅ اعتبارسنجی ۱: آیا فایل شیت داره؟
+          if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+            return new Response(JSON.stringify({ error: "فایل اکسل خالی است یا معتبر نیست." }), { status: 400, headers });
+          }
+
+          // ✅ اعتبارسنجی ۲: آیا شیت متناسب با نوع پیدا میشه؟
           let sheetsToRead = [];
           if (type === "resource") {
             sheetsToRead = workbook.SheetNames.filter(n => n.includes("منابع"));
@@ -9467,9 +9476,23 @@ if (url.pathname === "/" || url.pathname === "") {
           }
 
           if (sheetsToRead.length === 0) {
-            return new Response(JSON.stringify({ error: "هیچ شیت مرتبطی با نوع انتخاب شده پیدا نشد" }), { status: 400, headers });
+            return new Response(JSON.stringify({ 
+              error: `هیچ شیتی با کلمه «${type === 'resource' ? 'منابع' : 'مصارف'}» در فایل پیدا نشد. لطفاً از فایل نمونه استفاده کنید.` 
+            }), { status: 400, headers });
           }
 
+          // ✅ اعتبارسنجی ۳: آیا شیت‌ها ساختار درست (۲ ستون) دارن؟
+          for (const sheetName of sheetsToRead) {
+            const ws = workbook.Sheets[sheetName];
+            const testRows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+            if (!testRows || testRows.length < 2 || !testRows[0] || testRows[0].length < 2) {
+              return new Response(JSON.stringify({ 
+                error: `ساختار شیت «${sheetName}» نامعتبر است. ستون‌ها باید شامل «کد طبقه‌بندی» و «عنوان» باشند.` 
+              }), { status: 400, headers });
+            }
+          }
+
+          // استخراج داده‌ها
           let rawItems = [];
           for (const sheetName of sheetsToRead) {
             const ws = workbook.Sheets[sheetName];

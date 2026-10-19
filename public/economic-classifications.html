@@ -517,6 +517,11 @@
       </div>
 
       <div class="toolbar">
+
+        <div style="margin-top: 15px; padding: 10px 15px; background: #fff3cd; border-right: 4px solid #ffc107; border-radius: 6px; font-size: 12px; color: #856404; margin-bottom: 15px;">
+          💡 <b>راهنمای ایمپورت:</b> لطفاً حتماً از فایل نمونه (دکمه آبی رنگ) استفاده کنید. فایل شما باید شامل شیت‌هایی با نام «منابع» یا «مصارف» باشد و ستون اول آن «کد طبقه‌بندی» و ستون دوم آن «عنوان» باشد.
+        </div>
+
         <div class="view-switch">
           <button id="btn-tree" class="active" onclick="switchView('tree')">
             🌳 درختی
@@ -533,6 +538,13 @@
           📥 ایمپورت از اکسل
           <input type="file" id="excel-file" accept=".xlsx, .xls" style="display: none;" onchange="handleExcelImport(this)">
         </label>
+
+
+        <!-- ✅ لینک دانلود فایل نمونه و راهنما -->
+        <a href="/import-template.xlsx" download class="add-root-btn" style="background: #17a2b8; text-decoration: none; margin-right: 10px; display: inline-flex; align-items: center; gap: 5px;">
+          📄 دانلود فایل نمونه
+        </a>
+
 
       </div>
       <div id="tree-view" class="tree-container">
