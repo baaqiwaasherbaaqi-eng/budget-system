@@ -11,6 +11,8 @@ npm-debug.log*
 migrations-backup/
 *.bak
 *.tmp
+*- old.html
+*-old.html
 
 # OS files
 .DS_Store

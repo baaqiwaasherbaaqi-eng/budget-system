@@ -4,6 +4,8 @@
 
 import { toShamsi } from "./date.js";
 
+
+
 /**
  * ساخت کد خودکار برای ردیف جدید
  */
