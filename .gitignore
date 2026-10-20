@@ -17,3 +17,9 @@ migrations-backup/
 # OS files
 .DS_Store
 Thumbs.db
+# Backups
+backups/
+*.sql
+
+# Backups
+backups/

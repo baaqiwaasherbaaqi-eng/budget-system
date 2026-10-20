@@ -9433,21 +9433,27 @@ if (url.pathname === "/" || url.pathname === "") {
       // ============================================
       // POST: ایمپورت فایل اکسل مستقیم
       // ============================================
-      // ============================================
-      // POST: ایمپورت فایل اکسل مستقیم
-      // ============================================
-      if (url.pathname === "/api/base-data/import-excel" && request.method === "POST") {
+      if (
+        url.pathname === "/api/base-data/import-excel" &&
+        request.method === "POST"
+      ) {
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              { status: 401, headers }
+            );
           }
 
           const token = authHeader.replace("Bearer ", "");
           const userData = await verifyToken(token, env.JWT_SECRET);
 
           if (!userData || !["admin", "manager"].includes(userData.role)) {
-            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
           }
 
           const formData = await request.formData();
@@ -9456,7 +9462,10 @@ if (url.pathname === "/" || url.pathname === "") {
           const type = formData.get("type"); // 'resource' یا 'expense'
 
           if (!file || !section || !type) {
-            return new Response(JSON.stringify({ error: "فایل یا اطلاعات ناقص است" }), { status: 400, headers });
+            return new Response(
+              JSON.stringify({ error: "فایل یا اطلاعات ناقص است" }),
+              { status: 400, headers }
+            );
           }
 
           const arrayBuffer = await file.arrayBuffer();
@@ -9464,31 +9473,51 @@ if (url.pathname === "/" || url.pathname === "") {
 
           // ✅ اعتبارسنجی ۱: آیا فایل شیت داره؟
           if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
-            return new Response(JSON.stringify({ error: "فایل اکسل خالی است یا معتبر نیست." }), { status: 400, headers });
+            return new Response(
+              JSON.stringify({ error: "فایل اکسل خالی است یا معتبر نیست." }),
+              { status: 400, headers }
+            );
           }
 
           // ✅ اعتبارسنجی ۲: آیا شیت متناسب با نوع پیدا میشه؟
           let sheetsToRead = [];
           if (type === "resource") {
-            sheetsToRead = workbook.SheetNames.filter(n => n.includes("منابع"));
+            sheetsToRead = workbook.SheetNames.filter((n) =>
+              n.includes("منابع")
+            );
           } else {
-            sheetsToRead = workbook.SheetNames.filter(n => n.includes("مصارف"));
+            sheetsToRead = workbook.SheetNames.filter((n) =>
+              n.includes("مصارف")
+            );
           }
 
           if (sheetsToRead.length === 0) {
-            return new Response(JSON.stringify({ 
-              error: `هیچ شیتی با کلمه «${type === 'resource' ? 'منابع' : 'مصارف'}» در فایل پیدا نشد. لطفاً از فایل نمونه استفاده کنید.` 
-            }), { status: 400, headers });
+            return new Response(
+              JSON.stringify({
+                error: `هیچ شیتی با کلمه «${
+                  type === "resource" ? "منابع" : "مصارف"
+                }» در فایل پیدا نشد. لطفاً از فایل نمونه استفاده کنید.`,
+              }),
+              { status: 400, headers }
+            );
           }
 
           // ✅ اعتبارسنجی ۳: آیا شیت‌ها ساختار درست (۲ ستون) دارن؟
           for (const sheetName of sheetsToRead) {
             const ws = workbook.Sheets[sheetName];
             const testRows = XLSX.utils.sheet_to_json(ws, { header: 1 });
-            if (!testRows || testRows.length < 2 || !testRows[0] || testRows[0].length < 2) {
-              return new Response(JSON.stringify({ 
-                error: `ساختار شیت «${sheetName}» نامعتبر است. ستون‌ها باید شامل «کد طبقه‌بندی» و «عنوان» باشند.` 
-              }), { status: 400, headers });
+            if (
+              !testRows ||
+              testRows.length < 2 ||
+              !testRows[0] ||
+              testRows[0].length < 2
+            ) {
+              return new Response(
+                JSON.stringify({
+                  error: `ساختار شیت «${sheetName}» نامعتبر است. ستون‌ها باید شامل «کد طبقه‌بندی» و «عنوان» باشند.`,
+                }),
+                { status: 400, headers }
+              );
             }
           }
 
@@ -9502,8 +9531,13 @@ if (url.pathname === "/" || url.pathname === "") {
               const row = rows[i];
               if (row && row.length >= 2 && row[0] && row[1]) {
                 let code = row[0].toString().trim();
-                if (code.includes("جمع") || code === "" || isNaN(parseInt(toEnglishNumbers(code)))) continue;
-                
+                if (
+                  code.includes("جمع") ||
+                  code === "" ||
+                  isNaN(parseInt(toEnglishNumbers(code)))
+                )
+                  continue;
+
                 code = toEnglishNumbers(code);
                 const title = row[1].toString().trim();
                 if (code !== "" && title !== "") {
@@ -9514,7 +9548,10 @@ if (url.pathname === "/" || url.pathname === "") {
           }
 
           if (rawItems.length === 0) {
-            return new Response(JSON.stringify({ error: "هیچ داده معتبری در فایل یافت نشد" }), { status: 400, headers });
+            return new Response(
+              JSON.stringify({ error: "هیچ داده معتبری در فایل یافت نشد" }),
+              { status: 400, headers }
+            );
           }
 
           const nowShamsi = toShamsi(new Date());
@@ -9523,93 +9560,523 @@ if (url.pathname === "/" || url.pathname === "") {
           rawItems.sort((a, b) => a.code.length - b.code.length);
 
           // پاک کردن داده‌های قبلی
-          await env.DB.prepare("DELETE FROM base_data WHERE section = ? AND type = ?")
+          await env.DB.prepare(
+            "DELETE FROM base_data WHERE section = ? AND type = ?"
+          )
             .bind(section, type)
             .run();
 
           let insertedCount = 0;
-          const insertedNodes = {}; 
+          const insertedNodes = {};
           const siblingCounters = {};
 
           for (const item of rawItems) {
-              let parentId = null;
-              let parentLevel = -1;
-              let parentCode = "";
-              
-              // پیدا کردن والد بر اساس پیشوند عددی
-              let bestMatchCode = "";
-              let bestMatchLength = 0;
+            let parentId = null;
+            let parentLevel = -1;
+            let parentCode = "";
 
-              for (const existingExcelCode in insertedNodes) {
-                  let commonLength = 0;
-                  const minLength = Math.min(item.code.length, existingExcelCode.length);
-                  
-                  for (let i = 0; i < minLength; i++) {
-                      if (item.code[i] === existingExcelCode[i]) {
-                          commonLength++;
-                      } else {
-                          break;
-                      }
-                  }
+            // پیدا کردن والد بر اساس پیشوند عددی
+            let bestMatchCode = "";
+            let bestMatchLength = 0;
 
-                  if (commonLength > 0 && commonLength < item.code.length) {
-                      if (commonLength > bestMatchLength) {
-                          bestMatchLength = commonLength;
-                          bestMatchCode = existingExcelCode;
-                      }
-                  }
+            for (const existingExcelCode in insertedNodes) {
+              let commonLength = 0;
+              const minLength = Math.min(
+                item.code.length,
+                existingExcelCode.length
+              );
+
+              for (let i = 0; i < minLength; i++) {
+                if (item.code[i] === existingExcelCode[i]) {
+                  commonLength++;
+                } else {
+                  break;
+                }
               }
 
-              if (bestMatchCode) {
-                  parentId = insertedNodes[bestMatchCode].id;
-                  parentLevel = insertedNodes[bestMatchCode].level;
-                  parentCode = insertedNodes[bestMatchCode].code;
+              if (commonLength > 0 && commonLength < item.code.length) {
+                if (commonLength > bestMatchLength) {
+                  bestMatchLength = commonLength;
+                  bestMatchCode = existingExcelCode;
+                }
               }
+            }
 
-              let level = parentLevel === -1 ? 0 : parentLevel + 1;
-              let levelName = 'گروه';
-              if (level === 0) levelName = 'گروه';
-              else if (level === 1) levelName = 'سرفصل';
-              else if (level === 2) levelName = 'بند';
-              else if (level === 3) levelName = 'جزء';
+            if (bestMatchCode) {
+              parentId = insertedNodes[bestMatchCode].id;
+              parentLevel = insertedNodes[bestMatchCode].level;
+              parentCode = insertedNodes[bestMatchCode].code;
+            }
 
-              let newCode = "";
-              
-              if (level === 0) {
-                  const key = "ROOT_" + type;
-                  if (!siblingCounters[key]) siblingCounters[key] = 1;
-                  newCode = siblingCounters[key].toString().padStart(3, '0');
-                  siblingCounters[key]++;
-              } else {
-                  const key = parentId;
-                  if (!siblingCounters[key]) siblingCounters[key] = 1;
-                  newCode = parentCode + siblingCounters[key].toString().padStart(3, '0');
-                  siblingCounters[key]++;
-              }
+            let level = parentLevel === -1 ? 0 : parentLevel + 1;
+            let levelName = "گروه";
+            if (level === 0) levelName = "گروه";
+            else if (level === 1) levelName = "سرفصل";
+            else if (level === 2) levelName = "بند";
+            else if (level === 3) levelName = "جزء";
 
-              const result = await env.DB.prepare(`
+            let newCode = "";
+
+            if (level === 0) {
+              const key = "ROOT_" + type;
+              if (!siblingCounters[key]) siblingCounters[key] = 1;
+              newCode = siblingCounters[key].toString().padStart(3, "0");
+              siblingCounters[key]++;
+            } else {
+              const key = parentId;
+              if (!siblingCounters[key]) siblingCounters[key] = 1;
+              newCode =
+                parentCode + siblingCounters[key].toString().padStart(3, "0");
+              siblingCounters[key]++;
+            }
+
+            const result = await env.DB.prepare(
+              `
                   INSERT INTO base_data 
                   (section, type, code, title, parent_id, level, level_name, digit_count, extra_data, created_at_shamsi, updated_at_shamsi)
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-              `).bind(
-                  section, type, newCode, item.title, parentId, level, levelName, 3,
-                  JSON.stringify({ original_excel_code: item.code }),
-                  nowShamsi, nowShamsi
-              ).run();
+              `
+            )
+              .bind(
+                section,
+                type,
+                newCode,
+                item.title,
+                parentId,
+                level,
+                levelName,
+                3,
+                JSON.stringify({ original_excel_code: item.code }),
+                nowShamsi,
+                nowShamsi
+              )
+              .run();
 
-              insertedNodes[item.code] = {
-                  id: result.meta.last_row_id,
-                  level: level,
-                  code: newCode
-              };
-              insertedCount++;
+            insertedNodes[item.code] = {
+              id: result.meta.last_row_id,
+              level: level,
+              code: newCode,
+            };
+            insertedCount++;
           }
 
-          return new Response(JSON.stringify({ success: true, count: insertedCount }), { status: 200, headers });
-
+          return new Response(
+            JSON.stringify({ success: true, count: insertedCount }),
+            { status: 200, headers }
+          );
         } catch (error) {
           console.error("Import error:", error);
-          return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // ============================================
+      // POST: ایمپورت اکسل عملیاتی (۳ شیت: تملک سرمایه‌ای + تملک مالی + خدمت)
+      // ============================================
+      if (
+        url.pathname === "/api/base-data/import-operational-excel" &&
+        request.method === "POST"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              { status: 401, headers }
+            );
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+              status: 403,
+              headers,
+            });
+          }
+
+          const formData = await request.formData();
+          const file = formData.get("file");
+
+          if (!file) {
+            return new Response(
+              JSON.stringify({ error: "فایلی ارسال نشده است" }),
+              { status: 400, headers }
+            );
+          }
+
+          const arrayBuffer = await file.arrayBuffer();
+          const workbook = XLSX.read(arrayBuffer, { type: "array" });
+
+          if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+            return new Response(
+              JSON.stringify({ error: "فایل اکسل خالی است یا معتبر نیست." }),
+              { status: 400, headers }
+            );
+          }
+
+          // ============================================
+          // تشخیص ۳ شیت اصلی (فقط شیت‌های «عملیاتی»)
+          // ============================================
+          const findSheet = (mainKeyword, subKeyword) => {
+            return workbook.SheetNames.find(
+              (n) => n.includes(mainKeyword) && n.includes(subKeyword)
+            );
+          };
+
+          // فقط شیت‌هایی که «عملیاتی» دارن
+          const sheetCapital =
+            findSheet("عملیاتی", "تملک سرمایه") ||
+            findSheet("عملیاتی", "سرمایه ای") ||
+            findSheet("عملیاتی", "سرمایه‌ای");
+
+          const sheetFinancial =
+            findSheet("عملیاتی", "تملک مالی") || findSheet("عملیاتی", "مالی");
+
+          const sheetService = findSheet("عملیاتی", "خدمت");
+
+          if (!sheetCapital && !sheetFinancial && !sheetService) {
+            return new Response(
+              JSON.stringify({
+                error:
+                  "هیچ شیت عملیاتی معتبری یافت نشد. شیت‌ها باید شامل «عملیاتی» و یکی از «تملک سرمایه ای»، «تملک مالی» یا «خدمت» باشند.",
+              }),
+              { status: 400, headers }
+            );
+          }
+
+          console.log("✅ Sheets found:", {
+            capital: sheetCapital,
+            financial: sheetFinancial,
+            service: sheetService,
+          });
+
+          // ============================================
+          // استخراج داده از یک شیت
+          // ============================================
+          const extractSheet = (sheetName) => {
+            if (!sheetName) return [];
+            const ws = workbook.Sheets[sheetName];
+            const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+            const items = [];
+
+            for (let i = 1; i < rows.length; i++) {
+              const row = rows[i];
+              if (!row || row.length < 2) continue;
+
+              let code = row[0] ? row[0].toString().trim() : "";
+              let title = row[1] ? row[1].toString().trim() : "";
+
+              if (!code || !title) continue;
+              if (code.includes("جمع") || title.includes("جمع")) continue;
+
+              code = toEnglishNumbers(code);
+
+              if (!/^\d+$/.test(code)) continue;
+
+              items.push({ code, title });
+            }
+
+            return items;
+          };
+
+          const capitalItems = extractSheet(sheetCapital);
+          const financialItems = extractSheet(sheetFinancial);
+          const serviceItems = extractSheet(sheetService);
+
+          console.log("=== IMPORT DEBUG ===");
+          console.log("Sheet names:", workbook.SheetNames);
+          console.log(
+            "Capital sheet:",
+            sheetCapital,
+            "→ items:",
+            capitalItems.length
+          );
+          console.log(
+            "Financial sheet:",
+            sheetFinancial,
+            "→ items:",
+            financialItems.length
+          );
+          console.log(
+            "Service sheet:",
+            sheetService,
+            "→ items:",
+            serviceItems.length
+          );
+          console.log("Capital items (first 10):", capitalItems.slice(0, 10));
+          console.log(
+            "Financial items (first 10):",
+            financialItems.slice(0, 10)
+          );
+          console.log("Service items (first 10):", serviceItems.slice(0, 10));
+
+          if (
+            capitalItems.length === 0 &&
+            financialItems.length === 0 &&
+            serviceItems.length === 0
+          ) {
+            return new Response(
+              JSON.stringify({ error: "هیچ داده معتبری در شیت‌ها یافت نشد" }),
+              { status: 400, headers }
+            );
+          }
+
+          const nowShamsi = toShamsi(new Date());
+
+          // پاک کردن داده‌های قبلی
+          await env.DB.prepare(
+            "DELETE FROM base_data WHERE section = 'operational'"
+          ).run();
+
+          // map: excelCode → { id, code, level, type }
+          const insertedNodes = {};
+          let totalCount = 0;
+
+          // ============================================
+          // تابع کمکی: پیدا کردن یا ساختن نود
+          // ============================================
+          const findOrCreateNode = async (
+            normalizedCode,
+            title,
+            type,
+            level,
+            levelName,
+            parentId,
+            rawCode
+          ) => {
+            const key = `${type}:${normalizedCode}`; // ← کلید ترکیبی
+
+            // اگه قبلاً ساخته شده، برش گردون
+            if (insertedNodes[key]) {
+              return insertedNodes[key];
+            }
+
+            const nextCode = await generateNextCode(env, {
+              section: "operational",
+              type: type,
+              parent_id: parentId,
+            });
+
+            const result = await env.DB.prepare(
+              `
+              INSERT INTO base_data 
+              (section, type, code, title, parent_id, level, level_name, digit_count, extra_data, created_at_shamsi, updated_at_shamsi)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `
+            )
+              .bind(
+                "operational",
+                type,
+                nextCode,
+                title,
+                parentId,
+                level,
+                levelName,
+                3,
+                JSON.stringify({
+                  original_excel_code: rawCode || normalizedCode,
+                }),
+                nowShamsi,
+                nowShamsi
+              )
+              .run();
+
+            const node = {
+              id: result.meta.last_row_id,
+              code: nextCode,
+              level: level,
+              type: type,
+            };
+
+            insertedNodes[key] = node; // ← با کلید ترکیبی
+            totalCount++;
+
+            return node;
+          };
+
+          // ============================================
+          // پردازش یک شیت
+          // ============================================
+          const processSheet = async (items, leafType) => {
+            if (items.length === 0) return;
+
+            const _sheetStart = Object.keys(insertedNodes).length;
+
+            // نرمال‌سازی: حذف صفرهای ابتدایی
+            const normalizedItems = items.map((item) => {
+              const normalized = item.code.replace(/^0+/, "") || "0";
+              return {
+                ...item,
+                normalizedCode: normalized,
+                normalizedLen: normalized.length,
+              };
+            });
+
+            normalizedItems.sort((a, b) => a.normalizedLen - b.normalizedLen);
+
+            // ============================================
+            // سطح ۰: مأموریت (طول ۱)
+            // ============================================
+            for (const item of normalizedItems.filter(
+              (i) => i.normalizedLen === 1
+            )) {
+              const key = `mission:${item.normalizedCode}`;
+              if (insertedNodes[key]) continue;
+              await findOrCreateNode(
+                item.normalizedCode,
+                item.title,
+                "mission",
+                0,
+                "مأموریت",
+                null,
+                item.code
+              );
+            }
+
+            // ============================================
+            // سطح ۱: برنامه (طول ۳)
+            // ============================================
+            for (const item of normalizedItems.filter(
+              (i) => i.normalizedLen === 3
+            )) {
+              const parentCode = item.normalizedCode.substring(0, 1);
+              const parentKey = `mission:${parentCode}`;
+              const parent = insertedNodes[parentKey];
+
+              if (!parent) {
+                console.warn(
+                  `[L1] والد مأموریت برای ${item.code} (looked for ${parentKey}) یافت نشد`
+                );
+                continue;
+              }
+
+              await findOrCreateNode(
+                item.normalizedCode,
+                item.title,
+                "program",
+                1,
+                "برنامه",
+                parent.id,
+                item.code
+              );
+            }
+
+            // ============================================
+            // سطح ۲: طرح/خدمت (طول ۵)
+            // ============================================
+            const level2Type = leafType === "activity" ? "service" : "plan";
+            const level2Name = leafType === "activity" ? "خدمت" : "طرح";
+
+            for (const item of normalizedItems.filter(
+              (i) => i.normalizedLen === 5
+            )) {
+              const parentCode = item.normalizedCode.substring(0, 3);
+              const parentKey = `program:${parentCode}`;
+              const parent = insertedNodes[parentKey];
+
+              if (!parent) {
+                console.warn(
+                  `[L2] والد برنامه برای ${item.code} (looked for ${parentKey}) یافت نشد`
+                );
+                continue;
+              }
+
+              await findOrCreateNode(
+                item.normalizedCode,
+                item.title,
+                level2Type,
+                2,
+                level2Name,
+                parent.id,
+                item.code
+              );
+            }
+
+            // ============================================
+            // سطح ۳: پروژه/فعالیت (طول > 5)
+            // ============================================
+            const leafName =
+              leafType === "project_capital"
+                ? "پروژه (تملک سرمایه‌ای)"
+                : leafType === "project_financial"
+                ? "پروژه (تملک مالی)"
+                : "فعالیت";
+
+            // والد سطح ۲: plan برای پروژه‌ها، service برای فعالیت‌ها
+            const parent2Type = leafType === "activity" ? "service" : "plan";
+
+            for (const item of normalizedItems.filter(
+              (i) => i.normalizedLen > 5
+            )) {
+              const parentCode = item.normalizedCode.substring(0, 5);
+              const parentKey = `${parent2Type}:${parentCode}`;
+              const parent = insertedNodes[parentKey];
+
+              if (!parent) {
+                console.warn(
+                  `[L3] والد سطح ۲ برای ${item.code} (looked for ${parentKey}) یافت نشد`
+                );
+                continue;
+              }
+
+              await findOrCreateNode(
+                item.normalizedCode,
+                item.title,
+                leafType,
+                3,
+                leafName,
+                parent.id,
+                item.code
+              );
+            }
+
+            const _sheetEnd = Object.keys(insertedNodes).length;
+            console.log(
+              `[SHEET ${leafType}] items=${
+                items.length
+              } | before=${_sheetStart} | after=${_sheetEnd} | new=${
+                _sheetEnd - _sheetStart
+              }`
+            );
+          };
+          // ============================================
+          // پردازش به ترتیب
+          // ============================================
+          // ۱. تملک سرمایه‌ای (اول چون مأموریت/برنامه/طرح رو می‌سازه)
+          await processSheet(capitalItems, "project_capital");
+
+          // ۲. تملک مالی (فقط پروژه‌های جدید؛ مأموریت/برنامه/طرح موجود رو استفاده می‌کنه)
+          await processSheet(financialItems, "project_financial");
+
+          // ۳. خدمت (فقط خدمت/فعالیت جدید؛ مأموریت/برنامه موجود رو استفاده می‌کنه)
+          await processSheet(serviceItems, "activity");
+
+          return new Response(
+            JSON.stringify({
+              success: true,
+              count: totalCount,
+              sheets: {
+                capital: { name: sheetCapital, found: capitalItems.length },
+                financial: {
+                  name: sheetFinancial,
+                  found: financialItems.length,
+                },
+                service: { name: sheetService, found: serviceItems.length },
+              },
+            }),
+            { status: 200, headers }
+          );
+        } catch (error) {
+          console.error("Operational import error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
         }
       }
 

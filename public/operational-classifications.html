@@ -89,6 +89,38 @@
 
         .add-root-btn:hover { background: #218838; }
 
+        /* ============ Info Banner ============ */
+.info-banner {
+    background: #fff3cd;
+    border-right: 4px solid #ffc107;
+    border-radius: 6px;
+    padding: 12px 18px;
+    margin-bottom: 15px;
+    font-size: 12px;
+    color: #856404;
+    line-height: 1.7;
+}
+
+.info-banner b {
+    color: #664d03;
+}
+
+.toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+body.dark .info-banner {
+    background: #4a3f1e;
+    color: #ffc107;
+}
+
+body.dark .info-banner b {
+    color: #ffd966;
+}
+
         .level-badge.mission { background: #667eea; color: white; }
         .level-badge.program { background: #764ba2; color: white; }
         .level-badge.service { background: #28a745; color: white; }
@@ -325,6 +357,104 @@
             .tree-children { padding-right: 15px; margin-right: 6px; }
 
         }
+
+
+
+/* ============ Info Banner ============ */
+.info-banner {
+    background: #fff3cd;
+    border-right: 4px solid #ffc107;
+    border-radius: 6px;
+    padding: 12px 18px;
+    margin-bottom: 15px;
+    font-size: 12px;
+    color: #856404;
+    line-height: 1.7;
+}
+
+.info-banner b {
+    color: #664d03;
+}
+
+.toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Dark mode */
+body.dark .info-banner {
+    background: #4a3f1e;
+    color: #ffc107;
+}
+
+body.dark .info-banner b {
+    color: #ffd966;
+}
+
+/* ============ Import Dropdown ============ */
+.import-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.import-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    padding: 6px;
+    z-index: 100;
+    min-width: 220px;
+    display: none;
+    margin-top: 4px;
+}
+
+.import-dropdown-menu.open {
+    display: block;
+}
+
+.import-dropdown-menu button,
+.import-dropdown-menu label {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 10px 14px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    font-size: 13px;
+    color: #333;
+    text-align: right;
+    transition: background 0.15s;
+    gap: 10px;
+    box-sizing: border-box;
+}
+
+.import-dropdown-menu button:hover,
+.import-dropdown-menu label:hover {
+    background: #f0f2f5;
+}
+
+body.dark .import-dropdown-menu {
+    background: #2d3748;
+}
+
+body.dark .import-dropdown-menu button,
+body.dark .import-dropdown-menu label {
+    color: #e2e8f0;
+}
+
+body.dark .import-dropdown-menu button:hover,
+body.dark .import-dropdown-menu label:hover {
+    background: #4a5568;
+}
+
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -335,15 +465,45 @@
             <h1>📊 طبقه‌بندی عملیاتی</h1>
         </div>
 
+
+<!-- Toolbar -->
+        <!-- راهنمای ایمپورت (بیرون از toolbar) -->
+        <div class="info-banner">
+            💡 <b>راهنمای ایمپورت:</b> فایل اکسل باید شامل ۳ شیت باشد:<br>
+            • <b>«عملیاتی (تملک سرمایه ای)»</b> = مأموریت‌ها + برنامه‌ها + طرح‌ها + پروژه‌های تملک سرمایه‌ای<br>
+            • <b>«عملیاتی (تملک مالی)»</b> = مأموریت‌ها + برنامه‌ها + طرح‌ها + پروژه‌های تملک مالی<br>
+            • <b>«عملیاتی (خدمت)»</b> = مأموریت‌ها + برنامه‌ها + خدمت‌ها + فعالیت‌ها<br>
+            <br>
+            <b>کدینگ:</b> ۱ رقم = مأموریت، ۳ رقم = برنامه، ۵ رقم = طرح/خدمت، ۸ رقم = پروژه/فعالیت<br>
+            <b>توجه:</b> مأموریت‌ها در هر ۳ شیت تکرار شده‌اند — فقط یکبار ساخته می‌شوند و بقیه به همان وصل می‌شوند.
+        </div>
+
+        <!-- Toolbar -->
         <div class="toolbar">
             <div class="view-switch">
                 <button id="btn-tree" class="active" onclick="switchView('tree')">🌳 درختی</button>
                 <button id="btn-table" onclick="switchView('table')">📋 جدولی</button>
             </div>
-            <button class="add-root-btn" onclick="openAddModal(null, 'mission')">
-                ➕ افزودن مأموریت
-            </button>
+
+            <div class="toolbar-actions">
+                <button class="add-root-btn" onclick="openAddModal(null, 'mission')">
+                    ➕ افزودن مأموریت
+                </button>
+
+                <!-- Import Button (ساده) -->
+                <label class="add-root-btn" style="background: #6f42c1; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; margin: 0;">
+                    📥 ایمپورت از اکسل
+                    <input type="file" accept=".xlsx, .xls" style="display: none;" onchange="handleExcelImport(this)">
+                </label>
+
+                <a href="/import-template-operational.xlsx" download class="add-root-btn" style="background: #17a2b8; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+                    📄 دانلود فایل نمونه
+                </a>
+            </div>
         </div>
+
+
+
 
         <div id="tree-view" class="tree-container">
             <div class="loading">
@@ -975,6 +1135,73 @@
             }
         });
 
+
+        // ============================================
+// Import Excel
+// ============================================
+
+
+// بستن منو با کلیک بیرون
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('import-dropdown-menu');
+    const btn = e.target.closest('.import-dropdown > button');
+    if (!btn && !e.target.closest('.import-dropdown-menu')) {
+        if (menu) menu.classList.remove('open');
+    }
+});
+
+        // ============================================
+        // Import Excel (۳ شیت: تملک سرمایه‌ای + تملک مالی + خدمت)
+        // ============================================
+        async function handleExcelImport(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            if (!confirm(`آیا از ایمپورت فایل «${file.name}» مطمئن هستید؟\n\n⚠️ توجه: تمام داده‌های عملیاتی قبلی حذف خواهند شد!`)) {
+                input.value = '';
+                return;
+            }
+
+            const btn = input.closest('label');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '⏳ در حال پردازش...';
+            btn.style.pointerEvents = 'none';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const res = await fetch(`/api/base-data/import-operational-excel`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.error || 'خطا در سرور');
+
+                let msg = `✅ ${toPersianNumbers(result.count)} ردیف جدید با موفقیت ایمپورت شد.`;
+                if (result.sheets) {
+                    const parts = [];
+                    if (result.sheets.capital?.found > 0) parts.push(`تملک سرمایه‌ای: ${toPersianNumbers(result.sheets.capital.found)}`);
+                    if (result.sheets.financial?.found > 0) parts.push(`تملک مالی: ${toPersianNumbers(result.sheets.financial.found)}`);
+                    if (result.sheets.service?.found > 0) parts.push(`خدمت: ${toPersianNumbers(result.sheets.service.found)}`);
+                    if (parts.length > 0) msg += `\n(${parts.join(' | ')})`;
+                }
+                showToast(msg);
+
+                await loadData();
+            } catch (error) {
+                console.error("Import error:", error);
+                showToast(error.message, 'error');
+            } finally {
+                btn.innerHTML = originalHTML;
+                btn.style.pointerEvents = 'auto';
+                input.value = '';
+            }
+        }
         // ============================================
         // شروع
         // ============================================
