@@ -9838,76 +9838,54 @@ if (url.pathname === "/" || url.pathname === "") {
           let totalCount = 0;
 
           // ============================================
-          // تابع کمکی: پیدا کردن یا ساختن نود
+          // ساخت statement برای درج نود (بدون اجرا)
           // ============================================
-          const findOrCreateNode = async (
+          const buildNodeStatement = (
             normalizedCode,
             title,
             type,
             level,
             levelName,
             parentId,
-            rawCode
+            rawCode,
+            nextCode
           ) => {
-            const key = `${type}:${normalizedCode}`; // ← کلید ترکیبی
-
-            // اگه قبلاً ساخته شده، برش گردون
-            if (insertedNodes[key]) {
-              return insertedNodes[key];
-            }
-
-            const nextCode = await generateNextCode(env, {
-              section: "operational",
-              type: type,
-              parent_id: parentId,
-            });
-
-            const result = await env.DB.prepare(
+            const stmt = env.DB.prepare(
               `
               INSERT INTO base_data 
               (section, type, code, title, parent_id, level, level_name, digit_count, extra_data, created_at_shamsi, updated_at_shamsi)
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `
-            )
-              .bind(
-                "operational",
-                type,
-                nextCode,
-                title,
-                parentId,
-                level,
-                levelName,
-                3,
-                JSON.stringify({
-                  original_excel_code: rawCode || normalizedCode,
-                }),
-                nowShamsi,
-                nowShamsi
-              )
-              .run();
+            ).bind(
+              "operational",
+              type,
+              nextCode,
+              title,
+              parentId,
+              level,
+              levelName,
+              3,
+              JSON.stringify({
+                original_excel_code: rawCode || normalizedCode,
+              }),
+              nowShamsi,
+              nowShamsi
+            );
 
-            const node = {
-              id: result.meta.last_row_id,
-              code: nextCode,
-              level: level,
-              type: type,
+            return {
+              stmt,
+              key: `${type}:${normalizedCode}`,
+              nextCode,
+              level,
+              type,
             };
-
-            insertedNodes[key] = node; // ← با کلید ترکیبی
-            totalCount++;
-
-            return node;
           };
 
-          // ============================================
-          // پردازش یک شیت
-          // ============================================
           const processSheet = async (items, leafType) => {
             if (items.length === 0) return;
 
             const _sheetStart = Object.keys(insertedNodes).length;
 
-            // نرمال‌سازی: حذف صفرهای ابتدایی
             const normalizedItems = items.map((item) => {
               const normalized = item.code.replace(/^0+/, "") || "0";
               return {
@@ -9919,86 +9897,158 @@ if (url.pathname === "/" || url.pathname === "") {
 
             normalizedItems.sort((a, b) => a.normalizedLen - b.normalizedLen);
 
-            // ============================================
-            // سطح ۰: مأموریت (طول ۱)
-            // ============================================
-            for (const item of normalizedItems.filter(
-              (i) => i.normalizedLen === 1
-            )) {
-              const key = `mission:${item.normalizedCode}`;
-              if (insertedNodes[key]) continue;
-              await findOrCreateNode(
-                item.normalizedCode,
-                item.title,
-                "mission",
-                0,
-                "مأموریت",
-                null,
-                item.code
-              );
-            }
+            // شمارنده‌های کد بعدی (in-memory)
+            const codeCounters = {};
+            let missionCounter = 0;
 
-            // ============================================
-            // سطح ۱: برنامه (طول ۳)
-            // ============================================
-            for (const item of normalizedItems.filter(
-              (i) => i.normalizedLen === 3
-            )) {
-              const parentCode = item.normalizedCode.substring(0, 1);
-              const parentKey = `mission:${parentCode}`;
-              const parent = insertedNodes[parentKey];
-
-              if (!parent) {
-                console.warn(
-                  `[L1] والد مأموریت برای ${item.code} (looked for ${parentKey}) یافت نشد`
-                );
-                continue;
+            // کش برای آخرین کد والد (برای محاسبه کد بعدی)
+            const getNextCode = async (type, parentId, parent) => {
+              if (!parentId) {
+                missionCounter++;
+                return String(missionCounter).padStart(3, "0");
               }
 
-              await findOrCreateNode(
-                item.normalizedCode,
-                item.title,
-                "program",
-                1,
-                "برنامه",
-                parent.id,
-                item.code
+              const key = `${type}:${parentId}`;
+              if (codeCounters[key] === undefined) {
+                const last = await env.DB.prepare(
+                  `SELECT code FROM base_data WHERE parent_id = ? AND type = ? ORDER BY code DESC LIMIT 1`
+                )
+                  .bind(parentId, type)
+                  .first();
+
+                if (last) {
+                  const suffix = last.code.substring(parent.code.length);
+                  codeCounters[key] = parseInt(suffix, 10) || 0;
+                } else {
+                  codeCounters[key] = type === "plan" ? 49999 : 0;
+                }
+              }
+
+              codeCounters[key]++;
+
+              let padLen = 3;
+              if (type === "service" || type === "plan") padLen = 5;
+
+              return (
+                parent.code + String(codeCounters[key]).padStart(padLen, "0")
               );
-            }
+            };
 
             // ============================================
-            // سطح ۲: طرح/خدمت (طول ۵)
+            // اجرای یک سطح به‌صورت batch
+            // ============================================
+            const runLevel = async (
+              levelItems,
+              type,
+              level,
+              levelName,
+              parentResolver
+            ) => {
+              const stmts = [];
+
+              for (const item of levelItems) {
+                const parent = parentResolver(item);
+                if (parent === null) continue;
+
+                const key = `${type}:${item.normalizedCode}`;
+
+                // اگه قبلاً (از شیت قبلی) ساخته شده و id داره، skip
+                if (insertedNodes[key] && insertedNodes[key].id) continue;
+
+                const nextCode = await getNextCode(
+                  type,
+                  parent ? parent.id : null,
+                  parent
+                );
+
+                const stmt = env.DB.prepare(
+                  `INSERT INTO base_data 
+                   (section, type, code, title, parent_id, level, level_name, digit_count, extra_data, created_at_shamsi, updated_at_shamsi)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                ).bind(
+                  "operational",
+                  type,
+                  nextCode,
+                  item.title,
+                  parent ? parent.id : null,
+                  level,
+                  levelName,
+                  3,
+                  JSON.stringify({ original_excel_code: item.code }),
+                  nowShamsi,
+                  nowShamsi
+                );
+
+                stmts.push({ stmt, key, nextCode, type, level });
+              }
+
+              // اجرای batch
+              const BATCH_SIZE = 50;
+              for (let i = 0; i < stmts.length; i += BATCH_SIZE) {
+                const chunk = stmts.slice(i, i + BATCH_SIZE);
+                const results = await env.DB.batch(chunk.map((c) => c.stmt));
+
+                chunk.forEach((b, idx) => {
+                  const result = results[idx];
+                  const id =
+                    result && result.meta ? result.meta.last_row_id : null;
+
+                  if (id) {
+                    insertedNodes[b.key] = {
+                      id: id,
+                      code: b.nextCode,
+                      level: b.level,
+                      type: b.type,
+                    };
+                    totalCount++;
+                  } else {
+                    console.warn(
+                      `[INSERT FAILED] ${b.key} (code: ${b.nextCode})`
+                    );
+                  }
+                });
+              }
+            };
+
+            // ============================================
+            // سطح ۰: مأموریت
+            // ============================================
+            const missions = normalizedItems.filter(
+              (i) => i.normalizedLen === 1
+            );
+            await runLevel(missions, "mission", 0, "مأموریت", (item) => {
+              const key = `mission:${item.normalizedCode}`;
+              if (insertedNodes[key]) return null; // قبلاً ساخته شده
+              return { id: null, code: null }; // والد نداره
+            });
+
+            // ============================================
+            // سطح ۱: برنامه
+            // ============================================
+            const programs = normalizedItems.filter(
+              (i) => i.normalizedLen === 3
+            );
+            await runLevel(programs, "program", 1, "برنامه", (item) => {
+              const parentCode = item.normalizedCode.substring(0, 1);
+              return insertedNodes[`mission:${parentCode}`] || null;
+            });
+
+            // ============================================
+            // سطح ۲: طرح یا خدمت
             // ============================================
             const level2Type = leafType === "activity" ? "service" : "plan";
             const level2Name = leafType === "activity" ? "خدمت" : "طرح";
-
-            for (const item of normalizedItems.filter(
+            const level2Items = normalizedItems.filter(
               (i) => i.normalizedLen === 5
-            )) {
+            );
+
+            await runLevel(level2Items, level2Type, 2, level2Name, (item) => {
               const parentCode = item.normalizedCode.substring(0, 3);
-              const parentKey = `program:${parentCode}`;
-              const parent = insertedNodes[parentKey];
-
-              if (!parent) {
-                console.warn(
-                  `[L2] والد برنامه برای ${item.code} (looked for ${parentKey}) یافت نشد`
-                );
-                continue;
-              }
-
-              await findOrCreateNode(
-                item.normalizedCode,
-                item.title,
-                level2Type,
-                2,
-                level2Name,
-                parent.id,
-                item.code
-              );
-            }
+              return insertedNodes[`program:${parentCode}`] || null;
+            });
 
             // ============================================
-            // سطح ۳: پروژه/فعالیت (طول > 5)
+            // سطح ۳: پروژه یا فعالیت
             // ============================================
             const leafName =
               leafType === "project_capital"
@@ -10007,33 +10057,15 @@ if (url.pathname === "/" || url.pathname === "") {
                 ? "پروژه (تملک مالی)"
                 : "فعالیت";
 
-            // والد سطح ۲: plan برای پروژه‌ها، service برای فعالیت‌ها
             const parent2Type = leafType === "activity" ? "service" : "plan";
-
-            for (const item of normalizedItems.filter(
+            const leafItems = normalizedItems.filter(
               (i) => i.normalizedLen > 5
-            )) {
+            );
+
+            await runLevel(leafItems, leafType, 3, leafName, (item) => {
               const parentCode = item.normalizedCode.substring(0, 5);
-              const parentKey = `${parent2Type}:${parentCode}`;
-              const parent = insertedNodes[parentKey];
-
-              if (!parent) {
-                console.warn(
-                  `[L3] والد سطح ۲ برای ${item.code} (looked for ${parentKey}) یافت نشد`
-                );
-                continue;
-              }
-
-              await findOrCreateNode(
-                item.normalizedCode,
-                item.title,
-                leafType,
-                3,
-                leafName,
-                parent.id,
-                item.code
-              );
-            }
+              return insertedNodes[`${parent2Type}:${parentCode}`] || null;
+            });
 
             const _sheetEnd = Object.keys(insertedNodes).length;
             console.log(
