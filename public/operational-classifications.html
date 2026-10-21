@@ -8,6 +8,69 @@
     <script src="/sidebar.js"></script>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css">
     <style>
+
+/* ============ Loading Overlay ============ */
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 99999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+    animation: fadeIn 0.2s;
+}
+
+.loading-overlay.show {
+    display: flex;
+}
+
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.loading-text {
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    text-align: center;
+    line-height: 1.6;
+}
+
+.loading-text .sub {
+    font-size: 13px;
+    font-weight: normal;
+    opacity: 0.8;
+    margin-top: 8px;
+}
+
+.loading-progress {
+    color: white;
+    font-size: 13px;
+    opacity: 0.9;
+    font-family: 'Sahel', 'Vazirmatn', Tahoma, sans-serif;
+    direction: ltr;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+
       * {
         box-sizing: border-box;
       }
@@ -801,6 +864,18 @@ body.dark .download-menu-item div[style*="color: #999"] {
       </div>
     </div>
     <div class="toast" id="toast"></div>
+
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">
+        ⏳ در حال پردازش...
+        <div class="sub" id="loading-sub">لطفاً صبر کنید، صفحه را نبندید</div>
+      </div>
+    </div>
+
+
     <script src="/common.js"></script>
     <script>
       // ============================================
@@ -1451,60 +1526,75 @@ document.addEventListener('click', function(e) {
       // ============================================
       // Import Excel (۳ شیت: تملک سرمایه‌ای + تملک مالی + خدمت)
       // ============================================
-      async function handleExcelImport(input, mode) {
-        const file = input.files[0];
-        if (!file) return;
+  async function handleExcelImport(input, mode) {
+    const file = input.files[0];
+    if (!file) return;
 
-        // بستن منو
-        document.getElementById("import-dropdown-menu").style.display = "none";
+    // بستن منو
+    document.getElementById('import-dropdown-menu').style.display = 'none';
 
-        const confirmMsg =
-          mode === "activities"
-            ? `آیا از ایمپورت فعالیت‌ها از فایل «${file.name}» مطمئن هستید؟\n\nفعالیت‌ها زیر خدمت‌های موجود اضافه می‌شوند.`
-            : `آیا از ایمپورت مأموریت/برنامه/طرح/خدمت/پروژه از فایل «${file.name}» مطمئن هستید؟\n\n⚠️ توجه: تمام داده‌های عملیاتی قبلی (به جز فعالیت‌ها) حذف خواهند شد!`;
+    const confirmMsg = mode === 'activities'
+        ? `آیا از ایمپورت فعالیت‌ها از فایل «${file.name}» مطمئن هستید؟\n\nفعالیت‌ها زیر خدمت‌های موجود اضافه می‌شوند.`
+        : `آیا از ایمپورت مأموریت/برنامه/طرح/خدمت/پروژه از فایل «${file.name}» مطمئن هستید؟\n\n⚠️ توجه: تمام داده‌های عملیاتی قبلی (به جز فعالیت‌ها) حذف خواهند شد!`;
 
-        if (!confirm(confirmMsg)) {
-          input.value = "";
-          return;
+    if (!confirm(confirmMsg)) {
+        input.value = '';
+        return;
+    }
+
+    // 👇 نمایش Overlay
+    showLoading(mode === 'activities' 
+        ? 'در حال ایمپورت فعالیت‌ها...' 
+        : 'در حال ایمپورت مأموریت/برنامه/طرح/خدمت/پروژه...');
+
+    // غیرفعال کردن دکمه (اختیاری)
+    const btn = input.closest('label');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '⏳ در حال پردازش...';
+    btn.style.pointerEvents = 'none';
+
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const endpoint = mode === 'activities'
+            ? '/api/base-data/import-activities-excel'
+            : '/api/base-data/import-operational-excel';
+
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+        });
+
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'خطا در سرور');
+
+        let msg = `✅ ${toPersianNumbers(result.count)} ردیف با موفقیت ایمپورت شد.`;
+        
+        if (mode === 'activities' && result.not_found > 0) {
+            msg += `\n⚠️ ${toPersianNumbers(result.not_found)} فعالیت والدشون پیدا نشد.`;
+            if (result.not_found_samples && result.not_found_samples.length > 0) {
+                msg += `\nکدهای نمونه: ${result.not_found_samples.join(', ')}`;
+            }
         }
-
-        const btn = input.closest("label");
-        const originalHTML = btn.innerHTML;
-        btn.innerHTML = "⏳ در حال پردازش...";
-        btn.style.pointerEvents = "none";
-
-        try {
-          const formData = new FormData();
-          formData.append("file", file);
-
-          const endpoint =
-            mode === "activities"
-              ? "/api/base-data/import-activities-excel"
-              : "/api/base-data/import-operational-excel";
-
-          const res = await fetch(endpoint, {
-            method: "POST",
-            headers: { Authorization: `Bearer ${token}` },
-            body: formData,
-          });
-
-          const result = await res.json();
-          if (!res.ok) throw new Error(result.error || "خطا در سرور");
-
-          let msg = `✅ ${toPersianNumbers(result.count)} ردیف با موفقیت ایمپورت شد.`;
-          showToast(msg);
-
-          await loadData();
-        } catch (error) {
-          console.error("Import error:", error);
-          showToast(error.message, "error");
-        } finally {
-          btn.innerHTML = originalHTML;
-          btn.style.pointerEvents = "auto";
-          input.value = "";
-        }
-      }
-
+        
+        // 👇 بستن Overlay
+        hideLoading();
+        
+        showToast(msg);
+        await loadData();
+    } catch (error) {
+        // 👇 بستن Overlay حتی در صورت خطا
+        hideLoading();
+        console.error("Import error:", error);
+        showToast(error.message, 'error');
+    } finally {
+        btn.innerHTML = originalHTML;
+        btn.style.pointerEvents = 'auto';
+        input.value = '';
+    }
+}
 function toggleImportMenu(e) {
     e.stopPropagation();
     const menu = document.getElementById('import-dropdown-menu');
@@ -1545,6 +1635,18 @@ document.addEventListener('click', (e) => {
         downloadMenu.style.display = 'none';
     }
 });
+
+function showLoading(message = "لطفاً صبر کنید، صفحه را نبندید") {
+    const overlay = document.getElementById('loading-overlay');
+    const sub = document.getElementById('loading-sub');
+    if (sub) sub.textContent = message;
+    if (overlay) overlay.classList.add('show');
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) overlay.classList.remove('show');
+}
 
       // ============================================
       // شروع
