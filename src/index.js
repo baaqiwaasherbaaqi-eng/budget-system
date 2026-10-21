@@ -9,7 +9,7 @@ import { toShamsi } from "./date.js";
 import { generateNextCode, buildTree, logBaseDataAction } from "./base-data.js";
 import { generatePersonCode } from "./base-data.js";
 
-import * as XLSX from 'xlsx';
+import * as XLSX from "xlsx";
 
 // تبدیل اعداد فارسی به انگلیسی
 function toEnglishNumbers(str) {
@@ -27,7 +27,7 @@ async function logAction(
   action,
   entityType,
   entityId,
-  details
+  details,
 ) {
   try {
     const ip =
@@ -40,7 +40,7 @@ async function logAction(
       `
       INSERT INTO audit_log (user_id, username, action, entity_type, entity_id, details, ip_address, user_agent)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `
+    `,
     )
       .bind(
         userData ? userData.userId : null,
@@ -50,7 +50,7 @@ async function logAction(
         entityId || null,
         details ? JSON.stringify(details) : null,
         ip,
-        userAgent
+        userAgent,
       )
       .run();
   } catch (error) {
@@ -64,18 +64,18 @@ async function checkRateLimit(
   ip,
   action,
   maxRequests = 10,
-  windowSeconds = 60
+  windowSeconds = 60,
 ) {
   try {
     const windowStart = new Date(
-      Date.now() - windowSeconds * 1000
+      Date.now() - windowSeconds * 1000,
     ).toISOString();
 
     const result = await env.DB.prepare(
       `
       SELECT COUNT(*) as count FROM audit_log
       WHERE ip_address = ? AND action = ? AND created_at > ?
-    `
+    `,
     )
       .bind(ip, action, windowStart)
       .first();
@@ -86,13 +86,13 @@ async function checkRateLimit(
   }
 }
 
-
 // چک Permission
 async function checkPermission(env, userId, permissionKey) {
   try {
     // گرفتن نقش کاربر
     const user = await env.DB.prepare("SELECT role FROM users WHERE id = ?")
-      .bind(userId).first();
+      .bind(userId)
+      .first();
 
     if (!user) return false;
 
@@ -101,8 +101,10 @@ async function checkPermission(env, userId, permissionKey) {
 
     // چک user_permissions (override)
     const userPerm = await env.DB.prepare(
-      "SELECT granted FROM user_permissions WHERE user_id = ? AND permission_key = ?"
-    ).bind(userId, permissionKey).first();
+      "SELECT granted FROM user_permissions WHERE user_id = ? AND permission_key = ?",
+    )
+      .bind(userId, permissionKey)
+      .first();
 
     if (userPerm) {
       return userPerm.granted === 1;
@@ -110,8 +112,10 @@ async function checkPermission(env, userId, permissionKey) {
 
     // چک role_permissions
     const rolePerm = await env.DB.prepare(
-      "SELECT granted FROM role_permissions WHERE role = ? AND permission_key = ?"
-    ).bind(user.role, permissionKey).first();
+      "SELECT granted FROM role_permissions WHERE role = ? AND permission_key = ?",
+    )
+      .bind(user.role, permissionKey)
+      .first();
 
     if (rolePerm) {
       return rolePerm.granted === 1;
@@ -129,21 +133,21 @@ async function checkPermission(env, userId, permissionKey) {
 // ============================================
 function getRoleFromPosition(position) {
   if (!position) return "viewer";
-  
+
   const pos = position.trim();
-  
+
   // نقش‌های manager
-  const managerKeywords = ['شهردار', 'معاون', 'مدیر', 'رئیس', 'سرپرست'];
+  const managerKeywords = ["شهردار", "معاون", "مدیر", "رئیس", "سرپرست"];
   for (const kw of managerKeywords) {
     if (pos.includes(kw)) return "manager";
   }
-  
+
   // نقش‌های expert
-  const expertKeywords = ['کارشناس', 'مسئول', 'کارشناس ارشد', 'مشاور'];
+  const expertKeywords = ["کارشناس", "مسئول", "کارشناس ارشد", "مشاور"];
   for (const kw of expertKeywords) {
     if (pos.includes(kw)) return "expert";
   }
-  
+
   // سایر → viewer
   return "viewer";
 }
@@ -170,12 +174,10 @@ export default {
       "Content-Type": "application/json; charset=utf-8",
     };
 
-
-// هدایت خودکار مسیر ریشه به صفحه لاگین
-if (url.pathname === "/" || url.pathname === "") {
-  return Response.redirect(url.origin + "/login", 302);
-}
-
+    // هدایت خودکار مسیر ریشه به صفحه لاگین
+    if (url.pathname === "/" || url.pathname === "") {
+      return Response.redirect(url.origin + "/login", 302);
+    }
 
     // CORS preflight
     if (request.method === "OPTIONS") {
@@ -200,7 +202,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
@@ -211,7 +213,7 @@ if (url.pathname === "/" || url.pathname === "") {
                     p.mobile as person_mobile
              FROM users u
              LEFT JOIN persons p ON p.user_id = u.id
-             WHERE u.username = ?`
+             WHERE u.username = ?`,
           )
             .bind(nationalId)
             .first();
@@ -225,7 +227,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 404,
                 headers,
-              }
+              },
             );
           }
 
@@ -235,7 +237,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 403,
                 headers,
-              }
+              },
             );
           }
 
@@ -251,13 +253,13 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
           // تولید کد ۶ رقمی
           const otpCode = Math.floor(
-            100000 + Math.random() * 900000
+            100000 + Math.random() * 900000,
           ).toString();
 
           // تاریخ انقضا: ۵ دقیقه بعد
@@ -267,7 +269,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
           // حذف OTP های قبلی pending
           await env.DB.prepare(
-            "UPDATE login_otp SET status = 'expired' WHERE user_id = ? AND status = 'pending'"
+            "UPDATE login_otp SET status = 'expired' WHERE user_id = ? AND status = 'pending'",
           )
             .bind(user.id)
             .run();
@@ -276,7 +278,7 @@ if (url.pathname === "/" || url.pathname === "") {
           const result = await env.DB.prepare(
             `INSERT INTO login_otp 
              (user_id, username, mobile, otp_code, otp_expires_at, ip_address, status, created_at_shamsi)
-             VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)`
+             VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)`,
           )
             .bind(
               user.id,
@@ -285,7 +287,7 @@ if (url.pathname === "/" || url.pathname === "") {
               otpCode,
               expiresAt,
               request.headers.get("CF-Connecting-IP") || null,
-              nowShamsi
+              nowShamsi,
             )
             .run();
 
@@ -311,7 +313,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 200,
               headers,
-            }
+            },
           );
         } catch (error) {
           console.error("Request OTP error:", error);
@@ -339,12 +341,12 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
           const otp = await env.DB.prepare(
-            `SELECT * FROM login_otp WHERE id = ?`
+            `SELECT * FROM login_otp WHERE id = ?`,
           )
             .bind(otp_id)
             .first();
@@ -362,14 +364,14 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
           // چک انقضا
           if (new Date(otp.otp_expires_at) < new Date()) {
             await env.DB.prepare(
-              "UPDATE login_otp SET status = 'expired' WHERE id = ?"
+              "UPDATE login_otp SET status = 'expired' WHERE id = ?",
             )
               .bind(otp_id)
               .run();
@@ -379,14 +381,14 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
           // چک تعداد تلاش
           if (otp.attempts >= 5) {
             await env.DB.prepare(
-              "UPDATE login_otp SET status = 'failed' WHERE id = ?"
+              "UPDATE login_otp SET status = 'failed' WHERE id = ?",
             )
               .bind(otp_id)
               .run();
@@ -396,14 +398,14 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
           // چک کد
           if (otp.otp_code !== otp_code) {
             await env.DB.prepare(
-              "UPDATE login_otp SET attempts = attempts + 1 WHERE id = ?"
+              "UPDATE login_otp SET attempts = attempts + 1 WHERE id = ?",
             )
               .bind(otp_id)
               .run();
@@ -416,7 +418,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
           // موفق → getUser
           const user = await env.DB.prepare(
-            "SELECT * FROM users WHERE id = ? AND is_active = 1"
+            "SELECT * FROM users WHERE id = ? AND is_active = 1",
           )
             .bind(otp.user_id)
             .first();
@@ -427,13 +429,13 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 404,
                 headers,
-              }
+              },
             );
           }
 
           // آپدیت OTP
           await env.DB.prepare(
-            "UPDATE login_otp SET status = 'verified', verified_at = CURRENT_TIMESTAMP WHERE id = ?"
+            "UPDATE login_otp SET status = 'verified', verified_at = CURRENT_TIMESTAMP WHERE id = ?",
           )
             .bind(otp_id)
             .run();
@@ -443,7 +445,7 @@ if (url.pathname === "/" || url.pathname === "") {
             user.id,
             user.username,
             user.role,
-            env.JWT_SECRET
+            env.JWT_SECRET,
           );
 
           // لاگ
@@ -455,8 +457,8 @@ if (url.pathname === "/" || url.pathname === "") {
               "login",
               "user",
               user.id,
-              { method: "otp" }
-            )
+              { method: "otp" },
+            ),
           );
 
           return new Response(
@@ -473,7 +475,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 200,
               headers,
-            }
+            },
           );
         } catch (error) {
           console.error("Verify OTP error:", error);
@@ -497,14 +499,14 @@ if (url.pathname === "/" || url.pathname === "") {
               error:
                 "تعداد درخواست‌های شما بیش از حد مجاز است. لطفاً یک دقیقه صبر کنید.",
             }),
-            { status: 429, headers }
+            { status: 429, headers },
           );
         }
 
         const { username, password } = await request.json();
 
         const user = await env.DB.prepare(
-          "SELECT * FROM users WHERE username = ? AND is_active = 1"
+          "SELECT * FROM users WHERE username = ? AND is_active = 1",
         )
           .bind(username)
           .first();
@@ -515,14 +517,14 @@ if (url.pathname === "/" || url.pathname === "") {
             logAction(env, request, null, "login_failed", "user", null, {
               username: username,
               reason: !user ? "user_not_found" : "wrong_password",
-            })
+            }),
           );
 
           return new Response(
             JSON.stringify({
               error: "نام کاربری یا رمز عبور اشتباه است",
             }),
-            { status: 401, headers }
+            { status: 401, headers },
           );
         }
 
@@ -530,7 +532,7 @@ if (url.pathname === "/" || url.pathname === "") {
           user.id,
           user.username,
           user.role,
-          env.JWT_SECRET
+          env.JWT_SECRET,
         );
 
         // ثبت لاگ ورود موفق
@@ -542,8 +544,8 @@ if (url.pathname === "/" || url.pathname === "") {
             "login",
             "user",
             user.id,
-            { success: true }
-          )
+            { success: true },
+          ),
         );
 
         return new Response(
@@ -557,7 +559,7 @@ if (url.pathname === "/" || url.pathname === "") {
               organization: user.organization,
             },
           }),
-          { status: 200, headers }
+          { status: 200, headers },
         );
       }
 
@@ -567,7 +569,7 @@ if (url.pathname === "/" || url.pathname === "") {
           JSON.stringify({
             message: "سلام! سامانه بودجه شهرداری آماده است",
           }),
-          { status: 200, headers }
+          { status: 200, headers },
         );
       }
 
@@ -578,7 +580,7 @@ if (url.pathname === "/" || url.pathname === "") {
             message: "دیتابیس کار میکنه",
             result: result,
           }),
-          { status: 200, headers }
+          { status: 200, headers },
         );
       }
 
@@ -587,7 +589,7 @@ if (url.pathname === "/" || url.pathname === "") {
       // دریافت لیست سال‌های مالی
       if (url.pathname === "/api/fiscal-years" && request.method === "GET") {
         const years = await env.DB.prepare(
-          "SELECT * FROM fiscal_years ORDER BY year DESC"
+          "SELECT * FROM fiscal_years ORDER BY year DESC",
         ).all();
 
         return new Response(JSON.stringify(years.results), {
@@ -610,13 +612,13 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
 
         try {
           const result = await env.DB.prepare(
-            "INSERT INTO fiscal_years (year, start_date, end_date) VALUES (?, ?, ?)"
+            "INSERT INTO fiscal_years (year, start_date, end_date) VALUES (?, ?, ?)",
           )
             .bind(year, start_date, end_date)
             .run();
@@ -626,7 +628,7 @@ if (url.pathname === "/" || url.pathname === "") {
               success: true,
               id: result.meta.last_row_id,
             }),
-            { status: 201, headers }
+            { status: 201, headers },
           );
         } catch (error) {
           return new Response(
@@ -634,7 +636,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
       }
@@ -652,7 +654,7 @@ if (url.pathname === "/" || url.pathname === "") {
         await env.DB.prepare("UPDATE fiscal_years SET is_active = 0").run();
 
         await env.DB.prepare(
-          "UPDATE fiscal_years SET is_active = 1, status = ? WHERE year = ?"
+          "UPDATE fiscal_years SET is_active = 1, status = ? WHERE year = ?",
         )
           .bind("active", year)
           .run();
@@ -700,12 +702,12 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
           const result = await env.DB.prepare(
-            "UPDATE fiscal_years SET start_date = ?, end_date = ? WHERE year = ?"
+            "UPDATE fiscal_years SET start_date = ?, end_date = ? WHERE year = ?",
           )
             .bind(start_date, end_date, year)
             .run();
@@ -717,7 +719,7 @@ if (url.pathname === "/" || url.pathname === "") {
               success: true,
               changes: result.meta.changes,
             }),
-            { status: 200, headers }
+            { status: 200, headers },
           );
         } catch (error) {
           console.error("Edit year error:", error.message);
@@ -831,7 +833,7 @@ if (url.pathname === "/" || url.pathname === "") {
               try {
                 // چک: کاربر قبلاً هست؟
                 const existingUser = await env.DB.prepare(
-                  "SELECT id FROM users WHERE username = ?"
+                  "SELECT id FROM users WHERE username = ?",
                 )
                   .bind(national_id)
                   .first();
@@ -843,7 +845,7 @@ if (url.pathname === "/" || url.pathname === "") {
                   const userResult = await env.DB.prepare(
                     `INSERT INTO users 
                    (username, password_hash, full_name, role, organization, is_active, mobile)
-                   VALUES (?, ?, ?, ?, ?, 1, ?)`
+                   VALUES (?, ?, ?, ?, ?, 1, ?)`,
                   )
                     .bind(
                       national_id,
@@ -851,7 +853,7 @@ if (url.pathname === "/" || url.pathname === "") {
                       full_name,
                       role,
                       null,
-                      mobile || null
+                      mobile || null,
                     )
                     .run();
 
@@ -859,13 +861,13 @@ if (url.pathname === "/" || url.pathname === "") {
 
                   // آپدیت person.user_id
                   await env.DB.prepare(
-                    "UPDATE persons SET user_id = ? WHERE id = ?"
+                    "UPDATE persons SET user_id = ? WHERE id = ?",
                   )
                     .bind(userId, newPersonId)
                     .run();
 
                   console.log(
-                    `✅ کاربر خودکار ساخته شد: ${national_id} (${role})`
+                    `✅ کاربر خودکار ساخته شد: ${national_id} (${role})`,
                   );
                 }
               } catch (userError) {
@@ -880,7 +882,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 id: newPersonId,
                 code: code,
               }),
-              { status: 201, headers }
+              { status: 201, headers },
             );
           }
 
@@ -927,7 +929,7 @@ if (url.pathname === "/" || url.pathname === "") {
           if (!person_type || !full_name) {
             return new Response(
               JSON.stringify({ error: "نوع شخص و نام کامل الزامی است" }),
-              { status: 400, headers }
+              { status: 400, headers },
             );
           }
 
@@ -951,7 +953,7 @@ if (url.pathname === "/" || url.pathname === "") {
           let level = 1;
           if (parent_id) {
             const parent = await env.DB.prepare(
-              "SELECT level FROM persons WHERE id = ?"
+              "SELECT level FROM persons WHERE id = ?",
             )
               .bind(parent_id)
               .first();
@@ -963,13 +965,13 @@ if (url.pathname === "/" || url.pathname === "") {
             if (!national_id) {
               return new Response(
                 JSON.stringify({ error: "کد ملی برای اشخاص الزامی است" }),
-                { status: 400, headers }
+                { status: 400, headers },
               );
             }
             if (!mobile) {
               return new Response(
                 JSON.stringify({ error: "شماره موبایل برای اشخاص الزامی است" }),
-                { status: 400, headers }
+                { status: 400, headers },
               );
             }
           }
@@ -984,7 +986,7 @@ if (url.pathname === "/" || url.pathname === "") {
              phone, mobile, address, postal_code, email,
              bank_name, bank_account, iban,
              notes, extra_data, created_at_shamsi, updated_at_shamsi)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           )
             .bind(
               person_type,
@@ -1016,7 +1018,7 @@ if (url.pathname === "/" || url.pathname === "") {
               notes || null,
               extra_data ? JSON.stringify(extra_data) : null,
               nowShamsi,
-              nowShamsi
+              nowShamsi,
             )
             .run();
 
@@ -1026,7 +1028,7 @@ if (url.pathname === "/" || url.pathname === "") {
           if (level === 4 && national_id) {
             try {
               const existingUser = await env.DB.prepare(
-                "SELECT id FROM users WHERE username = ?"
+                "SELECT id FROM users WHERE username = ?",
               )
                 .bind(national_id)
                 .first();
@@ -1038,7 +1040,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 const userResult = await env.DB.prepare(
                   `INSERT INTO users 
                    (username, password_hash, full_name, role, organization, is_active, mobile)
-                   VALUES (?, 'OTP_ONLY', ?, 'viewer', NULL, 1, ?)`
+                   VALUES (?, 'OTP_ONLY', ?, 'viewer', NULL, 1, ?)`,
                 )
                   .bind(national_id, full_name, mobile || null)
                   .run();
@@ -1047,7 +1049,7 @@ if (url.pathname === "/" || url.pathname === "") {
               }
 
               await env.DB.prepare(
-                "UPDATE persons SET user_id = ? WHERE id = ?"
+                "UPDATE persons SET user_id = ? WHERE id = ?",
               )
                 .bind(userId, newPersonId)
                 .run();
@@ -1062,7 +1064,7 @@ if (url.pathname === "/" || url.pathname === "") {
               id: newPersonId,
               code: code,
             }),
-            { status: 201, headers }
+            { status: 201, headers },
           );
         } catch (error) {
           console.error("Person POST error:", error);
@@ -1086,7 +1088,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -1137,7 +1139,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
@@ -1151,7 +1153,7 @@ if (url.pathname === "/" || url.pathname === "") {
               bank_name = ?, bank_account = ?, iban = ?,
               notes = ?, extra_data = ?, is_active = ?, level_name = ?,
               updated_at = CURRENT_TIMESTAMP, updated_at_shamsi = ?
-            WHERE id = ?`
+            WHERE id = ?`,
           )
             .bind(
               full_name,
@@ -1180,7 +1182,7 @@ if (url.pathname === "/" || url.pathname === "") {
               is_active !== undefined ? (is_active ? 1 : 0) : 1,
               level_name || null,
               nowShamsi,
-              id
+              id,
             )
             .run();
 
@@ -1216,7 +1218,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -1234,7 +1236,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
           // چک فرزندان
           const children = await env.DB.prepare(
-            "SELECT COUNT(*) as count FROM persons WHERE parent_id = ?"
+            "SELECT COUNT(*) as count FROM persons WHERE parent_id = ?",
           )
             .bind(id)
             .first();
@@ -1244,12 +1246,12 @@ if (url.pathname === "/" || url.pathname === "") {
               JSON.stringify({
                 error: `این شخص ${children.count} زیرمجموعه دارد. ابتدا آن‌ها را حذف کنید.`,
               }),
-              { status: 400, headers }
+              { status: 400, headers },
             );
           }
 
           const result = await env.DB.prepare(
-            "DELETE FROM persons WHERE id = ?"
+            "DELETE FROM persons WHERE id = ?",
           )
             .bind(id)
             .run();
@@ -1340,7 +1342,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
 
@@ -1350,7 +1352,7 @@ if (url.pathname === "/" || url.pathname === "") {
             INSERT INTO economic_classifications 
             (fiscal_year_id, type, category, main_code, chapter_code, sub_code, title, parent_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-          `
+          `,
           )
             .bind(
               fiscal_year_id,
@@ -1360,7 +1362,7 @@ if (url.pathname === "/" || url.pathname === "") {
               chapter_code,
               sub_code,
               title,
-              parent_id || null
+              parent_id || null,
             )
             .run();
 
@@ -1369,7 +1371,7 @@ if (url.pathname === "/" || url.pathname === "") {
               success: true,
               id: result.meta.last_row_id,
             }),
-            { status: 201, headers }
+            { status: 201, headers },
           );
         } catch (error) {
           return new Response(JSON.stringify({ error: "خطا در ثبت" }), {
@@ -1387,7 +1389,7 @@ if (url.pathname === "/" || url.pathname === "") {
         const id = url.pathname.split("/").pop();
 
         await env.DB.prepare(
-          "DELETE FROM economic_classifications WHERE id = ?"
+          "DELETE FROM economic_classifications WHERE id = ?",
         )
           .bind(id)
           .run();
@@ -1443,7 +1445,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
 
@@ -1453,7 +1455,7 @@ if (url.pathname === "/" || url.pathname === "") {
             INSERT INTO organizations 
             (fiscal_year_id, name, type, manager_name, finance_manager_name, parent_id, is_cost_center)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-          `
+          `,
           )
             .bind(
               fiscal_year_id,
@@ -1462,7 +1464,7 @@ if (url.pathname === "/" || url.pathname === "") {
               manager_name || null,
               finance_manager_name || null,
               parent_id || null,
-              is_cost_center ? 1 : 0
+              is_cost_center ? 1 : 0,
             )
             .run();
 
@@ -1474,7 +1476,7 @@ if (url.pathname === "/" || url.pathname === "") {
           if (is_primary && role) {
             try {
               const person = await env.DB.prepare(
-                "SELECT user_id FROM persons WHERE id = ?"
+                "SELECT user_id FROM persons WHERE id = ?",
               )
                 .bind(personId)
                 .first();
@@ -1483,7 +1485,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 const newRole = getRoleFromPosition(role);
 
                 await env.DB.prepare(
-                  "UPDATE users SET role = ?, organization = ? WHERE id = ?"
+                  "UPDATE users SET role = ?, organization = ? WHERE id = ?",
                 )
                   .bind(newRole, role, person.user_id)
                   .run();
@@ -1503,7 +1505,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 201,
               headers,
-            }
+            },
           );
         } catch (error) {
           return new Response(JSON.stringify({ error: "خطا در ثبت" }), {
@@ -1596,7 +1598,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
 
@@ -1614,7 +1616,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
         // اعتبارسنجی: organization_id و economic_class_id باید توی base_data باشن
         const org = await env.DB.prepare(
-          "SELECT id FROM base_data WHERE id = ? AND section = 'organization'"
+          "SELECT id FROM base_data WHERE id = ? AND section = 'organization'",
         )
           .bind(organization_id)
           .first();
@@ -1622,12 +1624,12 @@ if (url.pathname === "/" || url.pathname === "") {
         if (!org) {
           return new Response(
             JSON.stringify({ error: "سازمان انتخاب شده معتبر نیست" }),
-            { status: 400, headers }
+            { status: 400, headers },
           );
         }
 
         const econ = await env.DB.prepare(
-          "SELECT id FROM base_data WHERE id = ? AND section = 'economic'"
+          "SELECT id FROM base_data WHERE id = ? AND section = 'economic'",
         )
           .bind(economic_class_id)
           .first();
@@ -1637,7 +1639,7 @@ if (url.pathname === "/" || url.pathname === "") {
             JSON.stringify({
               error: "طبقه‌بندی اقتصادی انتخاب شده معتبر نیست",
             }),
-            { status: 400, headers }
+            { status: 400, headers },
           );
         }
 
@@ -1649,7 +1651,7 @@ if (url.pathname === "/" || url.pathname === "") {
                   INSERT INTO budget_proposals 
                   (fiscal_year_id, organization_id, economic_class_id, title, amount, description, proposed_by, created_at_shamsi)
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                `
+                `,
           )
             .bind(
               fiscal_year_id,
@@ -1659,7 +1661,7 @@ if (url.pathname === "/" || url.pathname === "") {
               amount,
               description || null,
               userData.userId,
-              nowShamsi
+              nowShamsi,
             )
             .run();
 
@@ -1668,13 +1670,13 @@ if (url.pathname === "/" || url.pathname === "") {
               success: true,
               id: result.meta.last_row_id,
             }),
-            { status: 201, headers }
+            { status: 201, headers },
           );
         } catch (error) {
           console.error("Budget proposal POST error:", error);
           return new Response(
             JSON.stringify({ error: "خطا در ثبت: " + error.message }),
-            { status: 400, headers }
+            { status: 400, headers },
           );
         }
       }
@@ -1726,7 +1728,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
         // دریافت وضعیت فعلی
         const current = await env.DB.prepare(
-          "SELECT status FROM budget_proposals WHERE id = ?"
+          "SELECT status FROM budget_proposals WHERE id = ?",
         )
           .bind(id)
           .first();
@@ -1744,7 +1746,7 @@ if (url.pathname === "/" || url.pathname === "") {
             JSON.stringify({
               error: "این بودجه در حال حاضر در این وضعیت است",
             }),
-            { status: 400, headers }
+            { status: 400, headers },
           );
         }
 
@@ -1754,7 +1756,7 @@ if (url.pathname === "/" || url.pathname === "") {
             JSON.stringify({
               error: "این بودجه در حال حاضر در این وضعیت است",
             }),
-            { status: 400, headers }
+            { status: 400, headers },
           );
         }
 
@@ -1776,7 +1778,7 @@ if (url.pathname === "/" || url.pathname === "") {
               JSON.stringify({
                 error: "شما دسترسی این تغییر وضعیت را ندارید",
               }),
-              { status: 403, headers }
+              { status: 403, headers },
             );
           }
         }
@@ -1788,14 +1790,14 @@ if (url.pathname === "/" || url.pathname === "") {
             INSERT INTO approval_history 
             (budget_proposal_id, from_status, to_status, action_by, comment)
             VALUES (?, ?, ?, ?, ?)
-          `
+          `,
           )
             .bind(
               id,
               current.status,
               new_status,
               userData.userId,
-              comment || null
+              comment || null,
             )
             .run();
         } catch (historyError) {
@@ -1809,13 +1811,13 @@ if (url.pathname === "/" || url.pathname === "") {
                 action_by: userData.userId,
               },
             }),
-            { status: 500, headers }
+            { status: 500, headers },
           );
         }
 
         // آپدیت وضعیت
         await env.DB.prepare(
-          "UPDATE budget_proposals SET status = ? WHERE id = ?"
+          "UPDATE budget_proposals SET status = ? WHERE id = ?",
         )
           .bind(new_status, id)
           .run();
@@ -1829,8 +1831,8 @@ if (url.pathname === "/" || url.pathname === "") {
             "budget_status_changed",
             "budget_proposal",
             id,
-            { from: current.status, to: new_status, comment: comment }
-          )
+            { from: current.status, to: new_status, comment: comment },
+          ),
         );
 
         return new Response(JSON.stringify({ success: true }), {
@@ -1853,7 +1855,7 @@ if (url.pathname === "/" || url.pathname === "") {
           LEFT JOIN users u ON ah.action_by = u.id
           WHERE ah.budget_proposal_id = ?
           ORDER BY ah.action_at DESC
-        `
+        `,
         )
           .bind(budgetId)
           .all();
@@ -1876,7 +1878,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
 
@@ -1887,7 +1889,7 @@ if (url.pathname === "/" || url.pathname === "") {
           FROM budget_proposals
           WHERE fiscal_year_id = ?
           GROUP BY status
-        `
+        `,
         )
           .bind(fiscalYearId)
           .all();
@@ -1901,7 +1903,7 @@ if (url.pathname === "/" || url.pathname === "") {
           WHERE bp.fiscal_year_id = ?
           GROUP BY bp.organization_id
           ORDER BY total DESC
-        `
+        `,
         )
           .bind(fiscalYearId)
           .all();
@@ -1914,7 +1916,7 @@ if (url.pathname === "/" || url.pathname === "") {
           LEFT JOIN economic_classifications ec ON bp.economic_class_id = ec.id
           WHERE bp.fiscal_year_id = ?
           GROUP BY ec.type
-        `
+        `,
         )
           .bind(fiscalYearId)
           .all();
@@ -1925,7 +1927,7 @@ if (url.pathname === "/" || url.pathname === "") {
           SELECT SUM(amount) as total_amount, COUNT(*) as total_count
           FROM budget_proposals
           WHERE fiscal_year_id = ?
-        `
+        `,
         )
           .bind(fiscalYearId)
           .first();
@@ -1937,7 +1939,7 @@ if (url.pathname === "/" || url.pathname === "") {
             byOrganization: byOrganization.results,
             byType: byType.results,
           }),
-          { status: 200, headers }
+          { status: 200, headers },
         );
       }
 
@@ -1954,7 +1956,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
 
@@ -1972,7 +1974,7 @@ if (url.pathname === "/" || url.pathname === "") {
           LEFT JOIN users u ON bp.proposed_by = u.id
           WHERE bp.fiscal_year_id = ?
           ORDER BY bp.created_at DESC
-        `
+        `,
         )
           .bind(fiscalYearId)
           .all();
@@ -2041,13 +2043,13 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
 
         // بررسی سقف بودجه
         const budget = await env.DB.prepare(
-          "SELECT amount FROM budget_proposals WHERE id = ?"
+          "SELECT amount FROM budget_proposals WHERE id = ?",
         )
           .bind(approved_budget_id)
           .first();
@@ -2061,7 +2063,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
         // جمع تخصیص‌های قبلی
         const previousAllocations = await env.DB.prepare(
-          "SELECT SUM(amount) as total FROM budget_allocations WHERE approved_budget_id = ?"
+          "SELECT SUM(amount) as total FROM budget_allocations WHERE approved_budget_id = ?",
         )
           .bind(approved_budget_id)
           .first();
@@ -2074,7 +2076,7 @@ if (url.pathname === "/" || url.pathname === "") {
             JSON.stringify({
               error: `مجموع تخصیص (${totalAllocated}) از سقف بودجه (${budget.amount}) بیشتر است`,
             }),
-            { status: 400, headers }
+            { status: 400, headers },
           );
         }
 
@@ -2084,14 +2086,14 @@ if (url.pathname === "/" || url.pathname === "") {
             INSERT INTO budget_allocations 
             (approved_budget_id, organization_id, amount, percentage, allocation_date)
             VALUES (?, ?, ?, ?, ?)
-          `
+          `,
           )
             .bind(
               approved_budget_id,
               organization_id,
               amount,
               percentage || null,
-              allocation_date || null
+              allocation_date || null,
             )
             .run();
 
@@ -2104,8 +2106,8 @@ if (url.pathname === "/" || url.pathname === "") {
               "allocation_created",
               "budget_allocation",
               result.meta.last_row_id,
-              { amount: amount, organization_id: organization_id }
-            )
+              { amount: amount, organization_id: organization_id },
+            ),
           );
 
           return new Response(
@@ -2113,7 +2115,7 @@ if (url.pathname === "/" || url.pathname === "") {
               success: true,
               id: result.meta.last_row_id,
             }),
-            { status: 201, headers }
+            { status: 201, headers },
           );
         } catch (error) {
           return new Response(
@@ -2121,7 +2123,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
       }
@@ -2195,13 +2197,13 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
 
         // بررسی سقف تخصیص
         const allocation = await env.DB.prepare(
-          "SELECT amount FROM budget_allocations WHERE id = ?"
+          "SELECT amount FROM budget_allocations WHERE id = ?",
         )
           .bind(allocation_id)
           .first();
@@ -2215,7 +2217,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
         // جمع اجراهای قبلی
         const previousExecutions = await env.DB.prepare(
-          "SELECT SUM(amount) as total FROM budget_executions WHERE allocation_id = ?"
+          "SELECT SUM(amount) as total FROM budget_executions WHERE allocation_id = ?",
         )
           .bind(allocation_id)
           .first();
@@ -2229,7 +2231,7 @@ if (url.pathname === "/" || url.pathname === "") {
             JSON.stringify({
               error: `مبلغ درخواستی از مانده تخصیص بیشتر است. مانده: ${remaining} ریال`,
             }),
-            { status: 400, headers }
+            { status: 400, headers },
           );
         }
 
@@ -2251,7 +2253,7 @@ if (url.pathname === "/" || url.pathname === "") {
             INSERT INTO budget_executions 
             (allocation_id, technical_code, amount, description, execution_date, accounting_doc_no)
             VALUES (?, ?, ?, ?, ?, ?)
-          `
+          `,
           )
             .bind(
               allocation_id,
@@ -2259,7 +2261,7 @@ if (url.pathname === "/" || url.pathname === "") {
               amount,
               description || null,
               execution_date || null,
-              accounting_doc_no || null
+              accounting_doc_no || null,
             )
             .run();
 
@@ -2268,7 +2270,7 @@ if (url.pathname === "/" || url.pathname === "") {
               success: true,
               id: result.meta.last_row_id,
             }),
-            { status: 201, headers }
+            { status: 201, headers },
           );
         } catch (error) {
           return new Response(
@@ -2276,7 +2278,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
       }
@@ -2306,7 +2308,7 @@ if (url.pathname === "/" || url.pathname === "") {
         const allocationId = url.pathname.split("/").pop();
 
         const allocation = await env.DB.prepare(
-          "SELECT amount FROM budget_allocations WHERE id = ?"
+          "SELECT amount FROM budget_allocations WHERE id = ?",
         )
           .bind(allocationId)
           .first();
@@ -2319,7 +2321,7 @@ if (url.pathname === "/" || url.pathname === "") {
         }
 
         const executed = await env.DB.prepare(
-          "SELECT SUM(amount) as total FROM budget_executions WHERE allocation_id = ?"
+          "SELECT SUM(amount) as total FROM budget_executions WHERE allocation_id = ?",
         )
           .bind(allocationId)
           .first();
@@ -2333,7 +2335,7 @@ if (url.pathname === "/" || url.pathname === "") {
             executed: totalExecuted,
             remaining: remaining,
           }),
-          { status: 200, headers }
+          { status: 200, headers },
         );
       }
 
@@ -2351,7 +2353,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 401,
               headers,
-            }
+            },
           );
         }
 
@@ -2447,7 +2449,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 401,
               headers,
-            }
+            },
           );
         }
 
@@ -2465,7 +2467,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
         // گرفتن کاربر
         const user = await env.DB.prepare(
-          "SELECT id, username, full_name, role FROM users WHERE id = ?"
+          "SELECT id, username, full_name, role FROM users WHERE id = ?",
         )
           .bind(userId)
           .first();
@@ -2479,14 +2481,14 @@ if (url.pathname === "/" || url.pathname === "") {
 
         // Permission های نقش
         const rolePerms = await env.DB.prepare(
-          "SELECT permission_key, granted FROM role_permissions WHERE role = ?"
+          "SELECT permission_key, granted FROM role_permissions WHERE role = ?",
         )
           .bind(user.role)
           .all();
 
         // Permission های اختصاصی
         const userPerms = await env.DB.prepare(
-          "SELECT permission_key, granted FROM user_permissions WHERE user_id = ?"
+          "SELECT permission_key, granted FROM user_permissions WHERE user_id = ?",
         )
           .bind(userId)
           .all();
@@ -2497,7 +2499,7 @@ if (url.pathname === "/" || url.pathname === "") {
             role_permissions: rolePerms.results,
             user_permissions: userPerms.results,
           }),
-          { status: 200, headers }
+          { status: 200, headers },
         );
       }
 
@@ -2513,7 +2515,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 401,
               headers,
-            }
+            },
           );
         }
 
@@ -2528,7 +2530,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 403,
               headers,
-            }
+            },
           );
         }
 
@@ -2558,7 +2560,7 @@ if (url.pathname === "/" || url.pathname === "") {
           if (perm.granted === null || perm.granted === undefined) {
             // حذف از user_permissions (به پیش‌فرض برمی‌گرده)
             await env.DB.prepare(
-              `DELETE FROM user_permissions WHERE user_id = ? AND permission_key = ?`
+              `DELETE FROM user_permissions WHERE user_id = ? AND permission_key = ?`,
             )
               .bind(userId, perm.permission_key)
               .run();
@@ -2566,13 +2568,13 @@ if (url.pathname === "/" || url.pathname === "") {
             // درج/آپدیت
             await env.DB.prepare(
               `INSERT OR REPLACE INTO user_permissions (user_id, permission_key, granted, granted_by)
-               VALUES (?, ?, ?, ?)`
+               VALUES (?, ?, ?, ?)`,
             )
               .bind(
                 userId,
                 perm.permission_key,
                 perm.granted ? 1 : 0,
-                userData.userId
+                userData.userId,
               )
               .run();
           }
@@ -2589,8 +2591,8 @@ if (url.pathname === "/" || url.pathname === "") {
             parseInt(userId),
             {
               count: permissions.length,
-            }
-          )
+            },
+          ),
         );
 
         return new Response(JSON.stringify({ success: true }), {
@@ -2608,7 +2610,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 401,
               headers,
-            }
+            },
           );
         }
 
@@ -2636,14 +2638,14 @@ if (url.pathname === "/" || url.pathname === "") {
 
         // Permission های نقش
         const rolePerms = await env.DB.prepare(
-          "SELECT permission_key, granted FROM role_permissions WHERE role = ? AND granted = 1"
+          "SELECT permission_key, granted FROM role_permissions WHERE role = ? AND granted = 1",
         )
           .bind(user.role)
           .all();
 
         // Permission های اختصاصی کاربر
         const userPerms = await env.DB.prepare(
-          "SELECT permission_key, granted FROM user_permissions WHERE user_id = ?"
+          "SELECT permission_key, granted FROM user_permissions WHERE user_id = ?",
         )
           .bind(userData.userId)
           .all();
@@ -2651,10 +2653,10 @@ if (url.pathname === "/" || url.pathname === "") {
         // ترکیب (user_permissions روی role_permissions override می‌کنه)
         const permissions = {};
         rolePerms.results.forEach(
-          (p) => (permissions[p.permission_key] = true)
+          (p) => (permissions[p.permission_key] = true),
         );
         userPerms.results.forEach(
-          (p) => (permissions[p.permission_key] = p.granted === 1)
+          (p) => (permissions[p.permission_key] = p.granted === 1),
         );
 
         return new Response(JSON.stringify({ permissions }), {
@@ -2675,7 +2677,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -2697,7 +2699,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
@@ -2706,7 +2708,7 @@ if (url.pathname === "/" || url.pathname === "") {
             `SELECT id, national_id, code, full_name, first_name, last_name, 
                     person_type, level, parent_id, is_active, mobile
              FROM persons 
-             WHERE national_id = ? AND level = 4`
+             WHERE national_id = ? AND level = 4`,
           )
             .bind(nationalId)
             .first();
@@ -2720,7 +2722,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 404,
                 headers,
-              }
+              },
             );
           }
 
@@ -2732,7 +2734,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 200,
               headers,
-            }
+            },
           );
         } catch (error) {
           console.error("Search error:", error);
@@ -2760,7 +2762,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -2777,14 +2779,14 @@ if (url.pathname === "/" || url.pathname === "") {
           const personId = url.pathname.split("/").pop();
 
           const employee = await env.DB.prepare(
-            `SELECT * FROM employees WHERE person_id = ?`
+            `SELECT * FROM employees WHERE person_id = ?`,
           )
             .bind(personId)
             .first();
 
           // اطلاعات شخص
           const person = await env.DB.prepare(
-            `SELECT * FROM persons WHERE id = ?`
+            `SELECT * FROM persons WHERE id = ?`,
           )
             .bind(personId)
             .first();
@@ -2804,7 +2806,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 200,
               headers,
-            }
+            },
           );
         } catch (error) {
           console.error("Employee GET error:", error);
@@ -2828,7 +2830,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -2876,7 +2878,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
           // چک کن اگه کارمند وجود داره
           const existing = await env.DB.prepare(
-            `SELECT id FROM employees WHERE person_id = ?`
+            `SELECT id FROM employees WHERE person_id = ?`,
           )
             .bind(personId)
             .first();
@@ -2911,7 +2913,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 notes = ?,
                 updated_at = CURRENT_TIMESTAMP,
                 updated_at_shamsi = ?
-              WHERE person_id = ?`
+              WHERE person_id = ?`,
             )
               .bind(
                 contract_type || null,
@@ -2939,7 +2941,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 other_occasion_title || null,
                 notes || null,
                 nowShamsi,
-                personId
+                personId,
               )
               .run();
           } else {
@@ -2954,7 +2956,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 specialties, experience_years, experience_description,
                 birthday_shamsi, other_occasion_shamsi, other_occasion_title,
                 notes, created_at_shamsi, updated_at_shamsi
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             )
               .bind(
                 personId,
@@ -2983,7 +2985,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 other_occasion_title || null,
                 notes || null,
                 nowShamsi,
-                nowShamsi
+                nowShamsi,
               )
               .run();
           }
@@ -3018,7 +3020,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -3035,7 +3037,7 @@ if (url.pathname === "/" || url.pathname === "") {
           const personId = url.pathname.split("/")[3];
 
           const tasks = await env.DB.prepare(
-            `SELECT * FROM employee_tasks WHERE person_id = ? ORDER BY id`
+            `SELECT * FROM employee_tasks WHERE person_id = ? ORDER BY id`,
           )
             .bind(personId)
             .all();
@@ -3066,7 +3068,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -3089,14 +3091,14 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
           // چک جمع درصد
           const totalPercentage = tasks.reduce(
             (sum, t) => sum + (t.percentage || 0),
-            0
+            0,
           );
           if (totalPercentage > 100) {
             return new Response(
@@ -3106,7 +3108,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
@@ -3124,7 +3126,7 @@ if (url.pathname === "/" || url.pathname === "") {
             await env.DB.prepare(
               `INSERT INTO employee_tasks 
                (person_id, task_type, task_id, task_title, percentage, notes, created_at_shamsi, updated_at_shamsi)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             )
               .bind(
                 personId,
@@ -3134,7 +3136,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 t.percentage || 0,
                 t.notes || null,
                 nowShamsi,
-                nowShamsi
+                nowShamsi,
               )
               .run();
           }
@@ -3147,7 +3149,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 200,
               headers,
-            }
+            },
           );
         } catch (error) {
           console.error("Tasks POST error:", error);
@@ -3171,7 +3173,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -3188,7 +3190,7 @@ if (url.pathname === "/" || url.pathname === "") {
           const items = await env.DB.prepare(
             `SELECT id, code, title, type, parent_id, level FROM base_data 
              WHERE section = 'operational' AND is_active = 1 
-             ORDER BY code`
+             ORDER BY code`,
           ).all();
 
           return new Response(JSON.stringify(items.results), {
@@ -3219,7 +3221,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -3244,7 +3246,7 @@ if (url.pathname === "/" || url.pathname === "") {
                WHERE section = 'operational' 
                  AND parent_id IS NULL 
                  AND is_active = 1
-               ORDER BY code`
+               ORDER BY code`,
             ).all();
           } else {
             items = await env.DB.prepare(
@@ -3253,7 +3255,7 @@ if (url.pathname === "/" || url.pathname === "") {
                WHERE section = 'operational' 
                  AND parent_id = ? 
                  AND is_active = 1
-               ORDER BY code`
+               ORDER BY code`,
             )
               .bind(parentId)
               .all();
@@ -3289,7 +3291,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -3306,7 +3308,7 @@ if (url.pathname === "/" || url.pathname === "") {
           const personId = url.pathname.split("/")[3];
 
           const deps = await env.DB.prepare(
-            `SELECT * FROM dependents WHERE employee_person_id = ? ORDER BY id`
+            `SELECT * FROM dependents WHERE employee_person_id = ? ORDER BY id`,
           )
             .bind(personId)
             .all();
@@ -3337,7 +3339,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -3379,7 +3381,7 @@ if (url.pathname === "/" || url.pathname === "") {
           // چک کد ملی تکراری
           if (national_id) {
             const existing = await env.DB.prepare(
-              `SELECT id FROM dependents WHERE employee_person_id = ? AND national_id = ? AND id != ?`
+              `SELECT id FROM dependents WHERE employee_person_id = ? AND national_id = ? AND id != ?`,
             )
               .bind(personId, national_id, id || 0)
               .first();
@@ -3392,7 +3394,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 {
                   status: 400,
                   headers,
-                }
+                },
               );
             }
           }
@@ -3407,7 +3409,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 education_status = ?, military_status = ?, marital_status = ?, marriage_date_shamsi = ?,
                 is_disabled = ?, notes = ?,
                 updated_at = CURRENT_TIMESTAMP, updated_at_shamsi = ?
-              WHERE id = ? AND employee_person_id = ?`
+              WHERE id = ? AND employee_person_id = ?`,
             )
               .bind(
                 national_id || null,
@@ -3428,7 +3430,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 notes || null,
                 nowShamsi,
                 id,
-                personId
+                personId,
               )
               .run();
 
@@ -3444,7 +3446,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 father_name, id_number, birth_date_shamsi, gender, mobile,
                 education_status, military_status, marital_status, marriage_date_shamsi,
                 is_disabled, notes, created_at_shamsi, updated_at_shamsi)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             )
               .bind(
                 personId,
@@ -3465,7 +3467,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 is_disabled ? 1 : 0,
                 notes || null,
                 nowShamsi,
-                nowShamsi
+                nowShamsi,
               )
               .run();
 
@@ -3477,7 +3479,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 201,
                 headers,
-              }
+              },
             );
           }
         } catch (error) {
@@ -3502,7 +3504,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -3560,7 +3562,7 @@ if (url.pathname === "/" || url.pathname === "") {
           const decreeId = url.pathname.split("/")[3];
 
           await env.DB.prepare(
-            `UPDATE decrees SET signed_by_manager = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+            `UPDATE decrees SET signed_by_manager = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
           )
             .bind(decreeId)
             .run();
@@ -3592,14 +3594,14 @@ if (url.pathname === "/" || url.pathname === "") {
           if (!userData || userData.role !== "admin") {
             return new Response(
               JSON.stringify({ error: "فقط شهردار (مدیر سیستم) دسترسی دارد" }),
-              { status: 403, headers }
+              { status: 403, headers },
             );
           }
 
           const decreeId = url.pathname.split("/")[3];
 
           await env.DB.prepare(
-            `UPDATE decrees SET signed_by_mayor = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+            `UPDATE decrees SET signed_by_mayor = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
           )
             .bind(decreeId)
             .run();
@@ -3626,7 +3628,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -3648,12 +3650,12 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
           const items = await env.DB.prepare(
-            `SELECT * FROM decree_items WHERE decree_type = ? AND is_active = 1 ORDER BY sort_order`
+            `SELECT * FROM decree_items WHERE decree_type = ? AND is_active = 1 ORDER BY sort_order`,
           )
             .bind(decreeType)
             .all();
@@ -3684,7 +3686,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -3701,7 +3703,7 @@ if (url.pathname === "/" || url.pathname === "") {
           const personId = url.pathname.split("/")[3];
 
           const decrees = await env.DB.prepare(
-            `SELECT * FROM decrees WHERE employee_person_id = ? ORDER BY id DESC`
+            `SELECT * FROM decrees WHERE employee_person_id = ? ORDER BY id DESC`,
           )
             .bind(personId)
             .all();
@@ -3732,7 +3734,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -3749,7 +3751,7 @@ if (url.pathname === "/" || url.pathname === "") {
           const decreeId = url.pathname.split("/").pop();
 
           const decree = await env.DB.prepare(
-            `SELECT * FROM decrees WHERE id = ?`
+            `SELECT * FROM decrees WHERE id = ?`,
           )
             .bind(decreeId)
             .first();
@@ -3796,7 +3798,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -3862,7 +3864,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
@@ -3914,7 +3916,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 notes = ?,
                 updated_at = CURRENT_TIMESTAMP,
                 updated_at_shamsi = ?
-              WHERE id = ? AND employee_person_id = ?`
+              WHERE id = ? AND employee_person_id = ?`,
             )
               .bind(
                 decree_type,
@@ -3958,7 +3960,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 notes || null,
                 nowShamsi,
                 id,
-                personId
+                personId,
               )
               .run();
 
@@ -3984,7 +3986,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 created_at_shamsi, updated_at_shamsi
               ) VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-              )`
+              )`,
             )
               .bind(
                 personId,
@@ -4028,7 +4030,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 extra_data ? JSON.stringify(extra_data) : null,
                 notes || null,
                 nowShamsi,
-                nowShamsi
+                nowShamsi,
               )
               .run();
 
@@ -4040,7 +4042,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 201,
                 headers,
-              }
+              },
             );
           }
         } catch (error) {
@@ -4065,7 +4067,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -4115,7 +4117,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -4141,7 +4143,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
           // تولید OTP تصادفی ۶ رقمی
           const otpCode = Math.floor(
-            100000 + Math.random() * 900000
+            100000 + Math.random() * 900000,
           ).toString();
 
           const nowShamsi = toShamsi(new Date());
@@ -4150,7 +4152,7 @@ if (url.pathname === "/" || url.pathname === "") {
           const result = await env.DB.prepare(
             `INSERT INTO signatures 
              (entity_type, entity_id, employee_person_id, mobile, otp_code, otp_sent_at, status, created_at_shamsi)
-             VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'sent', ?)`
+             VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'sent', ?)`,
           )
             .bind(
               entity_type,
@@ -4158,7 +4160,7 @@ if (url.pathname === "/" || url.pathname === "") {
               employee_person_id,
               mobile,
               otpCode,
-              nowShamsi
+              nowShamsi,
             )
             .run();
 
@@ -4166,7 +4168,7 @@ if (url.pathname === "/" || url.pathname === "") {
           await env.DB.prepare(
             `INSERT INTO sms_log 
              (mobile, message, message_type, provider, status, entity_type, entity_id, employee_person_id, sent_at_shamsi)
-             VALUES (?, ?, 'otp', 'mock', 'sent', ?, ?, ?, ?)`
+             VALUES (?, ?, 'otp', 'mock', 'sent', ?, ?, ?, ?)`,
           )
             .bind(
               mobile,
@@ -4174,7 +4176,7 @@ if (url.pathname === "/" || url.pathname === "") {
               entity_type,
               entity_id,
               employee_person_id,
-              nowShamsi
+              nowShamsi,
             )
             .run();
 
@@ -4192,7 +4194,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 200,
               headers,
-            }
+            },
           );
         } catch (error) {
           console.error("Send OTP error:", error);
@@ -4216,7 +4218,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -4242,7 +4244,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
           // چک کد
           const signature = await env.DB.prepare(
-            `SELECT * FROM signatures WHERE id = ? AND status = 'sent'`
+            `SELECT * FROM signatures WHERE id = ? AND status = 'sent'`,
           )
             .bind(signature_id)
             .first();
@@ -4253,14 +4255,14 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 404,
                 headers,
-              }
+              },
             );
           }
 
           // چک تعداد تلاش
           if (signature.otp_attempts >= 5) {
             await env.DB.prepare(
-              `UPDATE signatures SET status = 'failed' WHERE id = ?`
+              `UPDATE signatures SET status = 'failed' WHERE id = ?`,
             )
               .bind(signature_id)
               .run();
@@ -4270,14 +4272,14 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
           if (signature.otp_code !== otp_code) {
             // افزایش تعداد تلاش
             await env.DB.prepare(
-              `UPDATE signatures SET otp_attempts = otp_attempts + 1 WHERE id = ?`
+              `UPDATE signatures SET otp_attempts = otp_attempts + 1 WHERE id = ?`,
             )
               .bind(signature_id)
               .run();
@@ -4287,7 +4289,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
@@ -4297,7 +4299,7 @@ if (url.pathname === "/" || url.pathname === "") {
              SET status = 'verified', 
                  otp_verified_at = CURRENT_TIMESTAMP,
                  signed_at = CURRENT_TIMESTAMP
-             WHERE id = ?`
+             WHERE id = ?`,
           )
             .bind(signature_id)
             .run();
@@ -4309,7 +4311,7 @@ if (url.pathname === "/" || url.pathname === "") {
                SET status = 'signed', 
                    signed_at = CURRENT_TIMESTAMP,
                    signed_by_employee = 1
-               WHERE id = ?`
+               WHERE id = ?`,
             )
               .bind(signature.entity_id)
               .run();
@@ -4323,7 +4325,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 200,
               headers,
-            }
+            },
           );
         } catch (error) {
           console.error("Verify OTP error:", error);
@@ -4347,7 +4349,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -4369,7 +4371,7 @@ if (url.pathname === "/" || url.pathname === "") {
             `SELECT id, entity_type, entity_id, mobile, status, otp_sent_at, otp_verified_at, signed_at
              FROM signatures 
              WHERE entity_type = ? AND entity_id = ?
-             ORDER BY id DESC`
+             ORDER BY id DESC`,
           )
             .bind(entityType, entityId)
             .all();
@@ -4404,7 +4406,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -4453,7 +4455,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 200,
               headers,
-            }
+            },
           );
         } catch (error) {
           console.error("Payroll settings GET error:", error);
@@ -4477,7 +4479,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -4492,7 +4494,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 403,
                 headers,
-              }
+              },
             );
           }
 
@@ -4505,7 +4507,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
@@ -4515,25 +4517,25 @@ if (url.pathname === "/" || url.pathname === "") {
             if (!s.setting_key) continue;
 
             const existing = await env.DB.prepare(
-              `SELECT id FROM payroll_settings WHERE setting_key = ? AND (fiscal_year_id = ? OR (fiscal_year_id IS NULL AND ? IS NULL))`
+              `SELECT id FROM payroll_settings WHERE setting_key = ? AND (fiscal_year_id = ? OR (fiscal_year_id IS NULL AND ? IS NULL))`,
             )
               .bind(
                 s.setting_key,
                 fiscal_year_id || null,
-                fiscal_year_id || null
+                fiscal_year_id || null,
               )
               .first();
 
             if (existing) {
               await env.DB.prepare(
-                `UPDATE payroll_settings SET setting_value = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+                `UPDATE payroll_settings SET setting_value = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
               )
                 .bind(s.setting_value || null, existing.id)
                 .run();
             } else {
               await env.DB.prepare(
                 `INSERT INTO payroll_settings (fiscal_year_id, setting_key, setting_value, setting_type, description, category, sort_order)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)`
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
               )
                 .bind(
                   fiscal_year_id || null,
@@ -4542,7 +4544,7 @@ if (url.pathname === "/" || url.pathname === "") {
                   s.setting_type || "number",
                   s.description || null,
                   s.category || "general",
-                  s.sort_order || 0
+                  s.sort_order || 0,
                 )
                 .run();
             }
@@ -4571,7 +4573,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -4586,7 +4588,7 @@ if (url.pathname === "/" || url.pathname === "") {
           }
 
           const items = await env.DB.prepare(
-            "SELECT * FROM payroll_items WHERE is_active = 1 ORDER BY sort_order"
+            "SELECT * FROM payroll_items WHERE is_active = 1 ORDER BY sort_order",
           ).all();
 
           return new Response(JSON.stringify(items.results), {
@@ -4615,7 +4617,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -4668,7 +4670,7 @@ if (url.pathname === "/" || url.pathname === "") {
               sort_order = ?,
               notes = ?,
               updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?`
+            WHERE id = ?`,
           )
             .bind(
               title,
@@ -4686,7 +4688,7 @@ if (url.pathname === "/" || url.pathname === "") {
               is_active !== undefined ? (is_active ? 1 : 0) : 1,
               sort_order || 0,
               notes || null,
-              itemId
+              itemId,
             )
             .run();
 
@@ -4720,7 +4722,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -4790,7 +4792,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -4810,7 +4812,7 @@ if (url.pathname === "/" || url.pathname === "") {
             `SELECT pc.*, p.full_name, p.national_id, p.code as person_code, p.mobile
              FROM payroll_calculations pc
              LEFT JOIN persons p ON pc.employee_person_id = p.id
-             WHERE pc.id = ?`
+             WHERE pc.id = ?`,
           )
             .bind(id)
             .first();
@@ -4860,7 +4862,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -4900,7 +4902,7 @@ if (url.pathname === "/" || url.pathname === "") {
             decree = await env.DB.prepare(
               `SELECT * FROM decrees 
                WHERE employee_person_id = ? AND status IN ('signed', 'active', 'issued')
-               ORDER BY id DESC LIMIT 1`
+               ORDER BY id DESC LIMIT 1`,
             )
               .bind(employee_person_id)
               .first();
@@ -4912,7 +4914,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 404,
                 headers,
-              }
+              },
             );
           }
 
@@ -4926,7 +4928,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
           // لود payroll_items برای مشمولیت‌ها
           const payrollItemsData = await env.DB.prepare(
-            "SELECT * FROM payroll_items WHERE is_active = 1"
+            "SELECT * FROM payroll_items WHERE is_active = 1",
           ).all();
 
           const payrollItemsMap = {};
@@ -4936,7 +4938,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
           // لود تنظیمات
           const settingsData = await env.DB.prepare(
-            "SELECT setting_key, setting_value FROM payroll_settings WHERE fiscal_year_id IS NULL"
+            "SELECT setting_key, setting_value FROM payroll_settings WHERE fiscal_year_id IS NULL",
           ).all();
 
           const settings = {};
@@ -4952,13 +4954,13 @@ if (url.pathname === "/" || url.pathname === "") {
              WHERE employee_person_id = ? 
                AND period_year = ? 
                AND period_month = ?
-               AND status IN ('draft', 'submitted', 'manager_approved', 'mayor_approved')`
+               AND status IN ('draft', 'submitted', 'manager_approved', 'mayor_approved')`,
           )
             .bind(employee_person_id, period_year, period_month)
             .first();
 
           const baseSalaryItem = decreeItems.find(
-            (i) => i.title === "حقوق مبنا" || i.title === "مزد شغل"
+            (i) => i.title === "حقوق مبنا" || i.title === "مزد شغل",
           );
           const baseSalary = baseSalaryItem
             ? parseFloat(baseSalaryItem.amount)
@@ -4981,7 +4983,7 @@ if (url.pathname === "/" || url.pathname === "") {
             // اضافه‌کاری
             if (attendance.overtime_hours > 0 && hourlyRate > 0) {
               const overtimeAmount = Math.round(
-                attendance.overtime_hours * hourlyRate * overtimeRate
+                attendance.overtime_hours * hourlyRate * overtimeRate,
               );
               decreeItems.push({
                 code: "ض",
@@ -4995,7 +4997,7 @@ if (url.pathname === "/" || url.pathname === "") {
             // تعطیل‌کاری
             if (attendance.holiday_hours > 0 && hourlyRate > 0) {
               const holidayAmount = Math.round(
-                attendance.holiday_hours * hourlyRate * holidayRate
+                attendance.holiday_hours * hourlyRate * holidayRate,
               );
               decreeItems.push({
                 code: "ط",
@@ -5009,7 +5011,7 @@ if (url.pathname === "/" || url.pathname === "") {
             // نوبت‌کاری
             if (attendance.nightshift_hours > 0 && hourlyRate > 0) {
               const nightshiftAmount = Math.round(
-                attendance.nightshift_hours * hourlyRate * nightshiftRate
+                attendance.nightshift_hours * hourlyRate * nightshiftRate,
               );
               decreeItems.push({
                 code: "ظ",
@@ -5032,7 +5034,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
               if (totalMissionDays > 0) {
                 const missionAmount = Math.round(
-                  totalMissionDays * dailyRate * missionRate
+                  totalMissionDays * dailyRate * missionRate,
                 );
                 decreeItems.push({
                   code: "ع",
@@ -5075,15 +5077,15 @@ if (url.pathname === "/" || url.pathname === "") {
           const insuranceRateEmployer =
             parseFloat(settings.insurance_rate_employer || "23") / 100;
           const insuranceEmployee = Math.round(
-            totalInsuranceSubject * insuranceRateEmployee
+            totalInsuranceSubject * insuranceRateEmployee,
           );
           const insuranceEmployer = Math.round(
-            totalInsuranceSubject * insuranceRateEmployer
+            totalInsuranceSubject * insuranceRateEmployer,
           );
 
           // محاسبه مالیات (ساده - پله‌ای)
           const taxExemption = parseFloat(
-            settings.tax_exemption_monthly || "120000000"
+            settings.tax_exemption_monthly || "120000000",
           );
           const taxBase = Math.max(0, totalTaxSubject - taxExemption);
 
@@ -5112,7 +5114,7 @@ if (url.pathname === "/" || url.pathname === "") {
                AND status = 'active' 
                AND is_active = 1
                AND paid_installments < installments_count
-             ORDER BY id`
+             ORDER BY id`,
           )
             .bind(employee_person_id)
             .all();
@@ -5124,9 +5126,8 @@ if (url.pathname === "/" || url.pathname === "") {
               appliedDeductions.push({
                 type: "loan",
                 loan_id: loan.id,
-                title: `${loan.lender_name || "وام"} - قسط ${
-                  loan.paid_installments + 1
-                }`,
+                title: `${loan.lender_name || "وام"} - قسط ${loan.paid_installments + 1
+                  }`,
                 amount: installmentAmt,
               });
             }
@@ -5139,7 +5140,7 @@ if (url.pathname === "/" || url.pathname === "") {
              LEFT JOIN deduction_types dt ON ed.deduction_type_id = dt.id
              WHERE ed.employee_person_id = ? 
                AND ed.status = 'active' 
-               AND ed.is_active = 1`
+               AND ed.is_active = 1`,
           )
             .bind(employee_person_id)
             .all();
@@ -5147,7 +5148,7 @@ if (url.pathname === "/" || url.pathname === "") {
           if (attendance && attendance.absence_days > 0 && baseSalary > 0) {
             const dailyRate = baseSalary / 30;
             const absenceAmount = Math.round(
-              attendance.absence_days * dailyRate
+              attendance.absence_days * dailyRate,
             );
 
             if (absenceAmount > 0) {
@@ -5155,7 +5156,7 @@ if (url.pathname === "/" || url.pathname === "") {
               appliedDeductions.push({
                 type: "absence",
                 title: `کسر غیبت (${toPersianNumbers(
-                  attendance.absence_days
+                  attendance.absence_days,
                 )} روز)`,
                 amount: absenceAmount,
               });
@@ -5200,7 +5201,7 @@ if (url.pathname === "/" || url.pathname === "") {
               insurance_employee, insurance_employer, tax_amount, other_deductions,
               total_deductions, net_pay, settings_snapshot, status,
               calculated_by, calculated_at_shamsi, created_at_shamsi, updated_at_shamsi)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'calculated', ?, ?, ?, ?)`
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'calculated', ?, ?, ?, ?)`,
           )
             .bind(
               employee_person_id,
@@ -5222,7 +5223,7 @@ if (url.pathname === "/" || url.pathname === "") {
               userData.userId,
               nowShamsi,
               nowShamsi,
-              nowShamsi
+              nowShamsi,
             )
             .run();
 
@@ -5243,7 +5244,7 @@ if (url.pathname === "/" || url.pathname === "") {
                (loan_id, employee_person_id, installment_number, amount,
                 period_year, period_month, payroll_calculation_id,
                 status, created_at_shamsi)
-               VALUES (?, ?, ?, ?, ?, ?, ?, 'paid', ?)`
+               VALUES (?, ?, ?, ?, ?, ?, ?, 'paid', ?)`,
             )
               .bind(
                 loan.id,
@@ -5253,7 +5254,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 period_year,
                 period_month,
                 calculationId,
-                nowShamsi
+                nowShamsi,
               )
               .run();
 
@@ -5274,7 +5275,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 status = ?,
                 updated_at = CURRENT_TIMESTAMP,
                 updated_at_shamsi = ?
-              WHERE id = ?`
+              WHERE id = ?`,
             )
               .bind(
                 newPaidInstallments,
@@ -5282,7 +5283,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 newRemaining,
                 newStatus,
                 nowShamsi,
-                loan.id
+                loan.id,
               )
               .run();
           }
@@ -5309,7 +5310,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 201,
               headers,
-            }
+            },
           );
         } catch (error) {
           console.error("Payroll calculate error:", error);
@@ -5333,7 +5334,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -5353,7 +5354,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
           // چک کن محاسبه وجود داره
           const calc = await env.DB.prepare(
-            `SELECT * FROM payroll_calculations WHERE id = ?`
+            `SELECT * FROM payroll_calculations WHERE id = ?`,
           )
             .bind(id)
             .first();
@@ -5371,7 +5372,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
@@ -5380,14 +5381,14 @@ if (url.pathname === "/" || url.pathname === "") {
           // ۱. بازگرداندن اقساط وام
           const loanPayments = await env.DB.prepare(
             `SELECT * FROM loan_payments 
-             WHERE payroll_calculation_id = ? AND status = 'paid'`
+             WHERE payroll_calculation_id = ? AND status = 'paid'`,
           )
             .bind(id)
             .all();
 
           for (const payment of loanPayments.results) {
             const loan = await env.DB.prepare(
-              `SELECT * FROM loans WHERE id = ?`
+              `SELECT * FROM loans WHERE id = ?`,
             )
               .bind(payment.loan_id)
               .first();
@@ -5395,11 +5396,11 @@ if (url.pathname === "/" || url.pathname === "") {
             if (loan) {
               const newPaidInstallments = Math.max(
                 0,
-                (loan.paid_installments || 0) - 1
+                (loan.paid_installments || 0) - 1,
               );
               const newPaidAmount = Math.max(
                 0,
-                (loan.paid_amount || 0) - payment.amount
+                (loan.paid_amount || 0) - payment.amount,
               );
               const newRemaining = (loan.total_amount || 0) - newPaidAmount;
 
@@ -5420,7 +5421,7 @@ if (url.pathname === "/" || url.pathname === "") {
                   status = ?,
                   updated_at = CURRENT_TIMESTAMP,
                   updated_at_shamsi = ?
-                WHERE id = ?`
+                WHERE id = ?`,
               )
                 .bind(
                   newPaidInstallments,
@@ -5428,7 +5429,7 @@ if (url.pathname === "/" || url.pathname === "") {
                   newRemaining,
                   newStatus,
                   nowShamsi,
-                  loan.id
+                  loan.id,
                 )
                 .run();
             }
@@ -5437,7 +5438,7 @@ if (url.pathname === "/" || url.pathname === "") {
           // ۲. علامت‌گذاری پرداخت‌ها به عنوان cancelled
           await env.DB.prepare(
             `UPDATE loan_payments SET status = 'cancelled' 
-             WHERE payroll_calculation_id = ?`
+             WHERE payroll_calculation_id = ?`,
           )
             .bind(id)
             .run();
@@ -5451,7 +5452,7 @@ if (url.pathname === "/" || url.pathname === "") {
               cancelled_reason = ?,
               updated_at = CURRENT_TIMESTAMP,
               updated_at_shamsi = ?
-            WHERE id = ?`
+            WHERE id = ?`,
           )
             .bind(userData.userId, reason || null, nowShamsi, id)
             .run();
@@ -5464,7 +5465,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 200,
               headers,
-            }
+            },
           );
         } catch (error) {
           console.error("Payroll cancel error:", error);
@@ -5488,7 +5489,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -5506,7 +5507,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
           // چک کن status
           const calc = await env.DB.prepare(
-            `SELECT status FROM payroll_calculations WHERE id = ?`
+            `SELECT status FROM payroll_calculations WHERE id = ?`,
           )
             .bind(id)
             .first();
@@ -5526,13 +5527,13 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
           // حذف پرداخت‌های وام
           await env.DB.prepare(
-            "DELETE FROM loan_payments WHERE payroll_calculation_id = ?"
+            "DELETE FROM loan_payments WHERE payroll_calculation_id = ?",
           )
             .bind(id)
             .run();
@@ -5565,7 +5566,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -5586,7 +5587,7 @@ if (url.pathname === "/" || url.pathname === "") {
              FROM persons p
              INNER JOIN decrees d ON d.employee_person_id = p.id
              WHERE p.person_type = 'employee' AND p.is_active = 1
-             ORDER BY p.full_name`
+             ORDER BY p.full_name`,
           ).all();
 
           return new Response(JSON.stringify(employees.results), {
@@ -5616,7 +5617,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -5631,7 +5632,7 @@ if (url.pathname === "/" || url.pathname === "") {
           }
 
           const items = await env.DB.prepare(
-            "SELECT * FROM deduction_types WHERE is_active = 1 ORDER BY sort_order"
+            "SELECT * FROM deduction_types WHERE is_active = 1 ORDER BY sort_order",
           ).all();
 
           return new Response(JSON.stringify(items.results), {
@@ -5664,7 +5665,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -5681,7 +5682,7 @@ if (url.pathname === "/" || url.pathname === "") {
           const personId = url.pathname.split("/")[3];
 
           const loans = await env.DB.prepare(
-            `SELECT * FROM loans WHERE employee_person_id = ? ORDER BY id DESC`
+            `SELECT * FROM loans WHERE employee_person_id = ? ORDER BY id DESC`,
           )
             .bind(personId)
             .all();
@@ -5712,7 +5713,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -5741,7 +5742,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
           // پرداخت‌ها
           const payments = await env.DB.prepare(
-            `SELECT * FROM loan_payments WHERE loan_id = ? ORDER BY installment_number`
+            `SELECT * FROM loan_payments WHERE loan_id = ? ORDER BY installment_number`,
           )
             .bind(loanId)
             .all();
@@ -5754,7 +5755,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 200,
               headers,
-            }
+            },
           );
         } catch (error) {
           console.error("Loan GET error:", error);
@@ -5778,7 +5779,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -5815,7 +5816,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
@@ -5840,7 +5841,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 notes = ?,
                 updated_at = CURRENT_TIMESTAMP,
                 updated_at_shamsi = ?
-              WHERE id = ? AND employee_person_id = ?`
+              WHERE id = ? AND employee_person_id = ?`,
             )
               .bind(
                 loan_type || null,
@@ -5855,7 +5856,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 notes || null,
                 nowShamsi,
                 id,
-                personId
+                personId,
               )
               .run();
 
@@ -5872,7 +5873,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 installments_count, installment_amount, paid_installments,
                 start_date_shamsi, end_date_shamsi, first_installment_shamsi,
                 status, notes, created_at_shamsi, updated_at_shamsi)
-               VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, 0, ?, ?, ?, 'active', ?, ?, ?)`
+               VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, 0, ?, ?, ?, 'active', ?, ?, ?)`,
             )
               .bind(
                 personId,
@@ -5888,7 +5889,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 first_installment_shamsi || null,
                 notes || null,
                 nowShamsi,
-                nowShamsi
+                nowShamsi,
               )
               .run();
 
@@ -5900,7 +5901,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 201,
                 headers,
-              }
+              },
             );
           }
         } catch (error) {
@@ -5925,7 +5926,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -5975,7 +5976,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -5996,7 +5997,7 @@ if (url.pathname === "/" || url.pathname === "") {
              FROM employee_deductions ed
              LEFT JOIN deduction_types dt ON ed.deduction_type_id = dt.id
              WHERE ed.employee_person_id = ?
-             ORDER BY ed.id DESC`
+             ORDER BY ed.id DESC`,
           )
             .bind(personId)
             .all();
@@ -6027,7 +6028,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -6061,7 +6062,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
@@ -6079,7 +6080,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 notes = ?,
                 updated_at = CURRENT_TIMESTAMP,
                 updated_at_shamsi = ?
-              WHERE id = ? AND employee_person_id = ?`
+              WHERE id = ? AND employee_person_id = ?`,
             )
               .bind(
                 deduction_type_id || null,
@@ -6091,7 +6092,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 notes || null,
                 nowShamsi,
                 id,
-                personId
+                personId,
               )
               .run();
 
@@ -6105,7 +6106,7 @@ if (url.pathname === "/" || url.pathname === "") {
                (employee_person_id, deduction_type_id, title, amount,
                 start_date_shamsi, end_date_shamsi, remaining_count,
                 status, notes, created_at_shamsi, updated_at_shamsi)
-               VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`
+               VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
             )
               .bind(
                 personId,
@@ -6117,7 +6118,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 remaining_count || null,
                 notes || null,
                 nowShamsi,
-                nowShamsi
+                nowShamsi,
               )
               .run();
 
@@ -6129,7 +6130,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 201,
                 headers,
-              }
+              },
             );
           }
         } catch (error) {
@@ -6154,7 +6155,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -6200,7 +6201,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -6217,7 +6218,7 @@ if (url.pathname === "/" || url.pathname === "") {
           const loanId = url.pathname.split("/")[3];
 
           const payments = await env.DB.prepare(
-            `SELECT * FROM loan_payments WHERE loan_id = ? ORDER BY installment_number`
+            `SELECT * FROM loan_payments WHERE loan_id = ? ORDER BY installment_number`,
           )
             .bind(loanId)
             .all();
@@ -6250,7 +6251,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -6276,7 +6277,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
@@ -6297,7 +6298,7 @@ if (url.pathname === "/" || url.pathname === "") {
                  OR p.code LIKE ?
                )
              ORDER BY p.full_name
-             LIMIT ?`
+             LIMIT ?`,
           )
             .bind(searchPattern, searchPattern, searchPattern, limit)
             .all();
@@ -6310,7 +6311,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 200,
               headers,
-            }
+            },
           );
         } catch (error) {
           console.error("Employees search error:", error);
@@ -6335,7 +6336,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -6405,7 +6406,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -6425,7 +6426,7 @@ if (url.pathname === "/" || url.pathname === "") {
             `SELECT a.*, p.full_name, p.code as person_code, p.national_id
              FROM attendance a
              LEFT JOIN persons p ON a.employee_person_id = p.id
-             WHERE a.id = ?`
+             WHERE a.id = ?`,
           )
             .bind(id)
             .first();
@@ -6460,7 +6461,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -6520,7 +6521,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 notes = ?,
                 updated_at = CURRENT_TIMESTAMP,
                 updated_at_shamsi = ?
-              WHERE id = ?`
+              WHERE id = ?`,
             )
               .bind(
                 working_days || 0,
@@ -6534,7 +6535,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 mission_days_without_stay || 0,
                 notes || null,
                 nowShamsi,
-                id
+                id,
               )
               .run();
 
@@ -6551,7 +6552,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 overtime_hours, holiday_hours, nightshift_hours,
                 mission_days_with_stay, mission_days_without_stay,
                 status, notes, created_at_shamsi, updated_at_shamsi)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?)`
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?)`,
             )
               .bind(
                 employee_person_id,
@@ -6568,7 +6569,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 mission_days_without_stay || 0,
                 notes || null,
                 nowShamsi,
-                nowShamsi
+                nowShamsi,
               )
               .run();
 
@@ -6580,7 +6581,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 201,
                 headers,
-              }
+              },
             );
           }
         } catch (error) {
@@ -6605,7 +6606,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -6629,7 +6630,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
@@ -6643,14 +6644,14 @@ if (url.pathname === "/" || url.pathname === "") {
                 manager_approved_at = CURRENT_TIMESTAMP,
                 status = ?,
                 updated_at_shamsi = ?
-              WHERE id = ?`
+              WHERE id = ?`,
             )
               .bind(
                 approved ? 1 : 0,
                 userData.userId,
                 approved ? "manager_approved" : "rejected",
                 nowShamsi,
-                id
+                id,
               )
               .run();
           } else {
@@ -6661,14 +6662,14 @@ if (url.pathname === "/" || url.pathname === "") {
                 mayor_approved_at = CURRENT_TIMESTAMP,
                 status = ?,
                 updated_at_shamsi = ?
-              WHERE id = ?`
+              WHERE id = ?`,
             )
               .bind(
                 approved ? 1 : 0,
                 userData.userId,
                 approved ? "mayor_approved" : "rejected",
                 nowShamsi,
-                id
+                id,
               )
               .run();
           }
@@ -6699,7 +6700,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -6746,7 +6747,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -6761,7 +6762,7 @@ if (url.pathname === "/" || url.pathname === "") {
           }
 
           const items = await env.DB.prepare(
-            `SELECT * FROM council_members ORDER BY position_order, id`
+            `SELECT * FROM council_members ORDER BY position_order, id`,
           ).all();
 
           return new Response(JSON.stringify(items.results), {
@@ -6790,7 +6791,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -6832,7 +6833,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
           // municipality_info_id
           const mInfo = await env.DB.prepare(
-            `SELECT id FROM municipality_info ORDER BY id DESC LIMIT 1`
+            `SELECT id FROM municipality_info ORDER BY id DESC LIMIT 1`,
           ).first();
 
           const municipalityId = mInfo ? mInfo.id : null;
@@ -6855,7 +6856,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 is_active = ?,
                 updated_at = CURRENT_TIMESTAMP,
                 updated_at_shamsi = ?
-              WHERE id = ?`
+              WHERE id = ?`,
             )
               .bind(
                 full_name,
@@ -6871,7 +6872,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 notes || null,
                 is_active !== undefined ? (is_active ? 1 : 0) : 1,
                 nowShamsi,
-                id
+                id,
               )
               .run();
 
@@ -6886,7 +6887,7 @@ if (url.pathname === "/" || url.pathname === "") {
                (municipality_info_id, full_name, national_id, mobile, phone,
                 position, position_order, start_date_shamsi, end_date_shamsi,
                 address, email, notes, is_active, created_at_shamsi, updated_at_shamsi)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             )
               .bind(
                 municipalityId,
@@ -6903,7 +6904,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 notes || null,
                 is_active !== undefined ? (is_active ? 1 : 0) : 1,
                 nowShamsi,
-                nowShamsi
+                nowShamsi,
               )
               .run();
 
@@ -6915,7 +6916,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 201,
                 headers,
-              }
+              },
             );
           }
         } catch (error) {
@@ -6940,7 +6941,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -6990,7 +6991,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -7011,7 +7012,7 @@ if (url.pathname === "/" || url.pathname === "") {
              FROM person_organizations po
              LEFT JOIN base_data bd ON po.organization_id = bd.id
              WHERE po.person_id = ?
-             ORDER BY po.is_primary DESC, po.id DESC`
+             ORDER BY po.is_primary DESC, po.id DESC`,
           )
             .bind(personId)
             .all();
@@ -7042,7 +7043,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -7075,7 +7076,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
@@ -7084,7 +7085,7 @@ if (url.pathname === "/" || url.pathname === "") {
           // اگه is_primary = true، بقیه رو false کن
           if (is_primary) {
             await env.DB.prepare(
-              "UPDATE person_organizations SET is_primary = 0 WHERE person_id = ?"
+              "UPDATE person_organizations SET is_primary = 0 WHERE person_id = ?",
             )
               .bind(personId)
               .run();
@@ -7101,7 +7102,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 start_date_shamsi = ?,
                 end_date_shamsi = ?,
                 notes = ?
-              WHERE id = ? AND person_id = ?`
+              WHERE id = ? AND person_id = ?`,
             )
               .bind(
                 organization_id,
@@ -7112,7 +7113,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 end_date_shamsi || null,
                 notes || null,
                 id,
-                personId
+                personId,
               )
               .run();
 
@@ -7120,7 +7121,7 @@ if (url.pathname === "/" || url.pathname === "") {
             if (is_primary && role) {
               try {
                 const person = await env.DB.prepare(
-                  "SELECT user_id FROM persons WHERE id = ?"
+                  "SELECT user_id FROM persons WHERE id = ?",
                 )
                   .bind(personId)
                   .first();
@@ -7128,7 +7129,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 if (person && person.user_id) {
                   const newRole = getRoleFromPosition(role);
                   await env.DB.prepare(
-                    "UPDATE users SET role = ?, organization = ? WHERE id = ?"
+                    "UPDATE users SET role = ?, organization = ? WHERE id = ?",
                   )
                     .bind(newRole, role, person.user_id)
                     .run();
@@ -7148,7 +7149,7 @@ if (url.pathname === "/" || url.pathname === "") {
               `INSERT INTO person_organizations
                (person_id, organization_id, position_id, role, is_primary,
                 start_date_shamsi, end_date_shamsi, notes, created_at_shamsi)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             )
               .bind(
                 personId,
@@ -7159,7 +7160,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 start_date_shamsi || null,
                 end_date_shamsi || null,
                 notes || null,
-                nowShamsi
+                nowShamsi,
               )
               .run();
 
@@ -7169,7 +7170,7 @@ if (url.pathname === "/" || url.pathname === "") {
             if (is_primary && role) {
               try {
                 const person = await env.DB.prepare(
-                  "SELECT user_id FROM persons WHERE id = ?"
+                  "SELECT user_id FROM persons WHERE id = ?",
                 )
                   .bind(personId)
                   .first();
@@ -7177,7 +7178,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 if (person && person.user_id) {
                   const newRole = getRoleFromPosition(role);
                   await env.DB.prepare(
-                    "UPDATE users SET role = ?, organization = ? WHERE id = ?"
+                    "UPDATE users SET role = ?, organization = ? WHERE id = ?",
                   )
                     .bind(newRole, role, person.user_id)
                     .run();
@@ -7195,7 +7196,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 201,
                 headers,
-              }
+              },
             );
           }
         } catch (error) {
@@ -7220,7 +7221,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -7268,7 +7269,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -7286,7 +7287,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
           // لود شخص
           const person = await env.DB.prepare(
-            "SELECT id, full_name, national_id, mobile FROM persons WHERE id = ?"
+            "SELECT id, full_name, national_id, mobile FROM persons WHERE id = ?",
           )
             .bind(personId)
             .first();
@@ -7311,13 +7312,13 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
           // چک: کاربر قبلاً ساخته شده؟
           const existingUser = await env.DB.prepare(
-            "SELECT id FROM users WHERE username = ?"
+            "SELECT id FROM users WHERE username = ?",
           )
             .bind(person.national_id)
             .first();
@@ -7328,14 +7329,14 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
           // پست سازمانی اصلی
           const primaryOrg = await env.DB.prepare(
             `SELECT role FROM person_organizations 
-             WHERE person_id = ? AND is_primary = 1 LIMIT 1`
+             WHERE person_id = ? AND is_primary = 1 LIMIT 1`,
           )
             .bind(personId)
             .first();
@@ -7353,14 +7354,14 @@ if (url.pathname === "/" || url.pathname === "") {
 
           const result = await env.DB.prepare(
             `INSERT INTO users (username, password_hash, full_name, role, organization, is_active)
-             VALUES (?, ?, ?, ?, ?, 1)`
+             VALUES (?, ?, ?, ?, ?, 1)`,
           )
             .bind(
               person.national_id,
               passwordHash,
               person.full_name,
               role,
-              position || null
+              position || null,
             )
             .run();
 
@@ -7375,7 +7376,7 @@ if (url.pathname === "/" || url.pathname === "") {
           await env.DB.prepare(
             `INSERT INTO user_creation_log
              (person_id, national_id, username, temp_password, mobile, status, created_at_shamsi)
-             VALUES (?, ?, ?, ?, ?, 'created', ?)`
+             VALUES (?, ?, ?, ?, ?, 'created', ?)`,
           )
             .bind(
               personId,
@@ -7383,7 +7384,7 @@ if (url.pathname === "/" || url.pathname === "") {
               person.national_id,
               tempPassword,
               person.mobile,
-              nowShamsi
+              nowShamsi,
             )
             .run();
 
@@ -7409,7 +7410,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 201,
               headers,
-            }
+            },
           );
         } catch (error) {
           console.error("Create user error:", error);
@@ -7435,7 +7436,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -7456,7 +7457,7 @@ if (url.pathname === "/" || url.pathname === "") {
                     u.username, u.role, u.is_active
              FROM persons p
              LEFT JOIN users u ON p.user_id = u.id
-             WHERE p.id = ?`
+             WHERE p.id = ?`,
           )
             .bind(personId)
             .first();
@@ -7472,7 +7473,7 @@ if (url.pathname === "/" || url.pathname === "") {
           const lastLog = await env.DB.prepare(
             `SELECT * FROM user_creation_log 
              WHERE person_id = ? 
-             ORDER BY id DESC LIMIT 1`
+             ORDER BY id DESC LIMIT 1`,
           )
             .bind(personId)
             .first();
@@ -7489,7 +7490,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 200,
               headers,
-            }
+            },
           );
         } catch (error) {
           console.error("User status error:", error);
@@ -7515,7 +7516,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -7532,7 +7533,7 @@ if (url.pathname === "/" || url.pathname === "") {
           const personId = url.pathname.split("/")[3];
 
           const person = await env.DB.prepare(
-            "SELECT id, full_name, national_id, mobile FROM persons WHERE id = ?"
+            "SELECT id, full_name, national_id, mobile FROM persons WHERE id = ?",
           )
             .bind(personId)
             .first();
@@ -7553,7 +7554,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
           // چک وجود کاربر
           const existing = await env.DB.prepare(
-            "SELECT id FROM users WHERE username = ?"
+            "SELECT id FROM users WHERE username = ?",
           )
             .bind(person.national_id)
             .first();
@@ -7565,7 +7566,7 @@ if (url.pathname === "/" || url.pathname === "") {
             const result = await env.DB.prepare(
               `INSERT INTO users 
                (username, password_hash, full_name, role, organization, is_active, mobile)
-               VALUES (?, 'OTP_ONLY', ?, 'viewer', NULL, 1, ?)`
+               VALUES (?, 'OTP_ONLY', ?, 'viewer', NULL, 1, ?)`,
             )
               .bind(person.national_id, person.full_name, person.mobile || null)
               .run();
@@ -7588,7 +7589,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 200,
               headers,
-            }
+            },
           );
         } catch (error) {
           return new Response(JSON.stringify({ error: error.message }), {
@@ -7612,7 +7613,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -7653,7 +7654,7 @@ if (url.pathname === "/" || url.pathname === "") {
                FROM person_organizations po
                LEFT JOIN persons p ON po.person_id = p.id
                WHERE po.organization_id = ? AND po.position_id = ?
-               LIMIT 1`
+               LIMIT 1`,
             )
               .bind(pos.organization_id, pos.id)
               .first();
@@ -7687,7 +7688,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -7720,7 +7721,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
@@ -7739,7 +7740,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 is_active = ?,
                 updated_at = CURRENT_TIMESTAMP,
                 updated_at_shamsi = ?
-              WHERE id = ?`
+              WHERE id = ?`,
             )
               .bind(
                 organization_id,
@@ -7751,7 +7752,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 description || null,
                 is_active !== undefined ? (is_active ? 1 : 0) : 1,
                 nowShamsi,
-                id
+                id,
               )
               .run();
 
@@ -7764,7 +7765,7 @@ if (url.pathname === "/" || url.pathname === "") {
               `INSERT INTO org_positions 
                (organization_id, position_code, position_title, position_level,
                 position_order, is_primary, description, is_active, created_at_shamsi)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             )
               .bind(
                 organization_id,
@@ -7775,7 +7776,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 is_primary ? 1 : 0,
                 description || null,
                 is_active !== undefined ? (is_active ? 1 : 0) : 1,
-                nowShamsi
+                nowShamsi,
               )
               .run();
 
@@ -7787,7 +7788,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 201,
                 headers,
-              }
+              },
             );
           }
         } catch (error) {
@@ -7812,7 +7813,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -7830,7 +7831,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
           // چک: شخصی به این پست وصله؟
           const assigned = await env.DB.prepare(
-            "SELECT COUNT(*) as cnt FROM person_organizations WHERE position_id = ?"
+            "SELECT COUNT(*) as cnt FROM person_organizations WHERE position_id = ?",
           )
             .bind(id)
             .first();
@@ -7843,7 +7844,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
@@ -7879,7 +7880,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -7898,12 +7899,12 @@ if (url.pathname === "/" || url.pathname === "") {
             `SELECT id, code, title, parent_id, level, level_name, sort_order
              FROM base_data 
              WHERE section = 'organization' AND is_active = 1
-             ORDER BY code`
+             ORDER BY code`,
           ).all();
 
           // ۲. همه پست‌ها
           const positions = await env.DB.prepare(
-            `SELECT * FROM org_positions WHERE is_active = 1 ORDER BY position_order, id`
+            `SELECT * FROM org_positions WHERE is_active = 1 ORDER BY position_order, id`,
           ).all();
 
           // ۳. همه اتصالات (شخص به سازمان+پست)
@@ -7912,7 +7913,7 @@ if (url.pathname === "/" || url.pathname === "") {
                     po.role, po.is_primary,
                     p.full_name, p.national_id, p.mobile, p.code as person_code
              FROM person_organizations po
-             LEFT JOIN persons p ON po.person_id = p.id`
+             LEFT JOIN persons p ON po.person_id = p.id`,
           ).all();
 
           // ۴. ساختار درختی + پست‌ها
@@ -7934,7 +7935,7 @@ if (url.pathname === "/" || url.pathname === "") {
               const assigned = assignments.results.find(
                 (a) =>
                   a.organization_id === pos.organization_id &&
-                  a.position_id === pos.id
+                  a.position_id === pos.id,
               );
 
               orgMap[pos.organization_id].positions.push({
@@ -7946,12 +7947,12 @@ if (url.pathname === "/" || url.pathname === "") {
                 is_primary: pos.is_primary,
                 assigned_person: assigned
                   ? {
-                      person_id: assigned.person_id,
-                      full_name: assigned.full_name,
-                      national_id: assigned.national_id,
-                      person_code: assigned.person_code,
-                      mobile: assigned.mobile,
-                    }
+                    person_id: assigned.person_id,
+                    full_name: assigned.full_name,
+                    national_id: assigned.national_id,
+                    person_code: assigned.person_code,
+                    mobile: assigned.mobile,
+                  }
                   : null,
               });
             }
@@ -7994,7 +7995,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -8021,7 +8022,7 @@ if (url.pathname === "/" || url.pathname === "") {
           // چک: پست قبلاً به کسی داده شده؟
           const existing = await env.DB.prepare(
             `SELECT id FROM person_organizations 
-             WHERE organization_id = ? AND position_id = ? AND person_id != ?`
+             WHERE organization_id = ? AND position_id = ? AND person_id != ?`,
           )
             .bind(organization_id, position_id, person_id)
             .first();
@@ -8034,14 +8035,14 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
           // چک: این شخص قبلاً به این سازمان+پست وصله؟
           const already = await env.DB.prepare(
             `SELECT id FROM person_organizations 
-             WHERE person_id = ? AND organization_id = ? AND position_id = ?`
+             WHERE person_id = ? AND organization_id = ? AND position_id = ?`,
           )
             .bind(person_id, organization_id, position_id)
             .first();
@@ -8049,7 +8050,7 @@ if (url.pathname === "/" || url.pathname === "") {
           if (already) {
             // فقط role رو آپدیت کن
             await env.DB.prepare(
-              "UPDATE person_organizations SET role = ? WHERE id = ?"
+              "UPDATE person_organizations SET role = ? WHERE id = ?",
             )
               .bind(role || null, already.id)
               .run();
@@ -8059,7 +8060,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 200,
                 headers,
-              }
+              },
             );
           }
 
@@ -8068,14 +8069,14 @@ if (url.pathname === "/" || url.pathname === "") {
           const result = await env.DB.prepare(
             `INSERT INTO person_organizations 
              (person_id, organization_id, position_id, role, is_primary, created_at_shamsi)
-             VALUES (?, ?, ?, ?, 0, ?)`
+             VALUES (?, ?, ?, ?, 0, ?)`,
           )
             .bind(
               person_id,
               organization_id,
               position_id,
               role || null,
-              nowShamsi
+              nowShamsi,
             )
             .run();
 
@@ -8087,7 +8088,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 201,
               headers,
-            }
+            },
           );
         } catch (error) {
           console.error("Assign position error:", error);
@@ -8113,7 +8114,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -8130,7 +8131,7 @@ if (url.pathname === "/" || url.pathname === "") {
           const poId = url.pathname.split("/")[3];
 
           await env.DB.prepare(
-            "UPDATE person_organizations SET position_id = NULL WHERE id = ?"
+            "UPDATE person_organizations SET position_id = NULL WHERE id = ?",
           )
             .bind(poId)
             .run();
@@ -8159,7 +8160,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 401,
               headers,
-            }
+            },
           );
         }
 
@@ -8177,7 +8178,7 @@ if (url.pathname === "/" || url.pathname === "") {
         const hasAccess = await checkPermission(
           env,
           userData.userId,
-          "users.view"
+          "users.view",
         );
         if (!hasAccess) {
           return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
@@ -8187,7 +8188,7 @@ if (url.pathname === "/" || url.pathname === "") {
         }
 
         const users = await env.DB.prepare(
-          "SELECT id, username, full_name, role, organization, is_active, created_at FROM users ORDER BY created_at DESC"
+          "SELECT id, username, full_name, role, organization, is_active, created_at FROM users ORDER BY created_at DESC",
         ).all();
 
         return new Response(JSON.stringify(users.results), {
@@ -8205,7 +8206,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 401,
               headers,
-            }
+            },
           );
         }
 
@@ -8228,7 +8229,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
 
@@ -8240,14 +8241,14 @@ if (url.pathname === "/" || url.pathname === "") {
             `
             INSERT INTO users (username, password_hash, full_name, role, organization)
             VALUES (?, ?, ?, ?, ?)
-          `
+          `,
           )
             .bind(
               username,
               password_hash,
               full_name,
               role,
-              organization || null
+              organization || null,
             )
             .run();
 
@@ -8256,7 +8257,7 @@ if (url.pathname === "/" || url.pathname === "") {
               success: true,
               id: result.meta.last_row_id,
             }),
-            { status: 201, headers }
+            { status: 201, headers },
           );
         } catch (error) {
           return new Response(
@@ -8264,7 +8265,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
       }
@@ -8278,7 +8279,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 401,
               headers,
-            }
+            },
           );
         }
 
@@ -8302,7 +8303,7 @@ if (url.pathname === "/" || url.pathname === "") {
             `
             UPDATE users SET full_name = ?, role = ?, organization = ?, is_active = ?, password_hash = ?
             WHERE id = ?
-          `
+          `,
           )
             .bind(
               full_name,
@@ -8310,7 +8311,7 @@ if (url.pathname === "/" || url.pathname === "") {
               organization || null,
               is_active ? 1 : 0,
               password_hash,
-              id
+              id,
             )
             .run();
         } else {
@@ -8318,7 +8319,7 @@ if (url.pathname === "/" || url.pathname === "") {
             `
             UPDATE users SET full_name = ?, role = ?, organization = ?, is_active = ?
             WHERE id = ?
-          `
+          `,
           )
             .bind(full_name, role, organization || null, is_active ? 1 : 0, id)
             .run();
@@ -8343,7 +8344,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 401,
                 headers,
-              }
+              },
             );
           }
 
@@ -8366,7 +8367,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
@@ -8381,7 +8382,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 SELECT id FROM budget_executions LIMIT 1
               )) as exec_check,
               (SELECT COUNT(*) FROM audit_log WHERE user_id = ?) as audit_count
-          `
+          `,
           )
             .bind(id, id, id, id)
             .first();
@@ -8403,7 +8404,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 message: "کاربر به دلیل داشتن سوابق، غیرفعال شد",
                 deactivated: true,
               }),
-              { status: 200, headers }
+              { status: 200, headers },
             );
           }
 
@@ -8416,7 +8417,7 @@ if (url.pathname === "/" || url.pathname === "") {
               message: "کاربر حذف شد",
               deleted: true,
             }),
-            { status: 200, headers }
+            { status: 200, headers },
           );
         } catch (error) {
           console.error("Delete user error:", error.message);
@@ -8489,7 +8490,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
 
@@ -8504,12 +8505,12 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
           const budget = await env.DB.prepare(
-            "SELECT amount FROM budget_proposals WHERE id = ?"
+            "SELECT amount FROM budget_proposals WHERE id = ?",
           )
             .bind(budget_proposal_id)
             .first();
@@ -8530,7 +8531,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 {
                   status: 400,
                   headers,
-                }
+                },
               );
             }
             difference = parseFloat(new_amount);
@@ -8541,7 +8542,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 {
                   status: 400,
                   headers,
-                }
+                },
               );
             }
             difference = -parseFloat(new_amount);
@@ -8567,7 +8568,7 @@ if (url.pathname === "/" || url.pathname === "") {
             INSERT INTO budget_revisions 
             (fiscal_year_id, budget_proposal_id, revision_type, old_amount, new_amount, difference, reason, created_by)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-          `
+          `,
           )
             .bind(
               fiscal_year_id,
@@ -8577,7 +8578,7 @@ if (url.pathname === "/" || url.pathname === "") {
               new_amount || null,
               difference,
               reason,
-              userData.userId
+              userData.userId,
             )
             .run();
 
@@ -8586,7 +8587,7 @@ if (url.pathname === "/" || url.pathname === "") {
               success: true,
               id: result.meta.last_row_id,
             }),
-            { status: 201, headers }
+            { status: 201, headers },
           );
         } catch (error) {
           return new Response(
@@ -8594,7 +8595,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
       }
@@ -8627,7 +8628,7 @@ if (url.pathname === "/" || url.pathname === "") {
         // اگر تایید شد، تغییرات رو اعمال کن
         if (status === "approved") {
           const revision = await env.DB.prepare(
-            "SELECT * FROM budget_revisions WHERE id = ?"
+            "SELECT * FROM budget_revisions WHERE id = ?",
           )
             .bind(id)
             .first();
@@ -8645,7 +8646,7 @@ if (url.pathname === "/" || url.pathname === "") {
               {
                 status: 400,
                 headers,
-              }
+              },
             );
           }
 
@@ -8657,7 +8658,7 @@ if (url.pathname === "/" || url.pathname === "") {
               INSERT INTO budget_proposals 
               (fiscal_year_id, organization_id, economic_class_id, title, amount, status, proposed_by)
               VALUES (?, ?, ?, ?, ?, 'approved', ?)
-            `
+            `,
             )
               .bind(
                 revision.fiscal_year_id,
@@ -8665,13 +8666,13 @@ if (url.pathname === "/" || url.pathname === "") {
                 1, // پیش‌فرض
                 "ردیف جدید (اصلاح بودجه)",
                 revision.new_amount,
-                revision.created_by
+                revision.created_by,
               )
               .run();
           } else if (revision.revision_type === "increase") {
             // مبلغ جدید = مبلغ فعلی بودجه + مبلغ افزایش
             const currentBudget = await env.DB.prepare(
-              "SELECT amount FROM budget_proposals WHERE id = ?"
+              "SELECT amount FROM budget_proposals WHERE id = ?",
             )
               .bind(revision.budget_proposal_id)
               .first();
@@ -8680,14 +8681,14 @@ if (url.pathname === "/" || url.pathname === "") {
             await env.DB.prepare(
               `
               UPDATE budget_proposals SET amount = ? WHERE id = ?
-            `
+            `,
             )
               .bind(newTotal, revision.budget_proposal_id)
               .run();
           } else if (revision.revision_type === "decrease") {
             // مبلغ جدید = مبلغ فعلی بودجه - مبلغ کاهش
             const currentBudget = await env.DB.prepare(
-              "SELECT amount FROM budget_proposals WHERE id = ?"
+              "SELECT amount FROM budget_proposals WHERE id = ?",
             )
               .bind(revision.budget_proposal_id)
               .first();
@@ -8696,7 +8697,7 @@ if (url.pathname === "/" || url.pathname === "") {
             await env.DB.prepare(
               `
               UPDATE budget_proposals SET amount = ? WHERE id = ?
-            `
+            `,
             )
               .bind(newTotal, revision.budget_proposal_id)
               .run();
@@ -8709,7 +8710,7 @@ if (url.pathname === "/" || url.pathname === "") {
           UPDATE budget_revisions 
           SET status = ?, approved_by = ?, approved_at = CURRENT_TIMESTAMP
           WHERE id = ?
-        `
+        `,
         )
           .bind(status, userData.userId, id)
           .run();
@@ -8735,13 +8736,13 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
 
         // اطلاعات سال مالی
         const fiscalYear = await env.DB.prepare(
-          "SELECT * FROM fiscal_years WHERE id = ?"
+          "SELECT * FROM fiscal_years WHERE id = ?",
         )
           .bind(fiscalYearId)
           .first();
@@ -8754,7 +8755,7 @@ if (url.pathname === "/" || url.pathname === "") {
           LEFT JOIN economic_classifications ec ON bp.economic_class_id = ec.id
           WHERE bp.fiscal_year_id = ? AND bp.status = 'approved'
           GROUP BY ec.type
-        `
+        `,
         )
           .bind(fiscalYearId)
           .all();
@@ -8769,7 +8770,7 @@ if (url.pathname === "/" || url.pathname === "") {
           WHERE bp.fiscal_year_id = ? AND bp.status = 'approved'
           GROUP BY ec.sub_code
           ORDER BY ec.main_code, ec.chapter_code, ec.sub_code
-        `
+        `,
         )
           .bind(fiscalYearId)
           .all();
@@ -8785,7 +8786,7 @@ if (url.pathname === "/" || url.pathname === "") {
           WHERE bp.fiscal_year_id = ? AND bp.status = 'approved'
           GROUP BY bp.organization_id
           ORDER BY total DESC
-        `
+        `,
         )
           .bind(fiscalYearId)
           .all();
@@ -8796,7 +8797,7 @@ if (url.pathname === "/" || url.pathname === "") {
           SELECT SUM(amount) as total, COUNT(*) as count
           FROM budget_proposals
           WHERE fiscal_year_id = ? AND status = 'approved'
-        `
+        `,
         )
           .bind(fiscalYearId)
           .first();
@@ -8809,7 +8810,7 @@ if (url.pathname === "/" || url.pathname === "") {
             byOrganization: byOrganization.results,
             grandTotal,
           }),
-          { status: 200, headers }
+          { status: 200, headers },
         );
       }
 
@@ -8826,7 +8827,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
 
@@ -8842,7 +8843,7 @@ if (url.pathname === "/" || url.pathname === "") {
           LEFT JOIN economic_classifications ec ON bp.economic_class_id = ec.id
           WHERE bp.fiscal_year_id = ? AND bp.status = 'approved'
           ORDER BY bp.amount DESC
-        `
+        `,
         )
           .bind(fiscalYearId)
           .all();
@@ -8867,7 +8868,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
 
@@ -8877,7 +8878,7 @@ if (url.pathname === "/" || url.pathname === "") {
           SELECT SUM(amount) as total, COUNT(*) as count
           FROM budget_proposals
           WHERE fiscal_year_id = ? AND status = 'approved'
-        `
+        `,
         )
           .bind(fiscalYear1)
           .first();
@@ -8887,7 +8888,7 @@ if (url.pathname === "/" || url.pathname === "") {
           SELECT SUM(amount) as total, COUNT(*) as count
           FROM budget_proposals
           WHERE fiscal_year_id = ? AND status = 'approved'
-        `
+        `,
         )
           .bind(fiscalYear2)
           .first();
@@ -8901,7 +8902,7 @@ if (url.pathname === "/" || url.pathname === "") {
           WHERE bp.fiscal_year_id = ? AND bp.status = 'approved'
           GROUP BY ec.sub_code
           ORDER BY ec.sub_code
-        `
+        `,
         )
           .bind(fiscalYear1)
           .all();
@@ -8914,7 +8915,7 @@ if (url.pathname === "/" || url.pathname === "") {
           WHERE bp.fiscal_year_id = ? AND bp.status = 'approved'
           GROUP BY ec.sub_code
           ORDER BY ec.sub_code
-        `
+        `,
         )
           .bind(fiscalYear2)
           .all();
@@ -8924,7 +8925,7 @@ if (url.pathname === "/" || url.pathname === "") {
             year1: { total: year1Total, details: year1Details.results },
             year2: { total: year2Total, details: year2Details.results },
           }),
-          { status: 200, headers }
+          { status: 200, headers },
         );
       }
 
@@ -8940,7 +8941,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
 
@@ -8955,7 +8956,7 @@ if (url.pathname === "/" || url.pathname === "") {
           LEFT JOIN economic_classifications ec ON bp.economic_class_id = ec.id
           WHERE bp.fiscal_year_id = ? AND bp.status = 'approved'
           ORDER BY bp.id
-        `
+        `,
         )
           .bind(fiscalYearId)
           .all();
@@ -8972,7 +8973,7 @@ if (url.pathname === "/" || url.pathname === "") {
             `
             SELECT SUM(amount) as total FROM budget_allocations
             WHERE approved_budget_id = ?
-          `
+          `,
           )
             .bind(budget.id)
             .first();
@@ -8986,7 +8987,7 @@ if (url.pathname === "/" || url.pathname === "") {
             FROM budget_executions be
             LEFT JOIN budget_allocations ba ON be.allocation_id = ba.id
             WHERE ba.approved_budget_id = ?
-          `
+          `,
           )
             .bind(budget.id)
             .first();
@@ -9033,7 +9034,7 @@ if (url.pathname === "/" || url.pathname === "") {
                   : 0,
             },
           }),
-          { status: 200, headers }
+          { status: 200, headers },
         );
       }
 
@@ -9058,7 +9059,7 @@ if (url.pathname === "/" || url.pathname === "") {
         await env.DB.prepare(
           `
           UPDATE fiscal_years SET status = 'closed' WHERE year = ?
-        `
+        `,
         )
           .bind(year)
           .run();
@@ -9114,7 +9115,7 @@ if (url.pathname === "/" || url.pathname === "") {
         request.method === "GET"
       ) {
         const info = await env.DB.prepare(
-          "SELECT * FROM municipality_info ORDER BY id DESC LIMIT 1"
+          "SELECT * FROM municipality_info ORDER BY id DESC LIMIT 1",
         ).first();
 
         return new Response(JSON.stringify(info || {}), {
@@ -9135,7 +9136,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 401,
               headers,
-            }
+            },
           );
         }
 
@@ -9145,7 +9146,7 @@ if (url.pathname === "/" || url.pathname === "") {
         const hasAccess = await checkPermission(
           env,
           userData.userId,
-          "municipality_info.edit"
+          "municipality_info.edit",
         );
         if (!hasAccess) {
           return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
@@ -9180,13 +9181,13 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 400,
               headers,
-            }
+            },
           );
         }
 
         // بررسی وجود رکورد
         const existing = await env.DB.prepare(
-          "SELECT id FROM municipality_info LIMIT 1"
+          "SELECT id FROM municipality_info LIMIT 1",
         ).first();
 
         if (existing) {
@@ -9202,7 +9203,7 @@ if (url.pathname === "/" || url.pathname === "") {
               allocation_signers = ?, execution_signers = ?,
               updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-          `
+          `,
           )
             .bind(
               province || null,
@@ -9220,7 +9221,7 @@ if (url.pathname === "/" || url.pathname === "") {
               treasury_signers || null,
               allocation_signers || null,
               execution_signers || null,
-              existing.id
+              existing.id,
             )
             .run();
 
@@ -9233,8 +9234,8 @@ if (url.pathname === "/" || url.pathname === "") {
               "municipality_info_updated",
               "municipality_info",
               existing.id,
-              { title }
-            )
+              { title },
+            ),
           );
 
           return new Response(
@@ -9246,7 +9247,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 200,
               headers,
-            }
+            },
           );
         } else {
           // ثبت جدید
@@ -9258,7 +9259,7 @@ if (url.pathname === "/" || url.pathname === "") {
               mayor_name, mayor_details,
               finance_signers, treasury_signers, allocation_signers, execution_signers
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `
+          `,
           )
             .bind(
               province || null,
@@ -9275,7 +9276,7 @@ if (url.pathname === "/" || url.pathname === "") {
               finance_signers || null,
               treasury_signers || null,
               allocation_signers || null,
-              execution_signers || null
+              execution_signers || null,
             )
             .run();
 
@@ -9288,8 +9289,8 @@ if (url.pathname === "/" || url.pathname === "") {
               "municipality_info_created",
               "municipality_info",
               result.meta.last_row_id,
-              { title }
-            )
+              { title },
+            ),
           );
 
           return new Response(
@@ -9301,7 +9302,7 @@ if (url.pathname === "/" || url.pathname === "") {
             {
               status: 201,
               headers,
-            }
+            },
           );
         }
       }
@@ -9399,14 +9400,14 @@ if (url.pathname === "/" || url.pathname === "") {
           const type = url.searchParams.get("type");
           const parentId = url.searchParams.get("parent_id");
           const digitCount = parseInt(
-            url.searchParams.get("digit_count") || "3"
+            url.searchParams.get("digit_count") || "3",
           );
           const prefix = url.searchParams.get("prefix");
 
           if (!section) {
             return new Response(
               JSON.stringify({ error: "section الزامی است" }),
-              { status: 400, headers }
+              { status: 400, headers },
             );
           }
 
@@ -9442,7 +9443,7 @@ if (url.pathname === "/" || url.pathname === "") {
           if (!authHeader) {
             return new Response(
               JSON.stringify({ error: "احراز هویت لازم است" }),
-              { status: 401, headers }
+              { status: 401, headers },
             );
           }
 
@@ -9464,7 +9465,7 @@ if (url.pathname === "/" || url.pathname === "") {
           if (!file || !section || !type) {
             return new Response(
               JSON.stringify({ error: "فایل یا اطلاعات ناقص است" }),
-              { status: 400, headers }
+              { status: 400, headers },
             );
           }
 
@@ -9475,7 +9476,7 @@ if (url.pathname === "/" || url.pathname === "") {
           if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
             return new Response(
               JSON.stringify({ error: "فایل اکسل خالی است یا معتبر نیست." }),
-              { status: 400, headers }
+              { status: 400, headers },
             );
           }
 
@@ -9483,22 +9484,21 @@ if (url.pathname === "/" || url.pathname === "") {
           let sheetsToRead = [];
           if (type === "resource") {
             sheetsToRead = workbook.SheetNames.filter((n) =>
-              n.includes("منابع")
+              n.includes("منابع"),
             );
           } else {
             sheetsToRead = workbook.SheetNames.filter((n) =>
-              n.includes("مصارف")
+              n.includes("مصارف"),
             );
           }
 
           if (sheetsToRead.length === 0) {
             return new Response(
               JSON.stringify({
-                error: `هیچ شیتی با کلمه «${
-                  type === "resource" ? "منابع" : "مصارف"
-                }» در فایل پیدا نشد. لطفاً از فایل نمونه استفاده کنید.`,
+                error: `هیچ شیتی با کلمه «${type === "resource" ? "منابع" : "مصارف"
+                  }» در فایل پیدا نشد. لطفاً از فایل نمونه استفاده کنید.`,
               }),
-              { status: 400, headers }
+              { status: 400, headers },
             );
           }
 
@@ -9516,7 +9516,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 JSON.stringify({
                   error: `ساختار شیت «${sheetName}» نامعتبر است. ستون‌ها باید شامل «کد طبقه‌بندی» و «عنوان» باشند.`,
                 }),
-                { status: 400, headers }
+                { status: 400, headers },
               );
             }
           }
@@ -9550,7 +9550,7 @@ if (url.pathname === "/" || url.pathname === "") {
           if (rawItems.length === 0) {
             return new Response(
               JSON.stringify({ error: "هیچ داده معتبری در فایل یافت نشد" }),
-              { status: 400, headers }
+              { status: 400, headers },
             );
           }
 
@@ -9561,7 +9561,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
           // پاک کردن داده‌های قبلی
           await env.DB.prepare(
-            "DELETE FROM base_data WHERE section = ? AND type = ?"
+            "DELETE FROM base_data WHERE section = ? AND type = ?",
           )
             .bind(section, type)
             .run();
@@ -9583,7 +9583,7 @@ if (url.pathname === "/" || url.pathname === "") {
               let commonLength = 0;
               const minLength = Math.min(
                 item.code.length,
-                existingExcelCode.length
+                existingExcelCode.length,
               );
 
               for (let i = 0; i < minLength; i++) {
@@ -9635,7 +9635,7 @@ if (url.pathname === "/" || url.pathname === "") {
                   INSERT INTO base_data 
                   (section, type, code, title, parent_id, level, level_name, digit_count, extra_data, created_at_shamsi, updated_at_shamsi)
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-              `
+              `,
             )
               .bind(
                 section,
@@ -9648,7 +9648,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 3,
                 JSON.stringify({ original_excel_code: item.code }),
                 nowShamsi,
-                nowShamsi
+                nowShamsi,
               )
               .run();
 
@@ -9662,7 +9662,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
           return new Response(
             JSON.stringify({ success: true, count: insertedCount }),
-            { status: 200, headers }
+            { status: 200, headers },
           );
         } catch (error) {
           console.error("Import error:", error);
@@ -9685,7 +9685,7 @@ if (url.pathname === "/" || url.pathname === "") {
           if (!authHeader) {
             return new Response(
               JSON.stringify({ error: "احراز هویت لازم است" }),
-              { status: 401, headers }
+              { status: 401, headers },
             );
           }
 
@@ -9705,7 +9705,7 @@ if (url.pathname === "/" || url.pathname === "") {
           if (!file) {
             return new Response(
               JSON.stringify({ error: "فایلی ارسال نشده است" }),
-              { status: 400, headers }
+              { status: 400, headers },
             );
           }
 
@@ -9715,7 +9715,7 @@ if (url.pathname === "/" || url.pathname === "") {
           if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
             return new Response(
               JSON.stringify({ error: "فایل اکسل خالی است یا معتبر نیست." }),
-              { status: 400, headers }
+              { status: 400, headers },
             );
           }
 
@@ -9724,7 +9724,7 @@ if (url.pathname === "/" || url.pathname === "") {
           // ============================================
           const findSheet = (mainKeyword, subKeyword) => {
             return workbook.SheetNames.find(
-              (n) => n.includes(mainKeyword) && n.includes(subKeyword)
+              (n) => n.includes(mainKeyword) && n.includes(subKeyword),
             );
           };
 
@@ -9745,7 +9745,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 error:
                   "هیچ شیت عملیاتی معتبری یافت نشد. شیت‌ها باید شامل «عملیاتی» و یکی از «تملک سرمایه ای»، «تملک مالی» یا «خدمت» باشند.",
               }),
-              { status: 400, headers }
+              { status: 400, headers },
             );
           }
 
@@ -9794,24 +9794,24 @@ if (url.pathname === "/" || url.pathname === "") {
             "Capital sheet:",
             sheetCapital,
             "→ items:",
-            capitalItems.length
+            capitalItems.length,
           );
           console.log(
             "Financial sheet:",
             sheetFinancial,
             "→ items:",
-            financialItems.length
+            financialItems.length,
           );
           console.log(
             "Service sheet:",
             sheetService,
             "→ items:",
-            serviceItems.length
+            serviceItems.length,
           );
           console.log("Capital items (first 10):", capitalItems.slice(0, 10));
           console.log(
             "Financial items (first 10):",
-            financialItems.slice(0, 10)
+            financialItems.slice(0, 10),
           );
           console.log("Service items (first 10):", serviceItems.slice(0, 10));
 
@@ -9822,7 +9822,7 @@ if (url.pathname === "/" || url.pathname === "") {
           ) {
             return new Response(
               JSON.stringify({ error: "هیچ داده معتبری در شیت‌ها یافت نشد" }),
-              { status: 400, headers }
+              { status: 400, headers },
             );
           }
 
@@ -9830,7 +9830,7 @@ if (url.pathname === "/" || url.pathname === "") {
 
           // پاک کردن داده‌های قبلی
           await env.DB.prepare(
-            "DELETE FROM base_data WHERE section = 'operational'"
+            "DELETE FROM base_data WHERE section = 'operational'",
           ).run();
 
           // map: excelCode → { id, code, level, type }
@@ -9848,14 +9848,14 @@ if (url.pathname === "/" || url.pathname === "") {
             levelName,
             parentId,
             rawCode,
-            nextCode
+            nextCode,
           ) => {
             const stmt = env.DB.prepare(
               `
               INSERT INTO base_data 
               (section, type, code, title, parent_id, level, level_name, digit_count, extra_data, created_at_shamsi, updated_at_shamsi)
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `
+            `,
             ).bind(
               "operational",
               type,
@@ -9869,7 +9869,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 original_excel_code: rawCode || normalizedCode,
               }),
               nowShamsi,
-              nowShamsi
+              nowShamsi,
             );
 
             return {
@@ -9911,7 +9911,7 @@ if (url.pathname === "/" || url.pathname === "") {
               const key = `${type}:${parentId}`;
               if (codeCounters[key] === undefined) {
                 const last = await env.DB.prepare(
-                  `SELECT code FROM base_data WHERE parent_id = ? AND type = ? ORDER BY code DESC LIMIT 1`
+                  `SELECT code FROM base_data WHERE parent_id = ? AND type = ? ORDER BY code DESC LIMIT 1`,
                 )
                   .bind(parentId, type)
                   .first();
@@ -9942,7 +9942,7 @@ if (url.pathname === "/" || url.pathname === "") {
               type,
               level,
               levelName,
-              parentResolver
+              parentResolver,
             ) => {
               const stmts = [];
 
@@ -9958,13 +9958,13 @@ if (url.pathname === "/" || url.pathname === "") {
                 const nextCode = await getNextCode(
                   type,
                   parent ? parent.id : null,
-                  parent
+                  parent,
                 );
 
                 const stmt = env.DB.prepare(
                   `INSERT INTO base_data 
                    (section, type, code, title, parent_id, level, level_name, digit_count, extra_data, created_at_shamsi, updated_at_shamsi)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 ).bind(
                   "operational",
                   type,
@@ -9976,7 +9976,7 @@ if (url.pathname === "/" || url.pathname === "") {
                   3,
                   JSON.stringify({ original_excel_code: item.code }),
                   nowShamsi,
-                  nowShamsi
+                  nowShamsi,
                 );
 
                 stmts.push({ stmt, key, nextCode, type, level });
@@ -10003,7 +10003,7 @@ if (url.pathname === "/" || url.pathname === "") {
                     totalCount++;
                   } else {
                     console.warn(
-                      `[INSERT FAILED] ${b.key} (code: ${b.nextCode})`
+                      `[INSERT FAILED] ${b.key} (code: ${b.nextCode})`,
                     );
                   }
                 });
@@ -10014,7 +10014,7 @@ if (url.pathname === "/" || url.pathname === "") {
             // سطح ۰: مأموریت
             // ============================================
             const missions = normalizedItems.filter(
-              (i) => i.normalizedLen === 1
+              (i) => i.normalizedLen === 1,
             );
             await runLevel(missions, "mission", 0, "مأموریت", (item) => {
               const key = `mission:${item.normalizedCode}`;
@@ -10026,7 +10026,7 @@ if (url.pathname === "/" || url.pathname === "") {
             // سطح ۱: برنامه
             // ============================================
             const programs = normalizedItems.filter(
-              (i) => i.normalizedLen === 3
+              (i) => i.normalizedLen === 3,
             );
             await runLevel(programs, "program", 1, "برنامه", (item) => {
               const parentCode = item.normalizedCode.substring(0, 1);
@@ -10039,7 +10039,7 @@ if (url.pathname === "/" || url.pathname === "") {
             const level2Type = leafType === "activity" ? "service" : "plan";
             const level2Name = leafType === "activity" ? "خدمت" : "طرح";
             const level2Items = normalizedItems.filter(
-              (i) => i.normalizedLen === 5
+              (i) => i.normalizedLen === 5,
             );
 
             await runLevel(level2Items, level2Type, 2, level2Name, (item) => {
@@ -10054,12 +10054,12 @@ if (url.pathname === "/" || url.pathname === "") {
               leafType === "project_capital"
                 ? "پروژه (تملک سرمایه‌ای)"
                 : leafType === "project_financial"
-                ? "پروژه (تملک مالی)"
-                : "فعالیت";
+                  ? "پروژه (تملک مالی)"
+                  : "فعالیت";
 
             const parent2Type = leafType === "activity" ? "service" : "plan";
             const leafItems = normalizedItems.filter(
-              (i) => i.normalizedLen > 5
+              (i) => i.normalizedLen > 5,
             );
 
             await runLevel(leafItems, leafType, 3, leafName, (item) => {
@@ -10069,11 +10069,9 @@ if (url.pathname === "/" || url.pathname === "") {
 
             const _sheetEnd = Object.keys(insertedNodes).length;
             console.log(
-              `[SHEET ${leafType}] items=${
-                items.length
-              } | before=${_sheetStart} | after=${_sheetEnd} | new=${
-                _sheetEnd - _sheetStart
-              }`
+              `[SHEET ${leafType}] items=${items.length
+              } | before=${_sheetStart} | after=${_sheetEnd} | new=${_sheetEnd - _sheetStart
+              }`,
             );
           };
           // ============================================
@@ -10101,7 +10099,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 service: { name: sheetService, found: serviceItems.length },
               },
             }),
-            { status: 200, headers }
+            { status: 200, headers },
           );
         } catch (error) {
           console.error("Operational import error:", error);
@@ -10112,6 +10110,194 @@ if (url.pathname === "/" || url.pathname === "") {
         }
       }
 
+      // ============================================
+      // POST: ایمپورت اکسل فعالیت‌ها (زیر خدمت‌های موجود)
+      // ============================================
+      if (url.pathname === "/api/base-data/import-activities-excel" && request.method === "POST") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+          }
+
+          const formData = await request.formData();
+          const file = formData.get("file");
+
+          if (!file) {
+            return new Response(JSON.stringify({ error: "فایلی ارسال نشده است" }), { status: 400, headers });
+          }
+
+          const arrayBuffer = await file.arrayBuffer();
+          const workbook = XLSX.read(arrayBuffer, { type: "array" });
+
+          if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+            return new Response(JSON.stringify({ error: "فایل اکسل خالی است" }), { status: 400, headers });
+          }
+
+          const ws = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+          if (!rows || rows.length < 2) {
+            return new Response(JSON.stringify({ error: "شیت خالی است" }), { status: 400, headers });
+          }
+
+          // ============================================
+          // استخراج فقط فعالیت‌ها (کد ۸ رقمی)
+          // ============================================
+          const activityItems = [];
+
+          for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length < 5) continue;
+
+            const codeRaw = row[0];
+            const programTitle = row[2] ? row[2].toString().trim() : "";
+            const serviceTitle = row[3] ? row[3].toString().trim() : "";
+            const activityTitle = row[4] ? row[4].toString().trim() : "";
+
+            if (!codeRaw) continue;
+
+            let code = codeRaw.toString().trim();
+            code = toEnglishNumbers(code);
+
+            if (!/^\d+$/.test(code)) continue;
+
+            // فقط فعالیت‌ها: کد ۸ رقمی
+            if (code.length === 8) {
+              // عنوان فعالیت از ستون E (اگه نبود، ستون B)
+              let title = activityTitle;
+              if (!title && row[1]) title = row[1].toString().trim();
+              
+              if (!title) continue;
+              if (title.includes("جمع")) continue;
+
+              // کد خدمت والد = ۵ رقم اول
+              const parentServiceExcelCode = code.substring(0, 5);
+
+              activityItems.push({
+                code,
+                title,
+                parentServiceExcelCode,
+              });
+            }
+          }
+
+          if (activityItems.length === 0) {
+            return new Response(JSON.stringify({ error: "هیچ فعالیتی (کد ۸ رقمی) در فایل یافت نشد" }), { status: 400, headers });
+          }
+
+          const nowShamsi = toShamsi(new Date());
+
+          // ============================================
+          // برای هر فعالیت: پیدا کردن خدمت والد
+          // ============================================
+          const pendingStmts = [];
+          let totalCount = 0;
+          let notFoundCount = 0;
+          const notFoundCodes = [];
+
+          // کش برای خدمت‌ها (برای جلوگیری از کوئری تکراری)
+          const serviceCache = {};
+          // شمارنده کد بعدی برای هر خدمت
+          const activityCounters = {};
+
+          for (const item of activityItems) {
+            const serviceExcelCode = item.parentServiceExcelCode;
+
+            // چک کش
+            let parentService = serviceCache[serviceExcelCode];
+
+            if (parentService === undefined) {
+              // از دیتابیس بپرس
+              parentService = await env.DB.prepare(
+                `SELECT id, code FROM base_data 
+                 WHERE section = 'operational' 
+                   AND type = 'service'
+                   AND json_extract(extra_data, '$.original_excel_code') = ?
+                 LIMIT 1`
+              ).bind(serviceExcelCode).first();
+
+              serviceCache[serviceExcelCode] = parentService; // null یا آبجکت
+            }
+
+            if (!parentService) {
+              console.warn(`خدمت والد برای ${item.code} (کد خدمت: ${serviceExcelCode}) یافت نشد`);
+              notFoundCount++;
+              if (notFoundCodes.length < 10) notFoundCodes.push(serviceExcelCode);
+              continue;
+            }
+
+            // کد بعدی فعالیت
+            if (activityCounters[parentService.id] === undefined) {
+              const lastActivity = await env.DB.prepare(
+                `SELECT code FROM base_data 
+                 WHERE parent_id = ? AND type = 'activity' 
+                 ORDER BY code DESC LIMIT 1`
+              ).bind(parentService.id).first();
+
+              if (lastActivity) {
+                const suffix = lastActivity.code.substring(parentService.code.length);
+                activityCounters[parentService.id] = parseInt(suffix, 10) || 0;
+              } else {
+                activityCounters[parentService.id] = 0;
+              }
+            }
+
+            activityCounters[parentService.id]++;
+            const nextCode = parentService.code + String(activityCounters[parentService.id]).padStart(3, "0");
+
+            const stmt = env.DB.prepare(
+              `INSERT INTO base_data 
+               (section, type, code, title, parent_id, level, level_name, digit_count, extra_data, created_at_shamsi, updated_at_shamsi)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            ).bind(
+              "operational",
+              "activity",
+              nextCode,
+              item.title,
+              parentService.id,
+              3,
+              "فعالیت",
+              3,
+              JSON.stringify({ original_excel_code: item.code }),
+              nowShamsi,
+              nowShamsi
+            );
+
+            pendingStmts.push(stmt);
+          }
+
+          // ============================================
+          // اجرای batch
+          // ============================================
+          const BATCH_SIZE = 50;
+          for (let i = 0; i < pendingStmts.length; i += BATCH_SIZE) {
+            const chunk = pendingStmts.slice(i, i + BATCH_SIZE);
+            await env.DB.batch(chunk);
+            totalCount += chunk.length;
+          }
+
+          return new Response(JSON.stringify({
+            success: true,
+            count: totalCount,
+            not_found: notFoundCount,
+            not_found_samples: notFoundCodes,
+            total_found: activityItems.length,
+          }), { status: 200, headers });
+
+        } catch (error) {
+          console.error("Activities import error:", error);
+          return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+        }
+      }
+
       // POST: افزودن ردیف جدید
       if (url.pathname === "/api/base-data" && request.method === "POST") {
         try {
@@ -10119,7 +10305,7 @@ if (url.pathname === "/" || url.pathname === "") {
           if (!authHeader) {
             return new Response(
               JSON.stringify({ error: "احراز هویت لازم است" }),
-              { status: 401, headers }
+              { status: 401, headers },
             );
           }
 
@@ -10151,7 +10337,7 @@ if (url.pathname === "/" || url.pathname === "") {
           if (!section || !title) {
             return new Response(
               JSON.stringify({ error: "section و title الزامی است" }),
-              { status: 400, headers }
+              { status: 400, headers },
             );
           }
 
@@ -10168,7 +10354,7 @@ if (url.pathname === "/" || url.pathname === "") {
           let level = 0;
           if (parent_id) {
             const parent = await env.DB.prepare(
-              "SELECT level FROM base_data WHERE id = ?"
+              "SELECT level FROM base_data WHERE id = ?",
             )
               .bind(parent_id)
               .first();
@@ -10190,7 +10376,7 @@ if (url.pathname === "/" || url.pathname === "") {
             INSERT INTO base_data 
             (fiscal_year_id, section, type, prefix, code, digit_count, level, level_name, title, parent_id, description, extra_data, sort_order, created_at_shamsi, updated_at_shamsi)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `
+          `,
           )
             .bind(
               fiscal_year_id || null,
@@ -10207,7 +10393,7 @@ if (url.pathname === "/" || url.pathname === "") {
               extra_data ? JSON.stringify(extra_data) : null,
               sort_order || 0,
               nowShamsi,
-              nowShamsi
+              nowShamsi,
             )
             .run();
 
@@ -10218,8 +10404,8 @@ if (url.pathname === "/" || url.pathname === "") {
               userData,
               "base_data_created",
               result.meta.last_row_id,
-              { section, type, code, title }
-            )
+              { section, type, code, title },
+            ),
           );
 
           return new Response(
@@ -10229,7 +10415,7 @@ if (url.pathname === "/" || url.pathname === "") {
               code: code,
               level: level,
             }),
-            { status: 201, headers }
+            { status: 201, headers },
           );
         } catch (error) {
           console.error("Base data POST error:", error);
@@ -10250,7 +10436,7 @@ if (url.pathname === "/" || url.pathname === "") {
           if (!authHeader) {
             return new Response(
               JSON.stringify({ error: "احراز هویت لازم است" }),
-              { status: 401, headers }
+              { status: 401, headers },
             );
           }
 
@@ -10297,7 +10483,7 @@ if (url.pathname === "/" || url.pathname === "") {
                 updated_at = CURRENT_TIMESTAMP,
                 updated_at_shamsi = ?
             WHERE id = ?
-          `
+          `,
           )
             .bind(
               title,
@@ -10307,7 +10493,7 @@ if (url.pathname === "/" || url.pathname === "") {
               is_active !== undefined ? (is_active ? 1 : 0) : 1,
               level_name || null,
               nowShamsi,
-              id
+              id,
             )
             .run();
 
@@ -10327,8 +10513,8 @@ if (url.pathname === "/" || url.pathname === "") {
               parseInt(id),
               {
                 title,
-              }
-            )
+              },
+            ),
           );
 
           return new Response(JSON.stringify({ success: true }), {
@@ -10354,7 +10540,7 @@ if (url.pathname === "/" || url.pathname === "") {
           if (!authHeader) {
             return new Response(
               JSON.stringify({ error: "احراز هویت لازم است" }),
-              { status: 401, headers }
+              { status: 401, headers },
             );
           }
 
@@ -10371,7 +10557,7 @@ if (url.pathname === "/" || url.pathname === "") {
           const id = url.pathname.split("/").pop();
 
           const children = await env.DB.prepare(
-            "SELECT COUNT(*) as count FROM base_data WHERE parent_id = ?"
+            "SELECT COUNT(*) as count FROM base_data WHERE parent_id = ?",
           )
             .bind(id)
             .first();
@@ -10382,12 +10568,12 @@ if (url.pathname === "/" || url.pathname === "") {
                 error: `این ردیف ${children.count} زیرشاخه دارد. ابتدا زیرشاخه‌ها را حذف کنید.`,
                 children_count: children.count,
               }),
-              { status: 400, headers }
+              { status: 400, headers },
             );
           }
 
           const result = await env.DB.prepare(
-            "DELETE FROM base_data WHERE id = ?"
+            "DELETE FROM base_data WHERE id = ?",
           )
             .bind(id)
             .run();
@@ -10406,8 +10592,8 @@ if (url.pathname === "/" || url.pathname === "") {
               userData,
               "base_data_deleted",
               parseInt(id),
-              {}
-            )
+              {},
+            ),
           );
 
           return new Response(JSON.stringify({ success: true }), {

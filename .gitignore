@@ -23,3 +23,6 @@ backups/
 
 # Backups
 backups/
+
+# Excel lock files
+~$*
