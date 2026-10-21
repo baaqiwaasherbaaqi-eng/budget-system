@@ -1,797 +1,817 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>طبقه‌بندی اقتصادی</title>
-    <link rel="stylesheet" href="/sidebar.css" />
-    <script src="/sidebar.js"></script>
-    <link
-      href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css"
-      rel="stylesheet"
-      type="text/css"
-    />
-    <style>
-      * {
-        box-sizing: border-box;
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>طبقه‌بندی اقتصادی</title>
+        <link rel="stylesheet" href="/sidebar.css">
+        <script src="/sidebar.js"></script>
+        <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css">
+        <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Vazirmatn", Tahoma, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px 30px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      padding: 12px 24px;
+      background: white;
+      border: 2px solid transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      font-family: "Vazirmatn", Tahoma, sans-serif;
+      font-size: 14px;
+      font-weight: bold;
+      color: #666;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab:hover {
+      background: #f8f9fa;
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .tab.resource.active {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+
+    .tab.expense.active {
+      background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+      box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+    }
+
+    .toolbar {
+      background: white;
+      padding: 15px 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .view-switch {
+      display: flex;
+      background: #f0f2f5;
+      border-radius: 8px;
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .view-switch button {
+      background: transparent;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: "Vazirmatn", Tahoma, sans-serif;
+      font-size: 13px;
+      color: #666;
+      transition: all 0.2s;
+    }
+
+    .view-switch button.active {
+      background: white;
+      color: #667eea;
+      font-weight: bold;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .add-root-btn {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: "Vazirmatn", Tahoma, sans-serif;
+      font-size: 13px;
+      transition: background 0.2s;
+    }
+
+    .add-root-btn:hover {
+      background: #218838;
+    }
+
+    /* ============ Info Banner ============ */
+    .info-banner {
+      background: #fff3cd;
+      border-right: 4px solid #ffc107;
+      border-radius: 6px;
+      padding: 12px 18px;
+      margin-bottom: 15px;
+      font-size: 12px;
+      color: #856404;
+      line-height: 1.7;
+    }
+
+    .info-banner b {
+      color: #664d03;
+    }
+
+    /* ============ Toolbar ============ */
+    .toolbar {
+      background: white;
+      padding: 15px 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Dark mode */
+    body.dark .info-banner {
+      background: #4a3f1e;
+      color: #ffc107;
+    }
+
+    body.dark .info-banner b {
+      color: #ffd966;
+    }
+
+    /* ============ Context Menu ============ */
+    .context-menu {
+      position: fixed;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      padding: 6px;
+      z-index: 10000;
+      min-width: 180px;
+      display: none;
+      animation: fadeIn 0.15s;
+    }
+
+    .context-menu.open {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-5px);
       }
 
-      body {
-        font-family: "Vazirmatn", Tahoma, sans-serif;
-        background: #f0f2f5;
-        margin: 0;
-        padding: 20px;
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .context-menu button {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: 10px 14px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: "Vazirmatn", Tahoma, sans-serif;
+      font-size: 13px;
+      color: #333;
+      text-align: right;
+      transition: background 0.15s;
+      gap: 10px;
+    }
+
+    .context-menu button:hover {
+      background: #f0f2f5;
+    }
+
+    .context-menu button.danger {
+      color: #e74c3c;
+    }
+
+    .context-menu button.danger:hover {
+      background: #fee;
+    }
+
+    .context-menu .divider {
+      height: 1px;
+      background: #e9ecef;
+      margin: 5px 0;
+    }
+
+    /* ============ Modal ============ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10001;
+      padding: 20px;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      animation: slideUp 0.2s;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
       }
 
-      .container {
-        max-width: 1400px;
-        margin: 0 auto;
+      to {
+        transform: translateY(0);
+        opacity: 1;
       }
+    }
 
+    .modal h3 {
+      margin: 0 0 20px 0;
+      font-size: 17px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal .form-group {
+      margin-bottom: 15px;
+    }
+
+    .modal label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      color: #444;
+      font-size: 13px;
+    }
+
+    .modal input,
+    .modal textarea,
+    .modal select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-family: "Vazirmatn", Tahoma, sans-serif;
+      font-size: 13px;
+      transition: border-color 0.2s;
+    }
+
+    .modal input:focus,
+    .modal textarea:focus,
+    .modal select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .modal textarea {
+      resize: vertical;
+      min-height: 70px;
+    }
+
+    .modal .info-row {
+      padding: 10px 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      font-size: 12px;
+      color: #666;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .modal .info-row span b {
+      color: #333;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .modal-actions button {
+      padding: 10px 20px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-family: "Vazirmatn", Tahoma, sans-serif;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .btn-cancel {
+      background: #e9ecef;
+      color: #333;
+    }
+
+    .btn-cancel:hover {
+      background: #dee2e6;
+    }
+
+    .btn-save {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-save:hover {
+      background: #5a67d8;
+    }
+
+    .btn-save:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* ============ Toast ============ */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #333;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      z-index: 10002;
+      transition: transform 0.3s;
+      font-family: "Vazirmatn", Tahoma, sans-serif;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.success {
+      background: #28a745;
+    }
+
+    .toast.error {
+      background: #dc3545;
+    }
+
+    /* ============ Loading / Empty ============ */
+    .loading,
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+      font-size: 14px;
+    }
+
+    .loading .spinner {
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      border: 3px solid #e9ecef;
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 15px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ============ Dark Mode ============ */
+    body.dark {
+      background: #1a202c;
+      color: #e2e8f0;
+    }
+
+    body.dark .toolbar,
+    body.dark .tree-container,
+    body.dark .modal,
+    body.dark .context-menu {
+      background: #2d3748;
+      color: #e2e8f0;
+    }
+
+    body.dark .tab {
+      background: #2d3748;
+      color: #a0aec0;
+    }
+
+    body.dark .tab.active {
+      color: white;
+    }
+
+    body.dark .tree-node .title {
+      color: #e2e8f0;
+    }
+
+    body.dark .tree-node:hover {
+      background: #4a5568;
+    }
+
+    body.dark .tree-node.selected {
+      background: #4a5568;
+    }
+
+    body.dark .tree-children {
+      border-right-color: #4a5568;
+    }
+
+    body.dark .level-0 {
+      background: #3b4a6b !important;
+    }
+
+    body.dark .level-1 {
+      background: #37415b !important;
+    }
+
+    body.dark .modal input,
+    body.dark .modal textarea,
+    body.dark .modal select {
+      background: #1a202c;
+      border-color: #4a5568;
+      color: #e2e8f0;
+    }
+
+    body.dark .modal .info-row {
+      background: #1a202c;
+    }
+
+    body.dark .modal h3 {
+      color: #e2e8f0;
+    }
+
+    body.dark .modal label {
+      color: #cbd5e0;
+    }
+
+    body.dark .view-switch {
+      background: #1a202c;
+    }
+
+    body.dark .view-switch button.active {
+      background: #4a5568;
+    }
+
+    body.dark .btn-cancel {
+      background: #4a5568;
+      color: #e2e8f0;
+    }
+
+    /* ============ Responsive ============ */
+    @media (max-width: 768px) {
       .header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 20px 30px;
-        border-radius: 10px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
-        gap: 15px;
+        padding: 15px 20px;
       }
 
       .header h1 {
-        margin: 0;
-        font-size: 20px;
-      }
-
-      .tabs {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 15px;
-        flex-wrap: wrap;
-      }
-
-      .tab {
-        padding: 12px 24px;
-        background: white;
-        border: 2px solid transparent;
-        border-radius: 10px;
-        cursor: pointer;
-        font-family: "Vazirmatn", Tahoma, sans-serif;
-        font-size: 14px;
-        font-weight: bold;
-        color: #666;
-        transition: all 0.2s;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .tab:hover {
-        background: #f8f9fa;
-      }
-
-      .tab.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-      }
-
-      .tab.resource.active {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
-      }
-
-      .tab.expense.active {
-        background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
-        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        font-size: 17px;
       }
 
       .toolbar {
-        background: white;
-        padding: 15px 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 15px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        padding: 12px 15px;
       }
 
-      .view-switch {
-        display: flex;
-        background: #f0f2f5;
-        border-radius: 8px;
-        padding: 4px;
-        gap: 4px;
-      }
-
-      .view-switch button {
-        background: transparent;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-family: "Vazirmatn", Tahoma, sans-serif;
-        font-size: 13px;
-        color: #666;
-        transition: all 0.2s;
-      }
-
-      .view-switch button.active {
-        background: white;
-        color: #667eea;
-        font-weight: bold;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      }
-
-      .add-root-btn {
-        background: #28a745;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-family: "Vazirmatn", Tahoma, sans-serif;
-        font-size: 13px;
-        transition: background 0.2s;
-      }
-
-      .add-root-btn:hover {
-        background: #218838;
-      }
-
-      /* ============ Info Banner ============ */
-.info-banner {
-    background: #fff3cd;
-    border-right: 4px solid #ffc107;
-    border-radius: 6px;
-    padding: 12px 18px;
-    margin-bottom: 15px;
-    font-size: 12px;
-    color: #856404;
-    line-height: 1.7;
-}
-
-.info-banner b {
-    color: #664d03;
-}
-
-/* ============ Toolbar ============ */
-.toolbar {
-    background: white;
-    padding: 15px 20px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 15px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-}
-
-.toolbar-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-/* Dark mode */
-body.dark .info-banner {
-    background: #4a3f1e;
-    color: #ffc107;
-}
-
-body.dark .info-banner b {
-    color: #ffd966;
-}
-
-      /* ============ Context Menu ============ */
-      .context-menu {
-        position: fixed;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        padding: 6px;
-        z-index: 10000;
-        min-width: 180px;
-        display: none;
-        animation: fadeIn 0.15s;
-      }
-
-      .context-menu.open {
-        display: block;
-      }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(-5px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      .context-menu button {
-        display: flex;
-        align-items: center;
-        width: 100%;
-        padding: 10px 14px;
-        background: transparent;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-family: "Vazirmatn", Tahoma, sans-serif;
-        font-size: 13px;
-        color: #333;
-        text-align: right;
-        transition: background 0.15s;
-        gap: 10px;
-      }
-
-      .context-menu button:hover {
-        background: #f0f2f5;
-      }
-      .context-menu button.danger {
-        color: #e74c3c;
-      }
-      .context-menu button.danger:hover {
-        background: #fee;
-      }
-
-      .context-menu .divider {
-        height: 1px;
-        background: #e9ecef;
-        margin: 5px 0;
-      }
-
-      /* ============ Modal ============ */
-      .modal-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.5);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 10001;
-        padding: 20px;
-      }
-
-      .modal-overlay.open {
-        display: flex;
-      }
-
-      .modal {
-        background: white;
-        border-radius: 12px;
-        padding: 25px;
-        max-width: 500px;
-        width: 100%;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-        animation: slideUp 0.2s;
-        max-height: 90vh;
-        overflow-y: auto;
-      }
-
-      @keyframes slideUp {
-        from {
-          transform: translateY(20px);
-          opacity: 0;
-        }
-        to {
-          transform: translateY(0);
-          opacity: 1;
-        }
-      }
-
-      .modal h3 {
-        margin: 0 0 20px 0;
-        font-size: 17px;
-        color: #333;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .modal .form-group {
-        margin-bottom: 15px;
-      }
-
-      .modal label {
-        display: block;
-        margin-bottom: 6px;
-        font-weight: bold;
-        color: #444;
-        font-size: 13px;
-      }
-
-      .modal input,
-      .modal textarea,
-      .modal select {
-        width: 100%;
+      .tree-node {
         padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        font-family: "Vazirmatn", Tahoma, sans-serif;
+      }
+
+      .tree-node .title {
         font-size: 13px;
-        transition: border-color 0.2s;
       }
 
-      .modal input:focus,
-      .modal textarea:focus,
-      .modal select:focus {
-        outline: none;
-        border-color: #667eea;
+      .tree-children {
+        padding-right: 15px;
+        margin-right: 6px;
       }
 
-      .modal textarea {
-        resize: vertical;
-        min-height: 70px;
-      }
-
-      .modal .info-row {
-        padding: 10px 12px;
-        background: #f8f9fa;
-        border-radius: 6px;
-        margin-bottom: 15px;
-        font-size: 12px;
-        color: #666;
-        display: flex;
-        gap: 15px;
-        flex-wrap: wrap;
-      }
-
-      .modal .info-row span b {
-        color: #333;
-      }
-
-      .modal-actions {
-        display: flex;
-        gap: 10px;
-        justify-content: flex-end;
-        margin-top: 20px;
-      }
-
-      .modal-actions button {
-        padding: 10px 20px;
-        border-radius: 6px;
-        border: none;
-        cursor: pointer;
-        font-family: "Vazirmatn", Tahoma, sans-serif;
+      .tab {
+        padding: 10px 16px;
         font-size: 13px;
-        transition: all 0.2s;
       }
-
-      .btn-cancel {
-        background: #e9ecef;
-        color: #333;
-      }
-      .btn-cancel:hover {
-        background: #dee2e6;
-      }
-
-      .btn-save {
-        background: #667eea;
-        color: white;
-      }
-      .btn-save:hover {
-        background: #5a67d8;
-      }
-      .btn-save:disabled {
-        background: #ccc;
-        cursor: not-allowed;
-      }
-
-      /* ============ Toast ============ */
-      .toast {
-        position: fixed;
-        bottom: 30px;
-        left: 50%;
-        transform: translateX(-50%) translateY(100px);
-        background: #333;
-        color: white;
-        padding: 12px 24px;
-        border-radius: 8px;
-        font-size: 14px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        z-index: 10002;
-        transition: transform 0.3s;
-        font-family: "Vazirmatn", Tahoma, sans-serif;
-      }
-
-      .toast.show {
-        transform: translateX(-50%) translateY(0);
-      }
-      .toast.success {
-        background: #28a745;
-      }
-      .toast.error {
-        background: #dc3545;
-      }
-
-      /* ============ Loading / Empty ============ */
-      .loading,
-      .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        color: #999;
-        font-size: 14px;
-      }
-
-      .loading .spinner {
-        display: inline-block;
-        width: 30px;
-        height: 30px;
-        border: 3px solid #e9ecef;
-        border-top-color: #667eea;
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-        margin-bottom: 15px;
-      }
-
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      /* ============ Dark Mode ============ */
-      body.dark {
-        background: #1a202c;
-        color: #e2e8f0;
-      }
-
-      body.dark .toolbar,
-      body.dark .tree-container,
-      body.dark .modal,
-      body.dark .context-menu {
-        background: #2d3748;
-        color: #e2e8f0;
-      }
-
-      body.dark .tab {
-        background: #2d3748;
-        color: #a0aec0;
-      }
-      body.dark .tab.active {
-        color: white;
-      }
-      body.dark .tree-node .title {
-        color: #e2e8f0;
-      }
-      body.dark .tree-node:hover {
-        background: #4a5568;
-      }
-      body.dark .tree-node.selected {
-        background: #4a5568;
-      }
-      body.dark .tree-children {
-        border-right-color: #4a5568;
-      }
-      body.dark .level-0 {
-        background: #3b4a6b !important;
-      }
-      body.dark .level-1 {
-        background: #37415b !important;
-      }
-      body.dark .modal input,
-      body.dark .modal textarea,
-      body.dark .modal select {
-        background: #1a202c;
-        border-color: #4a5568;
-        color: #e2e8f0;
-      }
-      body.dark .modal .info-row {
-        background: #1a202c;
-      }
-      body.dark .modal h3 {
-        color: #e2e8f0;
-      }
-      body.dark .modal label {
-        color: #cbd5e0;
-      }
-      body.dark .view-switch {
-        background: #1a202c;
-      }
-      body.dark .view-switch button.active {
-        background: #4a5568;
-      }
-      body.dark .btn-cancel {
-        background: #4a5568;
-        color: #e2e8f0;
-      }
-
-      /* ============ Responsive ============ */
-      @media (max-width: 768px) {
-        .header {
-          padding: 15px 20px;
-        }
-        .header h1 {
-          font-size: 17px;
-        }
-        .toolbar {
-          padding: 12px 15px;
-        }
-        .tree-node {
-          padding: 10px;
-        }
-        .tree-node .title {
-          font-size: 13px;
-        }
-        .tree-children {
-          padding-right: 15px;
-          margin-right: 6px;
-        }
-        .tab {
-          padding: 10px 16px;
-          font-size: 13px;
-        }
-      }
-    </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  </head>
-  <body>
-    <div class="container">
-      <div class="header">
-        <h1>📊 طبقه‌بندی اقتصادی</h1>
-      </div>
-
-      <!-- تب‌ها -->
-      <div class="tabs">
-        <button
-          class="tab resource active"
-          id="tab-resource"
-          onclick="switchTab('resource')"
-        >
-          💰 منابع 
-        </button>
-        <button
-          class="tab expense"
-          id="tab-expense"
-          onclick="switchTab('expense')"
-        >
-          💸 مصارف 
-        </button>
-      </div>
-
-<!-- راهنمای ایمپورت (بیرون از toolbar) -->
-<div class="info-banner">
-    💡 <b>راهنمای ایمپورت:</b> لطفاً حتماً از فایل نمونه (دکمه آبی رنگ) استفاده کنید. فایل شما باید شامل شیت‌هایی با نام «منابع» یا «مصارف» باشد و ستون اول آن «کد طبقه‌بندی» و ستون دوم آن «عنوان» باشد.
-</div>
-
-<!-- Toolbar (فقط دکمه‌ها) -->
-<div class="toolbar">
-    <div class="view-switch">
-        <button id="btn-tree" class="active" onclick="switchView('tree')">
-            🌳 درختی
-        </button>
-        <button id="btn-table" onclick="switchView('table')">📋 جدولی</button>
-    </div>
-
-    <div class="toolbar-actions">
-        <button class="add-root-btn" disabled style="background:#ccc; cursor:not-allowed;" title="گروه‌های اصلی ثابت هستند و قابل افزودن نیستند">
-            🔒 گروه اصلی
-        </button>
-
-        <!-- دکمه ایمپورت -->
-        <label class="add-root-btn" style="background: #6f42c1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 5px; margin: 0;">
-            📥 ایمپورت از اکسل
-            <input type="file" id="excel-file" accept=".xlsx, .xls" style="display: none;" onchange="handleExcelImport(this)">
-        </label>
-
-        <!-- لینک دانلود فایل نمونه -->
-        <a href="/import-template.xlsx" download class="add-root-btn" style="background: #17a2b8; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; margin: 0;">
-            📄 دانلود فایل نمونه
-        </a>
-    </div>
-</div>
-
-
-      <div id="tree-view" class="tree-container">
-        <div class="loading">
-          <div class="spinner"></div>
-          <div>در حال بارگذاری...</div>
+    }
+        </style>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>📊 طبقه‌بندی اقتصادی</h1>
+            </div>
+            <!-- تب‌ها -->
+            <div class="tabs">
+                <button class="tab resource active" id="tab-resource" onclick="switchTab('resource')">
+                    💰 منابع
+                </button>
+                <button class="tab expense" id="tab-expense" onclick="switchTab('expense')">
+                    💸 مصارف
+                </button>
+            </div>
+            <!-- راهنمای ایمپورت (بیرون از toolbar) -->
+            <div class="info-banner">
+                💡
+                <b>راهنمای ایمپورت:</b>
+                لطفاً حتماً از فایل نمونه (دکمه آبی رنگ) استفاده کنید. فایل شما باید شامل شیت‌هایی با
+      نام «منابع» یا «مصارف» باشد و ستون اول آن «کد طبقه‌بندی» و ستون دوم آن «عنوان» باشد.
+            </div>
+            <!-- Toolbar (فقط دکمه‌ها) -->
+            <div class="toolbar">
+                <div class="view-switch">
+                    <button id="btn-tree" class="active" onclick="switchView('tree')">
+                        🌳 درختی
+                    </button>
+                    <button id="btn-table" onclick="switchView('table')">📋 جدولی</button>
+                </div>
+                <div class="toolbar-actions">
+                    <button
+                        class="add-root-btn"
+                        disabled
+                        style="background:#ccc; cursor:not-allowed;"
+                        title="گروه‌های اصلی ثابت هستند و قابل افزودن نیستند"
+                    >
+                        🔒 گروه اصلی
+                    </button>
+                    <!-- دکمه ایمپورت -->
+                    <label class="add-root-btn" style="background: #6f42c1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 5px; margin: 0;">
+                        📥 ایمپورت از اکسل
+                        <input
+                            type="file"
+                            id="excel-file"
+                            accept=".xlsx, .xls"
+                            style="display: none;"
+                            onchange="handleExcelImport(this)"
+                        >
+                    </label>
+                    <!-- لینک دانلود فایل نمونه -->
+                    <a
+                        href="/import-template-All-NA.xlsx"
+                        download
+                        class="add-root-btn"
+                        style="background: #17a2b8; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; margin: 0;"
+                    >
+                        📄 دانلود فایل نمونه
+                    </a>
+                </div>
+            </div>
+            <div id="tree-view" class="tree-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <div>در حال بارگذاری...</div>
+                </div>
+            </div>
+            <div id="table-view" class="table-container" style="display: none">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 15%">کد</th>
+                            <th style="width: 45%">عنوان</th>
+                            <th style="width: 20%">سطح</th>
+                            <th style="width: 20%">وضعیت</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body"></tbody>
+                </table>
+            </div>
         </div>
-      </div>
-
-      <div id="table-view" class="table-container" style="display: none">
-        <table>
-          <thead>
-            <tr>
-              <th style="width: 15%">کد</th>
-              <th style="width: 45%">عنوان</th>
-              <th style="width: 20%">سطح</th>
-              <th style="width: 20%">وضعیت</th>
-            </tr>
-          </thead>
-          <tbody id="table-body"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Context Menu -->
-    <div class="context-menu" id="context-menu">
-        <button onclick="ctxAction('add')">➕ افزودن زیرشاخه</button>
-        <button onclick="ctxAction('add-sibling')">➕ افزودن هم‌سطح</button>
-        <button onclick="ctxAction('edit')">✏️ ویرایش</button>
-        <div class="divider"></div>
-        <button onclick="ctxAction('toggle')" id="ctx-toggle">🔄 تغییر وضعیت</button>
-        <button class="danger" onclick="ctxAction('delete')">🗑️ حذف</button>
-    </div>
-
-    <!-- Modal -->
-    <div class="modal-overlay" id="modal-overlay">
-      <div class="modal" id="modal">
-        <h3 id="modal-title">افزودن</h3>
-
-        <div class="info-row" id="modal-info" style="display: none">
-          <span>والد: <b id="info-parent"></b></span>
-          <span>سطح: <b id="info-level"></b></span>
-          <span>کد بعدی: <b id="info-code"></b></span>
+        <!-- Context Menu -->
+        <div class="context-menu" id="context-menu">
+            <button onclick="ctxAction('add')">➕ افزودن زیرشاخه</button>
+            <button onclick="ctxAction('add-sibling')">➕ افزودن هم‌سطح</button>
+            <button onclick="ctxAction('edit')">✏️ ویرایش</button>
+            <div class="divider"></div>
+            <button onclick="ctxAction('toggle')" id="ctx-toggle">🔄 تغییر وضعیت</button>
+            <button class="danger" onclick="ctxAction('delete')">🗑️ حذف</button>
         </div>
-
-        <div class="form-group">
-          <label>عنوان <span style="color: #e74c3c">*</span></label>
-          <input
-            type="text"
-            id="input-title"
-            placeholder="عنوان را وارد کنید"
-          />
+        <!-- Modal -->
+        <div class="modal-overlay" id="modal-overlay">
+            <div class="modal" id="modal">
+                <h3 id="modal-title">افزودن</h3>
+                <div class="info-row" id="modal-info" style="display: none">
+                    <span>
+                        والد:
+                        <b id="info-parent"></b>
+                    </span>
+                    <span>
+                        سطح:
+                        <b id="info-level"></b>
+                    </span>
+                    <span>
+                        کد بعدی:
+                        <b id="info-code"></b>
+                    </span>
+                </div>
+                <div class="form-group">
+                    <label>
+                        عنوان
+                        <span style="color: #e74c3c">*</span>
+                    </label>
+                    <input type="text" id="input-title" placeholder="عنوان را وارد کنید">
+                </div>
+                <div class="form-group" id="group-level-name">
+                    <label>نام سطح</label>
+                    <select id="input-level-name">
+                        <!-- پر می‌شه توسط JS --></select>
+                </div>
+                <div class="form-group">
+                    <label>توضیحات</label>
+                    <textarea id="input-description" placeholder="توضیحات (اختیاری)"></textarea>
+                </div>
+                <div class="form-group" id="group-digit-count">
+                    <label>تعداد ارقام کد</label>
+                    <input
+                        type="number"
+                        id="input-digit-count"
+                        value="3"
+                        min="2"
+                        max="20"
+                    >
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-cancel" onclick="closeModal()">انصراف</button>
+                    <button class="btn-save" id="btn-save" onclick="saveModal()">
+                        ذخیره
+                    </button>
+                </div>
+            </div>
         </div>
+        <!-- Toast -->
+        <div class="toast" id="toast"></div>
+        <script src="/common.js"></script>
+        <script>
+    // ============================================
+    // وضعیت
+    // ============================================
+    if (!isTokenValid()) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login.html";
+    }
 
-        <div class="form-group" id="group-level-name">
-          <label>نام سطح</label>
-          <select id="input-level-name">
-            <!-- پر می‌شه توسط JS -->
-          </select>
-        </div>
+    const token = localStorage.getItem("token");
+    const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+    const SECTION = "economic";
 
-        <div class="form-group">
-          <label>توضیحات</label>
-          <textarea
-            id="input-description"
-            placeholder="توضیحات (اختیاری)"
-          ></textarea>
-        </div>
+    let currentType = localStorage.getItem("econ-type") || "resource";
+    let currentView = localStorage.getItem("econ-view") || "tree";
 
-        <div class="form-group" id="group-digit-count">
-          <label>تعداد ارقام کد</label>
-          <input
-            type="number"
-            id="input-digit-count"
-            value="3"
-            min="2"
-            max="20"
-          />
-        </div>
+    let treeData = [];
+    let flatData = [];
+    let selectedNode = null;
+    let editingNode = null;
+    let ctxNodeId = null;
+    let currentParentId = null; // ✅ اضافه شد
 
-        <div class="modal-actions">
-          <button class="btn-cancel" onclick="closeModal()">انصراف</button>
-          <button class="btn-save" id="btn-save" onclick="saveModal()">
-            ذخیره
-          </button>
-        </div>
-      </div>
-    </div>
+    // ============================================
+    // تعریف سطوح بر اساس نوع
+    // ============================================
+    const LEVEL_NAMES = {
+      resource: ["گروه", "سرفصل", "بند", "جزء"],
+      expense: ["گروه", "سرفصل", "فصل", "بند", "جزء"],
+    };
 
-    <!-- Toast -->
-    <div class="toast" id="toast"></div>
+    function getLevelName(level, type = currentType) {
+      const names = LEVEL_NAMES[type] || LEVEL_NAMES.resource;
+      return names[level] || `سطح ${level + 1}`;
+    }
 
-    <script src="/common.js"></script>
+    function getLevelClass(level) {
+      return `l${Math.min(level, 4)}`;
+    }
 
-    <script>
-      // ============================================
-      // وضعیت
-      // ============================================
-      if (!isTokenValid()) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.location.href = "/login.html";
-      }
+    function showToast(message, type = "success") {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.className = `toast ${type} show`;
+      setTimeout(() => toast.classList.remove("show"), 3000);
+    }
 
-      const token = localStorage.getItem("token");
-      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
-      const SECTION = "economic";
-
-      let currentType = localStorage.getItem("econ-type") || "resource";
-      let currentView = localStorage.getItem("econ-view") || "tree";
-
-      let treeData = [];
-      let flatData = [];
-      let selectedNode = null;
-      let editingNode = null;
-      let ctxNodeId = null;
-      let currentParentId = null; // ✅ اضافه شد
-
-      // ============================================
-      // تعریف سطوح بر اساس نوع
-      // ============================================
-      const LEVEL_NAMES = {
-        resource: ["گروه", "سرفصل", "بند", "جزء"],
-        expense: ["گروه", "سرفصل", "فصل", "بند", "جزء"],
-      };
-
-      function getLevelName(level, type = currentType) {
-        const names = LEVEL_NAMES[type] || LEVEL_NAMES.resource;
-        return names[level] || `سطح ${level + 1}`;
-      }
-
-      function getLevelClass(level) {
-        return `l${Math.min(level, 4)}`;
-      }
-
-      function showToast(message, type = "success") {
-        const toast = document.getElementById("toast");
-        toast.textContent = message;
-        toast.className = `toast ${type} show`;
-        setTimeout(() => toast.classList.remove("show"), 3000);
-      }
-
-      // ============================================
-      // لود دیتا
-      // ============================================
-      async function loadData() {
-        try {
-          const [treeRes, flatRes] = await Promise.all([
-            fetch(
-              `/api/base-data/tree?section=${SECTION}&type=${currentType}`,
-              {
-                headers: { Authorization: `Bearer ${token}` },
-              }
-            ),
-            fetch(`/api/base-data?section=${SECTION}&type=${currentType}`, {
+    // ============================================
+    // لود دیتا
+    // ============================================
+    async function loadData() {
+      try {
+        const [treeRes, flatRes] = await Promise.all([
+          fetch(
+            `/api/base-data/tree?section=${SECTION}&type=${currentType}`,
+            {
               headers: { Authorization: `Bearer ${token}` },
-            }),
-          ]);
+            }
+          ),
+          fetch(`/api/base-data?section=${SECTION}&type=${currentType}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
 
-          treeData = await treeRes.json();
-          flatData = await flatRes.json();
+        treeData = await treeRes.json();
+        flatData = await flatRes.json();
 
-          renderTree();
-          renderTable();
-        } catch (error) {
-          console.error("Load error:", error);
-          showToast("خطا در بارگذاری", "error");
-        }
+        renderTree();
+        renderTable();
+      } catch (error) {
+        console.error("Load error:", error);
+        showToast("خطا در بارگذاری", "error");
       }
+    }
 
-      // ============================================
-      // تب
-      // ============================================
-      function switchTab(type) {
-        currentType = type;
-        localStorage.setItem("econ-type", type);
+    // ============================================
+    // تب
+    // ============================================
+    function switchTab(type) {
+      currentType = type;
+      localStorage.setItem("econ-type", type);
 
-        document
-          .getElementById("tab-resource")
-          .classList.toggle("active", type === "resource");
-        document
-          .getElementById("tab-expense")
-          .classList.toggle("active", type === "expense");
+      document
+        .getElementById("tab-resource")
+        .classList.toggle("active", type === "resource");
+      document
+        .getElementById("tab-expense")
+        .classList.toggle("active", type === "expense");
 
-        // ریست انتخاب
-        selectedNode = null;
+      // ریست انتخاب
+      selectedNode = null;
 
-        loadData();
-      }
+      loadData();
+    }
 
-      // ============================================
-      // رندر درخت
-      // ============================================
-      function renderTree() {
-        const container = document.getElementById("tree-view");
+    // ============================================
+    // رندر درخت
+    // ============================================
+    function renderTree() {
+      const container = document.getElementById("tree-view");
 
-        if (!treeData || treeData.length === 0) {
-          const typeLabel = currentType === "resource" ? "منبع" : "مصرف";
-          container.innerHTML = `
+      if (!treeData || treeData.length === 0) {
+        const typeLabel = currentType === "resource" ? "منبع" : "مصرف";
+        container.innerHTML = `
                     <div class="empty-state">
                         <div style="font-size: 40px; margin-bottom: 15px;">📭</div>
                         <div>هنوز ${typeLabel}ی ثبت نشده</div>
@@ -799,526 +819,520 @@ body.dark .info-banner b {
                             <button class="add-root-btn" onclick="openAddModal(null)">➕ افزودن گروه اصلی</button>
                         </div>
                     </div>`;
-          return;
-        }
-
-        container.innerHTML = "";
-        treeData.forEach((node) => {
-          container.appendChild(renderTreeNode(node, 0));
-        });
+        return;
       }
 
-      function renderTreeNode(node, depth) {
-        const wrapper = document.createElement("div");
+      container.innerHTML = "";
+      treeData.forEach((node) => {
+        container.appendChild(renderTreeNode(node, 0));
+      });
+    }
 
-        const nodeEl = document.createElement("div");
-        nodeEl.className = "tree-node";
-        nodeEl.dataset.id = node.id;
-        if (selectedNode && selectedNode.id === node.id)
-          nodeEl.classList.add("selected");
-        if (!node.is_active) nodeEl.style.opacity = "0.5";
+    function renderTreeNode(node, depth) {
+      const wrapper = document.createElement("div");
 
-        const hasChildren = node.children && node.children.length > 0;
-        const collapsedKey = `econ-collapsed-${node.id}`;
-        const isCollapsed = localStorage.getItem(collapsedKey) === "1";
+      const nodeEl = document.createElement("div");
+      nodeEl.className = "tree-node";
+      nodeEl.dataset.id = node.id;
+      if (selectedNode && selectedNode.id === node.id)
+        nodeEl.classList.add("selected");
+      if (!node.is_active) nodeEl.style.opacity = "0.5";
 
-        nodeEl.innerHTML = `
-                <span class="toggle ${hasChildren ? "" : "empty"}">${
-          isCollapsed ? "◀" : "▼"
+      const hasChildren = node.children && node.children.length > 0;
+      const collapsedKey = `econ-collapsed-${node.id}`;
+      const isCollapsed = localStorage.getItem(collapsedKey) === "1";
+
+      nodeEl.innerHTML = `
+                <span class="toggle ${hasChildren ? "" : "empty"}">${isCollapsed ? "◀" : "▼"
         }</span>
                 <span class="icon">${hasChildren ? "📁" : "📄"}</span>
-                <span class="title" title="${node.code}">${node.title}${
-          !node.is_active ? " (غیرفعال)" : ""
+                <span class="title" title="${node.code}">${node.title}${!node.is_active ? " (غیرفعال)" : ""
         }</span>
-                <button class="menu-btn" onclick="event.stopPropagation(); openContextMenu(event, ${
-                  node.id
-                })">⋮</button>
+                <button class="menu-btn" onclick="event.stopPropagation(); openContextMenu(event, ${node.id
+        })">⋮</button>
             `;
 
-        const toggleEl = nodeEl.querySelector(".toggle");
-        if (hasChildren) {
-          toggleEl.addEventListener("click", (e) => {
-            e.stopPropagation();
-            if (isCollapsed) {
-              localStorage.removeItem(collapsedKey);
-            } else {
-              localStorage.setItem(collapsedKey, "1");
-            }
-            renderTree();
-          });
-        }
-
-        nodeEl.addEventListener("click", () => {
-          selectedNode = node;
+      const toggleEl = nodeEl.querySelector(".toggle");
+      if (hasChildren) {
+        toggleEl.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (isCollapsed) {
+            localStorage.removeItem(collapsedKey);
+          } else {
+            localStorage.setItem(collapsedKey, "1");
+          }
           renderTree();
         });
-
-        nodeEl.addEventListener("contextmenu", (e) => {
-          e.preventDefault();
-          selectedNode = node;
-          renderTree();
-          openContextMenu(e, node.id);
-        });
-
-        wrapper.appendChild(nodeEl);
-
-        if (hasChildren && !isCollapsed) {
-          const childrenEl = document.createElement("div");
-          childrenEl.className = "tree-children";
-          node.children.forEach((child) => {
-            childrenEl.appendChild(renderTreeNode(child, depth + 1));
-          });
-          wrapper.appendChild(childrenEl);
-        }
-
-        return wrapper;
       }
 
-      // ============================================
-      // رندر جدول
-      // ============================================
-      function renderTable() {
-        const tbody = document.getElementById("table-body");
+      nodeEl.addEventListener("click", () => {
+        selectedNode = node;
+        renderTree();
+      });
 
-        if (!flatData || flatData.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:40px; color:#999;">موردی ثبت نشده</td></tr>`;
-          return;
-        }
+      nodeEl.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        selectedNode = node;
+        renderTree();
+        openContextMenu(e, node.id);
+      });
 
-        const sorted = [...flatData].sort((a, b) =>
-          a.code.localeCompare(b.code)
-        );
+      wrapper.appendChild(nodeEl);
 
-        tbody.innerHTML = "";
-        sorted.forEach((item) => {
-          const tr = document.createElement("tr");
-          tr.className = `level-${Math.min(item.level, 3)}`;
-          tr.style.cursor = "pointer";
-          if (!item.is_active) tr.style.opacity = "0.5";
+      if (hasChildren && !isCollapsed) {
+        const childrenEl = document.createElement("div");
+        childrenEl.className = "tree-children";
+        node.children.forEach((child) => {
+          childrenEl.appendChild(renderTreeNode(child, depth + 1));
+        });
+        wrapper.appendChild(childrenEl);
+      }
 
-          const indent = "　".repeat(item.level);
+      return wrapper;
+    }
 
-          tr.innerHTML = `
-                    <td><span style="font-family: monospace; font-size: 12px; color: #667eea;">${
-                      item.code
-                    }</span></td>
+    // ============================================
+    // رندر جدول
+    // ============================================
+    function renderTable() {
+      const tbody = document.getElementById("table-body");
+
+      if (!flatData || flatData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:40px; color:#999;">موردی ثبت نشده</td></tr>`;
+        return;
+      }
+
+      const sorted = [...flatData].sort((a, b) =>
+        a.code.localeCompare(b.code)
+      );
+
+      tbody.innerHTML = "";
+      sorted.forEach((item) => {
+        const tr = document.createElement("tr");
+        tr.className = `level-${Math.min(item.level, 3)}`;
+        tr.style.cursor = "pointer";
+        if (!item.is_active) tr.style.opacity = "0.5";
+
+        const indent = "　".repeat(item.level);
+
+        tr.innerHTML = `
+                    <td><span style="font-family: monospace; font-size: 12px; color: #667eea;">${item.code
+          }</span></td>
                     <td>
                         <span class="indent-marker">${indent}</span>
                         <span style="margin-left: 6px;">📄</span>
                         <span>${item.title}</span>
                     </td>
                     <td><span class="level-badge ${getLevelClass(
-                      item.level
-                    )}">${
-            item.level_name || getLevelName(item.level)
+            item.level
+          )}">${item.level_name || getLevelName(item.level)
           }</span></td>
                     <td>${item.is_active ? "✅ فعال" : "❌ غیرفعال"}</td>
                 `;
 
-          tr.addEventListener("click", () => {
-            selectedNode = item;
-            renderTable();
-          });
-
-          tr.addEventListener("contextmenu", (e) => {
-            e.preventDefault();
-            selectedNode = item;
-            renderTable();
-            openContextMenu(e, item.id);
-          });
-
-          tbody.appendChild(tr);
-        });
-      }
-
-      // ============================================
-      // سوئیچ نما
-      // ============================================
-      function switchView(view) {
-        currentView = view;
-        localStorage.setItem("econ-view", view);
-
-        document
-          .getElementById("btn-tree")
-          .classList.toggle("active", view === "tree");
-        document
-          .getElementById("btn-table")
-          .classList.toggle("active", view === "table");
-        document.getElementById("tree-view").style.display =
-          view === "tree" ? "block" : "none";
-        document.getElementById("table-view").style.display =
-          view === "table" ? "block" : "none";
-      }
-
-      // ============================================
-      // Context Menu
-      // ============================================
-        function openContextMenu(event, nodeId) {
-            ctxNodeId = nodeId;
-            const menu = document.getElementById('context-menu');
-            const node = flatData.find(n => n.id === nodeId);
-
-            if (!node) return;
-
-            let menuHtml = '';
-
-            // افزودن زیرشاخه
-            menuHtml += `<button onclick="ctxAction('add')">➕ افزودن زیرشاخه</button>`;
-
-            // ✅ افزودن هم‌سطح (اگه والد داره)
-            if (node.parent_id) {
-                menuHtml += `<button onclick="ctxAction('add-sibling')">➕ افزودن هم‌سطح</button>`;
-            }
-
-            menuHtml += '<div class="divider"></div>';
-            menuHtml += `<button onclick="ctxAction('edit')">✏️ ویرایش</button>`;
-            menuHtml += `<button onclick="ctxAction('toggle')">${node.is_active ? '🔄 غیرفعال کردن' : '🔄 فعال کردن'}</button>`;
-            menuHtml += '<div class="divider"></div>';
-            menuHtml += `<button class="danger" onclick="ctxAction('delete')">🗑️ حذف</button>`;
-
-            menu.innerHTML = menuHtml;
-            menu.classList.add('open');
-
-            const menuWidth = 220;
-            const menuHeight = menu.offsetHeight || 220;
-            let x = event.clientX;
-            let y = event.clientY;
-
-            if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
-            if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
-
-            menu.style.left = x + 'px';
-            menu.style.top = y + 'px';
-        }
-      function closeContextMenu() {
-        document.getElementById("context-menu").classList.remove("open");
-      }
-
-         async function ctxAction(action) {
-            const node = flatData.find(n => n.id === ctxNodeId);
-            closeContextMenu();
-
-            if (!node) return;
-
-            if (action === 'add') {
-                openAddModal(node);
-            } else if (action === 'add-sibling') {
-                const parent = node.parent_id 
-                    ? flatData.find(n => n.id === node.parent_id) 
-                    : null;
-                openAddModal(parent);
-            } else if (action === 'edit') {
-                openEditModal(node);
-            } else if (action === 'delete') {
-                await deleteNode(node);
-            } else if (action === 'toggle') {
-                await toggleNode(node);
-            }
-        }
-      // ============================================
-      // Modal: پر کردن dropdown سطح
-      // ============================================
-      function fillLevelNames(selectedLevel = null, selectedName = null) {
-        const select = document.getElementById("input-level-name");
-        select.innerHTML = "";
-
-        const names = LEVEL_NAMES[currentType] || [];
-
-        // اضافه کردن گزینه‌های استاندارد
-        names.forEach((name, idx) => {
-          const opt = document.createElement("option");
-          opt.value = name;
-          opt.textContent = `${name} (سطح ${idx + 1})`;
-          if (selectedName && selectedName === name) opt.selected = true;
-          select.appendChild(opt);
+        tr.addEventListener("click", () => {
+          selectedNode = item;
+          renderTable();
         });
 
-        // اگه مقدار custom بود، اضافه کن
-        if (selectedName && !names.includes(selectedName)) {
-          const opt = document.createElement("option");
-          opt.value = selectedName;
-          opt.textContent = selectedName;
-          opt.selected = true;
-          select.appendChild(opt);
-        }
+        tr.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          selectedNode = item;
+          renderTable();
+          openContextMenu(e, item.id);
+        });
 
-        // اگه سطحی تعیین نشده، پیش‌فرض بر اساس level
-        if (!selectedName && selectedLevel !== null) {
-          const defaultName = names[selectedLevel];
-          if (defaultName) {
-            select.value = defaultName;
-          }
-        }
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ============================================
+    // سوئیچ نما
+    // ============================================
+    function switchView(view) {
+      currentView = view;
+      localStorage.setItem("econ-view", view);
+
+      document
+        .getElementById("btn-tree")
+        .classList.toggle("active", view === "tree");
+      document
+        .getElementById("btn-table")
+        .classList.toggle("active", view === "table");
+      document.getElementById("tree-view").style.display =
+        view === "tree" ? "block" : "none";
+      document.getElementById("table-view").style.display =
+        view === "table" ? "block" : "none";
+    }
+
+    // ============================================
+    // Context Menu
+    // ============================================
+    function openContextMenu(event, nodeId) {
+      ctxNodeId = nodeId;
+      const menu = document.getElementById('context-menu');
+      const node = flatData.find(n => n.id === nodeId);
+
+      if (!node) return;
+
+      let menuHtml = '';
+
+      // افزودن زیرشاخه
+      menuHtml += `<button onclick="ctxAction('add')">➕ افزودن زیرشاخه</button>`;
+
+      // ✅ افزودن هم‌سطح (اگه والد داره)
+      if (node.parent_id) {
+        menuHtml += `<button onclick="ctxAction('add-sibling')">➕ افزودن هم‌سطح</button>`;
       }
 
-      // ============================================
-      // Modal: افزودن
-      // ============================================
-      async function openAddModal(parent) {
-        editingNode = null;
-        currentParentId = parent ? parent.id : null; // ✅ اضافه شد
-        document.getElementById("modal-title").textContent =
-          "➕ افزودن " + (parent ? "زیرشاخه" : "گروه جدید");
-        document.getElementById("input-title").value = "";
-        document.getElementById("input-description").value = "";
-        document.getElementById("input-digit-count").value = "3";
-        document.getElementById("group-digit-count").style.display = "block";
-        document.getElementById("group-level-name").style.display = "block";
+      menuHtml += '<div class="divider"></div>';
+      menuHtml += `<button onclick="ctxAction('edit')">✏️ ویرایش</button>`;
+      menuHtml += `<button onclick="ctxAction('toggle')">${node.is_active ? '🔄 غیرفعال کردن' : '🔄 فعال کردن'}</button>`;
+      menuHtml += '<div class="divider"></div>';
+      menuHtml += `<button class="danger" onclick="ctxAction('delete')">🗑️ حذف</button>`;
 
-        if (parent) {
-          document.getElementById("modal-info").style.display = "flex";
-          document.getElementById("info-parent").textContent = parent.title;
-          const nextLevel = parent.level + 1;
-          document.getElementById("info-level").textContent =
-            getLevelName(nextLevel);
+      menu.innerHTML = menuHtml;
+      menu.classList.add('open');
 
-          fillLevelNames(nextLevel, null);
+      const menuWidth = 220;
+      const menuHeight = menu.offsetHeight || 220;
+      let x = event.clientX;
+      let y = event.clientY;
 
-          try {
-            const res = await fetch(
-              `/api/base-data/next-code?section=${SECTION}&type=${currentType}&parent_id=${
-                parent.id
-              }&digit_count=${parent.digit_count || 3}`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-            const data = await res.json();
-            document.getElementById("info-code").textContent =
-              data.next_code || "...";
-          } catch {
-            document.getElementById("info-code").textContent = "...";
-          }
-        } else {
-          document.getElementById("modal-info").style.display = "none";
-          fillLevelNames(0, null);
-        }
+      if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
+      if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
 
-        document.getElementById("modal-overlay").classList.add("open");
-        setTimeout(() => document.getElementById("input-title").focus(), 100);
+      menu.style.left = x + 'px';
+      menu.style.top = y + 'px';
+    }
+    function closeContextMenu() {
+      document.getElementById("context-menu").classList.remove("open");
+    }
+
+    async function ctxAction(action) {
+      const node = flatData.find(n => n.id === ctxNodeId);
+      closeContextMenu();
+
+      if (!node) return;
+
+      if (action === 'add') {
+        openAddModal(node);
+      } else if (action === 'add-sibling') {
+        const parent = node.parent_id
+          ? flatData.find(n => n.id === node.parent_id)
+          : null;
+        openAddModal(parent);
+      } else if (action === 'edit') {
+        openEditModal(node);
+      } else if (action === 'delete') {
+        await deleteNode(node);
+      } else if (action === 'toggle') {
+        await toggleNode(node);
+      }
+    }
+    // ============================================
+    // Modal: پر کردن dropdown سطح
+    // ============================================
+    function fillLevelNames(selectedLevel = null, selectedName = null) {
+      const select = document.getElementById("input-level-name");
+      select.innerHTML = "";
+
+      const names = LEVEL_NAMES[currentType] || [];
+
+      // اضافه کردن گزینه‌های استاندارد
+      names.forEach((name, idx) => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = `${name} (سطح ${idx + 1})`;
+        if (selectedName && selectedName === name) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      // اگه مقدار custom بود، اضافه کن
+      if (selectedName && !names.includes(selectedName)) {
+        const opt = document.createElement("option");
+        opt.value = selectedName;
+        opt.textContent = selectedName;
+        opt.selected = true;
+        select.appendChild(opt);
       }
 
-      // ============================================
-      // Modal: ویرایش
-      // ============================================
-      function openEditModal(node) {
-        editingNode = node;
-        currentParentId = null; // ✅ اضافه شد
-        document.getElementById("modal-title").textContent = "✏️ ویرایش";
-        document.getElementById("input-title").value = node.title;
-        document.getElementById("input-description").value =
-          node.description || "";
-        document.getElementById("group-digit-count").style.display = "none";
-        document.getElementById("group-level-name").style.display = "block";
+      // اگه سطحی تعیین نشده، پیش‌فرض بر اساس level
+      if (!selectedName && selectedLevel !== null) {
+        const defaultName = names[selectedLevel];
+        if (defaultName) {
+          select.value = defaultName;
+        }
+      }
+    }
 
-        fillLevelNames(node.level, node.level_name);
+    // ============================================
+    // Modal: افزودن
+    // ============================================
+    async function openAddModal(parent) {
+      editingNode = null;
+      currentParentId = parent ? parent.id : null; // ✅ اضافه شد
+      document.getElementById("modal-title").textContent =
+        "➕ افزودن " + (parent ? "زیرشاخه" : "گروه جدید");
+      document.getElementById("input-title").value = "";
+      document.getElementById("input-description").value = "";
+      document.getElementById("input-digit-count").value = "3";
+      document.getElementById("group-digit-count").style.display = "block";
+      document.getElementById("group-level-name").style.display = "block";
 
+      if (parent) {
         document.getElementById("modal-info").style.display = "flex";
-        document.getElementById("info-parent").textContent = node.code;
+        document.getElementById("info-parent").textContent = parent.title;
+        const nextLevel = parent.level + 1;
         document.getElementById("info-level").textContent =
-          node.level_name || getLevelName(node.level);
-        document.getElementById("info-code").textContent = "-";
+          getLevelName(nextLevel);
 
-        document.getElementById("modal-overlay").classList.add("open");
-        setTimeout(() => document.getElementById("input-title").focus(), 100);
-      }
-
-      function closeModal() {
-        document.getElementById("modal-overlay").classList.remove("open");
-        editingNode = null;
-        currentParentId = null; // ✅ اضافه شد
-      }
-
-      // ============================================
-      // ذخیره Modal
-      // ============================================
-      async function saveModal() {
-        const title = document.getElementById("input-title").value.trim();
-        const description = document
-          .getElementById("input-description")
-          .value.trim();
-        const levelName = document.getElementById("input-level-name").value;
-
-        if (!title) {
-          showToast("عنوان الزامی است", "error");
-          return;
-        }
-
-        const btn = document.getElementById("btn-save");
-        btn.disabled = true;
-        btn.textContent = "در حال ذخیره...";
+        fillLevelNames(nextLevel, null);
 
         try {
-          if (editingNode) {
-            // ویرایش
-            const res = await fetch(`/api/base-data/${editingNode.id}`, {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                title,
-                description,
-                level_name: levelName,
-                is_active: editingNode.is_active,
-              }),
-            });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "خطا");
-
-            showToast("با موفقیت ویرایش شد");
-          } else {
-            // افزودن
-            const digitCount =
-              parseInt(document.getElementById("input-digit-count").value) || 3;
-            const parentId = currentParentId; // ✅ از currentParentId
-
-            const body = {
-              section: SECTION,
-              type: currentType,
-              title,
-              description,
-              digit_count: digitCount,
-              parent_id: parentId,
-              level_name: levelName,
-            };
-
-            const res = await fetch("/api/base-data", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify(body),
-            });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "خطا");
-
-            showToast(`با موفقیت ثبت شد (کد: ${data.code})`);
-          }
-
-          closeModal();
-          await loadData();
-        } catch (error) {
-          showToast(error.message, "error");
-        } finally {
-          btn.disabled = false;
-          btn.textContent = "ذخیره";
-        }
-      }
-
-      // ============================================
-      // حذف
-      // ============================================
-      async function deleteNode(node) {
-        if (!confirm(`مطمئن هستید "${node.title}" حذف شود؟`)) return;
-
-        try {
-          const res = await fetch(`/api/base-data/${node.id}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
-          });
-
+          const res = await fetch(
+            `/api/base-data/next-code?section=${SECTION}&type=${currentType}&parent_id=${parent.id
+            }&digit_count=${parent.digit_count || 3}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
           const data = await res.json();
-          if (!res.ok) throw new Error(data.error || "خطا");
-
-          showToast("با موفقیت حذف شد");
-          await loadData();
-        } catch (error) {
-          showToast(error.message, "error");
+          document.getElementById("info-code").textContent =
+            data.next_code || "...";
+        } catch {
+          document.getElementById("info-code").textContent = "...";
         }
+      } else {
+        document.getElementById("modal-info").style.display = "none";
+        fillLevelNames(0, null);
       }
 
-      // ============================================
-      // تغییر وضعیت
-      // ============================================
-      async function toggleNode(node) {
-        try {
-          const res = await fetch(`/api/base-data/${node.id}`, {
+      document.getElementById("modal-overlay").classList.add("open");
+      setTimeout(() => document.getElementById("input-title").focus(), 100);
+    }
+
+    // ============================================
+    // Modal: ویرایش
+    // ============================================
+    function openEditModal(node) {
+      editingNode = node;
+      currentParentId = null; // ✅ اضافه شد
+      document.getElementById("modal-title").textContent = "✏️ ویرایش";
+      document.getElementById("input-title").value = node.title;
+      document.getElementById("input-description").value =
+        node.description || "";
+      document.getElementById("group-digit-count").style.display = "none";
+      document.getElementById("group-level-name").style.display = "block";
+
+      fillLevelNames(node.level, node.level_name);
+
+      document.getElementById("modal-info").style.display = "flex";
+      document.getElementById("info-parent").textContent = node.code;
+      document.getElementById("info-level").textContent =
+        node.level_name || getLevelName(node.level);
+      document.getElementById("info-code").textContent = "-";
+
+      document.getElementById("modal-overlay").classList.add("open");
+      setTimeout(() => document.getElementById("input-title").focus(), 100);
+    }
+
+    function closeModal() {
+      document.getElementById("modal-overlay").classList.remove("open");
+      editingNode = null;
+      currentParentId = null; // ✅ اضافه شد
+    }
+
+    // ============================================
+    // ذخیره Modal
+    // ============================================
+    async function saveModal() {
+      const title = document.getElementById("input-title").value.trim();
+      const description = document
+        .getElementById("input-description")
+        .value.trim();
+      const levelName = document.getElementById("input-level-name").value;
+
+      if (!title) {
+        showToast("عنوان الزامی است", "error");
+        return;
+      }
+
+      const btn = document.getElementById("btn-save");
+      btn.disabled = true;
+      btn.textContent = "در حال ذخیره...";
+
+      try {
+        if (editingNode) {
+          // ویرایش
+          const res = await fetch(`/api/base-data/${editingNode.id}`, {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
-              title: node.title,
-              description: node.description,
-              level_name: node.level_name,
-              is_active: !node.is_active,
+              title,
+              description,
+              level_name: levelName,
+              is_active: editingNode.is_active,
             }),
           });
 
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "خطا");
 
-          showToast("وضعیت تغییر کرد");
-          await loadData();
-        } catch (error) {
-          showToast(error.message, "error");
+          showToast("با موفقیت ویرایش شد");
+        } else {
+          // افزودن
+          const digitCount =
+            parseInt(document.getElementById("input-digit-count").value) || 3;
+          const parentId = currentParentId; // ✅ از currentParentId
+
+          const body = {
+            section: SECTION,
+            type: currentType,
+            title,
+            description,
+            digit_count: digitCount,
+            parent_id: parentId,
+            level_name: levelName,
+          };
+
+          const res = await fetch("/api/base-data", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(body),
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "خطا");
+
+          showToast(`با موفقیت ثبت شد (کد: ${data.code})`);
         }
+
+        closeModal();
+        await loadData();
+      } catch (error) {
+        showToast(error.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "ذخیره";
       }
+    }
 
-      // ============================================
-      // Event Listeners
-      // ============================================
-      document.addEventListener("click", (e) => {
-        if (
-          !e.target.closest(".context-menu") &&
-          !e.target.closest(".menu-btn")
-        ) {
-          closeContextMenu();
-        }
-      });
+    // ============================================
+    // حذف
+    // ============================================
+    async function deleteNode(node) {
+      if (!confirm(`مطمئن هستید "${node.title}" حذف شود؟`)) return;
 
-      document.addEventListener("contextmenu", (e) => {
-        if (!e.target.closest(".tree-node") && !e.target.closest("tr")) {
-          closeContextMenu();
-        }
-      });
+      try {
+        const res = await fetch(`/api/base-data/${node.id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          closeModal();
-          closeContextMenu();
-        }
-      });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "خطا");
+
+        showToast("با موفقیت حذف شد");
+        await loadData();
+      } catch (error) {
+        showToast(error.message, "error");
+      }
+    }
+
+    // ============================================
+    // تغییر وضعیت
+    // ============================================
+    async function toggleNode(node) {
+      try {
+        const res = await fetch(`/api/base-data/${node.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title: node.title,
+            description: node.description,
+            level_name: node.level_name,
+            is_active: !node.is_active,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "خطا");
+
+        showToast("وضعیت تغییر کرد");
+        await loadData();
+      } catch (error) {
+        showToast(error.message, "error");
+      }
+    }
+
+    // ============================================
+    // Event Listeners
+    // ============================================
+    document.addEventListener("click", (e) => {
+      if (
+        !e.target.closest(".context-menu") &&
+        !e.target.closest(".menu-btn")
+      ) {
+        closeContextMenu();
+      }
+    });
+
+    document.addEventListener("contextmenu", (e) => {
+      if (!e.target.closest(".tree-node") && !e.target.closest("tr")) {
+        closeContextMenu();
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        closeModal();
+        closeContextMenu();
+      }
+    });
 
 
-// تابع کمکی برای تبدیل اعداد و کدها
-function normalizeNumber(num) {
-    if (!num) return "";
-    return toEnglishNumbers(num.toString().trim());
-}
+    // تابع کمکی برای تبدیل اعداد و کدها
+    function normalizeNumber(num) {
+      if (!num) return "";
+      return toEnglishNumbers(num.toString().trim());
+    }
 
-async function handleExcelImport(input) {
-    const file = input.files[0];
-    if (!file) return;
+    async function handleExcelImport(input) {
+      const file = input.files[0];
+      if (!file) return;
 
-    // چک کردن تب فعال
-    const isExpense = document.getElementById('tab-expense').classList.contains('active');
-    const isResource = document.getElementById('tab-resource').classList.contains('active');
+      // چک کردن تب فعال
+      const isExpense = document.getElementById('tab-expense').classList.contains('active');
+      const isResource = document.getElementById('tab-resource').classList.contains('active');
 
-    if (!isResource && !isExpense) {
+      if (!isResource && !isExpense) {
         showToast('لطفاً ابتدا تب منابع یا مصارف را انتخاب کنید.', 'error');
         input.value = '';
         return;
-    }
+      }
 
-    const targetType = isExpense ? 'expense' : 'resource';
-    const section = 'economic';
+      const targetType = isExpense ? 'expense' : 'resource';
+      const section = 'economic';
 
-    if (!confirm(`آیا از ایمپورت فایل «${file.name}» در بخش ${isExpense ? 'مصارف' : 'منابع'} مطمئن هستید؟`)) {
+      if (!confirm(`آیا از ایمپورت فایل «${file.name}» در بخش ${isExpense ? 'مصارف' : 'منابع'} مطمئن هستید؟`)) {
         input.value = '';
         return;
-    }
+      }
 
-    const btn = document.querySelector('label.add-root-btn');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '⏳ در حال پردازش...';
-    btn.style.pointerEvents = 'none';
+      const btn = document.querySelector('label.add-root-btn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '⏳ در حال پردازش...';
+      btn.style.pointerEvents = 'none';
 
-    try {
+      try {
         // ارسال فایل به صورت FormData
         const formData = new FormData();
         formData.append('file', file);
@@ -1326,11 +1340,11 @@ async function handleExcelImport(input) {
         formData.append('type', targetType);
 
         const res = await fetch(`/api/base-data/import-excel`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            body: formData
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
         });
 
         const result = await res.json();
@@ -1339,76 +1353,74 @@ async function handleExcelImport(input) {
         showToast(`تعداد ${toPersianNumbers(result.count)} ردیف با موفقیت ایمپورت شد.`);
         await loadData(); // رفرش درخت
 
-    } catch (error) {
+      } catch (error) {
         console.error("Import error:", error);
         showToast(error.message, 'error');
-    } finally {
+      } finally {
         btn.innerHTML = originalText;
         btn.style.pointerEvents = 'auto';
         input.value = '';
+                 }
     }
-}
 
-async function submitImportData(items, type) {
-    const res = await fetch(`/api/base-data/import`, {
+    async function submitImportData(items, type) {
+      const res = await fetch(`/api/base-data/import`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ section: 'economic', type: type, items: items })
-    });
+      });
 
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'خطا در ذخیره اطلاعات');
-}
-async function submitImportData(items, type) {
-    const res = await fetch(`/api/base-data/import`, {
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'خطا در ذخیره اطلاعات');
+    }
+    async function submitImportData(items, type) {
+      const res = await fetch(`/api/base-data/import`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ section: 'economic', type: type, items: items })
-    });
+      });
 
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'خطا در ذخیره اطلاعات');
-}
-async function submitImportData(items, isResource) {
-    const type = isResource ? 'resource' : 'expense';
-    
-    const res = await fetch(`/api/base-data/import`, {
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'خطا در ذخیره اطلاعات');
+    }
+    async function submitImportData(items, isResource) {
+      const type = isResource ? 'resource' : 'expense';
+
+      const res = await fetch(`/api/base-data/import`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ section: 'economic', type: type, items: items })
-    });
+      });
 
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'خطا در ذخیره اطلاعات');
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'خطا در ذخیره اطلاعات');
 
-    showToast(`تعداد ${toPersianNumbers(result.count)} ردیف با موفقیت ایمپورت شد.`);
-    await loadData(); // رفرش درخت
-}
-
-
-      // ============================================
-      // شروع
-      // ============================================
-      switchView(currentView);
-      // فعال‌سازی تب درست
-      document
-        .getElementById("tab-resource")
-        .classList.toggle("active", currentType === "resource");
-      document
-        .getElementById("tab-expense")
-        .classList.toggle("active", currentType === "expense");
-      loadData();
+      showToast(`تعداد ${toPersianNumbers(result.count)} ردیف با موفقیت ایمپورت شد.`);
+      await loadData(); // رفرش درخت
+    }
 
 
-    </script>
-  </body>
+    // ============================================
+    // شروع
+    // ============================================
+    switchView(currentView);
+    // فعال‌سازی تب درست
+    document
+      .getElementById("tab-resource")
+      .classList.toggle("active", currentType === "resource");
+    document
+      .getElementById("tab-expense")
+      .classList.toggle("active", currentType === "expense");
+    loadData();
+        </script>
+    </body>
 </html>
