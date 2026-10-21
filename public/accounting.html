@@ -684,19 +684,34 @@ body.dark .level-pill.active {
 
             const toggleBtn = document.getElementById('ctx-toggle');
             toggleBtn.textContent = node && node.is_active ? '🔄 غیرفعال کردن' : '🔄 فعال کردن';
+menu.classList.add("open");
 
-            menu.classList.add('open');
-
-            const menuWidth = 200;
-            const menuHeight = 200;
-            let x = event.clientX;
-            let y = event.clientY;
-
-            if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
-            if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
-
-            menu.style.left = x + 'px';
-            menu.style.top = y + 'px';
+// موقعیت رو با ابعاد واقعی منو حساب کن
+requestAnimationFrame(() => {
+    const menuRect = menu.getBoundingClientRect();
+    const menuWidth = menuRect.width;
+    const menuHeight = menuRect.height;
+    
+    let x = event.clientX;
+    let y = event.clientY;
+    
+    // اگه از راست بیرون زد، بذار سمت چپ
+    if (x + menuWidth > window.innerWidth) {
+        x = window.innerWidth - menuWidth - 10;
+    }
+    // اگه از چپ بیرون زد
+    if (x < 10) x = 10;
+    
+    // اگه از پایین بیرون زد، بذار بالای کلیک
+    if (y + menuHeight > window.innerHeight) {
+        y = window.innerHeight - menuHeight - 10;
+    }
+    // اگه از بالا بیرون زد
+    if (y < 10) y = 10;
+    
+    menu.style.left = x + "px";
+    menu.style.top = y + "px";
+});
         }
 
         function closeContextMenu() {
