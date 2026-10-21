@@ -735,6 +735,98 @@
         color: #e2e8f0;
       }
 
+      /* ============ استایل Select (نوع) ============ */
+#input-level-name {
+    width: 100%;
+    padding: 10px 40px 10px 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    font-size: 13px;
+    background-color: white;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: left 12px center;
+    background-size: 18px;
+}
+
+#input-level-name:hover {
+    border-color: #667eea;
+    background-color: #f8f9ff;
+}
+
+#input-level-name:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+/* Dark mode */
+body.dark #input-level-name {
+    background-color: #1a202c;
+    border-color: #4a5568;
+    color: #e2e8f0;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2390cdf4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+}
+
+body.dark #input-level-name:hover {
+    border-color: #667eea;
+    background-color: #2d3748;
+}
+
+    
+.level-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.level-pill {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 2px solid #e0e0e0;
+    background: white;
+    cursor: pointer;
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    font-size: 13px;
+    color: #666;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.level-pill:hover {
+    border-color: #667eea;
+    color: #667eea;
+    background: #f8f9ff;
+}
+
+.level-pill.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+body.dark .level-pill {
+    background: #1a202c;
+    border-color: #4a5568;
+    color: #a0aec0;
+}
+
+body.dark .level-pill.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: transparent;
+}
+
     </style>
   </head>
   <body>
@@ -819,6 +911,14 @@
           />
         </div>
 
+
+        <div class="form-group" id="group-level-name">
+          <label>نوع <span style="color: #e74c3c">*</span></label>
+          <div class="level-pills" id="level-pills">
+            <!-- دکمه‌ها داینامیک -->
+          </div>
+        </div>
+
         <div class="form-group">
           <label>توضیحات</label>
           <textarea
@@ -866,7 +966,7 @@
       const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
       const SECTION = "organization";
       const PREFIX = "س";
-      const LEVEL_NAMES = ["حوزه", "معاونت", "اداره", "واحد"];
+     const LEVEL_NAMES = ["حوزه", "معاونت", "سازمان", "اداره", "واحد"];
 
       let treeData = [];
       let flatData = [];
@@ -879,7 +979,8 @@
       // توابع کمکی
       // ============================================
       function getLevelName(level) {
-        return LEVEL_NAMES[level] || `سطح ${level + 1}`;
+        const defaults = ["حوزه", "معاونت", "اداره", "واحد"];
+        return defaults[level] || `سطح ${level + 1}`;
       }
 
       function getLevelClass(level) {
@@ -1309,69 +1410,102 @@
         }
      
      
+      // ============================================
+      // پر کردن dropdown نوع
+      // ============================================
+function fillLevelNames(selectedLevel = null, selectedName = null) {
+    const container = document.getElementById('level-pills');
+    if (!container) {
+        console.warn('level-pills not found');
+        return;
+    }
+    container.innerHTML = '';
+
+    LEVEL_NAMES.forEach((name, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'level-pill';
+        btn.dataset.value = name;
+        btn.textContent = name;
+
+        if (selectedName === name || (!selectedName && selectedLevel === idx)) {
+            btn.classList.add('active');
+        }
+
+        btn.addEventListener('click', () => {
+            container.querySelectorAll('.level-pill').forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+        });
+
+        container.appendChild(btn);
+    });
+}
         // ============================================
       // Modal: افزودن
       // ============================================
-      async function openAddModal(parent) {
-        editingNode = null;
-        currentParentId = parent ? parent.id : null; // ✅ اضافه شد
-        document.getElementById("modal-title").textContent =
-          "➕ افزودن " + (parent ? "زیرشاخه" : "ریشه");
-        document.getElementById("input-title").value = "";
-        document.getElementById("input-description").value = "";
-        document.getElementById("input-digit-count").value = "3";
-        document.getElementById(
-          "input-digit-count"
-        ).parentElement.style.display = "block";
+async function openAddModal(parent) {
+    editingNode = null;
+    currentParentId = parent ? parent.id : null;
+    
+    document.getElementById("modal-title").textContent =
+        "➕ افزودن " + (parent ? "زیرشاخه" : "ریشه");
+    document.getElementById("input-title").value = "";
+    document.getElementById("input-description").value = "";
+    document.getElementById("input-digit-count").value = "3";
+    document.getElementById("input-digit-count").parentElement.style.display = "block";
 
-        if (parent) {
-          document.getElementById("modal-info").style.display = "flex";
-          document.getElementById("info-parent").textContent = parent.title;
-          document.getElementById("info-level").textContent = getLevelName(
-            parent.level + 1
-          );
+    // نمایش dropdown نوع
+    document.getElementById("group-level-name").style.display = "block";
 
-          // گرفتن کد بعدی
-          try {
+    if (parent) {
+        document.getElementById("modal-info").style.display = "flex";
+        document.getElementById("info-parent").textContent = parent.title;
+        document.getElementById("info-level").textContent = getLevelName(parent.level + 1);
+
+        // پر کردن dropdown
+        const nextLevel = parent.level + 1;
+        fillLevelNames(nextLevel, null);
+
+        try {
             const res = await fetch(
-              `/api/base-data/next-code?section=${SECTION}&parent_id=${parent.id}&digit_count=${parent.digit_count}&prefix=${PREFIX}`,
-              { headers: { Authorization: `Bearer ${token}` } }
+                `/api/base-data/next-code?section=${SECTION}&parent_id=${parent.id}&digit_count=${parent.digit_count}&prefix=${PREFIX}`,
+                { headers: { Authorization: `Bearer ${token}` } }
             );
             const data = await res.json();
-            document.getElementById("info-code").textContent =
-              data.next_code || "...";
-          } catch {
+            document.getElementById("info-code").textContent = data.next_code || "...";
+        } catch {
             document.getElementById("info-code").textContent = "...";
-          }
-        } else {
-          document.getElementById("modal-info").style.display = "none";
         }
+    } else {
+        document.getElementById("modal-info").style.display = "none";
+        fillLevelNames(0, null);
+    }
 
-        document.getElementById("modal-overlay").classList.add("open");
-        setTimeout(() => document.getElementById("input-title").focus(), 100);
-      }
-
+    document.getElementById("modal-overlay").classList.add("open");
+    setTimeout(() => document.getElementById("input-title").focus(), 100);
+}
       // ============================================
       // Modal: ویرایش
       // ============================================
-      function openEditModal(node) {
-        editingNode = node;
-        currentParentId = null; // ✅ اضافه شد
-        document.getElementById("modal-title").textContent = "✏️ ویرایش";
-        document.getElementById("input-title").value = node.title;
-        document.getElementById("input-description").value =
-          node.description || "";
-        document.getElementById("group-digit-count").style.display = "none";
-        document.getElementById("modal-info").style.display = "flex";
-        document.getElementById("info-parent").textContent = node.code;
-        document.getElementById("info-level").textContent =
-          node.level_name || getLevelName(node.level);
-        document.getElementById("info-code").textContent = "-";
+function openEditModal(node) {
+    editingNode = node;
+    currentParentId = null;
+    document.getElementById("modal-title").textContent = "✏️ ویرایش";
+    document.getElementById("input-title").value = node.title;
+    document.getElementById("input-description").value = node.description || "";
+    document.getElementById("group-digit-count").style.display = "none";
+    document.getElementById("group-level-name").style.display = "block";  // ← این
+    
+    fillLevelNames(node.level, node.level_name);  // ← این
+    
+    document.getElementById("modal-info").style.display = "flex";
+    document.getElementById("info-parent").textContent = node.code;
+    document.getElementById("info-level").textContent = node.level_name || getLevelName(node.level);
+    document.getElementById("info-code").textContent = "-";
 
-        document.getElementById("modal-overlay").classList.add("open");
-        setTimeout(() => document.getElementById("input-title").focus(), 100);
-      }
-
+    document.getElementById("modal-overlay").classList.add("open");
+    setTimeout(() => document.getElementById("input-title").focus(), 100);
+}
       function closeModal() {
         document.getElementById("modal-overlay").classList.remove("open");
         editingNode = null;
@@ -1382,6 +1516,7 @@
       // ذخیره Modal
       // ============================================
       async function saveModal() {
+        const levelName = document.getElementById("input-level-name").value;
         const title = document.getElementById("input-title").value.trim();
         const description = document
           .getElementById("input-description")
@@ -1408,6 +1543,7 @@
               body: JSON.stringify({
                 title,
                 description,
+               level_name: levelName,
                 is_active: editingNode.is_active,
               }),
             });
@@ -1417,6 +1553,9 @@
 
             showToast("با موفقیت ویرایش شد");
           } else {
+           
+           
+           
             // افزودن
             const digitCount =
               parseInt(document.getElementById("input-digit-count").value) || 3;
@@ -1434,7 +1573,7 @@
               description,
               digit_count: digitCount,
               parent_id: parentId,
-              level_name: getLevelName(nextLevel),
+              level_name: levelName,
             };
 
             const res = await fetch("/api/base-data", {
