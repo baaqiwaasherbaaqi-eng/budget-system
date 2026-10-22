@@ -10609,6 +10609,65 @@ export default {
         }
       }
 
+
+
+
+      // ============================================
+      // PUT: جابجایی ردیف‌ها (فقط sort_order)
+      // ============================================
+      if (url.pathname === "/api/base-data/reorder" && request.method === "PUT") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+          }
+
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+          }
+
+          const body = await request.json();
+          const { items } = body;
+
+          if (!Array.isArray(items) || items.length === 0) {
+            return new Response(JSON.stringify({ error: "لیست ردیف‌ها الزامی است" }), { status: 400, headers });
+          }
+
+          const nowShamsi = toShamsi(new Date());
+          const stmts = [];
+
+          for (const item of items) {
+            if (!item.id || item.sort_order === undefined) continue;
+
+            stmts.push(
+              env.DB.prepare(
+                `UPDATE base_data SET sort_order = ?, updated_at = CURRENT_TIMESTAMP, updated_at_shamsi = ? WHERE id = ?`
+              ).bind(item.sort_order, nowShamsi, item.id)
+            );
+          }
+
+          if (stmts.length === 0) {
+            return new Response(JSON.stringify({ error: "هیچ ردیف معتبری یافت نشد" }), { status: 400, headers });
+          }
+
+          // اجرای batch
+          const BATCH_SIZE = 50;
+          for (let i = 0; i < stmts.length; i += BATCH_SIZE) {
+            const chunk = stmts.slice(i, i + BATCH_SIZE);
+            await env.DB.batch(chunk);
+          }
+
+          return new Response(JSON.stringify({ success: true, count: stmts.length }), { status: 200, headers });
+        } catch (error) {
+          console.error("Reorder error:", error);
+          return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+        }
+      }
+
+
       // Serve static files
       const staticPaths = [
         "/",

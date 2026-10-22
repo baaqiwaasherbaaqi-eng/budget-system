@@ -8,6 +8,73 @@
     <script src="/sidebar.js"></script>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <style>
+
+
+/* ============ Drag & Drop ============ */
+.tree-node[draggable="true"] {
+    cursor: grab;
+}
+
+.tree-node.dragging {
+    opacity: 0.4;
+    cursor: grabbing;
+}
+
+.tree-node.drag-over {
+    background: #eef1ff !important;
+    border-right: 4px solid #667eea;
+    outline: 2px dashed #667eea;
+}
+
+.tree-node .drag-handle {
+    cursor: grab;
+    color: #999;
+    font-size: 14px;
+    margin-left: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    user-select: none;
+    letter-spacing: -2px;
+    flex-shrink: 0;
+}
+
+.tree-node .drag-handle:hover {
+    background: #e9ecef;
+    color: #333;
+}
+
+body.dark .tree-node.drag-over {
+    background: #4a5568 !important;
+    outline-color: #90cdf4;
+}
+
+body.dark .tree-node .drag-handle:hover {
+    background: #4a5568;
+    color: #e2e8f0;
+}
+
+tbody tr[draggable="true"] {
+    cursor: grab;
+}
+
+tbody tr.dragging {
+    opacity: 0.4;
+}
+
+tbody tr.drag-over {
+    background: #eef1ff !important;
+    outline: 2px dashed #667eea;
+}
+
+body.dark tbody tr.drag-over {
+    background: #4a5568 !important;
+    outline-color: #90cdf4;
+}
+
+body.dark tbody tr.dragging {
+    opacity: 0.4;
+}
+
         * { box-sizing: border-box; }
 
         body {
@@ -361,6 +428,7 @@
             <table>
                 <thead>
                     <tr>
+                            <th style="width: 40px;"></th>
                         <th style="width: 15%;">کد</th>
                         <th style="width: 35%;">عنوان</th>
                         <th style="width: 12%;">واحد</th>
@@ -482,7 +550,7 @@
         // ============================================
         // لود دیتا
         // ============================================
-        async function loadData() {
+           async function loadData() {
             try {
                 const res = await fetch(`/api/base-data?section=${SECTION}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -496,12 +564,17 @@
 
                 renderTree();
                 renderTable();
+
+                // 👇 فعال‌سازی drag & drop فقط یه بار
+                if (!window._dragEnabled) {
+                    enableDragAndDrop();
+                    window._dragEnabled = true;
+                }
             } catch (error) {
                 console.error('Load error:', error);
                 showToast('خطا در بارگذاری', 'error');
             }
         }
-
         // ============================================
         // رندر درخت
         // ============================================
@@ -533,6 +606,7 @@
                 const nodeEl = document.createElement('div');
                 nodeEl.className = 'tree-node';
                 nodeEl.dataset.id = node.id;
+                nodeEl.draggable = true;
                 if (selectedNode && selectedNode.id === node.id) nodeEl.classList.add('selected');
                 if (!node.is_active) nodeEl.style.opacity = '0.5';
 
@@ -551,6 +625,7 @@
                 } catch {}
 
                 nodeEl.innerHTML = `
+                    <span class="drag-handle" title="برای جابجایی بکشید">⋮⋮</span>
                     <span class="toggle ${hasChildren ? '' : 'empty'}" onclick="event.stopPropagation(); toggleExpand(${node.id})">
                         ${hasChildren ? (isExpanded ? '▼' : '◀') : '•'}
                     </span>
@@ -586,7 +661,6 @@
 
             tree.forEach(root => renderNode(root));
         }
-
         // ============================================
         // ساخت درخت از لیست تخت
         // ============================================
@@ -635,11 +709,11 @@
         // ============================================
         // رندر جدول
         // ============================================
-        function renderTable() {
+         function renderTable() {
             const tbody = document.getElementById('table-body');
 
             if (!flatData || flatData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:#999;">موردی ثبت نشده</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:40px; color:#999;">موردی ثبت نشده</td></tr>`;
                 return;
             }
 
@@ -647,7 +721,6 @@
 
             tbody.innerHTML = '';
             sorted.forEach(item => {
-                // استخراج extra_data
                 let unit = '—', specs = '—';
                 try {
                     const extra = item.extra_data ? JSON.parse(item.extra_data) : null;
@@ -661,9 +734,13 @@
 
                 const tr = document.createElement('tr');
                 tr.style.cursor = 'pointer';
+                tr.dataset.id = item.id;
+                tr.draggable = true;
+
                 if (!item.is_active) tr.style.opacity = '0.5';
 
                 tr.innerHTML = `
+                    <td><span class="drag-handle" title="برای جابجایی بکشید">⋮⋮</span></td>
                     <td class="code-cell">${item.code}</td>
                     <td>${item.title}</td>
                     <td>${unit !== '—' ? `<span class="badge unit">${unit}</span>` : '—'}</td>
@@ -686,7 +763,123 @@
                 tbody.appendChild(tr);
             });
         }
+        
+        
+                // ============================================
+        // فعال‌سازی Drag & Drop
+        // ============================================
+        function enableDragAndDrop() {
+            const treeContainer = document.getElementById('tree-view');
+            const tableContainer = document.getElementById('table-view');
 
+            let draggedNode = null;
+            let draggedParentId = null;
+
+            const handleDragStart = (e) => {
+                const target = e.target.closest('.tree-node[data-id], #table-view tbody tr[data-id]');
+                if (!target) return;
+
+                const id = parseInt(target.dataset.id);
+                const node = flatData.find(n => n.id === id);
+                if (!node) return;
+
+                draggedNode = node;
+                draggedParentId = node.parent_id;
+                target.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', id);
+            };
+
+            const handleDragEnd = (e) => {
+                const target = e.target.closest('.tree-node[data-id], #table-view tbody tr[data-id]');
+                if (target) target.classList.remove('dragging');
+                document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+                draggedNode = null;
+                draggedParentId = null;
+            };
+
+            const handleDragOver = (e) => {
+                if (!draggedNode) return;
+                const target = e.target.closest('.tree-node[data-id], #table-view tbody tr[data-id]');
+                if (!target) return;
+
+                const id = parseInt(target.dataset.id);
+                const targetNode = flatData.find(n => n.id === id);
+                if (!targetNode) return;
+                if (targetNode.parent_id !== draggedParentId) return;
+
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+
+                document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+                target.classList.add('drag-over');
+            };
+
+            const handleDrop = async (e) => {
+                e.preventDefault();
+                const target = e.target.closest('.tree-node[data-id], #table-view tbody tr[data-id]');
+                if (!target) return;
+
+                target.classList.remove('drag-over');
+                if (!draggedNode) return;
+
+                const targetId = parseInt(target.dataset.id);
+                const targetNode = flatData.find(n => n.id === targetId);
+                if (!targetNode) return;
+                if (targetNode.parent_id !== draggedParentId) {
+                    showToast('فقط می‌تونید ردیف‌های هم‌سطح رو جابجا کنید', 'error');
+                    return;
+                }
+                if (draggedNode.id === targetNode.id) return;
+
+                const siblings = flatData
+                    .filter(n => n.parent_id === draggedParentId)
+                    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+                const filtered = siblings.filter(n => n.id !== draggedNode.id);
+                const targetIndex = filtered.findIndex(n => n.id === targetNode.id);
+                filtered.splice(targetIndex, 0, draggedNode);
+
+                const items = filtered.map((n, idx) => ({
+                    id: n.id,
+                    sort_order: idx + 1
+                }));
+
+                try {
+                    const res = await fetch('/api/base-data/reorder', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ items })
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'خطا');
+
+                    showToast('ترتیب با موفقیت ذخیره شد');
+                    await loadData();
+                } catch (error) {
+                    showToast(error.message, 'error');
+                }
+            };
+
+            if (treeContainer) {
+                treeContainer.addEventListener('dragstart', handleDragStart);
+                treeContainer.addEventListener('dragend', handleDragEnd);
+                treeContainer.addEventListener('dragover', handleDragOver);
+                treeContainer.addEventListener('drop', handleDrop);
+            }
+
+            if (tableContainer) {
+                tableContainer.addEventListener('dragstart', handleDragStart);
+                tableContainer.addEventListener('dragend', handleDragEnd);
+                tableContainer.addEventListener('dragover', handleDragOver);
+                tableContainer.addEventListener('drop', handleDrop);
+            }
+        }
+        
         // ============================================
         // سوئیچ نما
         // ============================================
