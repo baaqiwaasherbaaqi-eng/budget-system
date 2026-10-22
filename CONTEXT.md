@@ -1,8 +1,8 @@
 # پروژه: سامانه بودجه شهرداری
 
-## تاریخ آخرین آپدیت: 1405/07/29
+## تاریخ آخرین آپدیت: 1405/07/30
 
-## وضعیت: بخش ۷ (اشخاص) — تکمیل شد ✅ + بخش ۸ (Permission) — تکمیل شد ✅ + ایمپورت اکسل عملیاتی — تکمیل شد ✅
+## وضعیت: بخش ۷ (اشخاص) — تکمیل شد ✅ + بخش ۸ (Permission) — تکمیل شد ✅ + ایمپورت اکسل عملیاتی — تکمیل شد ✅ + Drag & Drop — تکمیل شد ✅
 
 ## کارهای انجام شده:
 - [x] فاز ۰ تا ۱۸
@@ -44,6 +44,40 @@
 - [x] **رفع تداخل کد طرح/خدمت با کلید `type:code`**
 - [x] **رفع باگ context menu (بیرون زدن از پایین صفحه)**
 - [x] **افزودن `level_name` dropdown به `organizations.html` (معاونت/سازمان)**
+- [x] **Drag & Drop برای مرتب‌سازی ردیف‌ها (فقط `sort_order`):**
+  - [x] `organizations.html`
+  - [x] `economic-classifications.html`
+  - [x] `operational-classifications.html`
+  - [x] `accounting.html`
+  - [x] `goods.html`
+  - [x] `strategic-plan.html` (خودم انجام دادم)
+- [x] **Loading Overlay برای ایمپورت اکسل (عملیاتی + اقتصادی)**
+- [x] **اصلاح ساختار اقتصادی (001 هزینه / 002 تملک سرمایه‌ای / 003 تملک مالی)**
+- [x] **حذف Drag & Drop از `persons.html`** (فعلاً لازم نیست)
+
+---
+
+## 🔥 بخش جدید: Drag & Drop (مرتب‌سازی ردیف‌ها)
+
+### Endpoint:
+- `PUT /api/base-data/reorder` — فقط `sort_order` رو عوض می‌کنه (کد ثابت می‌مونه)
+- `body`: `{ items: [{ id, sort_order }, ...] }`
+
+### منطق:
+- فقط بین **هم‌سطح‌ها** (siblings) جابجایی مجازه
+- `code` و `parent_id` **تغییر نمی‌کنن** (فقط `sort_order`)
+- `DB.batch()` هر ۵۰ statement
+
+### فایل‌های دارای Drag & Drop:
+| # | فایل | وضعیت |
+|---|------|--------|
+| ۱ | `organizations.html` | ✅ |
+| ۲ | `economic-classifications.html` | ✅ |
+| ۳ | `operational-classifications.html` | ✅ |
+| ۴ | `accounting.html` | ✅ |
+| ۵ | `goods.html` | ✅ |
+| ۶ | `strategic-plan.html` | ✅ |
+| ۷ | `persons.html` | ❌ (حذف شد) |
 
 ---
 
@@ -66,7 +100,7 @@
 - `insertedNodes` با کلید `type:code` (مثلاً `plan:10101` و `service:10101` جدا)
 - `DB.batch()` هر ۵۰ statement
 - `getNextCode` در حافظه (نه کوئری تکراری)
-- `json_extract(extra_data, '$.original_excel_code')` برای پیدا کردن والد
+- `json_extract(extra_data, '$.original_excel_code')` یا `LIKE` برای پیدا کردن والد
 
 ---
 
@@ -151,6 +185,7 @@
 - [x] Migration 040 — `user_id` + `user_creation_log`
 - [x] Migration 041 — `login_otp` + `mobile` در `users`
 - [x] Migration 042 — `org_positions` + `position_id` در `person_organizations`
+- [x] Migration 048 — `sort_order` در `persons` (اجرا شد، ولی برای Drag & Drop استفاده نمی‌شه)
 
 ### مراحل باقی‌مانده:
 - [ ] استعلام کد ملی (mock)
@@ -254,6 +289,7 @@
 - `section`: 'organization', 'economic', 'strategic', 'operational', 'accounting', 'budget_type', 'goods', 'decree_type'
 - `type`: انواع مختلف
 - `extra_data`: JSON string (شامل `original_excel_code` برای ردیف‌های ایمپورت‌شده)
+- `sort_order`: برای مرتب‌سازی (Drag & Drop)
 
 ### ساختار سازمانی (base_data section='organization'):
 - `س-001` — حوزه شهردار
@@ -283,6 +319,7 @@
 - اطلاعات هویتی، تماس، استخدامی، بانکی
 - `national_id_verified`, `notes`, `extra_data`, `is_active`
 - `user_id` (لینک به کاربر)
+- `sort_order` (اضافه شده در Migration 048، ولی برای Drag & Drop استفاده نمی‌شه)
 
 ---
 
@@ -306,9 +343,20 @@
 
 ---
 
+## قوانین کدینگ اقتصادی (بعد از اصلاح):
+- **001** — هزینه (سطح ۰)
+- **002** — تملک دارایی سرمایه‌ای (سطح ۰)
+- **003** — تملک دارایی مالی (سطح ۰)
+- **سطح ۱:** `001001`, `001002`, ... (سرفصل‌ها)
+- **سطح ۲:** `001001001`, ... (بندها/فصل‌ها)
+- **سطح ۳:** `001001001001`, ... (جزءها)
+
+---
+
 ## Migration های اجراشده روی ریموت:
 - 001 تا 042 (همه اجرا شدن)
 - **042 روی ریموت اجرا شد (با `--remote`)**
+- **048 روی لوکال اجرا شد (sort_order در persons)**
 
 ---
 
@@ -323,6 +371,8 @@
 8. **`import-template-All-NA.xlsx`** برای همه اطلاعات پایه
 9. **`import-template-A.xlsx`** فقط برای فعالیت‌ها
 10. **`--remote`** برای اجرای migration روی ریموت
+11. **Drag & Drop** فقط `sort_order` رو عوض می‌کنه (کد ثابت)
+12. **Loading Overlay** برای ایمپورت‌های طولانی
 
 ---
 

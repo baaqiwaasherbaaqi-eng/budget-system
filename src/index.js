@@ -756,7 +756,7 @@ export default {
           params.push(isActive === "1" || isActive === "true" ? 1 : 0);
         }
 
-        query += " ORDER BY code";
+               query += " ORDER BY sort_order, code";
 
         const items = await env.DB.prepare(query)
           .bind(...params)
@@ -780,7 +780,7 @@ export default {
           params.push(personType);
         }
 
-        query += " ORDER BY code";
+                query += " ORDER BY sort_order, code";
 
         const items = await env.DB.prepare(query)
           .bind(...params)
@@ -10666,6 +10666,8 @@ export default {
           return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
         }
       }
+
+
 
 
       // Serve static files

@@ -15,6 +15,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
     
     <style>
+
+
+
         * { box-sizing: border-box; }
 
         body {
@@ -1023,12 +1026,13 @@
 
                 renderTree();
                 renderTable();
+
+  
             } catch (error) {
                 console.error('Load error:', error);
                 showToast('خطا در بارگذاری', 'error');
             }
         }
-
         // ============================================
         // رندر درخت
         // ============================================
@@ -1056,6 +1060,7 @@
                 const nodeEl = document.createElement('div');
                 nodeEl.className = 'tree-node';
                 nodeEl.dataset.id = node.id;
+ 
                 if (selectedNode && selectedNode.id === node.id) nodeEl.classList.add('selected');
                 if (!node.is_active) nodeEl.style.opacity = '0.5';
 
@@ -1064,6 +1069,7 @@
                 const icon = icons[node.level] || '📄';
 
                 nodeEl.innerHTML = `
+                    
                     <span class="toggle ${hasChildren ? '' : 'empty'}" onclick="event.stopPropagation(); toggleExpand(${node.id})">
                         ${hasChildren ? (isExpanded ? '▼' : '◀') : '•'}
                     </span>
@@ -1097,7 +1103,6 @@
 
             tree.forEach(root => renderNode(root, container));
         }
-
         function buildTree(items) {
             const map = {};
             const roots = [];
@@ -1158,13 +1163,15 @@
 
                 const tr = document.createElement('tr');
                 tr.style.cursor = 'pointer';
+ 
                 if (!item.is_active) tr.style.opacity = '0.5';
 
-                                const profileBtn = (item.level === 4 && item.person_type === 'employee')
+                const profileBtn = (item.level === 4 && item.person_type === 'employee')
                     ? `<a href="/employee-profile.html?id=${item.id}" style="color:#667eea;text-decoration:none;font-size:12px;margin-right:8px;" onclick="event.stopPropagation();">📁 پرونده</a>`
                     : '';
 
                 tr.innerHTML = `
+                    
                     <td class="code-cell">${item.code}</td>
                     <td>
                         <span>${indent}</span>
@@ -1191,7 +1198,123 @@
                 tbody.appendChild(tr);
             });
         }
+        
+        
+                // ============================================
+        // فعال‌سازی Drag & Drop
+        // ============================================
+        function enableDragAndDrop() {
+            const treeContainer = document.getElementById('tree-view');
+            const tableContainer = document.getElementById('table-view');
 
+            let draggedNode = null;
+            let draggedParentId = null;
+
+            const handleDragStart = (e) => {
+                const target = e.target.closest('.tree-node[data-id], #table-view tbody tr[data-id]');
+                if (!target) return;
+
+                const id = parseInt(target.dataset.id);
+                const node = flatData.find(n => n.id === id);
+                if (!node) return;
+
+                draggedNode = node;
+                draggedParentId = node.parent_id;
+                target.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', id);
+            };
+
+            const handleDragEnd = (e) => {
+                const target = e.target.closest('.tree-node[data-id], #table-view tbody tr[data-id]');
+                if (target) target.classList.remove('dragging');
+                document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+                draggedNode = null;
+                draggedParentId = null;
+            };
+
+            const handleDragOver = (e) => {
+                if (!draggedNode) return;
+                const target = e.target.closest('.tree-node[data-id], #table-view tbody tr[data-id]');
+                if (!target) return;
+
+                const id = parseInt(target.dataset.id);
+                const targetNode = flatData.find(n => n.id === id);
+                if (!targetNode) return;
+                if (targetNode.parent_id !== draggedParentId) return;
+
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+
+                document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+                target.classList.add('drag-over');
+            };
+
+            const handleDrop = async (e) => {
+                e.preventDefault();
+                const target = e.target.closest('.tree-node[data-id], #table-view tbody tr[data-id]');
+                if (!target) return;
+
+                target.classList.remove('drag-over');
+                if (!draggedNode) return;
+
+                const targetId = parseInt(target.dataset.id);
+                const targetNode = flatData.find(n => n.id === targetId);
+                if (!targetNode) return;
+                if (targetNode.parent_id !== draggedParentId) {
+                    showToast('فقط می‌تونید ردیف‌های هم‌سطح رو جابجا کنید', 'error');
+                    return;
+                }
+                if (draggedNode.id === targetNode.id) return;
+
+                const siblings = flatData
+                    .filter(n => n.parent_id === draggedParentId)
+                    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+                const filtered = siblings.filter(n => n.id !== draggedNode.id);
+                const targetIndex = filtered.findIndex(n => n.id === targetNode.id);
+                filtered.splice(targetIndex, 0, draggedNode);
+
+                const items = filtered.map((n, idx) => ({
+                    id: n.id,
+                    sort_order: idx + 1
+                }));
+
+                try {
+                    const res = await fetch('/api/persons/reorder', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ items })
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'خطا');
+
+                    showToast('ترتیب با موفقیت ذخیره شد');
+                    await loadData();
+                } catch (error) {
+                    showToast(error.message, 'error');
+                }
+            };
+
+            if (treeContainer) {
+                treeContainer.addEventListener('dragstart', handleDragStart);
+                treeContainer.addEventListener('dragend', handleDragEnd);
+                treeContainer.addEventListener('dragover', handleDragOver);
+                treeContainer.addEventListener('drop', handleDrop);
+            }
+
+            if (tableContainer) {
+                tableContainer.addEventListener('dragstart', handleDragStart);
+                tableContainer.addEventListener('dragend', handleDragEnd);
+                tableContainer.addEventListener('dragover', handleDragOver);
+                tableContainer.addEventListener('drop', handleDrop);
+            }
+        }
+        
         // ============================================
         // سوئیچ تب
         // ============================================
