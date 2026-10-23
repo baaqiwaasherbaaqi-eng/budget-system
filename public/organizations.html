@@ -1846,7 +1846,9 @@ function openEditModal(node) {
       // ذخیره Modal
       // ============================================
       async function saveModal() {
-        const levelName = document.getElementById("input-level-name").value;
+        // ✅ خواندن از level-pills (به جای select)
+const levelNameEl = document.querySelector('#level-pills .level-pill.active');
+const levelName = levelNameEl ? levelNameEl.dataset.value : (LEVEL_NAMES[0] || 'حوزه');
         const title = document.getElementById("input-title").value.trim();
         const description = document
           .getElementById("input-description")

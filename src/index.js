@@ -10708,7 +10708,7 @@ export default {
         "/attendance.html",
   "/base-data-search.js",     
   "/base-data-search.css",    
-
+  "/save-shortcut.js",
 
       ];
 

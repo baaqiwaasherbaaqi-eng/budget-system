@@ -139,7 +139,7 @@ function renderSearchBar() {
 
     searchTimer = setTimeout(() => {
       searchQuery = value.trim();
-      saveStateToLocalStorage();
+      //saveStateToLocalStorage();
       triggerUpdate();
     }, 250);
   }
@@ -151,7 +151,7 @@ function renderSearchBar() {
     const input = document.getElementById('bds-search-input');
     if (input) input.value = '';
     searchQuery = '';
-    saveStateToLocalStorage();
+    //saveStateToLocalStorage();
     updateSearchClearButton();
     triggerUpdate();
   }
@@ -172,7 +172,7 @@ function renderSearchBar() {
       p.classList.toggle('active', p.dataset.level === String(level));
     });
 
-    saveStateToLocalStorage();
+    //saveStateToLocalStorage();
     triggerUpdate();
   }
 
@@ -348,7 +348,9 @@ function renderSearchBar() {
   // ============================================
   // localStorage
   // ============================================
-  function getStorageKey() {
+ 
+ 
+ /*  function getStorageKey() {
     return `bds-state-${config.section}`;
   }
 
@@ -373,7 +375,7 @@ function renderSearchBar() {
       if (state.searchQuery) searchQuery = state.searchQuery;
       if (state.activeLevel) activeLevel = state.activeLevel;
     } catch (e) {}
-  }
+  } */
 
   // ============================================
   // Public API
@@ -388,7 +390,7 @@ function renderSearchBar() {
     callbacks = userCallbacks;
 
     // لود state قبلی
-    loadStateFromLocalStorage();
+    //loadStateFromLocalStorage();
 
     // رندر نوار
     renderSearchBar();

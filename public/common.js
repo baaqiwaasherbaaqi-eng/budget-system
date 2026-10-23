@@ -132,8 +132,76 @@ function buildContextMenuHTML(node, options = {}) {
     return html;
 }
 
+// ============================================
+// Ctrl+S (Chrome/Edge/Yandex) + Ctrl+Enter (Firefox)
+// ============================================
+console.log('🔍 save-shortcut module loading...');
 
+window._ctrlSSaving = false;
 
+window._findSaveButton = function() {
+    // ۱. مدال باز
+    const modals = document.querySelectorAll('.modal-overlay.open, .dependent-modal-overlay.open');
+    for (const modal of modals) {
+        const btn = modal.querySelector('.btn-save, button[onclick*="save"], button[onclick*="Save"]');
+        if (btn && !btn.disabled && btn.offsetParent !== null) return btn;
+    }
+
+    // ۲. تب فعال
+    const activePanel = document.querySelector('.tab-panel.active');
+    if (activePanel) {
+        const btn = activePanel.querySelector('.btn-save:not([disabled])');
+        if (btn && btn.offsetParent !== null) return btn;
+    }
+
+    // ۳. هر دکمه ذخیره مرئی
+    const allBtns = document.querySelectorAll('.btn-save:not([disabled]), .btn-success:not([disabled])');
+    for (const btn of allBtns) {
+        if (btn.offsetParent !== null) return btn;
+    }
+
+    return null;
+};
+
+function _handleSaveShortcut(e) {
+    // Ctrl+S یا Cmd+S (Chrome/Edge/Yandex)
+    const isCtrlS = (e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S' || e.code === 'KeyS');
+    
+    // Ctrl+Enter یا Cmd+Enter (Firefox)
+    const isCtrlEnter = (e.ctrlKey || e.metaKey) && (e.key === 'Enter' || e.code === 'Enter' || e.code === 'NumpadEnter');
+
+    if (!isCtrlS && !isCtrlEnter) return;
+
+    const shortcutName = isCtrlEnter ? 'Ctrl+Enter' : 'Ctrl+S';
+    console.log('🔥 Save shortcut detected:', shortcutName);
+
+    // برای Ctrl+S در Chrome/Edge کار می‌کنه
+    // برای Ctrl+Enter در Firefox کار می‌کنه
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (window._ctrlSSaving) {
+        console.log('⏳ already saving...');
+        return;
+    }
+
+    const btn = window._findSaveButton();
+    console.log('🔍 found button:', btn);
+
+    if (btn) {
+        window._ctrlSSaving = true;
+        btn.click();
+        setTimeout(() => { window._ctrlSSaving = false; }, 1000);
+    } else {
+        console.log('❌ no save button found');
+    }
+}
+
+// ثبت روی document + window (برای اطمینان)
+document.addEventListener('keydown', _handleSaveShortcut, true);
+window.addEventListener('keydown', _handleSaveShortcut, true);
+
+console.log('✅ Save shortcut listener registered (Ctrl+S / Ctrl+Enter)');
 
 // ============================================
 // جابجایی هم‌سطح (در ctxAction استفاده بشه)

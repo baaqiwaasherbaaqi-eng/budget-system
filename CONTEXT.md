@@ -1,8 +1,8 @@
 # پروژه: سامانه بودجه شهرداری
 
-## تاریخ آخرین آپدیت: 1405/08/01
+## تاریخ آخرین آپدیت: 1405/08/02
 
-## وضعیت: بخش ۷ (اشخاص) — تکمیل شد ✅ + بخش ۸ (Permission) — تکمیل شد ✅ + ایمپورت اکسل عملیاتی — تکمیل شد ✅ + Drag & Drop — تکمیل شد ✅ + جستجو و فیلتر سطح در اطلاعات پایه — تکمیل شد ✅
+## وضعیت: بخش ۷ (اشخاص) — تکمیل شد ✅ + بخش ۸ (Permission) — تکمیل شد ✅ + ایمپورت اکسل عملیاتی — تکمیل شد ✅ + Drag & Drop — تکمیل شد ✅ + جستجو و فیلتر سطح — تکمیل شد ✅ + کلید میانبر Ctrl+S — تکمیل شد ✅
 
 ## کارهای انجام شده:
 - [x] فاز ۰ تا ۱۸
@@ -62,6 +62,20 @@
   - [x] `strategic-plan.html` — ۴ سطح (چشم‌انداز/راهبرد/سیاست اجرایی/زیرسیاست) ✅
   - [x] `goods.html` — ۴ سطح (گروه اصلی/گروه فرعی/زیرگروه/کالا-خدمت) ✅
   - [x] `budget-types.html` — فقط سرچ (بدون Pills) ✅
+- [x] **کلید میانبر Ctrl+S / Cmd+S + Ctrl+Enter برای ذخیره فرم‌ها** (`common.js`)
+  - [x] Chrome / Edge / Yandex — `Ctrl+S`
+  - [x] Firefox — `Ctrl+Enter`
+  - [x] `event.preventDefault()` برای جلوگیری از Save Page مرورگر
+  - [x] پیدا کردن خودکار دکمه ذخیره (مدال / تب فعال / دکمه مرئی)
+  - [x] Debounce 800ms برای جلوگیری از کلیک تکراری
+- [x] **رفع باگ `sort_order` در `accounting.html` و `operational-classifications.html`**
+  - [x] `sortRecursive` با `sort_order` (نه فقط `code`)
+  - [x] جابجایی ردیف‌ها الان درست کار می‌کنه
+- [x] **رفع باگ `toggleExpand` در `operational-classifications.html`**
+  - [x] حفظ فیلتر فعلی بعد از باز/بسته کردن شاخه
+- [x] **حذف `localStorage` از `base-data-search.js`**
+  - [x] فیلتر/سرچ هر بار صفحه باز می‌شه، ری‌ست می‌شه
+  - [x] `currentFilteredData` / `currentIsFiltered` برای حفظ state درون‌session
 
 ---
 
@@ -82,11 +96,12 @@
    - آیکون مخصوص برای هر سطح
 3. **جستجو + فیلتر با هم**
 4. **نمایش breadcrumb code** (مسیر کامل) زیر عنوان در نمای جدولی (وقتی فیلتر فعاله)
-5. **حفظ state در `localStorage`** (per-section)
-6. **نمایش تعداد نتایج** (مثلاً «۲۳ از ۴۵ ردیف»)
-7. **`useType: true`** — برای صفحاتی مثل `operational` که `type` معناداره (نه `level`)
-8. **`hidePills: true`** — برای صفحاتی مثل `budget-types` که سطح‌بندی ندارن
-9. **باز کردن خودکار همه نودها** وقتی فیلتر/سرچ فعاله (تا نتایج دیده بشن)
+5. **نمایش تعداد نتایج** (مثلاً «۲۳ از ۴۵ ردیف»)
+6. **`useType: true`** — برای صفحاتی مثل `operational` که `type` معناداره (نه `level`)
+7. **`hidePills: true`** — برای صفحاتی مثل `budget-types` که سطح‌بندی ندارن
+8. **باز کردن خودکار همه نودها** وقتی فیلتر/سرچ فعاله (تا نتایج دیده بشن)
+9. **`localStorage` غیرفعال** — هر بار صفحه لود میشه، فیلتر/سرچ ری‌ست میشه
+10. **`currentFilteredData` / `currentIsFiltered`** — برای حفظ state درون‌session (مثلاً موقع باز/بسته کردن شاخه)
 
 ### نحوه استفاده در هر صفحه:
 ```javascript
@@ -115,6 +130,8 @@ function startSearchComponent() {
         {
             getFlatData: () => flatData,
             onUpdate: ({ filteredData, isFiltered }) => {
+                currentFilteredData = isFiltered ? filteredData : null;
+                currentIsFiltered = isFiltered;
                 renderTree(filteredData, isFiltered);
                 renderTable(filteredData, isFiltered);
             },

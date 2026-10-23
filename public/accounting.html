@@ -633,6 +633,40 @@ body.dark .level-pill.active {
         }
     );
 }
+
+
+function buildTree(items) {
+    const map = {};
+    const roots = [];
+
+    items.forEach(item => {
+        map[item.id] = { ...item, children: [] };
+    });
+
+    items.forEach(item => {
+        if (item.parent_id && map[item.parent_id]) {
+            map[item.parent_id].children.push(map[item.id]);
+        } else {
+            roots.push(map[item.id]);
+        }
+    });
+
+    const sortFn = (a, b) => {
+        if (a.sort_order !== b.sort_order) {
+            return (a.sort_order || 0) - (b.sort_order || 0);
+        }
+        return a.code.localeCompare(b.code);
+    };
+
+    const sortRecursive = (nodes) => {
+        nodes.sort(sortFn);
+        nodes.forEach(n => sortRecursive(n.children));
+    };
+    sortRecursive(roots);
+
+    return roots;
+}
+
         // ============================================
         // رندر درخت
         // ============================================
@@ -677,10 +711,15 @@ body.dark .level-pill.active {
         }
     });
 
-    const sortRecursive = (nodes) => {
-        nodes.sort((a, b) => a.code.localeCompare(b.code));
-        nodes.forEach(n => sortRecursive(n.children));
-    };
+const sortRecursive = (nodes) => {
+    nodes.sort((a, b) => {
+        if ((a.sort_order || 0) !== (b.sort_order || 0)) {
+            return (a.sort_order || 0) - (b.sort_order || 0);
+        }
+        return a.code.localeCompare(b.code);
+    });
+    nodes.forEach(n => sortRecursive(n.children));
+};
     sortRecursive(roots);
 
     container.innerHTML = '';

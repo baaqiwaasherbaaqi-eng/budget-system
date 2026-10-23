@@ -753,6 +753,18 @@ window.addEventListener('load', function() {
 })();
 
 // ============================================
+// لود کلید میانبر Ctrl+S
+// ============================================
+(function() {
+    if (!document.getElementById('save-shortcut-script')) {
+        const script = document.createElement('script');
+        script.id = 'save-shortcut-script';
+        script.src = '/save-shortcut.js';
+        document.head.appendChild(script);
+    }
+})();
+
+// ============================================
 // اعمال فونت Vazirmatn روی همه فیلدهای ورودی
 // ============================================
 (function applyInputFont() {

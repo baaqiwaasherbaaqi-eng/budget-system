@@ -960,6 +960,8 @@ body.dark .download-menu-item div[style*="color: #999"] {
       const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
       const SECTION = "operational";
 
+      let currentFilteredData = null;
+let currentIsFiltered = false;
       let treeData = [];
       let flatData = [];
       let currentView = localStorage.getItem("operational-view") || "tree";
@@ -1075,19 +1077,21 @@ body.dark .download-menu-item div[style*="color: #999"] {
     }
 }
       
-   function startSearchComponent() {
-    // سطوح = type ها (چون این صفحه level معنادار نداره، type معناداره)
+function startSearchComponent() {
     initBaseDataSearch(
         {
             section: 'operational',
             levelNames: ['مأموریت', 'برنامه', 'خدمت', 'طرح', 'فعالیت', 'پروژه'],
             levelIcons: ['🎯', '📋', '⚙️', '📐', '🔧', '🏗️'],
-            // ⚠️ از type استفاده کن، نه level
             useType: true,
         },
         {
             getFlatData: () => flatData,
             onUpdate: ({ filteredData, isFiltered }) => {
+                // 👇 ذخیره state
+                currentFilteredData = isFiltered ? filteredData : null;
+                currentIsFiltered = isFiltered;
+
                 renderTree(filteredData, isFiltered);
                 renderTable(filteredData, isFiltered);
 
@@ -1096,7 +1100,39 @@ body.dark .download-menu-item div[style*="color: #999"] {
             },
         }
     );
-}   
+}
+function buildTree(items) {
+    const map = {};
+    const roots = [];
+
+    items.forEach(item => {
+        map[item.id] = { ...item, children: [] };
+    });
+
+    items.forEach(item => {
+        if (item.parent_id && map[item.parent_id]) {
+            map[item.parent_id].children.push(map[item.id]);
+        } else {
+            roots.push(map[item.id]);
+        }
+    });
+
+    const sortFn = (a, b) => {
+        if (a.sort_order !== b.sort_order) {
+            return (a.sort_order || 0) - (b.sort_order || 0);
+        }
+        return a.code.localeCompare(b.code);
+    };
+
+    const sortRecursive = (nodes) => {
+        nodes.sort(sortFn);
+        nodes.forEach(n => sortRecursive(n.children));
+    };
+    sortRecursive(roots);
+
+    return roots;
+}
+
         // ============================================
       // رندر درخت
       // ============================================
@@ -1141,10 +1177,15 @@ function renderTree(items, isFiltered) {
         }
     });
 
-    const sortRecursive = (nodes) => {
-        nodes.sort((a, b) => a.code.localeCompare(b.code));
-        nodes.forEach(n => sortRecursive(n.children));
-    };
+const sortRecursive = (nodes) => {
+    nodes.sort((a, b) => {
+        if ((a.sort_order || 0) !== (b.sort_order || 0)) {
+            return (a.sort_order || 0) - (b.sort_order || 0);
+        }
+        return a.code.localeCompare(b.code);
+    });
+    nodes.forEach(n => sortRecursive(n.children));
+};
     sortRecursive(roots);
 
     container.innerHTML = '';
@@ -1177,15 +1218,20 @@ function renderTree(items, isFiltered) {
 
             const toggleEl = nodeEl.querySelector('.toggle');
             if (hasChildren) {
-                toggleEl.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (isCollapsed) {
-                        localStorage.removeItem(collapsedKey);
-                    } else {
-                        localStorage.setItem(collapsedKey, '1');
-                    }
-                    renderTree();
-                });
+toggleEl.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (localStorage.getItem(`operational-collapsed-${node.id}`) === "1") {
+        localStorage.removeItem(`operational-collapsed-${node.id}`);
+    } else {
+        localStorage.setItem(`operational-collapsed-${node.id}`, "1");
+    }
+    // 👇 فیلتر فعلی رو حفظ کن
+    if (currentFilteredData !== null) {
+        renderTree(currentFilteredData, currentIsFiltered);
+    } else {
+        renderTree();
+    }
+});
             }
 
             nodeEl.addEventListener('click', () => {
@@ -1401,12 +1447,13 @@ function switchView(view) {
     document.getElementById("tree-view").style.display = view === "tree" ? "block" : "none";
     document.getElementById("table-view").style.display = view === "table" ? "block" : "none";
 
-    // اگه فیلتر فعاله، دوباره رندر کن
     if (typeof window.refreshBds === 'function') {
         window.refreshBds();
     }
 }
-      // ============================================
+
+
+// ============================================
       // Context Menu (داینامیک)
       // ============================================
       function openContextMenu(event, nodeId) {
