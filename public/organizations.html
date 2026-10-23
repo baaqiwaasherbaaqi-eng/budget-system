@@ -6,6 +6,7 @@
     <title>ساختار سازمانی</title>
     <link rel="stylesheet" href="/sidebar.css" />
     <script src="/sidebar.js"></script>
+    <link rel="stylesheet" href="/base-data-search.css">
     <link
       href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css"
       rel="stylesheet"
@@ -1019,7 +1020,7 @@ body.dark .level-pill.active {
     <div class="toast" id="toast"></div>
 
     <script src="/common.js"></script>
-
+    <script src="/base-data-search.js"></script>
     <script>
       // ============================================
       // وضعیت
@@ -1065,57 +1066,158 @@ body.dark .level-pill.active {
       // ============================================
       // لود دیتا
       // ============================================
-        async function loadData() {
-        try {
-          const [treeRes, flatRes] = await Promise.all([
+async function loadData() {
+    try {
+        const [treeRes, flatRes] = await Promise.all([
             fetch(`/api/base-data/tree?section=${SECTION}`, {
-              headers: { Authorization: `Bearer ${token}` },
+                headers: { Authorization: `Bearer ${token}` },
             }),
             fetch(`/api/base-data?section=${SECTION}`, {
-              headers: { Authorization: `Bearer ${token}` },
+                headers: { Authorization: `Bearer ${token}` },
             }),
-          ]);
+        ]);
 
-          treeData = await treeRes.json();
-          flatData = await flatRes.json();
+        treeData = await treeRes.json();
+        flatData = await flatRes.json();
 
-          renderTree();
-          renderTable();
+        // رندر اولیه
+        renderTree();
+        renderTable();
 
-          // 👇 فعال‌سازی drag & drop فقط یه بار
-          if (!window._dragEnabled) {
+        // 👇 راه‌اندازی کامپوننت جستجو (فقط یک بار)
+        if (!window._bdsInitialized) {
+            window._bdsInitialized = true;
+
+            // ایمپورت CSS اگه لود نشده
+            if (!document.getElementById('bds-css')) {
+                const link = document.createElement('link');
+                link.id = 'bds-css';
+                link.rel = 'stylesheet';
+                link.href = '/base-data-search.css';
+                document.head.appendChild(link);
+            }
+
+            // ایمپورت JS اگه لود نشده
+            if (typeof window.initBaseDataSearch !== 'function') {
+                const script = document.createElement('script');
+                script.src = '/base-data-search.js';
+                script.onload = () => startSearchComponent();
+                document.head.appendChild(script);
+            } else {
+                startSearchComponent();
+            }
+        } else if (typeof window.refreshBds === 'function') {
+            window.refreshBds();
+        }
+
+        // drag & drop
+        if (!window._dragEnabled) {
             enableDragAndDrop();
             window._dragEnabled = true;
-          }
-        } catch (error) {
-          console.error("Load error:", error);
-          showToast("خطا در بارگذاری", "error");
         }
-      }
+    } catch (error) {
+        console.error("Load error:", error);
+        showToast("خطا در بارگذاری", "error");
+    }
+}
+
+function startSearchComponent() {
+    initBaseDataSearch(
+        {
+            section: 'organization',
+            levelNames: ['حوزه', 'معاونت', 'سازمان', 'اداره', 'واحد'],
+            levelIcons: ['🏛️', '⭐', '🏢', '📁', '👥'],
+        },
+        {
+            getFlatData: () => flatData,
+            onUpdate: ({ allData, filteredData, isFiltered, breadcrumbMap }) => {
+                currentFilteredData = filteredData;
+                currentIsFiltered = isFiltered;
+
+                if (currentView === 'tree') {
+                    renderTree(filteredData, isFiltered);
+                } else if (currentView === 'table') {
+                    renderTable(filteredData, isFiltered);
+                }
+            },
+        }
+    );
+}
+      
+
+
+
+// ============================================
+// ساخت درخت از لیست تخت
+// ============================================
+function buildTree(items) {
+    const map = {};
+    const roots = [];
+
+    items.forEach(item => {
+        map[item.id] = { ...item, children: [] };
+    });
+
+    items.forEach(item => {
+        if (item.parent_id && map[item.parent_id]) {
+            map[item.parent_id].children.push(map[item.id]);
+        } else {
+            roots.push(map[item.id]);
+        }
+    });
+
+    const sortFn = (a, b) => {
+        if (a.sort_order !== b.sort_order) {
+            return (a.sort_order || 0) - (b.sort_order || 0);
+        }
+        return a.code.localeCompare(b.code);
+    };
+
+    const sortRecursive = (nodes) => {
+        nodes.sort(sortFn);
+        nodes.forEach(n => sortRecursive(n.children));
+    };
+
+    sortRecursive(roots);
+
+    return roots;
+}
+
+      
       // ============================================
       // رندر درخت
       // ============================================
-      function renderTree() {
-        const container = document.getElementById("tree-view");
 
-        if (!treeData || treeData.length === 0) {
-          container.innerHTML = `
-                    <div class="empty-state">
-                        <div style="font-size: 40px; margin-bottom: 15px;">📭</div>
-                        <div>هنوز سازمانی ثبت نشده</div>
-                        <div style="margin-top: 15px;">
-                            <button class="add-root-btn" onclick="openAddModal(null)">➕ افزودن اولین سازمان</button>
-                        </div>
-                    </div>`;
-          return;
-        }
+      function renderTree(items, isFiltered) {
+    const container = document.getElementById("tree-view");
 
-        container.innerHTML = "";
-        treeData.forEach((node) => {
-          container.appendChild(renderTreeNode(node, 0));
-        });
-      }
+    // اگه items پاس نشده، از flatData استفاده کن
+    if (items === undefined) items = flatData;
+    if (typeof isFiltered !== 'boolean') isFiltered = false;
 
+    if (!items || items.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div style="font-size: 40px; margin-bottom: 15px;">📭</div>
+                <div>${isFiltered ? 'نتیجه‌ای یافت نشد' : 'هنوز سازمانی ثبت نشده'}</div>
+                ${!isFiltered ? `<div style="margin-top: 15px;">
+                    <button class="add-root-btn" onclick="openAddModal(null)">➕ افزودن اولین سازمان</button>
+                </div>` : ''}
+            </div>`;
+        return;
+    }
+
+    // اگه فیلتر فعاله، از filteredData به عنوان data استفاده کن
+    const dataSource = items;
+
+    // ساخت درخت از dataSource
+    const tree = buildTree(dataSource);
+
+    container.innerHTML = '';
+    tree.forEach((node) => {
+        container.appendChild(renderTreeNode(node, 0));
+    });
+}
       function renderTreeNode(node, depth) {
         const wrapper = document.createElement("div");
 
@@ -1191,64 +1293,67 @@ body.dark .level-pill.active {
       // ============================================
       // رندر جدول
       // ============================================
-      function renderTable() {
-        const tbody = document.getElementById("table-body");
+function renderTable(items, isFiltered) {
+    const tbody = document.getElementById("table-body");
 
-        if (!flatData || flatData.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:40px; color:#999;">هنوز سازمانی ثبت نشده</td></tr>`;
-          return;
-        }
+    if (items === undefined) items = flatData;
+    if (typeof isFiltered !== 'boolean') isFiltered = false;
 
-        // مرتب‌سازی بر اساس code
-        const sorted = [...flatData].sort((a, b) =>
-          a.code.localeCompare(b.code)
-        );
+    if (!items || items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:40px; color:#999;">${isFiltered ? 'نتیجه‌ای یافت نشد' : 'هنوز سازمانی ثبت نشده'}</td></tr>`;
+        return;
+    }
 
-        tbody.innerHTML = "";
-        sorted.forEach((item) => {
-          const tr = document.createElement("tr");
-          tr.className = `level-${Math.min(item.level, 3)}`;
-          tr.style.cursor = "pointer";
-          tr.dataset.id = item.id;
-          tr.draggable = true;
+    const sorted = [...items].sort((a, b) => a.code.localeCompare(b.code));
+    const breadcrumbMap = window.bdsBuildBreadcrumbMap 
+    ? window.bdsBuildBreadcrumbMap(flatData) 
+    : {};
 
-          if (!item.is_active) tr.style.opacity = "0.5";
+    tbody.innerHTML = '';
+    sorted.forEach((item) => {
+        const tr = document.createElement("tr");
+        tr.className = `level-${Math.min(item.level, 3)}`;
+        tr.style.cursor = "pointer";
+        tr.dataset.id = item.id;
+        tr.draggable = true;
 
-          const indent = "　".repeat(item.level); // indent با فضای تمام‌عرض
+        if (!item.is_active) tr.style.opacity = "0.5";
 
-          tr.innerHTML = `
-                    <td><span class="drag-handle" title="برای جابجایی بکشید">⋮⋮</span></td>
-                    <td>
-                        <span class="indent-marker">${indent}</span>
-                        <span style="margin-left: 6px;">📄</span>
-                        <span>${item.title}</span>
-                    </td>
-                    <td><span class="level-badge ${getLevelClass(
-                      item.level
-                    )}">${
-            item.level_name || getLevelName(item.level)
-          }</span></td>
-                    <td>${item.is_active ? "✅ فعال" : "❌ غیرفعال"}</td>
-                `;
+        const indent = "　".repeat(item.level);
+        const bc = breadcrumbMap[item.id] || item.code;
+        const showBreadcrumb = isFiltered || item.level > 0;
 
-          // کلیک روی ردیف → انتخاب
-          tr.addEventListener("click", () => {
+        tr.innerHTML = `
+            <td><span class="drag-handle" title="برای جابجایی بکشید">⋮⋮</span></td>
+            <td>
+                <span class="indent-marker">${indent}</span>
+                <span style="margin-left: 6px;">📄</span>
+                <span>${item.title}</span>
+                ${showBreadcrumb && bc !== item.code ? `<span class="bds-breadcrumb-code">${bc}</span>` : ''}
+            </td>
+            <td><span class="level-badge ${getLevelClass(item.level)}">${item.level_name || getLevelName(item.level)}</span></td>
+            <td>${item.is_active ? "✅ فعال" : "❌ غیرفعال"}</td>
+        `;
+
+        tr.addEventListener("click", () => {
             selectedNode = item;
-            renderTable();
-          });
+            renderTable(items, isFiltered);
+        });
 
-          // راست‌کلیک
-          tr.addEventListener("contextmenu", (e) => {
+        tr.addEventListener("contextmenu", (e) => {
             e.preventDefault();
             selectedNode = item;
-            renderTable();
+            renderTable(items, isFiltered);
             openContextMenu(e, item.id);
-          });
-
-          tbody.appendChild(tr);
         });
-      }
-        // ============================================
+
+        tbody.appendChild(tr);
+    });
+}
+      
+      
+      
+      // ============================================
         // فعال‌سازی Drag & Drop برای مرتب‌سازی
         // ============================================
       function enableDragAndDrop() {
@@ -1535,24 +1640,33 @@ body.dark .level-pill.active {
       // ============================================
       // سوئیچ نما
       // ============================================
-            function switchView(view) {
-            currentView = view;
-            localStorage.setItem("org-view", view);
+let currentFilteredData = null;
+let currentIsFiltered = false;
 
-            document.getElementById("btn-tree").classList.toggle("active", view === "tree");
-            document.getElementById("btn-table").classList.toggle("active", view === "table");
-            document.getElementById("btn-chart").classList.toggle("active", view === "chart");
+function switchView(view) {
+    currentView = view;
+    localStorage.setItem("org-view", view);
 
-            document.getElementById("tree-view").style.display = view === "tree" ? "block" : "none";
-            document.getElementById("table-view").style.display = view === "table" ? "block" : "none";
-            document.getElementById("chart-view").style.display = view === "chart" ? "block" : "none";
+    document.getElementById("btn-tree").classList.toggle("active", view === "tree");
+    document.getElementById("btn-table").classList.toggle("active", view === "table");
+    document.getElementById("btn-chart").classList.toggle("active", view === "chart");
 
-            // لود فلوچارت (فقط اولین بار)
-            if (view === 'chart') {
-                loadChartData();
-            }
-        }
-      // ============================================
+    document.getElementById("tree-view").style.display = view === "tree" ? "block" : "none";
+    document.getElementById("table-view").style.display = view === "table" ? "block" : "none";
+    document.getElementById("chart-view").style.display = view === "chart" ? "block" : "none";
+
+    // اگه فیلتر فعاله، دوباره رندر کن
+    if (currentFilteredData !== null) {
+        if (view === 'tree') renderTree(currentFilteredData, currentIsFiltered);
+        if (view === 'table') renderTable(currentFilteredData, currentIsFiltered);
+    }
+
+    if (view === 'chart') {
+        loadChartData();
+    }
+}
+     
+        // ============================================
       // Context Menu
       // ============================================
       let ctxNodeId = null;

@@ -1,0 +1,248 @@
+/* ============================================
+   کامپوننت جستجو و فیلتر سطح
+   ============================================ */
+
+.bds-search-bar {
+    background: white;
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ============ Search Input ============ */
+.bds-search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #f8f9fa;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    padding: 0 12px;
+    transition: all 0.2s;
+}
+
+.bds-search-input-wrapper:focus-within {
+    background: white;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.bds-search-icon {
+    font-size: 16px;
+    color: #667eea;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.bds-search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 12px 8px;
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    font-size: 14px;
+    color: #333;
+    outline: none;
+    direction: rtl;
+    text-align: right;
+}
+
+.bds-search-input::placeholder {
+    color: #999;
+}
+
+.bds-search-clear {
+    background: #e9ecef;
+    color: #666;
+    border: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.bds-search-clear.visible {
+    display: flex;
+}
+
+.bds-search-clear:hover {
+    background: #dc3545;
+    color: white;
+}
+
+/* ============ Filter Pills ============ */
+.bds-filter-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.bds-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 2px solid #e0e0e0;
+    background: white;
+    cursor: pointer;
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.bds-pill:hover {
+    border-color: #667eea;
+    color: #667eea;
+    background: #f8f9ff;
+    transform: translateY(-1px);
+}
+
+.bds-pill.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.35);
+}
+
+.bds-pill-icon {
+    font-size: 14px;
+}
+
+/* ============ Result Info ============ */
+.bds-result-info {
+    display: flex;
+    justify-content: flex-end;
+    font-size: 12px;
+    color: #666;
+    min-height: 18px;
+    padding: 0 4px;
+}
+
+.bds-result-count {
+    background: #eef1ff;
+    color: #667eea;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.bds-result-count b {
+    color: #333;
+    font-weight: bold;
+}
+
+/* ============ Highlight (آیتم‌های هایلایت‌شده در نتایج) ============ */
+.bds-match-highlight {
+    background: #fff3cd;
+    color: #856404;
+    padding: 1px 3px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+/* ============ Breadcrumb (مسیر کامل زیر عنوان) ============ */
+.bds-breadcrumb-code {
+    display: block;
+    font-family: monospace;
+    font-size: 10px;
+    color: #999;
+    margin-top: 3px;
+    direction: ltr;
+    text-align: right;
+    line-height: 1.5;
+}
+
+/* ============ Dark Mode ============ */
+body.dark .bds-search-bar {
+    background: #2d3748;
+}
+
+body.dark .bds-search-input-wrapper {
+    background: #1a202c;
+}
+
+body.dark .bds-search-input-wrapper:focus-within {
+    background: #1a202c;
+}
+
+body.dark .bds-search-input {
+    color: #e2e8f0;
+}
+
+body.dark .bds-search-clear {
+    background: #4a5568;
+    color: #e2e8f0;
+}
+
+body.dark .bds-search-clear:hover {
+    background: #dc3545;
+    color: white;
+}
+
+body.dark .bds-pill {
+    background: #1a202c;
+    border-color: #4a5568;
+    color: #a0aec0;
+}
+
+body.dark .bds-pill:hover {
+    background: #374151;
+}
+
+body.dark .bds-pill.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+body.dark .bds-result-count {
+    background: #374151;
+    color: #90cdf4;
+}
+
+body.dark .bds-result-count b {
+    color: #e2e8f0;
+}
+
+body.dark .bds-match-highlight {
+    background: #4a3f1e;
+    color: #ffc107;
+}
+
+body.dark .bds-breadcrumb-code {
+    color: #718096;
+}
+
+/* ============ Responsive ============ */
+@media (max-width: 768px) {
+    .bds-search-bar {
+        padding: 12px 15px;
+    }
+
+    .bds-pill {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .bds-pill-icon {
+        font-size: 12px;
+    }
+
+    .bds-search-input {
+        font-size: 13px;
+        padding: 10px 6px;
+    }
+}

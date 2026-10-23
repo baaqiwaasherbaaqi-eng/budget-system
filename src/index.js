@@ -10706,6 +10706,10 @@ export default {
         "/payroll-calculate.html",
         "/employee-deductions.html",
         "/attendance.html",
+  "/base-data-search.js",     
+  "/base-data-search.css",    
+
+
       ];
 
       if (staticPaths.includes(url.pathname)) {

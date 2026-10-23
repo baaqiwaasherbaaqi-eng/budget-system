@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
     <head>
+
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>طبقه‌بندی اقتصادی</title>
         <link rel="stylesheet" href="/sidebar.css">
         <script src="/sidebar.js"></script>
+    <link rel="stylesheet" href="/base-data-search.css">
         <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css">
         <style>
 
@@ -838,6 +840,7 @@ body.dark tbody tr.dragging {
     </div>
 
         <script src="/common.js"></script>
+    <script src="/base-data-search.js"></script>
         <script>
     // ============================================
     // وضعیت
@@ -889,82 +892,142 @@ body.dark tbody tr.dragging {
     // ============================================
     // لود دیتا
     // ============================================
-       async function loadData() {
-        try {
-          const [treeRes, flatRes] = await Promise.all([
-            fetch(
-              `/api/base-data/tree?section=${SECTION}&type=${currentType}`,
-              {
+async function loadData() {
+    try {
+        const [treeRes, flatRes] = await Promise.all([
+            fetch(`/api/base-data/tree?section=${SECTION}&type=${currentType}`, {
                 headers: { Authorization: `Bearer ${token}` },
-              }
-            ),
-            fetch(`/api/base-data?section=${SECTION}&type=${currentType}`, {
-              headers: { Authorization: `Bearer ${token}` },
             }),
-          ]);
+            fetch(`/api/base-data?section=${SECTION}&type=${currentType}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            }),
+        ]);
 
-          treeData = await treeRes.json();
-          flatData = await flatRes.json();
+        treeData = await treeRes.json();
+        flatData = await flatRes.json();
 
-          renderTree();
-          renderTable();
+        renderTree();
+        renderTable();
 
-          // 👇 فعال‌سازی drag & drop فقط یه بار
-          if (!window._dragEnabled) {
+        // 👇 راه‌اندازی کامپوننت جستجو
+        if (typeof window.initBaseDataSearch === 'function') {
+            if (!window._bdsInitialized) {
+                window._bdsInitialized = true;
+                startSearchComponent();
+            } else if (typeof window.refreshBds === 'function') {
+                window.refreshBds();
+            }
+        }
+
+        // drag & drop
+        if (!window._dragEnabled) {
             enableDragAndDrop();
             window._dragEnabled = true;
-          }
-        } catch (error) {
-          console.error("Load error:", error);
-          showToast("خطا در بارگذاری", "error");
         }
-      }
-    // ============================================
-    // تب
-    // ============================================
-    function switchTab(type) {
-      currentType = type;
-      localStorage.setItem("econ-type", type);
+    } catch (error) {
+        console.error("Load error:", error);
+        showToast("خطا در بارگذاری", "error");
+    }
+}
+    
 
-      document
-        .getElementById("tab-resource")
-        .classList.toggle("active", type === "resource");
-      document
-        .getElementById("tab-expense")
-        .classList.toggle("active", type === "expense");
+function startSearchComponent() {
+    // سطح‌ها بر اساس نوع (منابع یا مصارف)
+    let levelNames, levelIcons;
 
-      // ریست انتخاب
-      selectedNode = null;
-
-      loadData();
+    if (currentType === "resource") {
+        levelNames = ["گروه", "سرفصل", "بند", "جزء"];
+        levelIcons = ["🗂️", "💰", "📑", "🔖"];
+    } else {
+        levelNames = ["گروه", "سرفصل", "فصل", "بند", "جزء"];
+        levelIcons = ["🗂️", "💰", "📋", "🏷️", "🔖"];
     }
 
+    initBaseDataSearch(
+        {
+            section: `economic-${currentType}`,
+            levelNames: levelNames,
+            levelIcons: levelIcons,
+        },
+        {
+            getFlatData: () => flatData,
+onUpdate: ({ filteredData, isFiltered }) => {
+    // همیشه هر دو رو رندر کن
+    renderTree(filteredData, isFiltered);
+    renderTable(filteredData, isFiltered);
+
+    // بعد فقط اونی که فعاله رو نشون بده
+    document.getElementById("tree-view").style.display = currentView === "tree" ? "block" : "none";
+    document.getElementById("table-view").style.display = currentView === "table" ? "block" : "none";
+}
+        }
+    );
+}
+      // ============================================
+    // تب
+    // ============================================
+function switchTab(type) {
+    currentType = type;
+    localStorage.setItem("econ-type", type);
+
+    document.getElementById("tab-resource").classList.toggle("active", type === "resource");
+    document.getElementById("tab-expense").classList.toggle("active", type === "expense");
+
+    selectedNode = null;
+
+    // ریست کامپوننت جستجو (چون سطوح عوض میشن)
+    if (window._bdsInitialized) {
+        const oldBar = document.getElementById("bds-search-bar");
+        if (oldBar) oldBar.remove();
+
+        // ریست state
+        if (typeof window.resetBdsState === 'function') {
+            window.resetBdsState();
+        }
+
+        window._bdsInitialized = false;
+    }
+
+    loadData();
+}
     // ============================================
     // رندر درخت
     // ============================================
-    function renderTree() {
-      const container = document.getElementById("tree-view");
+function renderTree(items, isFiltered) {
+    const container = document.getElementById("tree-view");
 
-      if (!treeData || treeData.length === 0) {
+    if (items === undefined) items = flatData;
+    if (typeof isFiltered !== 'boolean') isFiltered = false;
+
+    if (!items || items.length === 0) {
         const typeLabel = currentType === "resource" ? "منبع" : "مصرف";
         container.innerHTML = `
-                    <div class="empty-state">
-                        <div style="font-size: 40px; margin-bottom: 15px;">📭</div>
-                        <div>هنوز ${typeLabel}ی ثبت نشده</div>
-                        <div style="margin-top: 15px;">
-                            <button class="add-root-btn" onclick="openAddModal(null)">➕ افزودن گروه اصلی</button>
-                        </div>
-                    </div>`;
+            <div class="empty-state">
+                <div style="font-size: 40px; margin-bottom: 15px;">📭</div>
+                <div>${isFiltered ? 'نتیجه‌ای یافت نشد' : `هنوز ${typeLabel}ی ثبت نشده`}</div>
+                ${!isFiltered ? `<div style="margin-top: 15px;">
+                    <button class="add-root-btn" onclick="openAddModal(null)">➕ افزودن گروه اصلی</button>
+                </div>` : ''}
+            </div>`;
         return;
-      }
-
-      container.innerHTML = "";
-      treeData.forEach((node) => {
-        container.appendChild(renderTreeNode(node, 0));
-      });
     }
 
-      function renderTreeNode(node, depth) {
+    // 👇 وقتی فیلتر/سرچ فعاله: همه رو باز کن
+    if (isFiltered) {
+        items.forEach(item => {
+            localStorage.removeItem(`econ-collapsed-${item.id}`);
+        });
+    }
+
+    const tree = buildTree(items);
+
+    container.innerHTML = '';
+    tree.forEach((node) => {
+        container.appendChild(renderTreeNode(node, 0));
+    });
+}
+
+function renderTreeNode(node, depth) {
         const wrapper = document.createElement("div");
 
         const nodeEl = document.createElement("div");
@@ -1035,63 +1098,104 @@ body.dark tbody tr.dragging {
     // ============================================
     // رندر جدول
     // ============================================
-      function renderTable() {
-        const tbody = document.getElementById("table-body");
+function renderTable(items, isFiltered) {
+    const tbody = document.getElementById("table-body");
 
-        if (!flatData || flatData.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:#999;">موردی ثبت نشده</td></tr>`;
-          return;
-        }
+    if (items === undefined) items = flatData;
+    if (typeof isFiltered !== 'boolean') isFiltered = false;
 
-        const sorted = [...flatData].sort((a, b) =>
-          a.code.localeCompare(b.code)
-        );
+    if (!items || items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:#999;">${isFiltered ? 'نتیجه‌ای یافت نشد' : 'موردی ثبت نشده'}</td></tr>`;
+        return;
+    }
 
-        tbody.innerHTML = "";
-        sorted.forEach((item) => {
-          const tr = document.createElement("tr");
-          tr.className = `level-${Math.min(item.level, 3)}`;
-          tr.style.cursor = "pointer";
-          tr.dataset.id = item.id;
-          tr.draggable = true;
+    const sorted = [...items].sort((a, b) => a.code.localeCompare(b.code));
+    const breadcrumbMap = window.bdsBuildBreadcrumbMap 
+        ? window.bdsBuildBreadcrumbMap(flatData) 
+        : {};
 
-          if (!item.is_active) tr.style.opacity = "0.5";
+    tbody.innerHTML = '';
+    sorted.forEach((item) => {
+        const tr = document.createElement("tr");
+        tr.className = `level-${Math.min(item.level, 3)}`;
+        tr.style.cursor = "pointer";
+        tr.dataset.id = item.id;
+        tr.draggable = true;
 
-          const indent = "　".repeat(item.level);
+        if (!item.is_active) tr.style.opacity = "0.5";
 
-          tr.innerHTML = `
-                    <td><span class="drag-handle" title="برای جابجایی بکشید">⋮⋮</span></td>
-                    <td><span style="font-family: monospace; font-size: 12px; color: #667eea;">${item.code}</span></td>
-                    <td>
-                        <span class="indent-marker">${indent}</span>
-                        <span style="margin-left: 6px;">📄</span>
-                        <span>${item.title}</span>
-                    </td>
-                    <td><span class="level-badge ${getLevelClass(
-                      item.level
-                    )}">${
-            item.level_name || getLevelName(item.level)
-          }</span></td>
-                    <td>${item.is_active ? "✅ فعال" : "❌ غیرفعال"}</td>
-                `;
+        const indent = "　".repeat(item.level);
+        const bc = breadcrumbMap[item.id] || item.code;
+        const showBreadcrumb = (isFiltered || item.level > 0) && bc !== item.code;
 
-          tr.addEventListener("click", () => {
+        tr.innerHTML = `
+            <td><span class="drag-handle" title="برای جابجایی بکشید">⋮⋮</span></td>
+            <td><span style="font-family: monospace; font-size: 12px; color: #667eea;">${item.code}</span></td>
+            <td>
+                <span class="indent-marker">${indent}</span>
+                <span style="margin-left: 6px;">📄</span>
+                <span>${item.title}</span>
+                ${showBreadcrumb ? `<span class="bds-breadcrumb-code">${bc}</span>` : ''}
+            </td>
+            <td><span class="level-badge ${getLevelClass(item.level)}">${item.level_name || getLevelName(item.level)}</span></td>
+            <td>${item.is_active ? "✅ فعال" : "❌ غیرفعال"}</td>
+        `;
+
+        tr.addEventListener("click", () => {
             selectedNode = item;
-            renderTable();
-          });
+            renderTable(items, isFiltered);
+        });
 
-          tr.addEventListener("contextmenu", (e) => {
+        tr.addEventListener("contextmenu", (e) => {
             e.preventDefault();
             selectedNode = item;
-            renderTable();
+            renderTable(items, isFiltered);
             openContextMenu(e, item.id);
-          });
-
-          tbody.appendChild(tr);
         });
-      }
-    
-            // ============================================
+
+        tbody.appendChild(tr);
+    });
+}
+            
+
+
+// ============================================
+// ساخت درخت از لیست تخت
+// ============================================
+function buildTree(items) {
+    const map = {};
+    const roots = [];
+
+    items.forEach(item => {
+        map[item.id] = { ...item, children: [] };
+    });
+
+    items.forEach(item => {
+        if (item.parent_id && map[item.parent_id]) {
+            map[item.parent_id].children.push(map[item.id]);
+        } else {
+            roots.push(map[item.id]);
+        }
+    });
+
+    const sortFn = (a, b) => {
+        if (a.sort_order !== b.sort_order) {
+            return (a.sort_order || 0) - (b.sort_order || 0);
+        }
+        return a.code.localeCompare(b.code);
+    };
+
+    const sortRecursive = (nodes) => {
+        nodes.sort(sortFn);
+        nodes.forEach(n => sortRecursive(n.children));
+    };
+
+    sortRecursive(roots);
+
+    return roots;
+}
+
+// ============================================
         // فعال‌سازی Drag & Drop برای مرتب‌سازی
         // ============================================
         function enableDragAndDrop() {
@@ -1222,22 +1326,20 @@ body.dark tbody tr.dragging {
       // ============================================
         // سوئیچ نما
     // ============================================
-    function switchView(view) {
-      currentView = view;
-      localStorage.setItem("econ-view", view);
+function switchView(view) {
+    currentView = view;
+    localStorage.setItem("econ-view", view);
 
-      document
-        .getElementById("btn-tree")
-        .classList.toggle("active", view === "tree");
-      document
-        .getElementById("btn-table")
-        .classList.toggle("active", view === "table");
-      document.getElementById("tree-view").style.display =
-        view === "tree" ? "block" : "none";
-      document.getElementById("table-view").style.display =
-        view === "table" ? "block" : "none";
+    document.getElementById("btn-tree").classList.toggle("active", view === "tree");
+    document.getElementById("btn-table").classList.toggle("active", view === "table");
+    document.getElementById("tree-view").style.display = view === "tree" ? "block" : "none";
+    document.getElementById("table-view").style.display = view === "table" ? "block" : "none";
+
+    // اگه فیلتر فعاله، دوباره رندر کن
+    if (typeof window.refreshBds === 'function') {
+        window.refreshBds();
     }
-
+}
     // ============================================
     // Context Menu
     // ============================================

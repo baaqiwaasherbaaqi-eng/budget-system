@@ -6,6 +6,7 @@
     <title>کالا و خدمات</title>
     <link rel="stylesheet" href="/sidebar.css">
     <script src="/sidebar.js"></script>
+        <link rel="stylesheet" href="/base-data-search.css">
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <style>
 
@@ -517,6 +518,7 @@ body.dark tbody tr.dragging {
     <div class="toast" id="toast"></div>
 
     <script src="/common.js"></script>
+        <script src="/base-data-search.js"></script>
 
     <script>
         // ============================================
@@ -550,117 +552,156 @@ body.dark tbody tr.dragging {
         // ============================================
         // لود دیتا
         // ============================================
-           async function loadData() {
-            try {
-                const res = await fetch(`/api/base-data?section=${SECTION}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                flatData = await res.json();
+async function loadData() {
+    try {
+        const res = await fetch(`/api/base-data?section=${SECTION}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        flatData = await res.json();
 
-                // باز کردن همه نودهای سطح ۱ به صورت پیش‌فرض
-                if (expandedNodes.size === 0) {
-                    flatData.filter(n => n.level === 1).forEach(n => expandedNodes.add(n.id));
-                }
+        // باز کردن نودهای سطح ۱ به صورت پیش‌فرض
+        if (expandedNodes.size === 0) {
+            flatData.filter(n => n.level === 1).forEach(n => expandedNodes.add(n.id));
+        }
 
-                renderTree();
-                renderTable();
+        renderTree();
+        renderTable();
 
-                // 👇 فعال‌سازی drag & drop فقط یه بار
-                if (!window._dragEnabled) {
-                    enableDragAndDrop();
-                    window._dragEnabled = true;
-                }
-            } catch (error) {
-                console.error('Load error:', error);
-                showToast('خطا در بارگذاری', 'error');
+        // 👇 راه‌اندازی کامپوننت جستجو
+        if (typeof window.initBaseDataSearch === 'function') {
+            if (!window._bdsInitialized) {
+                window._bdsInitialized = true;
+                startSearchComponent();
+            } else if (typeof window.refreshBds === 'function') {
+                window.refreshBds();
             }
         }
+
+        // drag & drop
+        if (!window._dragEnabled) {
+            enableDragAndDrop();
+            window._dragEnabled = true;
+        }
+    } catch (error) {
+        console.error('Load error:', error);
+        showToast('خطا در بارگذاری', 'error');
+    }
+}
+       
+     function startSearchComponent() {
+    initBaseDataSearch(
+        {
+            section: 'goods',
+            levelNames: ['گروه اصلی', 'گروه فرعی', 'زیرگروه', 'کالا/خدمت'],
+            levelIcons: ['📦', '📁', '🏷️', '🔖'],
+        },
+        {
+            getFlatData: () => flatData,
+            onUpdate: ({ filteredData, isFiltered }) => {
+                renderTree(filteredData, isFiltered);
+                renderTable(filteredData, isFiltered);
+
+                document.getElementById('tree-view').style.display = currentView === 'tree' ? 'block' : 'none';
+                document.getElementById('table-view').style.display = currentView === 'table' ? 'block' : 'none';
+            },
+        }
+    );
+}  
         // ============================================
         // رندر درخت
         // ============================================
-        function renderTree() {
-            const container = document.getElementById('tree-view');
+function renderTree(items, isFiltered) {
+    const container = document.getElementById('tree-view');
 
-            if (!flatData || flatData.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div style="font-size: 40px; margin-bottom: 15px;">📭</div>
-                        <div>هنوز کالا یا خدمتی ثبت نشده</div>
-                        <div style="margin-top: 15px;">
-                            <button class="add-btn" onclick="openAddModal(null)">➕ افزودن اولین گروه</button>
-                        </div>
-                    </div>`;
-                return;
+    if (items === undefined) items = flatData;
+    if (typeof isFiltered !== 'boolean') isFiltered = false;
+
+    if (!items || items.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div style="font-size: 40px; margin-bottom: 15px;">📭</div>
+                <div>${isFiltered ? 'نتیجه‌ای یافت نشد' : 'هنوز کالا یا خدمتی ثبت نشده'}</div>
+                ${!isFiltered ? `<div style="margin-top: 15px;">
+                    <button class="add-btn" onclick="openAddModal(null)">➕ افزودن اولین گروه</button>
+                </div>` : ''}
+            </div>`;
+        return;
+    }
+
+    // 👇 وقتی فیلتر/سرچ فعاله: همه رو باز کن
+    if (isFiltered) {
+        items.forEach(item => {
+            const hasChildren = items.some(i => i.parent_id === item.id);
+            if (hasChildren) expandedNodes.add(item.id);
+        });
+    }
+
+    // ساخت درخت
+    const tree = buildTree(items);
+
+    container.innerHTML = '';
+
+    // ⚠️ renderNode داخل renderTree تعریف میشه (closure)
+    const renderNode = (node, depth = 0) => {
+        const hasChildren = node.children && node.children.length > 0;
+        const isExpanded = expandedNodes.has(node.id);
+
+        const nodeEl = document.createElement('div');
+        nodeEl.className = 'tree-node';
+        nodeEl.dataset.id = node.id;
+        nodeEl.draggable = true;
+        if (selectedNode && selectedNode.id === node.id) nodeEl.classList.add('selected');
+        if (!node.is_active) nodeEl.style.opacity = '0.5';
+
+        const icons = { 1: '📦', 2: '📁', 3: '🏷️', 4: '🔖' };
+        const icon = icons[node.level] || '📄';
+
+        let unitBadge = '';
+        try {
+            const extra = node.extra_data ? JSON.parse(node.extra_data) : null;
+            if (extra && extra.unit) {
+                const unit = extra.unit === 'سایر' && extra.unit_custom ? extra.unit_custom : extra.unit;
+                unitBadge = `<span class="badge unit">${unit}</span>`;
             }
+        } catch {}
 
-            container.innerHTML = '';
+        nodeEl.innerHTML = `
+            <span class="drag-handle" title="برای جابجایی بکشید">⋮⋮</span>
+            <span class="toggle ${hasChildren ? '' : 'empty'}" onclick="event.stopPropagation(); toggleExpand(${node.id})">
+                ${hasChildren ? (isExpanded ? '▼' : '◀') : '•'}
+            </span>
+            <span class="icon">${icon}</span>
+            <span class="title">${node.title}${!node.is_active ? ' (غیرفعال)' : ''}</span>
+            ${unitBadge}
+            <span class="code">${node.code}</span>
+            <button class="menu-btn" onclick="event.stopPropagation(); openContextMenu(event, ${node.id})">⋮</button>
+        `;
 
-            // ساخت درخت
-            const tree = buildTree(flatData);
+        nodeEl.addEventListener('click', () => {
+            selectedNode = node;
+            renderTree(items, isFiltered);
+        });
 
-            // رندر بازگشتی
-            const renderNode = (node, depth = 0) => {
-                const hasChildren = node.children && node.children.length > 0;
-                const isExpanded = expandedNodes.has(node.id);
+        nodeEl.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            selectedNode = node;
+            renderTree(items, isFiltered);
+            openContextMenu(e, node.id);
+        });
 
-                const nodeEl = document.createElement('div');
-                nodeEl.className = 'tree-node';
-                nodeEl.dataset.id = node.id;
-                nodeEl.draggable = true;
-                if (selectedNode && selectedNode.id === node.id) nodeEl.classList.add('selected');
-                if (!node.is_active) nodeEl.style.opacity = '0.5';
+        container.appendChild(nodeEl);
 
-                // آیکون بر اساس سطح
-                const icons = { 1: '📦', 2: '📁', 3: '🏷️', 4: '🔖' };
-                const icon = icons[node.level] || '📄';
-
-                // واحد اندازه‌گیری
-                let unitBadge = '';
-                try {
-                    const extra = node.extra_data ? JSON.parse(node.extra_data) : null;
-                    if (extra && extra.unit) {
-                        const unit = extra.unit === 'سایر' && extra.unit_custom ? extra.unit_custom : extra.unit;
-                        unitBadge = `<span class="badge unit">${unit}</span>`;
-                    }
-                } catch {}
-
-                nodeEl.innerHTML = `
-                    <span class="drag-handle" title="برای جابجایی بکشید">⋮⋮</span>
-                    <span class="toggle ${hasChildren ? '' : 'empty'}" onclick="event.stopPropagation(); toggleExpand(${node.id})">
-                        ${hasChildren ? (isExpanded ? '▼' : '◀') : '•'}
-                    </span>
-                    <span class="icon">${icon}</span>
-                    <span class="title">${node.title}${!node.is_active ? ' (غیرفعال)' : ''}</span>
-                    ${unitBadge}
-                    <span class="code">${node.code}</span>
-                    <button class="menu-btn" onclick="event.stopPropagation(); openContextMenu(event, ${node.id})">⋮</button>
-                `;
-
-                nodeEl.addEventListener('click', () => {
-                    selectedNode = node;
-                    renderTree();
-                });
-
-                nodeEl.addEventListener('contextmenu', (e) => {
-                    e.preventDefault();
-                    selectedNode = node;
-                    renderTree();
-                    openContextMenu(e, node.id);
-                });
-
-                container.appendChild(nodeEl);
-
-                // رندر فرزندان
-                if (hasChildren && isExpanded) {
-                    const childrenContainer = document.createElement('div');
-                    childrenContainer.className = 'tree-children';
-                    node.children.forEach(child => renderNode(child, depth + 1, childrenContainer));
-                    container.appendChild(childrenContainer);
-                }
-            };
-
-            tree.forEach(root => renderNode(root));
+        if (hasChildren && isExpanded) {
+            const childrenContainer = document.createElement('div');
+            childrenContainer.className = 'tree-children';
+            node.children.forEach(child => renderNode(child, depth + 1));
+            container.appendChild(childrenContainer);
         }
+    };
+
+    tree.forEach(root => renderNode(root));
+}    
+        
         // ============================================
         // ساخت درخت از لیست تخت
         // ============================================
@@ -709,61 +750,72 @@ body.dark tbody tr.dragging {
         // ============================================
         // رندر جدول
         // ============================================
-         function renderTable() {
-            const tbody = document.getElementById('table-body');
+function renderTable(items, isFiltered) {
+    const tbody = document.getElementById('table-body');
 
-            if (!flatData || flatData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:40px; color:#999;">موردی ثبت نشده</td></tr>`;
-                return;
+    if (items === undefined) items = flatData;
+    if (typeof isFiltered !== 'boolean') isFiltered = false;
+
+    if (!items || items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:40px; color:#999;">${isFiltered ? 'نتیجه‌ای یافت نشد' : 'موردی ثبت نشده'}</td></tr>`;
+        return;
+    }
+
+    const sorted = [...items].sort((a, b) => a.code.localeCompare(b.code));
+    const breadcrumbMap = window.bdsBuildBreadcrumbMap 
+        ? window.bdsBuildBreadcrumbMap(flatData) 
+        : {};
+
+    tbody.innerHTML = '';
+    sorted.forEach(item => {
+        let unit = '—', specs = '—';
+        try {
+            const extra = item.extra_data ? JSON.parse(item.extra_data) : null;
+            if (extra) {
+                if (extra.unit) {
+                    unit = extra.unit === 'سایر' && extra.unit_custom ? extra.unit_custom : extra.unit;
+                }
+                if (extra.specs) specs = extra.specs;
             }
+        } catch {}
 
-            const sorted = [...flatData].sort((a, b) => a.code.localeCompare(b.code));
+        const tr = document.createElement('tr');
+        tr.style.cursor = 'pointer';
+        tr.dataset.id = item.id;
+        tr.draggable = true;
 
-            tbody.innerHTML = '';
-            sorted.forEach(item => {
-                let unit = '—', specs = '—';
-                try {
-                    const extra = item.extra_data ? JSON.parse(item.extra_data) : null;
-                    if (extra) {
-                        if (extra.unit) {
-                            unit = extra.unit === 'سایر' && extra.unit_custom ? extra.unit_custom : extra.unit;
-                        }
-                        if (extra.specs) specs = extra.specs;
-                    }
-                } catch {}
+        if (!item.is_active) tr.style.opacity = '0.5';
 
-                const tr = document.createElement('tr');
-                tr.style.cursor = 'pointer';
-                tr.dataset.id = item.id;
-                tr.draggable = true;
+        const bc = breadcrumbMap[item.id] || item.code;
+        const showBreadcrumb = isFiltered && bc !== item.code;
 
-                if (!item.is_active) tr.style.opacity = '0.5';
+        tr.innerHTML = `
+            <td><span class="drag-handle" title="برای جابجایی بکشید">⋮⋮</span></td>
+            <td class="code-cell">${item.code}</td>
+            <td>
+                <span>${item.title}</span>
+                ${showBreadcrumb ? `<span class="bds-breadcrumb-code">${bc}</span>` : ''}
+            </td>
+            <td>${unit !== '—' ? `<span class="badge unit">${unit}</span>` : '—'}</td>
+            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${specs}</td>
+            <td>${item.is_active ? '✅ فعال' : '❌ غیرفعال'}</td>
+        `;
 
-                tr.innerHTML = `
-                    <td><span class="drag-handle" title="برای جابجایی بکشید">⋮⋮</span></td>
-                    <td class="code-cell">${item.code}</td>
-                    <td>${item.title}</td>
-                    <td>${unit !== '—' ? `<span class="badge unit">${unit}</span>` : '—'}</td>
-                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${specs}</td>
-                    <td>${item.is_active ? '✅ فعال' : '❌ غیرفعال'}</td>
-                `;
+        tr.addEventListener('click', () => {
+            selectedNode = item;
+            renderTable(items, isFiltered);
+        });
 
-                tr.addEventListener('click', () => {
-                    selectedNode = item;
-                    renderTable();
-                });
+        tr.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            selectedNode = item;
+            renderTable(items, isFiltered);
+            openContextMenu(e, item.id);
+        });
 
-                tr.addEventListener('contextmenu', (e) => {
-                    e.preventDefault();
-                    selectedNode = item;
-                    renderTable();
-                    openContextMenu(e, item.id);
-                });
-
-                tbody.appendChild(tr);
-            });
-        }
-        
+        tbody.appendChild(tr);
+    });
+}
         
                 // ============================================
         // فعال‌سازی Drag & Drop
@@ -883,16 +935,20 @@ body.dark tbody tr.dragging {
         // ============================================
         // سوئیچ نما
         // ============================================
-        function switchView(view) {
-            currentView = view;
-            localStorage.setItem('goods-view', view);
+function switchView(view) {
+    currentView = view;
+    localStorage.setItem('goods-view', view);
 
-            document.getElementById('btn-tree').classList.toggle('active', view === 'tree');
-            document.getElementById('btn-table').classList.toggle('active', view === 'table');
-            document.getElementById('tree-view').style.display = view === 'tree' ? 'block' : 'none';
-            document.getElementById('table-view').style.display = view === 'table' ? 'block' : 'none';
-        }
+    document.getElementById('btn-tree').classList.toggle('active', view === 'tree');
+    document.getElementById('btn-table').classList.toggle('active', view === 'table');
+    document.getElementById('tree-view').style.display = view === 'tree' ? 'block' : 'none';
+    document.getElementById('table-view').style.display = view === 'table' ? 'block' : 'none';
 
+    // اگه فیلتر فعاله، دوباره رندر کن
+    if (typeof window.refreshBds === 'function') {
+        window.refreshBds();
+    }
+}
         // ============================================
         // Context Menu
         // ============================================
