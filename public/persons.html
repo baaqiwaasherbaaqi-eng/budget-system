@@ -863,6 +863,28 @@
         const token = localStorage.getItem('token');
         const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
+// ============================================
+// چک دسترسی: کاربر عادی → پرونده خودش
+// ============================================
+(async function checkAccess() {
+    try {
+        const res = await fetch('/api/me/permissions', {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        
+        const data = await res.json();
+        
+        // اگه کاربر persons.view نداره → برو پرونده خودش
+        if (!data.permissions || !data.permissions['persons.view']) {
+            window.location.href = '/employee-profile.html?my=1';
+            return;
+        }
+    } catch (e) {
+        console.error('Access check error:', e);
+    }
+})();
+
         let currentType = localStorage.getItem('persons-type') || 'employee';
         let currentView = localStorage.getItem('persons-view') || 'tree';
 

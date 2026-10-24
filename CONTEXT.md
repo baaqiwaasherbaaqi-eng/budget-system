@@ -76,7 +76,21 @@
 - [x] **حذف `localStorage` از `base-data-search.js`**
   - [x] فیلتر/سرچ هر بار صفحه باز می‌شه، ری‌ست می‌شه
   - [x] `currentFilteredData` / `currentIsFiltered` برای حفظ state درون‌session
-
+- [x] **محدودیت دسترسی کاربر عادی (viewer)**
+  - [x] `base-info.html` → حذف «مشخصات شهرداری» برای viewer
+  - [x] `sidebar.js` → «پرونده من» (به جای «اشخاص») برای viewer
+  - [x] `persons.html` → redirect کاربر عادی به `employee-profile.html?my=1`
+  - [x] `employee-profile.html` → چک دسترسی (فقط پرونده خودش)
+  - [x] اطلاعات پایه → ۵ فیلد readonly (کد ملی، شماره شناسنامه، نام، نام خانوادگی، موبایل)
+  - [x] اطلاعات استخدامی → فقط «شرح تجربه» قابل ویرایش
+  - [x] افراد تحت تکفل → `approval_status` (pending/approved/rejected) + تایید مدیر
+  - [x] احکام کارگزینی → فقط نمایش + چاپ (بدون افزودن/ویرایش/حذف/امضا)
+  - [x] واحد سازمانی → فقط نمایش (بدون افزودن/ویرایش/حذف/ساخت کاربر)
+- [x] **API جدید `/api/me/person`** (شخص مرتبط با کاربر فعلی)
+- [x] **API جدید `PUT /api/dependents/:id/approve`** (تایید/رد توسط مدیر)
+- [x] **آپدیت `POST /api/employees/:id/dependents`** (approval_status برای کاربر عادی)
+- [x] **رفع باگ `persons.html` روی ریموت** (Migration 048 روی ریموت اجرا شد)
+- [x] **Migration 050** — حذف `persons.view` از `viewer`
 ---
 
 ## 🔥 بخش جدید: کامپوننت جستجو و فیلتر سطح

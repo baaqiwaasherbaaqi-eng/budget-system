@@ -89,10 +89,10 @@ async function renderSidebar() {
     },
     {
       icon: "👥",
-      title: "اشخاص",
-      url: "/persons.html",
-      permission: "persons.view",
-    },
+      title: hasPermission('persons.view') ? "اشخاص" : "پرونده من",
+      url: hasPermission('persons.view') ? "/persons.html" : "/employee-profile.html?my=1",
+      permission: null,  // ← همه باید ببینن
+  },
     {
       icon: "💼",
       title: "حقوق و دستمزد",

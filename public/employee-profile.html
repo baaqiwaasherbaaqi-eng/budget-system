@@ -16,6 +16,23 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css" />
 
   <style>
+
+.form-group input:disabled,
+.form-group select:disabled,
+.form-group textarea:disabled {
+    background: #f5f5f5;
+    color: #666;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+body.dark .form-group input:disabled,
+body.dark .form-group select:disabled,
+body.dark .form-group textarea:disabled {
+    background: #1a202c;
+    color: #718096;
+}
+
     * { box-sizing: border-box; }
     body { font-family: "Vazirmatn", Tahoma, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
     .container { max-width: 1400px; margin: 0 auto; }
@@ -316,7 +333,7 @@
     const token = localStorage.getItem("token");
     const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
 
-    let personId = null;
+    let personId = null;  // ← global
     let person = null;
     let employee = null;
     let decreeTypes = [];
@@ -374,56 +391,148 @@
     }
 
     async function loadData() {
-      personId = getPersonIdFromUrl();
-      if (!personId) {
-        document.getElementById("main-container").innerHTML = `<div class="placeholder"><div class="icon">⚠️</div><h3>شناسه شخص مشخص نشده</h3><p>لطفاً از صفحه اشخاص یک شخص انتخاب کنید</p></div>`;
-        return;
-      }
+    console.log('🔍 [1] loadData STARTED');
 
-      try {
+    // ۱. چک ?my=1
+    const params = new URLSearchParams(window.location.search);
+    const isMyProfile = params.get('my') === '1';
+    let localPersonId = getPersonIdFromUrl();
+
+    console.log('🔍 [2] isMyProfile:', isMyProfile, 'localPersonId:', localPersonId);
+
+    // ۲. اگه ?my=1 بود یا id نداشتیم، از API بگیر
+    if (isMyProfile || !localPersonId) {
+        console.log('🔍 [3] fetching /api/me/person');
+        try {
+            const meRes = await fetch('/api/me/person', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            console.log('🔍 [4] /api/me/person status:', meRes.status);
+
+            if (!meRes.ok) {
+                document.getElementById('main-container').innerHTML = `
+                    <div class="placeholder">
+                        <div class="icon">⚠️</div>
+                        <h3>پرونده‌ای برای شما یافت نشد</h3>
+                        <p>لطفاً با مدیر سیستم تماس بگیرید</p>
+                    </div>`;
+                return;
+            }
+
+            const meData = await meRes.json();
+            console.log('🔍 [5] meData:', meData);
+            localPersonId = meData.person_id;
+            window._isMyProfile = true;
+        } catch (e) {
+            console.error('🔍 [5-ERR] /api/me/person error:', e);
+            document.getElementById('main-container').innerHTML = `
+                <div class="placeholder">
+                    <div class="icon">❌</div>
+                    <h3>خطا در دریافت اطلاعات</h3>
+                    <p>${e.message}</p>
+                </div>`;
+            return;
+        }
+    }
+
+    // ۳. ست کردن global
+    personId = parseInt(localPersonId);
+    window._myPersonId = personId;
+    window._canEditAll = await checkPermission('persons.edit');
+
+    console.log('🔍 [6] personId:', personId, '_canEditAll:', window._canEditAll);
+
+    // ۴. بقیه کد
+    try {
+        console.log('🔍 [7] fetching /api/employees/' + personId);
         const res = await fetch(`/api/employees/${personId}`, { headers: { Authorization: `Bearer ${token}` } });
+        console.log('🔍 [8] /api/employees status:', res.status);
+
         if (!res.ok) throw new Error("خطا در دریافت اطلاعات");
         const data = await res.json();
         person = data.person;
         employee = data.employee;
+        console.log('🔍 [9] person:', person?.full_name, 'employee:', employee);
 
+        console.log('🔍 [10] fetching decreeTypes');
         const decreeRes = await fetch("/api/base-data?section=decree_type", { headers: { Authorization: `Bearer ${token}` } });
+        console.log('🔍 [11] decreeTypes status:', decreeRes.status);
         decreeTypes = await decreeRes.json();
 
+        console.log('🔍 [12] fetching organizations');
         const orgRes = await fetch("/api/base-data?section=organization", { headers: { Authorization: `Bearer ${token}` } });
+        console.log('🔍 [13] organizations status:', orgRes.status);
         organizations = await orgRes.json();
 
+        console.log('🔍 [14] fetching tasks');
         const tasksRes = await fetch(`/api/employees/${personId}/tasks`, { headers: { Authorization: `Bearer ${token}` } });
+        console.log('🔍 [15] tasks status:', tasksRes.status);
         employeeTasks = await tasksRes.json();
         detectLockedType();
 
+        console.log('🔍 [16] fetching operational-tree');
         const opRes = await fetch("/api/operational-tree", { headers: { Authorization: `Bearer ${token}` } });
+        console.log('🔍 [17] operational-tree status:', opRes.status);
         operationalItems = await opRes.json();
 
+        console.log('🔍 [18] fetching dependents');
         const depsRes = await fetch(`/api/employees/${personId}/dependents`, { headers: { Authorization: `Bearer ${token}` } });
+        console.log('🔍 [19] dependents status:', depsRes.status);
         dependents = await depsRes.json();
 
+        console.log('🔍 [20] fetching decrees');
         const decreesRes = await fetch(`/api/employees/${personId}/decrees`, { headers: { Authorization: `Bearer ${token}` } });
+        console.log('🔍 [21] decrees status:', decreesRes.status);
         decrees = await decreesRes.json();
 
+        console.log('🔍 [22] fetching personOrganizations');
         const orgsRes = await fetch(`/api/persons/${personId}/organizations`, { headers: { Authorization: `Bearer ${token}` } });
+        console.log('🔍 [23] personOrganizations status:', orgsRes.status);
         personOrganizations = await orgsRes.json();
 
+        console.log('🔍 [24] fetching userStatus');
         const userRes = await fetch(`/api/persons/${personId}/user-status`, { headers: { Authorization: `Bearer ${token}` } });
+        console.log('🔍 [25] userStatus status:', userRes.status);
         userStatus = await userRes.json();
 
+        console.log('🔍 [26] fetching allOrganizations');
         const allOrgsRes = await fetch("/api/base-data?section=organization", { headers: { Authorization: `Bearer ${token}` } });
+        console.log('🔍 [27] allOrganizations status:', allOrgsRes.status);
         allOrganizations = await allOrgsRes.json();
 
+        console.log('🔍 [28] CALLING renderPage');
         renderPage();
+        console.log('🔍 [29] renderPage CALLED');
+
         setTimeout(initCascade, 200);
         setTimeout(initDatePickers, 200);
         setTimeout(initBasicDatePickers, 200);
-      } catch (error) {
-        console.error("Load error:", error);
-        document.getElementById("main-container").innerHTML = `<div class="placeholder"><div class="icon">❌</div><h3>${error.message}</h3><p><a href="/persons.html" style="color: #667eea;">بازگشت به اشخاص</a></p></div>`;
-      }
+
+        console.log('🎉 [30] loadData FINISHED');
+    } catch (error) {
+        console.error('💥 [ERR] loadData error:', error);
+        document.getElementById('main-container').innerHTML = `
+            <div class="placeholder">
+                <div class="icon">❌</div>
+                <h3>${error.message}</h3>
+                <pre style="text-align:left;font-size:11px;max-height:200px;overflow:auto;">${error.stack || ''}</pre>
+            </div>`;
     }
+}
+
+async function checkPermission(key) {
+    try {
+        const res = await fetch('/api/me/permissions', {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) return false;
+        const data = await res.json();
+        return data.permissions && data.permissions[key] === true;
+    } catch (e) {
+        return false;
+    }
+}
 
     function renderPage() {
       const typeLabels = { employee: "کارکنان", citizen: "شهروندان", legal: "اشخاص حقوقی", foreigner: "خارج شهروندان" };
@@ -482,92 +591,213 @@
     }
 
     function renderBasicTab() {
-      return `
+    const isOwnProfile = person.id === window._myPersonId;
+    const canEditAll = window._canEditAll || false;
+
+    // فیلدهای غیرقابل ویرایش برای خود شخص
+    const readonlyFields = [
+        'basic-national-id',    // کد ملی
+        'basic-id-number',      // شماره شناسنامه
+        'basic-first-name',     // نام
+        'basic-last-name',      // نام خانوادگی
+        'basic-mobile'          // موبایل
+    ];
+
+    // تابع کمکی: آیا فیلد باید disabled باشه؟
+    const isReadonly = (fieldId) => {
+        if (canEditAll) return false;        // مدیر → همه قابل ویرایش
+        if (!isOwnProfile) return true;      // پرونده دیگران → کاملاً readonly
+        return readonlyFields.includes(fieldId);  // پرونده خودش → ۵ فیلد readonly
+    };
+
+    return `
         <div class="section-divider">📋 اطلاعات سجلی</div>
         <div class="form-row">
-          <div class="form-group"><label>کد ملی <span class="required">*</span></label><input type="text" id="basic-national-id" value="${person.national_id || ""}" maxlength="10" dir="ltr" /></div>
-          <div class="form-group"><label>شماره شناسنامه</label><input type="text" id="basic-id-number" value="${person.id_number || ""}" /></div>
+            <div class="form-group">
+                <label>کد ملی <span class="required">*</span></label>
+                <input type="text" id="basic-national-id" 
+                       value="${person.national_id || ''}" 
+                       maxlength="10" dir="ltr"
+                       ${isReadonly('basic-national-id') ? 'disabled' : ''} />
+                ${isReadonly('basic-national-id') && isOwnProfile ? '<small style="color:#999;font-size:11px;">غیرقابل ویرایش</small>' : ''}
+            </div>
+            <div class="form-group">
+                <label>شماره شناسنامه</label>
+                <input type="text" id="basic-id-number" 
+                       value="${person.id_number || ''}"
+                       ${isReadonly('basic-id-number') ? 'disabled' : ''} />
+                ${isReadonly('basic-id-number') && isOwnProfile ? '<small style="color:#999;font-size:11px;">غیرقابل ویرایش</small>' : ''}
+            </div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>نام <span class="required">*</span></label><input type="text" id="basic-first-name" value="${person.first_name || ""}" /></div>
-          <div class="form-group"><label>نام خانوادگی <span class="required">*</span></label><input type="text" id="basic-last-name" value="${person.last_name || ""}" /></div>
+            <div class="form-group">
+                <label>نام <span class="required">*</span></label>
+                <input type="text" id="basic-first-name" 
+                       value="${person.first_name || ''}"
+                       ${isReadonly('basic-first-name') ? 'disabled' : ''} />
+                ${isReadonly('basic-first-name') && isOwnProfile ? '<small style="color:#999;font-size:11px;">غیرقابل ویرایش</small>' : ''}
+            </div>
+            <div class="form-group">
+                <label>نام خانوادگی <span class="required">*</span></label>
+                <input type="text" id="basic-last-name" 
+                       value="${person.last_name || ''}"
+                       ${isReadonly('basic-last-name') ? 'disabled' : ''} />
+                ${isReadonly('basic-last-name') && isOwnProfile ? '<small style="color:#999;font-size:11px;">غیرقابل ویرایش</small>' : ''}
+            </div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>نام پدر</label><input type="text" id="basic-father-name" value="${person.father_name || ""}" /></div>
-          <div class="form-group"><label>نام مادر</label><input type="text" id="basic-mother-name" value="${person.mother_name || ""}" /></div>
+            <div class="form-group"><label>نام پدر</label><input type="text" id="basic-father-name" value="${person.father_name || ''}" ${isReadonly('basic-father-name') ? 'disabled' : ''} /></div>
+            <div class="form-group"><label>نام مادر</label><input type="text" id="basic-mother-name" value="${person.mother_name || ''}" ${isReadonly('basic-mother-name') ? 'disabled' : ''} /></div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>تاریخ تولد</label><input type="text" id="basic-birth-date" value="${toPersianDate(person.birth_date_shamsi)}" placeholder="۱۳۷۰/۰۱/۰۱" /></div>
-          <div class="form-group"><label>محل تولد</label><input type="text" id="basic-birth-place" value="${person.birth_place || ""}" /></div>
+            <div class="form-group"><label>تاریخ تولد</label><input type="text" id="basic-birth-date" value="${toPersianDate(person.birth_date_shamsi)}" placeholder="۱۳۷۰/۰۱/۰۱" ${isReadonly('basic-birth-date') ? 'disabled' : ''} /></div>
+            <div class="form-group"><label>محل تولد</label><input type="text" id="basic-birth-place" value="${person.birth_place || ''}" ${isReadonly('basic-birth-place') ? 'disabled' : ''} /></div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>جنسیت</label><select id="basic-gender"><option value="">— انتخاب کنید —</option><option value="male" ${person.gender === "male" ? "selected" : ""}>مرد</option><option value="female" ${person.gender === "female" ? "selected" : ""}>زن</option></select></div>
-          <div class="form-group"><label>تابعیت</label><input type="text" id="basic-nationality" value="${person.nationality || "ایرانی"}" /></div>
+            <div class="form-group"><label>جنسیت</label><select id="basic-gender" ${isReadonly('basic-gender') ? 'disabled' : ''}><option value="">— انتخاب کنید —</option><option value="male" ${person.gender === "male" ? "selected" : ""}>مرد</option><option value="female" ${person.gender === "female" ? "selected" : ""}>زن</option></select></div>
+            <div class="form-group"><label>تابعیت</label><input type="text" id="basic-nationality" value="${person.nationality || "ایرانی"}" ${isReadonly('basic-nationality') ? 'disabled' : ''} /></div>
         </div>
         <div class="section-divider">📞 اطلاعات تماس</div>
         <div class="form-row">
-          <div class="form-group"><label>موبایل</label><input type="text" id="basic-mobile" value="${person.mobile || ""}" maxlength="11" dir="ltr" /></div>
-          <div class="form-group"><label>تلفن ثابت</label><input type="text" id="basic-phone" value="${person.phone || ""}" /></div>
+            <div class="form-group">
+                <label>موبایل</label>
+                <input type="text" id="basic-mobile" 
+                       value="${person.mobile || ''}" 
+                       maxlength="11" dir="ltr"
+                       ${isReadonly('basic-mobile') ? 'disabled' : ''} />
+                ${isReadonly('basic-mobile') && isOwnProfile ? '<small style="color:#999;font-size:11px;">غیرقابل ویرایش</small>' : ''}
+            </div>
+            <div class="form-group"><label>تلفن ثابت</label><input type="text" id="basic-phone" value="${person.phone || ''}" ${isReadonly('basic-phone') ? 'disabled' : ''} /></div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>کد پستی</label><input type="text" id="basic-postal-code" value="${person.postal_code || ""}" maxlength="10" /></div>
-          <div class="form-group"><label>ایمیل</label><input type="email" id="basic-email" value="${person.email || ""}" dir="ltr" /></div>
+            <div class="form-group"><label>کد پستی</label><input type="text" id="basic-postal-code" value="${person.postal_code || ''}" maxlength="10" ${isReadonly('basic-postal-code') ? 'disabled' : ''} /></div>
+            <div class="form-group"><label>ایمیل</label><input type="email" id="basic-email" value="${person.email || ''}" dir="ltr" ${isReadonly('basic-email') ? 'disabled' : ''} /></div>
         </div>
-        <div class="form-group"><label>آدرس</label><textarea id="basic-address">${person.address || ""}</textarea></div>
+        <div class="form-group"><label>آدرس</label><textarea id="basic-address" ${isReadonly('basic-address') ? 'disabled' : ''}>${person.address || ''}</textarea></div>
         <div class="section-divider">🏦 اطلاعات بانکی</div>
         <div class="form-row">
-          <div class="form-group"><label>نام بانک</label><input type="text" id="basic-bank-name" value="${person.bank_name || ""}" /></div>
-          <div class="form-group"><label>شماره حساب</label><input type="text" id="basic-bank-account" value="${person.bank_account || ""}" dir="ltr" /></div>
+            <div class="form-group"><label>نام بانک</label><input type="text" id="basic-bank-name" value="${person.bank_name || ''}" ${isReadonly('basic-bank-name') ? 'disabled' : ''} /></div>
+            <div class="form-group"><label>شماره حساب</label><input type="text" id="basic-bank-account" value="${person.bank_account || ''}" dir="ltr" ${isReadonly('basic-bank-account') ? 'disabled' : ''} /></div>
         </div>
-        <div class="form-group"><label>شبا (IR)</label><input type="text" id="basic-iban" value="${person.iban || ""}" dir="ltr" placeholder="IR..." /></div>
-        <div class="actions-bar"><button class="btn btn-save" id="btn-save-basic" onclick="saveBasicInfo()">💾 ذخیره اطلاعات پایه</button></div>
-      `;
+        <div class="form-group"><label>شبا (IR)</label><input type="text" id="basic-iban" value="${person.iban || ''}" dir="ltr" placeholder="IR..." ${isReadonly('basic-iban') ? 'disabled' : ''} /></div>
+        ${!canEditAll && !isOwnProfile ? '' : `<div class="actions-bar"><button class="btn btn-save" id="btn-save-basic" onclick="saveBasicInfo()">💾 ذخیره اطلاعات پایه</button></div>`}
+    `;
+}
+async function saveBasicInfo() {
+    const btn = document.getElementById("btn-save-basic");
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = "⏳ در حال ذخیره...";
     }
 
-    async function saveBasicInfo() {
-      const btn = document.getElementById("btn-save-basic");
-      btn.disabled = true; btn.textContent = "⏳ در حال ذخیره...";
-      try {
-        const firstName = document.getElementById("basic-first-name").value.trim();
-        const lastName = document.getElementById("basic-last-name").value.trim();
-        const fullName = `${firstName} ${lastName}`.trim();
-        if (!fullName) throw new Error("نام و نام خانوادگی الزامی است");
+    try {
+        const isOwnProfile = person.id === window._myPersonId;
+        const canEditAll = window._canEditAll || false;
 
+        // ============================================
+        // ۱. تعیین مقادیر ۵ فیلد readonly
+        // ============================================
+        let nationalId, idNumber, firstName, lastName, mobile;
+
+        if (!canEditAll && isOwnProfile) {
+            // کاربر عادی + پرونده خودش → از person فعلی بگیر (تغییر نکنه)
+            nationalId = person.national_id;
+            idNumber = person.id_number;
+            firstName = person.first_name;
+            lastName = person.last_name;
+            mobile = person.mobile;
+        } else if (canEditAll) {
+            // مدیر → از فرم بگیر
+            nationalId = document.getElementById("basic-national-id").value.trim() || null;
+            idNumber = document.getElementById("basic-id-number").value.trim() || null;
+            firstName = document.getElementById("basic-first-name").value.trim() || null;
+            lastName = document.getElementById("basic-last-name").value.trim() || null;
+            mobile = document.getElementById("basic-mobile").value.trim() || null;
+        } else {
+            // کاربر عادی + پرونده دیگران → نباید بتونه ذخیره کنه (دکمه مخفیه)
+            showToast('شما دسترسی ویرایش این پرونده را ندارید', 'error');
+            return;
+        }
+
+        // ============================================
+        // ۲. اعتبارسنجی
+        // ============================================
+        const fullName = `${firstName || ''} ${lastName || ''}`.trim();
+        if (!fullName) {
+            showToast("نام و نام خانوادگی الزامی است", "error");
+            return;
+        }
+
+        // ============================================
+        // ۳. بقیه فیلدها (از فرم)
+        // ============================================
         const data = {
-          full_name: fullName, first_name: firstName || null, last_name: lastName || null,
-          father_name: document.getElementById("basic-father-name").value.trim() || null,
-          mother_name: document.getElementById("basic-mother-name").value.trim() || null,
-          national_id: document.getElementById("basic-national-id").value.trim() || null,
-          id_number: document.getElementById("basic-id-number").value.trim() || null,
-          birth_date_shamsi: cleanDate(document.getElementById("basic-birth-date").value),
-          birth_place: document.getElementById("basic-birth-place").value.trim() || null,
-          gender: document.getElementById("basic-gender").value || null,
-          nationality: document.getElementById("basic-nationality").value.trim() || "ایرانی",
-          mobile: document.getElementById("basic-mobile").value.trim() || null,
-          phone: document.getElementById("basic-phone").value.trim() || null,
-          address: document.getElementById("basic-address").value.trim() || null,
-          postal_code: document.getElementById("basic-postal-code").value.trim() || null,
-          email: document.getElementById("basic-email").value.trim() || null,
-          bank_name: document.getElementById("basic-bank-name").value.trim() || null,
-          bank_account: document.getElementById("basic-bank-account").value.trim() || null,
-          iban: document.getElementById("basic-iban").value.trim() || null,
-          is_active: person.is_active,
+            // ۵ فیلد readonly
+            full_name: fullName,
+            first_name: firstName,
+            last_name: lastName,
+            national_id: nationalId,
+            id_number: idNumber,
+            mobile: mobile,
+
+            // فیلدهای قابل ویرایش (از فرم)
+            father_name: document.getElementById("basic-father-name").value.trim() || null,
+            mother_name: document.getElementById("basic-mother-name").value.trim() || null,
+            birth_date_shamsi: cleanDate(document.getElementById("basic-birth-date").value),
+            birth_place: document.getElementById("basic-birth-place").value.trim() || null,
+            gender: document.getElementById("basic-gender").value || null,
+            nationality: document.getElementById("basic-nationality").value.trim() || "ایرانی",
+            phone: document.getElementById("basic-phone").value.trim() || null,
+            address: document.getElementById("basic-address").value.trim() || null,
+            postal_code: document.getElementById("basic-postal-code").value.trim() || null,
+            email: document.getElementById("basic-email").value.trim() || null,
+            bank_name: document.getElementById("basic-bank-name").value.trim() || null,
+            bank_account: document.getElementById("basic-bank-account").value.trim() || null,
+            iban: document.getElementById("basic-iban").value.trim() || null,
+            is_active: person.is_active,
         };
 
-        const res = await fetch(`/api/persons/${personId}`, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(data) });
+        // ============================================
+        // ۴. ارسال به API
+        // ============================================
+        const res = await fetch(`/api/persons/${personId}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify(data)
+        });
+
         const result = await res.json();
-        if (!res.ok) throw new Error(result.error || "خطا");
+        if (!res.ok) throw new Error(result.error || "خطا در ذخیره");
 
         showToast("اطلاعات پایه با موفقیت ذخیره شد");
-        const res2 = await fetch(`/api/employees/${personId}`, { headers: { Authorization: `Bearer ${token}` } });
+
+        // ============================================
+        // ۵. رفرش اطلاعات
+        // ============================================
+        const res2 = await fetch(`/api/employees/${personId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
         const data2 = await res2.json();
         person = data2.person;
 
+        // رفرش تب
         const panel = document.getElementById("panel-basic");
-        if (panel) { panel.innerHTML = renderBasicTab(); setTimeout(initBasicDatePickers, 100); }
-      } catch (error) { showToast(error.message, "error"); } finally { btn.disabled = false; btn.textContent = "💾 ذخیره اطلاعات پایه"; }
+        if (panel) {
+            panel.innerHTML = renderBasicTab();
+            setTimeout(initBasicDatePickers, 100);
+        }
+    } catch (error) {
+        showToast(error.message, "error");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = "💾 ذخیره اطلاعات پایه";
+        }
     }
-
+}
     function initBasicDatePickers() {
       const el = document.getElementById("basic-birth-date");
       if (!el) return;
@@ -576,73 +806,167 @@
     }
 
     function renderEmploymentTab() {
-      const e = employee || {};
-      let decreeOptions = '<option value="">— انتخاب کنید —</option>';
-      decreeTypes.forEach((d) => {
+    const isOwnProfile = person.id === window._myPersonId;
+    const canEditAll = window._canEditAll || false;
+    const canEditEmployment = canEditAll;  // ← فقط admin/manager
+    const canEditExperience = canEditAll || isOwnProfile;  // ← کاربر عادی فقط شرح تجربه
+
+    const disabledAttr = !canEditEmployment ? 'disabled' : '';
+    const e = employee || {};
+
+    // ساخت options برای نوع حکم
+    let decreeOptions = '<option value="">— انتخاب کنید —</option>';
+    decreeTypes.forEach((d) => {
         const selected = e.decree_type === d.code ? "selected" : "";
         decreeOptions += `<option value="${d.code}" ${selected}>${d.title}</option>`;
-      });
-      let organizationOptions = '<option value="">— انتخاب کنید —</option>';
-      organizations.forEach((org) => {
+    });
+
+    // ساخت options برای سازمان
+    let organizationOptions = '<option value="">— انتخاب کنید —</option>';
+    organizations.forEach((org) => {
         const selected = e.department === org.title ? "selected" : "";
         organizationOptions += `<option value="${org.title}" ${selected}>${org.title}</option>`;
-      });
+    });
 
-      return `
+    return `
         <div class="section-divider">💼 اطلاعات قرارداد</div>
         <div class="form-row">
-          <div class="form-group"><label>نوع قرارداد <span class="required">*</span></label><select id="input-contract-type"><option value="">— انتخاب کنید —</option><option value="worker" ${e.contract_type === "worker" ? "selected" : ""}>کارگر</option><option value="employee" ${e.contract_type === "employee" ? "selected" : ""}>کارمند</option></select></div>
-          <div class="form-group"><label>تاریخ استخدام</label><input type="text" id="input-hire-date" value="${toPersianDate(e.hire_date_shamsi)}" placeholder="۱۴۰۰/۰۱/۰۱" /></div>
+            <div class="form-group">
+                <label>نوع قرارداد <span class="required">*</span></label>
+                <select id="input-contract-type" ${disabledAttr}>
+                    <option value="">— انتخاب کنید —</option>
+                    <option value="worker" ${e.contract_type === "worker" ? "selected" : ""}>کارگر</option>
+                    <option value="employee" ${e.contract_type === "employee" ? "selected" : ""}>کارمند</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>تاریخ استخدام</label>
+                <input type="text" id="input-hire-date" value="${toPersianDate(e.hire_date_shamsi)}" placeholder="۱۴۰۰/۰۱/۰۱" ${disabledAttr} />
+            </div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>تاریخ شروع قرارداد</label><input type="text" id="input-contract-start" value="${toPersianDate(e.contract_start_shamsi)}" placeholder="۱۴۰۰/۰۱/۰۱" /></div>
-          <div class="form-group"><label>تاریخ پایان قرارداد</label><input type="text" id="input-contract-end" value="${toPersianDate(e.contract_end_shamsi)}" placeholder="اختیاری" /></div>
+            <div class="form-group">
+                <label>تاریخ شروع قرارداد</label>
+                <input type="text" id="input-contract-start" value="${toPersianDate(e.contract_start_shamsi)}" placeholder="۱۴۰۰/۰۱/۰۱" ${disabledAttr} />
+            </div>
+            <div class="form-group">
+                <label>تاریخ پایان قرارداد</label>
+                <input type="text" id="input-contract-end" value="${toPersianDate(e.contract_end_shamsi)}" placeholder="اختیاری" ${disabledAttr} />
+            </div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>نوع حکم</label><select id="input-decree-type">${decreeOptions}</select></div>
-          <div class="form-group"><label>نوع استخدام</label><input type="text" id="input-employment-type" value="${e.employment_type || ""}" placeholder="مثلاً رسمی" /></div>
+            <div class="form-group">
+                <label>نوع حکم</label>
+                <select id="input-decree-type" ${disabledAttr}>${decreeOptions}</select>
+            </div>
+            <div class="form-group">
+                <label>نوع استخدام</label>
+                <input type="text" id="input-employment-type" value="${e.employment_type || ""}" placeholder="مثلاً رسمی" ${disabledAttr} />
+            </div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>سمت</label><input type="text" id="input-position" value="${e.position || ""}" /></div>
-          <div class="form-group"><label>واحد سازمانی</label><select id="input-department">${organizationOptions}</select></div>
+            <div class="form-group">
+                <label>سمت</label>
+                <input type="text" id="input-position" value="${e.position || ""}" ${disabledAttr} />
+            </div>
+            <div class="form-group">
+                <label>واحد سازمانی</label>
+                <select id="input-department" ${disabledAttr}>${organizationOptions}</select>
+            </div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>تاریخ شروع به کار در واحد فعلی</label><input type="text" id="input-unit-start-date" value="${toPersianDate(e.unit_start_shamsi)}" placeholder="۱۴۰۰/۰۱/۰۱" /></div>
-          <div class="form-group"><label>شماره پرسنلی</label><input type="text" id="input-personnel-code" value="${e.personnel_code || ""}" dir="ltr" /></div>
+            <div class="form-group">
+                <label>تاریخ شروع به کار در واحد فعلی</label>
+                <input type="text" id="input-unit-start-date" value="${toPersianDate(e.unit_start_shamsi)}" placeholder="۱۴۰۰/۰۱/۰۱" ${disabledAttr} />
+            </div>
+            <div class="form-group">
+                <label>شماره پرسنلی</label>
+                <input type="text" id="input-personnel-code" value="${e.personnel_code || ""}" dir="ltr" ${disabledAttr} />
+            </div>
         </div>
         <div class="section-divider">📊 سابقه</div>
         <div class="form-row">
-          <div class="form-group"><label>سابقه سنوات (سال)</label><input type="number" id="input-years-service" value="${e.years_of_service || 0}" min="0" /></div>
-          <div class="form-group"><label>سابقه بیمه (ماه)</label><input type="number" id="input-insurance-months" value="${e.insurance_history_months || 0}" min="0" /></div>
+            <div class="form-group">
+                <label>سابقه سنوات (سال)</label>
+                <input type="number" id="input-years-service" value="${e.years_of_service || 0}" min="0" ${disabledAttr} />
+            </div>
+            <div class="form-group">
+                <label>سابقه بیمه (ماه)</label>
+                <input type="number" id="input-insurance-months" value="${e.insurance_history_months || 0}" min="0" ${disabledAttr} />
+            </div>
         </div>
-        <div class="form-group"><label>شماره بیمه</label><input type="text" id="input-insurance-number" value="${e.insurance_number || ""}" dir="ltr" /></div>
+        <div class="form-group">
+            <label>شماره بیمه</label>
+            <input type="text" id="input-insurance-number" value="${e.insurance_number || ""}" dir="ltr" ${disabledAttr} />
+        </div>
         <div class="section-divider">🎓 مدرک تحصیلی</div>
         <div class="form-row">
-          <div class="form-group"><label>مقطع</label><select id="input-education-level"><option value="">— انتخاب کنید —</option><option value="زیر دیپلم" ${e.education_level === "زیر دیپلم" ? "selected" : ""}>زیر دیپلم</option><option value="دیپلم" ${e.education_level === "دیپلم" ? "selected" : ""}>دیپلم</option><option value="کاردانی" ${e.education_level === "کاردانی" ? "selected" : ""}>کاردانی</option><option value="کارشناسی" ${e.education_level === "کارشناسی" ? "selected" : ""}>کارشناسی</option><option value="کارشناسی ارشد" ${e.education_level === "کارشناسی ارشد" ? "selected" : ""}>کارشناسی ارشد</option><option value="دکتری" ${e.education_level === "دکتری" ? "selected" : ""}>دکتری</option></select></div>
-          <div class="form-group"><label>رشته تحصیلی</label><input type="text" id="input-education-field" value="${e.education_field || ""}" /></div>
+            <div class="form-group">
+                <label>مقطع</label>
+                <select id="input-education-level" ${disabledAttr}>
+                    <option value="">— انتخاب کنید —</option>
+                    <option value="زیر دیپلم" ${e.education_level === "زیر دیپلم" ? "selected" : ""}>زیر دیپلم</option>
+                    <option value="دیپلم" ${e.education_level === "دیپلم" ? "selected" : ""}>دیپلم</option>
+                    <option value="کاردانی" ${e.education_level === "کاردانی" ? "selected" : ""}>کاردانی</option>
+                    <option value="کارشناسی" ${e.education_level === "کارشناسی" ? "selected" : ""}>کارشناسی</option>
+                    <option value="کارشناسی ارشد" ${e.education_level === "کارشناسی ارشد" ? "selected" : ""}>کارشناسی ارشد</option>
+                    <option value="دکتری" ${e.education_level === "دکتری" ? "selected" : ""}>دکتری</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>رشته تحصیلی</label>
+                <input type="text" id="input-education-field" value="${e.education_field || ""}" ${disabledAttr} />
+            </div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>دانشگاه</label><input type="text" id="input-education-university" value="${e.education_university || ""}" /></div>
-          <div class="form-group"><label>سال فارغ‌التحصیلی</label><input type="text" id="input-education-year" value="${e.education_year_shamsi || ""}" /></div>
+            <div class="form-group">
+                <label>دانشگاه</label>
+                <input type="text" id="input-education-university" value="${e.education_university || ""}" ${disabledAttr} />
+            </div>
+            <div class="form-group">
+                <label>سال فارغ‌التحصیلی</label>
+                <input type="text" id="input-education-year" value="${e.education_year_shamsi || ""}" ${disabledAttr} />
+            </div>
         </div>
         <div class="section-divider">🎯 تخصص و تجربه</div>
         <div class="form-row">
-          <div class="form-group"><label>سال‌های تجربه</label><input type="number" id="input-experience-years" value="${e.experience_years || 0}" min="0" /></div>
-          <div class="form-group"><label>تخصص‌ها (با کاما جدا کنید)</label><input type="text" id="input-specialties" value="${e.specialties || ""}" placeholder="مثلاً: حسابداری، بودجه، مالیات" /></div>
+            <div class="form-group">
+                <label>سال‌های تجربه</label>
+                <input type="number" id="input-experience-years" value="${e.experience_years || 0}" min="0" ${disabledAttr} />
+            </div>
+            <div class="form-group">
+                <label>تخصص‌ها (با کاما جدا کنید)</label>
+                <input type="text" id="input-specialties" value="${e.specialties || ""}" placeholder="مثلاً: حسابداری، بودجه، مالیات" ${disabledAttr} />
+            </div>
         </div>
-        <div class="form-group"><label>شرح تجربه</label><textarea id="input-experience-description">${e.experience_description || ""}</textarea></div>
+        <div class="form-group">
+            <label>شرح تجربه</label>
+            <textarea id="input-experience-description" ${!canEditExperience ? 'disabled' : ''}>${e.experience_description || ""}</textarea>
+            ${!canEditAll && isOwnProfile ? '<small style="color:#28a745;font-size:11px;">✅ این فیلد قابل ویرایش است</small>' : ''}
+        </div>
         <div class="section-divider">🎂 روز مناسبتی</div>
         <div class="form-row">
-          <div class="form-group"><label>تاریخ تولد (شمسی)</label><input type="text" id="input-birthday" value="${toPersianDate(e.birthday_shamsi || person.birth_date_shamsi)}" placeholder="۱۳۷۰/۰۱/۰۱" /></div>
-          <div class="form-group"><label>سایر مناسبت‌ها (تاریخ)</label><input type="text" id="input-other-occasion-date" value="${toPersianDate(e.other_occasion_shamsi)}" placeholder="اختیاری" /></div>
+            <div class="form-group">
+                <label>تاریخ تولد (شمسی)</label>
+                <input type="text" id="input-birthday" value="${toPersianDate(e.birthday_shamsi || person.birth_date_shamsi)}" placeholder="۱۳۷۰/۰۱/۰۱" ${disabledAttr} />
+            </div>
+            <div class="form-group">
+                <label>سایر مناسبت‌ها (تاریخ)</label>
+                <input type="text" id="input-other-occasion-date" value="${toPersianDate(e.other_occasion_shamsi)}" placeholder="اختیاری" ${disabledAttr} />
+            </div>
         </div>
-        <div class="form-group"><label>عنوان سایر مناسبت</label><input type="text" id="input-other-occasion-title" value="${e.other_occasion_title || ""}" /></div>
+        <div class="form-group">
+            <label>عنوان سایر مناسبت</label>
+            <input type="text" id="input-other-occasion-title" value="${e.other_occasion_title || ""}" ${disabledAttr} />
+        </div>
         <div class="section-divider">📝 یادداشت</div>
-        <div class="form-group"><label>یادداشت</label><textarea id="input-notes">${e.notes || ""}</textarea></div>
-        <div class="actions-bar"><button class="btn btn-save" id="btn-save-employment" onclick="saveEmployment()">💾 ذخیره اطلاعات استخدامی</button></div>
-      `;
-    }
-
+        <div class="form-group">
+            <label>یادداشت</label>
+            <textarea id="input-notes" ${disabledAttr}>${e.notes || ""}</textarea>
+        </div>
+        ${canEditExperience ? `<div class="actions-bar"><button class="btn btn-save" id="btn-save-employment" onclick="saveEmployment()">💾 ذخیره ${!canEditAll && isOwnProfile ? 'شرح تجربه' : 'اطلاعات استخدامی'}</button></div>` : ''}
+    `;
+}
     let taskLevels = [];
     function renderTasksTab() {
       const totalPercentage = employeeTasks.reduce((sum, t) => sum + (t.percentage || 0), 0);
@@ -694,49 +1018,65 @@
     }
 
     function renderOrganizationTab() {
-      let orgsHtml = "";
-      if (personOrganizations.length === 0) {
-        orgsHtml = `<div class="empty-state" style="padding:30px;"><div class="icon">🏢</div><div>هنوز سازمانی برای این شخص ثبت نشده</div></div>`;
-      } else {
-        personOrganizations.forEach((po, index) => {
-          const isPrimary = po.is_primary;
-          orgsHtml += `
-            <div class="org-item ${isPrimary ? "primary" : ""}" data-index="${index}">
-              <div class="org-item-header">
-                <div class="org-item-info">
-                  <span class="org-item-icon">🏢</span>
-                  <div>
-                    <div class="org-item-title">${po.organization_title || "—"} ${isPrimary ? '<span class="primary-badge">اصلی</span>' : ""}</div>
-                    <div class="org-item-meta">${po.role ? `پست: ${po.role}` : "بدون پست"} ${po.organization_code ? ` | کد: ${po.organization_code}` : ""}</div>
-                  </div>
-                </div>
-                <div class="org-item-actions">
-                  <button class="dep-btn dep-edit-btn" onclick="openOrgModal(${po.id})" title="ویرایش">✏️</button>
-                  <button class="dep-btn dep-delete-btn" onclick="deleteOrg(${po.id})" title="حذف">🗑️</button>
-                </div>
-              </div>
-              ${po.start_date_shamsi ? `<div class="org-item-dates">📆 از ${toPersianNumbers(po.start_date_shamsi)}${po.end_date_shamsi ? ` تا ${toPersianNumbers(po.end_date_shamsi)}` : " (فعلی)"}</div>` : ""}
-            </div>
-          `;
-        });
-      }
+    const canEditAll = window._canEditAll || false;
+    const isOwnProfile = person.id === window._myPersonId;
 
-      let userHtml = "";
-      if (userStatus && userStatus.has_user) {
+    // ============================================
+    // بخش ۱: واحدهای سازمانی
+    // ============================================
+    let orgsHtml = "";
+    if (personOrganizations.length === 0) {
+        orgsHtml = `<div class="empty-state" style="padding:30px;"><div class="icon">🏢</div><div>هنوز سازمانی برای این شخص ثبت نشده</div></div>`;
+    } else {
+        personOrganizations.forEach((po, index) => {
+            const isPrimary = po.is_primary;
+            let actionButtons = '';
+            if (canEditAll) {
+                actionButtons = `
+                    <button class="dep-btn dep-edit-btn" onclick="openOrgModal(${po.id})" title="ویرایش">✏️</button>
+                    <button class="dep-btn dep-delete-btn" onclick="deleteOrg(${po.id})" title="حذف">🗑️</button>
+                `;
+            }
+
+            orgsHtml += `
+                <div class="org-item ${isPrimary ? "primary" : ""}" data-index="${index}">
+                    <div class="org-item-header">
+                        <div class="org-item-info">
+                            <span class="org-item-icon">🏢</span>
+                            <div>
+                                <div class="org-item-title">${po.organization_title || "—"} ${isPrimary ? '<span class="primary-badge">اصلی</span>' : ""}</div>
+                                <div class="org-item-meta">${po.role ? `پست: ${po.role}` : "بدون پست"} ${po.organization_code ? ` | کد: ${po.organization_code}` : ""}</div>
+                            </div>
+                        </div>
+                        <div class="org-item-actions">
+                            ${actionButtons}
+                        </div>
+                    </div>
+                    ${po.start_date_shamsi ? `<div class="org-item-dates">📆 از ${toPersianNumbers(po.start_date_shamsi)}${po.end_date_shamsi ? ` تا ${toPersianNumbers(po.end_date_shamsi)}` : " (فعلی)"}</div>` : ""}
+                </div>
+            `;
+        });
+    }
+
+    // ============================================
+    // بخش ۲: حساب کاربری
+    // ============================================
+    let userHtml = "";
+    if (userStatus && userStatus.has_user) {
         const roleLabels = { admin: "مدیر سیستم", manager: "مدیر", expert: "کارشناس", viewer: "بازدیدکننده", province: "استانداری", ministry: "وزارت کشور" };
         userHtml = `
-          <div class="user-status-card success">
-            <div class="user-status-header"><span class="user-status-icon">✅</span><span class="user-status-title">کاربر ساخته شده</span></div>
-            <div class="user-status-info">
-              <div><b>نام کاربری:</b> <span dir="ltr">${userStatus.username || "—"}</span></div>
-              <div><b>نقش:</b> ${roleLabels[userStatus.role] || userStatus.role || "—"}</div>
-              <div><b>وضعیت:</b> ${userStatus.is_active ? "فعال" : "غیرفعال"}</div>
-              ${userStatus.last_creation ? `<div><b>تاریخ ساخت:</b> ${toPersianNumbers(userStatus.last_creation.created_at_shamsi || "—")}</div>` : ""}
-              ${userStatus.last_creation && userStatus.last_creation.mobile ? `<div><b>موبایل:</b> <span dir="ltr">${toPersianNumbers(userStatus.last_creation.mobile)}</span></div>` : ""}
+            <div class="user-status-card success">
+                <div class="user-status-header"><span class="user-status-icon">✅</span><span class="user-status-title">کاربر ساخته شده</span></div>
+                <div class="user-status-info">
+                    <div><b>نام کاربری:</b> <span dir="ltr">${userStatus.username || "—"}</span></div>
+                    <div><b>نقش:</b> ${roleLabels[userStatus.role] || userStatus.role || "—"}</div>
+                    <div><b>وضعیت:</b> ${userStatus.is_active ? "فعال" : "غیرفعال"}</div>
+                    ${userStatus.last_creation ? `<div><b>تاریخ ساخت:</b> ${toPersianNumbers(userStatus.last_creation.created_at_shamsi || "—")}</div>` : ""}
+                    ${userStatus.last_creation && userStatus.last_creation.mobile ? `<div><b>موبایل:</b> <span dir="ltr">${toPersianNumbers(userStatus.last_creation.mobile)}</span></div>` : ""}
+                </div>
             </div>
-          </div>
         `;
-      } else {
+    } else {
         const hasPrimaryOrg = personOrganizations.some((po) => po.is_primary);
         const hasNationalId = person && person.national_id;
         const hasMobile = person && person.mobile;
@@ -744,27 +1084,27 @@
         if (!hasPrimaryOrg) errorMsg = "ابتدا باید یک سازمان اصلی برای شخص ثبت کنید";
         else if (!hasNationalId) errorMsg = "کد ملی شخص ثبت نشده است";
         else if (!hasMobile) errorMsg = "شماره موبایل شخص ثبت نشده است";
-        userHtml = `
-          <div class="user-status-card warning">
-            <div class="user-status-header"><span class="user-status-icon">⚠️</span><span class="user-status-title">کاربر ساخته نشده</span></div>
-            <div class="user-status-info">نام کاربری بر اساس <b>کد ملی</b> ساخته می‌شود و رمز عبور به صورت <b>SMS (mock)</b> به موبایل شخص ارسال می‌شود.</div>
-            <div class="user-status-info" style="color:#dc3545; margin-top:8px;">نقش کاربر بر اساس <b>پست سازمانی اصلی</b> تعیین می‌شود.</div>
-            ${errorMsg ? `<div class="user-status-warning">⚠️ ${errorMsg}</div>` : ""}
-            <button class="btn btn-success" onclick="createUserForPerson()" style="margin-top:12px;" ${errorMsg ? "disabled" : ""}>🔑 ساخت کاربر</button>
-          </div>
-        `;
-      }
 
-      return `
+        userHtml = `
+            <div class="user-status-card warning">
+                <div class="user-status-header"><span class="user-status-icon">⚠️</span><span class="user-status-title">کاربر ساخته نشده</span></div>
+                <div class="user-status-info">نام کاربری بر اساس <b>کد ملی</b> ساخته می‌شود و رمز عبور به صورت <b>SMS (mock)</b> به موبایل شخص ارسال می‌شود.</div>
+                <div class="user-status-info" style="color:#dc3545; margin-top:8px;">نقش کاربر بر اساس <b>پست سازمانی اصلی</b> تعیین می‌شود.</div>
+                ${errorMsg ? `<div class="user-status-warning">⚠️ ${errorMsg}</div>` : ""}
+                ${canEditAll ? `<button class="btn btn-success" onclick="createUserForPerson()" style="margin-top:12px;" ${errorMsg ? "disabled" : ""}>🔑 ساخت کاربر</button>` : ''}
+            </div>
+        `;
+    }
+
+    return `
         <div class="section-divider">🏢 واحدهای سازمانی</div>
         <div class="info-banner">💡 <b>راهنما:</b> شخص را به یک یا چند سازمان متصل کنید.<br>• سازمان <b>اصلی</b> = محل خدمت فعلی شخص<br>• پست سازمانی = نقش و سطح دسترسی کاربر</div>
         <div class="orgs-container" id="orgs-container">${orgsHtml}</div>
-        <button class="add-task-btn" onclick="openOrgModal()">➕ افزودن سازمان</button>
+        ${canEditAll ? `<button class="add-task-btn" onclick="openOrgModal()">➕ افزودن سازمان</button>` : ''}
         <div class="section-divider" style="margin-top:30px;">👤 حساب کاربری</div>
         ${userHtml}
-      `;
-    }
-
+    `;
+}
     async function openOrgModal(poId = null) {
       const po = poId ? personOrganizations.find((o) => o.id === poId) : null;
       const isEdit = !!po;
@@ -988,59 +1328,101 @@
     }
 
     function renderDependentsTab() {
-      const relationLabels = { spouse: "همسر", son: "فرزند پسر", daughter: "فرزند دختر", father: "پدر", mother: "مادر" };
-      const relationIcons = { spouse: "💑", son: "👦", daughter: "👧", father: "👨", mother: "👩" };
-      const counts = {};
-      dependents.forEach((d) => { counts[d.relation_type] = (counts[d.relation_type] || 0) + 1; });
-      let dependentsHtml = "";
-      if (dependents.length === 0) {
+    const canEditAll = window._canEditAll || false;
+    const isOwnProfile = person.id === window._myPersonId;
+
+    const relationLabels = { spouse: "همسر", son: "فرزند پسر", daughter: "فرزند دختر", father: "پدر", mother: "مادر" };
+    const relationIcons = { spouse: "💑", son: "👦", daughter: "👧", father: "👨", mother: "👩" };
+    const counts = {};
+    dependents.forEach((d) => { counts[d.relation_type] = (counts[d.relation_type] || 0) + 1; });
+
+    let dependentsHtml = "";
+    if (dependents.length === 0) {
         dependentsHtml = `<div style="text-align:center; padding:40px; color:#999;"><div style="font-size:40px; margin-bottom:10px;">👨‍👩‍👧</div><div>هنوز فرد تحت تکفلی ثبت نشده</div></div>`;
-      } else {
+    } else {
         dependents.forEach((dep) => {
-          const relationIcon = relationIcons[dep.relation_type] || "👤";
-          const relationLabel = relationLabels[dep.relation_type] || dep.relation_type;
-          const educationLabels = { student: "🎓 محصل", graduated: "🎓 فارغ‌التحصیل", dropout: "❌ ترک تحصیل" };
-          const militaryLabels = { serving: "🎖️ در حال خدمت", exempt: "✅ معاف", completed: "✅ پایان خدمت", not_applicable: "—" };
-          const maritalLabels = { single: "مجرد", married: "متأهل", divorced: "مطلقه", widowed: "بیوه" };
-          dependentsHtml += `
-            <div class="dependent-item">
-              <div class="dependent-header">
-                <div class="dependent-title"><span class="dependent-icon">${relationIcon}</span><span class="dependent-name">${dep.full_name}</span><span class="dependent-badge">${relationLabel}</span></div>
-                <div class="dependent-actions"><button class="dep-btn dep-edit-btn" onclick="openDependentModal(${dep.id})" title="ویرایش">✏️</button><button class="dep-btn dep-delete-btn" onclick="deleteDependent(${dep.id})" title="حذف">🗑️</button></div>
-              </div>
-              <div class="dependent-info">
-                ${dep.national_id ? `<div class="info-row"><span class="info-label">کد ملی:</span><span class="info-value" dir="ltr">${dep.national_id}</span></div>` : ""}
-                ${dep.birth_date_shamsi ? `<div class="info-row"><span class="info-label">تاریخ تولد:</span><span class="info-value">${toPersianNumbers(dep.birth_date_shamsi)}</span></div>` : ""}
-                ${dep.mobile ? `<div class="info-row"><span class="info-label">موبایل:</span><span class="info-value" dir="ltr">${dep.mobile}</span></div>` : ""}
-                ${dep.education_status ? `<div class="info-row"><span class="info-label">وضعیت تحصیل:</span><span class="info-value">${educationLabels[dep.education_status] || dep.education_status}</span></div>` : ""}
-                ${dep.military_status && dep.military_status !== "not_applicable" ? `<div class="info-row"><span class="info-label">وضعیت سربازی:</span><span class="info-value">${militaryLabels[dep.military_status] || dep.military_status}</span></div>` : ""}
-                ${dep.marital_status ? `<div class="info-row"><span class="info-label">وضعیت تأهل:</span><span class="info-value">${maritalLabels[dep.marital_status] || dep.marital_status}</span></div>` : ""}
-                ${dep.marriage_date_shamsi ? `<div class="info-row"><span class="info-label">تاریخ ازدواج:</span><span class="info-value">${toPersianNumbers(dep.marriage_date_shamsi)}</span></div>` : ""}
-              </div>
-              <div class="dependent-badges">
-                ${dep.is_eligible_for_allowance ? '<span class="badge-allowance">💰 مشمول حق عائله مندی</span>' : ""}
-                ${dep.is_eligible_for_insurance ? '<span class="badge-insurance">🏥 مشمول بیمه تکمیل درمان</span>' : ""}
-                ${dep.is_disabled ? '<span class="badge-disabled">♿ معلول</span>' : ""}
-              </div>
-            </div>
-          `;
+            const relationIcon = relationIcons[dep.relation_type] || "👤";
+            const relationLabel = relationLabels[dep.relation_type] || dep.relation_type;
+            const educationLabels = { student: "🎓 محصل", graduated: "🎓 فارغ‌التحصیل", dropout: "❌ ترک تحصیل" };
+            const militaryLabels = { serving: "🎖️ در حال خدمت", exempt: "✅ معاف", completed: "✅ پایان خدمت", not_applicable: "—" };
+            const maritalLabels = { single: "مجرد", married: "متأهل", divorced: "مطلقه", widowed: "بیوه" };
+
+            // وضعیت تایید
+            const approvalStatus = dep.approval_status || 'approved';
+            const isPending = approvalStatus === 'pending';
+            const isRejected = approvalStatus === 'rejected';
+            const isApproved = approvalStatus === 'approved';
+
+            let statusBadge = '';
+            if (isPending) {
+                statusBadge = `<span style="background:#ffc107; color:#333; padding:3px 10px; border-radius:12px; font-size:11px;">⏳ در انتظار تایید</span>`;
+            } else if (isRejected) {
+                statusBadge = `<span style="background:#dc3545; color:white; padding:3px 10px; border-radius:12px; font-size:11px;">❌ رد شده</span>`;
+            } else {
+                statusBadge = `<span style="background:#28a745; color:white; padding:3px 10px; border-radius:12px; font-size:11px;">✅ تایید شده</span>`;
+            }
+
+            // دکمه‌های تایید/رد (فقط مدیر)
+            let approveButtons = '';
+            if (canEditAll && isPending) {
+                approveButtons = `
+                    <button class="dep-btn" style="background:#28a745; color:white; padding:4px 10px; border-radius:4px; border:none; cursor:pointer; font-size:11px; margin-left:3px;" onclick="approveDependent(${dep.id}, 'approve')">✅ تایید</button>
+                    <button class="dep-btn" style="background:#dc3545; color:white; padding:4px 10px; border-radius:4px; border:none; cursor:pointer; font-size:11px;" onclick="approveDependent(${dep.id}, 'reject')">❌ رد</button>
+                `;
+            }
+
+            // کاربر عادی فقط pending/rejected رو می‌تونه ویرایش/حذف کنه
+            const canEditDep = canEditAll || (isOwnProfile && !isApproved);
+
+            dependentsHtml += `
+                <div class="dependent-item">
+                    <div class="dependent-header">
+                        <div class="dependent-title">
+                            <span class="dependent-icon">${relationIcon}</span>
+                            <span class="dependent-name">${dep.full_name}</span>
+                            <span class="dependent-badge">${relationLabel}</span>
+                            ${statusBadge}
+                        </div>
+                        <div class="dependent-actions">
+                            ${approveButtons}
+                            ${canEditDep ? `<button class="dep-btn dep-edit-btn" onclick="openDependentModal(${dep.id})" title="ویرایش">✏️</button>` : ''}
+                            ${canEditDep ? `<button class="dep-btn dep-delete-btn" onclick="deleteDependent(${dep.id})" title="حذف">🗑️</button>` : ''}
+                        </div>
+                    </div>
+                    <div class="dependent-info">
+                        ${dep.national_id ? `<div class="info-row"><span class="info-label">کد ملی:</span><span class="info-value" dir="ltr">${dep.national_id}</span></div>` : ""}
+                        ${dep.birth_date_shamsi ? `<div class="info-row"><span class="info-label">تاریخ تولد:</span><span class="info-value">${toPersianNumbers(dep.birth_date_shamsi)}</span></div>` : ""}
+                        ${dep.mobile ? `<div class="info-row"><span class="info-label">موبایل:</span><span class="info-value" dir="ltr">${dep.mobile}</span></div>` : ""}
+                        ${dep.education_status ? `<div class="info-row"><span class="info-label">وضعیت تحصیل:</span><span class="info-value">${educationLabels[dep.education_status] || dep.education_status}</span></div>` : ""}
+                        ${dep.military_status && dep.military_status !== "not_applicable" ? `<div class="info-row"><span class="info-label">وضعیت سربازی:</span><span class="info-value">${militaryLabels[dep.military_status] || dep.military_status}</span></div>` : ""}
+                        ${dep.marital_status ? `<div class="info-row"><span class="info-label">وضعیت تأهل:</span><span class="info-value">${maritalLabels[dep.marital_status] || dep.marital_status}</span></div>` : ""}
+                        ${dep.marriage_date_shamsi ? `<div class="info-row"><span class="info-label">تاریخ ازدواج:</span><span class="info-value">${toPersianNumbers(dep.marriage_date_shamsi)}</span></div>` : ""}
+                        ${isRejected && dep.rejection_reason ? `<div class="info-row" style="color:#dc3545;"><span class="info-label">دلیل رد:</span><span class="info-value">${dep.rejection_reason}</span></div>` : ""}
+                    </div>
+                    <div class="dependent-badges">
+                        ${dep.is_eligible_for_allowance ? '<span class="badge-allowance">💰 مشمول حق عائله مندی</span>' : ""}
+                        ${dep.is_eligible_for_insurance ? '<span class="badge-insurance">🏥 مشمول بیمه تکمیل درمان</span>' : ""}
+                        ${dep.is_disabled ? '<span class="badge-disabled">♿ معلول</span>' : ""}
+                    </div>
+                </div>
+            `;
         });
-      }
-      let summaryHtml = "";
-      if (dependents.length > 0) {
+    }
+
+    let summaryHtml = "";
+    if (dependents.length > 0) {
         const summaryItems = Object.entries(counts).map(([type, count]) => `<span class="summary-item">${relationIcons[type] || "👤"} ${relationLabels[type] || type}: <b>${toPersianNumbers(count)}</b></span>`).join("");
         summaryHtml = `<div class="dependents-summary"><span>جمع کل: <b>${toPersianNumbers(dependents.length)}</b></span>${summaryItems}</div>`;
-      }
+    }
 
-      return `
+    return `
         <div class="section-divider">👨‍👩‍👧 افراد تحت تکفل</div>
-        <div class="info-banner">💡 <b>راهنما:</b> افراد تحت تکفل شامل همسر، فرزندان، پدر و مادر می‌شوند.<br>• <b>فرزند پسر بالای ۱۸ سال</b> → نیاز به گواهی اشتغال به تحصیل یا خدمت سربازی<br>• <b>فرزند دختر بالای ۱۸ سال</b> → تا پایان قرارداد مشمول بیمه تکمیل درمان<br>• <b>پدر/مادر بالای ۶۰ سال</b> → با محاسبات متفاوت بیمه</div>
+        <div class="info-banner">💡 <b>راهنما:</b> افراد تحت تکفل شامل همسر، فرزندان، پدر و مادر می‌شوند.<br>${!canEditAll && isOwnProfile ? '⚠️ <b>توجه:</b> تغییرات شما نیاز به تایید مدیر دارد.' : ''}</div>
         ${summaryHtml}
         <div class="dependents-container" id="dependents-container">${dependentsHtml}</div>
         <button class="add-task-btn" onclick="openDependentModal()">➕ افزودن فرد تحت تکفل</button>
-      `;
-    }
-
+    `;
+}
     function closePrintModal() {
       document.getElementById('print-decree-modal').classList.remove('open');
     }
@@ -1146,62 +1528,81 @@
     }
 
     function renderDecreesTab() {
-      const typeLabels = { official: "رسمی", official_worker: "رسمی کارگری", contractual: "پیمانی", corporate: "شرکتی", specific_task: "کارمعین", worker_jobs: "مشاغل کارگری", temporary: "موقت", tasri: "تسری" };
-      const typeIcons = { official: "🎖️", official_worker: "👷", contractual: "📝", corporate: "🏢", specific_task: "📋", worker_jobs: "🔧", temporary: "⏱️", tasri: "📜" };
-      const statusLabels = { draft: { label: "پیش‌نویس", color: "#6c757d" }, issued: { label: "صادر شده", color: "#17a2b8" }, signed: { label: "امضا شده", color: "#28a745" }, active: { label: "فعال", color: "#28a745" }, expired: { label: "منقضی", color: "#fd7e14" }, cancelled: { label: "لغو شده", color: "#dc3545" } };
+    const canEditAll = window._canEditAll || false;
+    const isOwnProfile = person.id === window._myPersonId;
 
-      let decreesHtml = "";
-      if (decrees.length === 0) {
+    const typeLabels = { official: "رسمی", official_worker: "رسمی کارگری", contractual: "پیمانی", corporate: "شرکتی", specific_task: "کارمعین", worker_jobs: "مشاغل کارگری", temporary: "موقت", tasri: "تسری" };
+    const typeIcons = { official: "🎖️", official_worker: "👷", contractual: "📝", corporate: "🏢", specific_task: "📋", worker_jobs: "🔧", temporary: "⏱️", tasri: "📜" };
+    const statusLabels = { draft: { label: "پیش‌نویس", color: "#6c757d" }, issued: { label: "صادر شده", color: "#17a2b8" }, signed: { label: "امضا شده", color: "#28a745" }, active: { label: "فعال", color: "#28a745" }, expired: { label: "منقضی", color: "#fd7e14" }, cancelled: { label: "لغو شده", color: "#dc3545" } };
+
+    let decreesHtml = "";
+    if (decrees.length === 0) {
         decreesHtml = `<div style="text-align:center; padding:40px; color:#999;"><div style="font-size:40px; margin-bottom:10px;">📋</div><div>هنوز حکمی ثبت نشده</div></div>`;
-      } else {
+    } else {
         decrees.forEach((decree) => {
-          const icon = typeIcons[decree.decree_type] || "📋";
-          const typeLabel = typeLabels[decree.decree_type] || decree.decree_type;
-          const status = statusLabels[decree.status] || statusLabels.draft;
-          let totalAmount = decree.total_amount || 0;
-          let itemsCount = 0;
-          try { const items = decree.items ? JSON.parse(decree.items) : []; itemsCount = items.length; } catch (e) {}
+            const icon = typeIcons[decree.decree_type] || "📋";
+            const typeLabel = typeLabels[decree.decree_type] || decree.decree_type;
+            const status = statusLabels[decree.status] || statusLabels.draft;
+            let totalAmount = decree.total_amount || 0;
+            let itemsCount = 0;
+            try { const items = decree.items ? JSON.parse(decree.items) : []; itemsCount = items.length; } catch (e) {}
 
-          decreesHtml += `
-            <div class="decree-item">
-              <div class="decree-header">
-                <div class="decree-title"><span class="decree-icon">${icon}</span><span class="decree-type">${typeLabel}</span>${decree.decree_number ? `<span class="decree-number">شماره: ${decree.decree_number}</span>` : ""}<span class="decree-status" style="background:${status.color};">${status.label}</span></div>
-                <div class="decree-actions">
-                  <button class="dep-btn" onclick="printDecree(${decree.id})" title="پیش‌نمایش و چاپ" style="background:#17a2b8; color:white;">🖨️</button>
-                  <button class="dep-btn dep-edit-btn" onclick="openDecreeModal(${decree.id})" title="ویرایش">✏️</button>
-                  <button class="dep-btn dep-delete-btn" onclick="deleteDecree(${decree.id})" title="حذف">🗑️</button>
+            // دکمه‌های عملیات (چاپ همیشه، ویرایش/حذف فقط مدیر)
+            let actionButtons = `
+                <button class="dep-btn" onclick="printDecree(${decree.id})" title="پیش‌نمایش و چاپ" style="background:#17a2b8; color:white;">🖨️</button>
+            `;
+            if (canEditAll) {
+                actionButtons += `
+                    <button class="dep-btn dep-edit-btn" onclick="openDecreeModal(${decree.id})" title="ویرایش">✏️</button>
+                    <button class="dep-btn dep-delete-btn" onclick="deleteDecree(${decree.id})" title="حذف">🗑️</button>
+                `;
+            }
+
+            // دکمه‌های امضا (فقط مدیر)
+            let signButtons = '';
+            if (canEditAll) {
+                signButtons = `
+                    <div style="display: flex; gap: 8px; align-items: center; border-right: 1px solid #ddd; padding-right: 10px; margin-right: 10px;">
+                        <div title="امضای کارمند">${decree.signed_by_employee ? `<span style="color: #28a745; font-size: 18px;">✅</span>` : `<button class="dep-btn" onclick="sendDecreeForSignature(${decree.id})" style="background:#fff3cd; color:#856404; width:auto; padding:0 8px; font-size:11px;">📱 کارمند</button>`}</div>
+                        <div title="امضای مدیر">${decree.signed_by_manager ? `<span style="color: #28a745; font-size: 18px;">✅</span>` : `<button class="dep-btn" onclick="managerSignDecree(${decree.id})" style="background:#cce5ff; color:#004085; width:auto; padding:0 8px; font-size:11px;">✍️ مدیر</button>`}</div>
+                        <div title="امضای شهردار">${decree.signed_by_mayor ? `<span style="color: #28a745; font-size: 18px;">✅</span>` : `<button class="dep-btn" onclick="mayorSignDecree(${decree.id})" style="background:#f8d7da; color:#721c24; width:auto; padding:0 8px; font-size:11px;">🏛️ شهردار</button>`}</div>
+                    </div>
+                `;
+            }
+
+            decreesHtml += `
+                <div class="decree-item">
+                    <div class="decree-header">
+                        <div class="decree-title"><span class="decree-icon">${icon}</span><span class="decree-type">${typeLabel}</span>${decree.decree_number ? `<span class="decree-number">شماره: ${decree.decree_number}</span>` : ""}<span class="decree-status" style="background:${status.color};">${status.label}</span></div>
+                        <div class="decree-actions">
+                            ${actionButtons}
+                        </div>
+                    </div>
+                    <div class="decree-info">
+                        ${decree.decree_date_shamsi ? `<div class="info-row"><span class="info-label">تاریخ صدور:</span><span class="info-value">${toPersianNumbers(decree.decree_date_shamsi)}</span></div>` : ""}
+                        ${decree.execution_date_shamsi ? `<div class="info-row"><span class="info-label">تاریخ اجرا:</span><span class="info-value">${toPersianNumbers(decree.execution_date_shamsi)}</span></div>` : ""}
+                        ${decree.contract_start_shamsi ? `<div class="info-row"><span class="info-label">شروع قرارداد:</span><span class="info-value">${toPersianNumbers(decree.contract_start_shamsi)}</span></div>` : ""}
+                        ${decree.contract_end_shamsi ? `<div class="info-row"><span class="info-label">پایان قرارداد:</span><span class="info-value">${toPersianNumbers(decree.contract_end_shamsi)}</span></div>` : ""}
+                        ${decree.organization_unit ? `<div class="info-row"><span class="info-label">واحد سازمانی:</span><span class="info-value">${decree.organization_unit}</span></div>` : ""}
+                        ${decree.position_title ? `<div class="info-row"><span class="info-label">پست سازمانی:</span><span class="info-value">${decree.position_title}</span></div>` : ""}
+                    </div>
+                    <div class="decree-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="decree-total"><span>جمع کل:</span><strong>${formatAmount(totalAmount)} ریال</strong></div>
+                        <div class="decree-items-count">${itemsCount > 0 ? `${toPersianNumbers(itemsCount)} آیتم حقوق` : "بدون آیتم"}</div>
+                        ${signButtons}
+                    </div>
                 </div>
-              </div>
-              <div class="decree-info">
-                ${decree.decree_date_shamsi ? `<div class="info-row"><span class="info-label">تاریخ صدور:</span><span class="info-value">${toPersianNumbers(decree.decree_date_shamsi)}</span></div>` : ""}
-                ${decree.execution_date_shamsi ? `<div class="info-row"><span class="info-label">تاریخ اجرا:</span><span class="info-value">${toPersianNumbers(decree.execution_date_shamsi)}</span></div>` : ""}
-                ${decree.contract_start_shamsi ? `<div class="info-row"><span class="info-label">شروع قرارداد:</span><span class="info-value">${toPersianNumbers(decree.contract_start_shamsi)}</span></div>` : ""}
-                ${decree.contract_end_shamsi ? `<div class="info-row"><span class="info-label">پایان قرارداد:</span><span class="info-value">${toPersianNumbers(decree.contract_end_shamsi)}</span></div>` : ""}
-                ${decree.organization_unit ? `<div class="info-row"><span class="info-label">واحد سازمانی:</span><span class="info-value">${decree.organization_unit}</span></div>` : ""}
-                ${decree.position_title ? `<div class="info-row"><span class="info-label">پست سازمانی:</span><span class="info-value">${decree.position_title}</span></div>` : ""}
-              </div>
-              <div class="decree-footer" style="display: flex; justify-content: space-between; align-items: center;">
-                <div class="decree-total"><span>جمع کل:</span><strong>${formatAmount(totalAmount)} ریال</strong></div>
-                <div class="decree-items-count">${itemsCount > 0 ? `${toPersianNumbers(itemsCount)} آیتم حقوق` : "بدون آیتم"}</div>
-                <div style="display: flex; gap: 8px; align-items: center; border-right: 1px solid #ddd; padding-right: 10px; margin-right: 10px;">
-                    <div title="امضای کارمند">${decree.signed_by_employee ? `<span style="color: #28a745; font-size: 18px;">✅</span>` : `<button class="dep-btn" onclick="sendDecreeForSignature(${decree.id})" style="background:#fff3cd; color:#856404; width:auto; padding:0 8px; font-size:11px;">📱 کارمند</button>`}</div>
-                    <div title="امضای مدیر">${decree.signed_by_manager ? `<span style="color: #28a745; font-size: 18px;">✅</span>` : `<button class="dep-btn" onclick="managerSignDecree(${decree.id})" style="background:#cce5ff; color:#004085; width:auto; padding:0 8px; font-size:11px;">✍️ مدیر</button>`}</div>
-                    <div title="امضای شهردار">${decree.signed_by_mayor ? `<span style="color: #28a745; font-size: 18px;">✅</span>` : `<button class="dep-btn" onclick="mayorSignDecree(${decree.id})" style="background:#f8d7da; color:#721c24; width:auto; padding:0 8px; font-size:11px;">🏛️ شهردار</button>`}</div>
-                </div>
-              </div>
-            </div>
-          `;
+            `;
         });
-      }
+    }
 
-      return `
+    return `
         <div class="section-divider">📋 احکام کارگزینی</div>
         <div class="info-banner">💡 <b>راهنما:</b> احکام کارگزینی برای هر کارمند قابل ثبت است.<br>• <b>۸ نوع حکم:</b> رسمی، رسمی کارگری، پیمانی، شرکتی، کارمعین، مشاغل کارگری، موقت، تسری<br>• <b>امضای دیجیتال:</b> با ارسال SMS (mock) به موبایل کارمند، و تایید مدیر و شهردار</div>
         <div class="decrees-container" id="decrees-container">${decreesHtml}</div>
-        <button class="add-task-btn" onclick="openDecreeModal()">➕ افزودن حکم جدید</button>
-      `;
-    }
-
+        ${canEditAll ? `<button class="add-task-btn" onclick="openDecreeModal()">➕ افزودن حکم جدید</button>` : ''}
+    `;
+}
     let currentDecreeItems = [];
     let currentDecreeType = "official";
     let defaultDecreeType = "official";
@@ -1663,6 +2064,47 @@
       } catch (error) { showToast(error.message, "error"); }
     }
 
+// ============================================
+// تایید یا رد فرد تحت تکفل (مدیر)
+// ============================================
+async function approveDependent(depId, action) {
+    let reason = null;
+    if (action === 'reject') {
+        reason = prompt('دلیل رد:');
+        if (reason === null) return;
+    }
+
+    try {
+        const res = await fetch(`/api/dependents/${depId}/approve`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ action, reason })
+        });
+
+        if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || 'خطا');
+        }
+
+        showToast(action === 'approve' ? '✅ تایید شد' : '❌ رد شد');
+
+        // رفرش
+        const depsRes = await fetch(`/api/employees/${personId}/dependents`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        dependents = await depsRes.json();
+        
+        const panel = document.getElementById("panel-dependents");
+        if (panel) panel.innerHTML = renderDependentsTab();
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+
+
     function renderOperationalOptions(selectedId) {
       const typeLabels = { mission: "🎯", program: "📋", service: "⚙️", plan: "📐", activity: "🔧", project: "🏗️" };
       let html = '<option value="">— انتخاب کنید —</option>';
@@ -1743,42 +2185,132 @@
     }
 
     async function saveEmployment() {
-      const btn = document.getElementById("btn-save-employment");
-      btn.disabled = true; btn.textContent = "⏳ در حال ذخیره...";
-      try {
-        const data = {
-          contract_type: document.getElementById("input-contract-type").value || null,
-          contract_start_shamsi: cleanDate(document.getElementById("input-contract-start").value),
-          contract_end_shamsi: cleanDate(document.getElementById("input-contract-end").value),
-          hire_date_shamsi: cleanDate(document.getElementById("input-hire-date").value),
-          decree_type: document.getElementById("input-decree-type").value || null,
-          employment_type: document.getElementById("input-employment-type").value.trim() || null,
-          position: document.getElementById("input-position").value.trim() || null,
-          department: document.getElementById("input-department").value || null,
-          unit_start_shamsi: cleanDate(document.getElementById("input-unit-start-date").value),
-          personnel_code: document.getElementById("input-personnel-code").value.trim() || null,
-          specialties: document.getElementById("input-specialties").value.trim() || null,
-          years_of_service: parseInt(document.getElementById("input-years-service").value) || 0,
-          insurance_history_months: parseInt(document.getElementById("input-insurance-months").value) || 0,
-          insurance_number: document.getElementById("input-insurance-number").value.trim() || null,
-          education_level: document.getElementById("input-education-level").value || null,
-          education_field: document.getElementById("input-education-field").value.trim() || null,
-          education_university: document.getElementById("input-education-university").value.trim() || null,
-          education_year_shamsi: document.getElementById("input-education-year").value.trim() || null,
-          experience_years: parseInt(document.getElementById("input-experience-years").value) || 0,
-          experience_description: document.getElementById("input-experience-description").value.trim() || null,
-          birthday_shamsi: cleanDate(document.getElementById("input-birthday").value),
-          other_occasion_shamsi: cleanDate(document.getElementById("input-other-occasion-date").value),
-          other_occasion_title: document.getElementById("input-other-occasion-title").value.trim() || null,
-          notes: document.getElementById("input-notes").value.trim() || null,
-        };
-        const res = await fetch(`/api/employees/${personId}`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(data) });
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.error || "خطا");
-        showToast("اطلاعات استخدامی با موفقیت ذخیره شد");
-      } catch (error) { showToast(error.message, "error"); } finally { btn.disabled = false; btn.textContent = "💾 ذخیره اطلاعات استخدامی"; }
+    const isOwnProfile = person.id === window._myPersonId;
+    const canEditAll = window._canEditAll || false;
+
+    const btn = document.getElementById("btn-save-employment");
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = "⏳ در حال ذخیره...";
     }
 
+    try {
+        let data;
+
+        if (!canEditAll && isOwnProfile) {
+            // ============================================
+            // کاربر عادی + پرونده خودش → فقط شرح تجربه
+            // ============================================
+            const experienceDescription = document.getElementById("input-experience-description").value.trim() || null;
+
+            data = {
+                // فقط شرح تجربه (تغییر می‌کنه)
+                experience_description: experienceDescription,
+
+                // بقیه فیلدها: از employee فعلی (تغییر نمی‌کنن)
+                contract_type: employee?.contract_type || null,
+                contract_start_shamsi: employee?.contract_start_shamsi || null,
+                contract_end_shamsi: employee?.contract_end_shamsi || null,
+                hire_date_shamsi: employee?.hire_date_shamsi || null,
+                decree_type: employee?.decree_type || null,
+                employment_type: employee?.employment_type || null,
+                position: employee?.position || null,
+                department: employee?.department || null,
+                unit_start_shamsi: employee?.unit_start_shamsi || null,
+                personnel_code: employee?.personnel_code || null,
+                years_of_service: employee?.years_of_service || 0,
+                insurance_history_months: employee?.insurance_history_months || 0,
+                insurance_number: employee?.insurance_number || null,
+                education_level: employee?.education_level || null,
+                education_field: employee?.education_field || null,
+                education_university: employee?.education_university || null,
+                education_year_shamsi: employee?.education_year_shamsi || null,
+                specialties: employee?.specialties || null,
+                experience_years: employee?.experience_years || 0,
+                birthday_shamsi: employee?.birthday_shamsi || null,
+                other_occasion_shamsi: employee?.other_occasion_shamsi || null,
+                other_occasion_title: employee?.other_occasion_title || null,
+                notes: employee?.notes || null,
+            };
+        } else if (canEditAll) {
+            // ============================================
+            // مدیر → همه فیلدها از فرم
+            // ============================================
+            data = {
+                contract_type: document.getElementById("input-contract-type").value || null,
+                contract_start_shamsi: cleanDate(document.getElementById("input-contract-start").value),
+                contract_end_shamsi: cleanDate(document.getElementById("input-contract-end").value),
+                hire_date_shamsi: cleanDate(document.getElementById("input-hire-date").value),
+                decree_type: document.getElementById("input-decree-type").value || null,
+                employment_type: document.getElementById("input-employment-type").value.trim() || null,
+                position: document.getElementById("input-position").value.trim() || null,
+                department: document.getElementById("input-department").value || null,
+                unit_start_shamsi: cleanDate(document.getElementById("input-unit-start-date").value),
+                personnel_code: document.getElementById("input-personnel-code").value.trim() || null,
+                specialties: document.getElementById("input-specialties").value.trim() || null,
+                years_of_service: parseInt(document.getElementById("input-years-service").value) || 0,
+                insurance_history_months: parseInt(document.getElementById("input-insurance-months").value) || 0,
+                insurance_number: document.getElementById("input-insurance-number").value.trim() || null,
+                education_level: document.getElementById("input-education-level").value || null,
+                education_field: document.getElementById("input-education-field").value.trim() || null,
+                education_university: document.getElementById("input-education-university").value.trim() || null,
+                education_year_shamsi: document.getElementById("input-education-year").value.trim() || null,
+                experience_years: parseInt(document.getElementById("input-experience-years").value) || 0,
+                experience_description: document.getElementById("input-experience-description").value.trim() || null,
+                birthday_shamsi: cleanDate(document.getElementById("input-birthday").value),
+                other_occasion_shamsi: cleanDate(document.getElementById("input-other-occasion-date").value),
+                other_occasion_title: document.getElementById("input-other-occasion-title").value.trim() || null,
+                notes: document.getElementById("input-notes").value.trim() || null,
+            };
+        } else {
+            // ============================================
+            // کاربر عادی + پرونده دیگران → نباید بتونه ذخیره کنه
+            // ============================================
+            showToast('شما دسترسی ویرایش این پرونده را ندارید', 'error');
+            return;
+        }
+
+        // ============================================
+        // ارسال به API
+        // ============================================
+        const res = await fetch(`/api/employees/${personId}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || "خطا");
+
+        showToast("اطلاعات با موفقیت ذخیره شد");
+
+        // ============================================
+        // رفرش
+        // ============================================
+        const res2 = await fetch(`/api/employees/${personId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const data2 = await res2.json();
+        employee = data2.employee;
+
+        // رفرش تب
+        const panel = document.getElementById("panel-employment");
+        if (panel) {
+            panel.innerHTML = renderEmploymentTab();
+            setTimeout(initDatePickers, 100);
+        }
+    } catch (error) {
+        showToast(error.message, "error");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = "💾 ذخیره اطلاعات استخدامی";
+        }
+    }
+}
     function initDatePickers() {
       if (datePickersInitialized) return;
       const dateFields = ["input-hire-date", "input-contract-start", "input-contract-end", "input-birthday", "input-other-occasion-date", "input-unit-start-date"];
