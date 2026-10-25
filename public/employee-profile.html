@@ -969,6 +969,8 @@ async function saveBasicInfo() {
 }
     let taskLevels = [];
     function renderTasksTab() {
+
+          const canEdit = ['admin', 'manager'].includes(currentUser.role);
       const totalPercentage = employeeTasks.reduce((sum, t) => sum + (t.percentage || 0), 0);
       let totalColor = "#28a745";
       if (totalPercentage > 100) totalColor = "#dc3545";
@@ -978,20 +980,27 @@ async function saveBasicInfo() {
         tasksHtml = `<div style="text-align:center; padding:30px; color:#999;">هنوز وظیفه‌ای ثبت نشده</div>`;
       } else {
         employeeTasks.forEach((task, index) => {
-          tasksHtml += `
-            <div class="task-item" data-index="${index}">
-              <div class="task-row" style="align-items: flex-start;">
-                <div class="form-group" style="flex:1;"><label>وظیفه</label><div class="task-breadcrumb">${task.breadcrumb || task.task_title || "—"}</div></div>
-                <div class="form-group" style="flex:0.5;"><label>درصد</label><input type="number" class="task-percentage" min="0" max="100" value="${task.percentage || 0}" onchange="onPercentageChange(${index}, this.value)" /></div>
-                <button class="task-remove-btn" onclick="removeTask(${index})" title="حذف" style="margin-top:24px;">🗑️</button>
-              </div>
-              <div class="form-group" style="margin-top:10px;"><input type="text" class="task-notes" placeholder="یادداشت (اختیاری)" value="${task.notes || ""}" onchange="onNotesChange(${index}, this.value)" /></div>
-            </div>
-          `;
+tasksHtml += `
+    <div class="task-item" data-index="${index}">
+      <div class="task-row" style="align-items: flex-start;">
+        <div class="form-group" style="flex:1;"><label>وظیفه</label><div class="task-breadcrumb">${task.breadcrumb || task.task_title || "—"}</div></div>
+        <div class="form-group" style="flex:0.5;">
+            <label>درصد</label>
+            <input type="number" class="task-percentage" min="0" max="100" value="${task.percentage || 0}" 
+                ${canEdit ? `onchange="onPercentageChange(${index}, this.value)"` : 'disabled'} />
+        </div>
+        ${canEdit ? `<button class="task-remove-btn" onclick="removeTask(${index})" title="حذف" style="margin-top:24px;">🗑️</button>` : ''}
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+          <input type="text" class="task-notes" placeholder="یادداشت (اختیاری)" value="${task.notes || ""}" 
+              ${canEdit ? `onchange="onNotesChange(${index}, this.value)"` : 'disabled'} />
+      </div>
+    </div>
+  `;
         });
       }
       let cascadeHtml = "";
-      if (employeeTasks.length === 0 || true) {
+      if (canEdit) {
         cascadeHtml = `
           <div class="task-cascade" style="border: 2px dashed #ddd; border-radius: 10px; padding: 15px; margin-top: 15px; background: #fafbff;">
             <div style="font-size: 13px; font-weight: bold; color: #667eea; margin-bottom: 10px;">➕ افزودن وظیفه جدید</div>
@@ -1013,7 +1022,7 @@ async function saveBasicInfo() {
         <div class="tasks-container" id="tasks-container">${tasksHtml}</div>
         ${cascadeHtml}
         <div class="total-bar" style="border-color: ${totalColor}; margin-top: 20px;"><span>جمع درصدها:</span><strong style="color: ${totalColor};">${totalPercentage}٪</strong>${totalPercentage === 100 ? '<span style="color:#28a745;margin-right:10px;">✅ کامل</span>' : totalPercentage > 100 ? '<span style="color:#dc3545;margin-right:10px;">❌ بیش از ۱۰۰٪</span>' : '<span style="color:#fd7e14;margin-right:10px;">⚠️ کمتر از ۱۰۰٪</span>'}</div>
-        <div class="actions-bar"><button class="btn btn-save" id="btn-save-tasks" onclick="saveTasks()">💾 ذخیره وظایف</button></div>
+        ${canEdit ? `<div class="actions-bar"><button class="btn btn-save" id="btn-save-tasks" onclick="saveTasks()">💾 ذخیره وظایف</button></div>` : ''}
       `;
     }
 
