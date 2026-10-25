@@ -521,6 +521,9 @@ body.dark tbody tr.dragging {
         <script src="/base-data-search.js"></script>
 
     <script>
+
+        let currentFilteredData = null;
+let currentIsFiltered = false;
         // ============================================
         // وضعیت
         // ============================================
@@ -588,7 +591,7 @@ async function loadData() {
     }
 }
        
-     function startSearchComponent() {
+function startSearchComponent() {
     initBaseDataSearch(
         {
             section: 'goods',
@@ -598,16 +601,32 @@ async function loadData() {
         {
             getFlatData: () => flatData,
             onUpdate: ({ filteredData, isFiltered }) => {
+                currentFilteredData = isFiltered ? filteredData : null;
+                currentIsFiltered = isFiltered;
                 renderTree(filteredData, isFiltered);
                 renderTable(filteredData, isFiltered);
-
                 document.getElementById('tree-view').style.display = currentView === 'tree' ? 'block' : 'none';
                 document.getElementById('table-view').style.display = currentView === 'table' ? 'block' : 'none';
             },
         }
     );
-}  
-        // ============================================
+}
+
+
+// ============================================
+// محاسبه سطح از روی طول کد (برای goods)
+// ============================================
+function getGoodsLevel(item) {
+    if (!item || !item.code) return 0;
+    const len = item.code.toString().length;
+    if (len <= 1) return 0;   // سطح ۱: "1"
+    if (len <= 3) return 1;   // سطح ۲: "101"
+    if (len <= 6) return 2;   // سطح ۳: "101001"
+    return 3;                  // سطح ۴: "101001001"
+}
+
+
+// ============================================
         // رندر درخت
         // ============================================
 function renderTree(items, isFiltered) {
@@ -646,6 +665,8 @@ function renderTree(items, isFiltered) {
         const hasChildren = node.children && node.children.length > 0;
         const isExpanded = expandedNodes.has(node.id);
 
+        const wrapper = document.createElement('div');  // ← wrapper اضافه شد
+
         const nodeEl = document.createElement('div');
         nodeEl.className = 'tree-node';
         nodeEl.dataset.id = node.id;
@@ -653,8 +674,9 @@ function renderTree(items, isFiltered) {
         if (selectedNode && selectedNode.id === node.id) nodeEl.classList.add('selected');
         if (!node.is_active) nodeEl.style.opacity = '0.5';
 
-        const icons = { 1: '📦', 2: '📁', 3: '🏷️', 4: '🔖' };
-        const icon = icons[node.level] || '📄';
+const level = getGoodsLevel(node);
+const icons = { 0: '📦', 1: '📁', 2: '🏷️', 3: '🔖' };
+const icon = icons[level] || '📄';
 
         let unitBadge = '';
         try {
@@ -679,29 +701,37 @@ function renderTree(items, isFiltered) {
 
         nodeEl.addEventListener('click', () => {
             selectedNode = node;
-            renderTree(items, isFiltered);
+            if (currentFilteredData !== null) {
+                renderTree(currentFilteredData, currentIsFiltered);
+            } else {
+                renderTree();
+            }
         });
 
         nodeEl.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             selectedNode = node;
-            renderTree(items, isFiltered);
             openContextMenu(e, node.id);
         });
 
-        container.appendChild(nodeEl);
+        wrapper.appendChild(nodeEl);
 
         if (hasChildren && isExpanded) {
             const childrenContainer = document.createElement('div');
             childrenContainer.className = 'tree-children';
-            node.children.forEach(child => renderNode(child, depth + 1));
-            container.appendChild(childrenContainer);
+            node.children.forEach(child => {
+                childrenContainer.appendChild(renderNode(child, depth + 1));  // ← appendChild به childrenContainer
+            });
+            wrapper.appendChild(childrenContainer);  // ← اضافه به wrapper
         }
+
+        return wrapper;  // ← برگردوندن wrapper
     };
 
-    tree.forEach(root => renderNode(root));
-}    
-        
+    tree.forEach(root => {
+        container.appendChild(renderNode(root));  // ← appendChild به container
+    });
+}      
         // ============================================
         // ساخت درخت از لیست تخت
         // ============================================
@@ -738,18 +768,36 @@ function renderTree(items, isFiltered) {
         // ============================================
         // باز/بسته کردن
         // ============================================
-        function toggleExpand(id) {
-            if (expandedNodes.has(id)) {
-                expandedNodes.delete(id);
-            } else {
-                expandedNodes.add(id);
-            }
-            renderTree();
-        }
+function toggleExpand(id) {
+    if (expandedNodes.has(id)) {
+        expandedNodes.delete(id);
+    } else {
+        expandedNodes.add(id);
+    }
+    // 👇 فیلتر فعلی رو حفظ کن
+    if (currentFilteredData !== null) {
+        renderTree(currentFilteredData, currentIsFiltered);
+    } else {
+        renderTree();
+    }
+}
+
 
         // ============================================
         // رندر جدول
         // ============================================
+
+
+function getGoodsLevel(item) {
+    if (!item || !item.code) return 0;
+    const len = String(item.code).length;
+    if (len <= 1) return 0;
+    if (len <= 3) return 1;
+    if (len <= 6) return 2;
+    return 3;
+}
+
+
 function renderTable(items, isFiltered) {
     const tbody = document.getElementById('table-body');
 
@@ -761,10 +809,41 @@ function renderTable(items, isFiltered) {
         return;
     }
 
-    const sorted = [...items].sort((a, b) => a.code.localeCompare(b.code));
-    const breadcrumbMap = window.bdsBuildBreadcrumbMap 
-        ? window.bdsBuildBreadcrumbMap(flatData) 
-        : {};
+// 👇 ساخت درخت و پیمایش DFS (هر فرزند زیر والدش)
+const map = {};
+const roots = [];
+const itemsCopy = [...items];
+
+itemsCopy.forEach(item => {
+    map[item.id] = { ...item, children: [] };
+});
+
+itemsCopy.forEach(item => {
+    if (item.parent_id && map[item.parent_id]) {
+        map[item.parent_id].children.push(map[item.id]);
+    } else {
+        roots.push(map[item.id]);
+    }
+});
+
+// مرتب کردن فرزندان هر والد بر اساس code
+const sortRecursive = (nodes) => {
+    nodes.sort((a, b) => String(a.code || '').localeCompare(String(b.code || ''), undefined, { numeric: true }));
+    nodes.forEach(n => sortRecursive(n.children));
+};
+sortRecursive(roots);
+
+// DFS traversal (والد، بعد فرزندانش، بعد فرزندان فرزند و...)
+const sorted = [];
+const dfs = (nodes) => {
+    nodes.forEach(node => {
+        sorted.push(node);
+        if (node.children && node.children.length > 0) {
+            dfs(node.children);
+        }
+    });
+};
+dfs(roots);
 
     tbody.innerHTML = '';
     sorted.forEach(item => {
@@ -783,19 +862,21 @@ function renderTable(items, isFiltered) {
         tr.style.cursor = 'pointer';
         tr.dataset.id = item.id;
         tr.draggable = true;
-
         if (!item.is_active) tr.style.opacity = '0.5';
 
-        const bc = breadcrumbMap[item.id] || item.code;
-        const showBreadcrumb = isFiltered && bc !== item.code;
+        const codeStr = String(item.code || '');
+        const len = codeStr.length;
+        const indentPx = len <= 1 ? 0 : len <= 3 ? 20 : len <= 6 ? 40 : 60;
 
         tr.innerHTML = `
             <td><span class="drag-handle" title="برای جابجایی بکشید">⋮⋮</span></td>
             <td class="code-cell">${item.code}</td>
-            <td>
-                <span>${item.title}</span>
-                ${showBreadcrumb ? `<span class="bds-breadcrumb-code">${bc}</span>` : ''}
-            </td>
+<td>
+    <div style="margin-right: ${indentPx}px; display: inline-flex; align-items: center; gap: 6px;">
+        <span>📄</span>
+        <span>${item.title}</span>
+    </div>
+</td>
             <td>${unit !== '—' ? `<span class="badge unit">${unit}</span>` : '—'}</td>
             <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${specs}</td>
             <td>${item.is_active ? '✅ فعال' : '❌ غیرفعال'}</td>
@@ -816,8 +897,10 @@ function renderTable(items, isFiltered) {
         tbody.appendChild(tr);
     });
 }
-        
-                // ============================================
+
+
+
+// ============================================
         // فعال‌سازی Drag & Drop
         // ============================================
         function enableDragAndDrop() {
