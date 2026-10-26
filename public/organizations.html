@@ -4,85 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ساختار سازمانی</title>
+
     <link rel="stylesheet" href="/sidebar.css" />
     <script src="/sidebar.js"></script>
+    
+    <!-- کتابخانه‌های چارت سازمانی -->
+    <script src="/d3.min.js"></script>
+    <script src="/d3-org-chart@3.js"></script>
+    <script src="/d3-flextree.js"></script>
+
     <link rel="stylesheet" href="/base-data-search.css">
-    <link
-      href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css"
-      rel="stylesheet"
-      type="text/css"
-    />
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    
     <style>
-
-/* ============ Drag & Drop ============ */
-.tree-node[draggable="true"] {
-    cursor: grab;
-}
-
-.tree-node.dragging {
-    opacity: 0.4;
-    cursor: grabbing;
-}
-
-.tree-node.drag-over {
-    background: #eef1ff !important;
-    border-right: 4px solid #667eea;
-    outline: 2px dashed #667eea;
-}
-
-.tree-node .drag-handle {
-    cursor: grab;
-    color: #999;
-    font-size: 14px;
-    margin-left: 4px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    user-select: none;
-    letter-spacing: -2px;
-    flex-shrink: 0;
-}
-
-.tree-node .drag-handle:hover {
-    background: #e9ecef;
-    color: #333;
-}
-
-body.dark .tree-node.drag-over {
-    background: #4a5568 !important;
-    outline-color: #90cdf4;
-}
-
-body.dark .tree-node .drag-handle:hover {
-    background: #4a5568;
-    color: #e2e8f0;
-}
-
-/* جدول */
-tbody tr[draggable="true"] {
-    cursor: grab;
-}
-
-tbody tr.dragging {
-    opacity: 0.4;
-}
-
-tbody tr.drag-over {
-    background: #eef1ff !important;
-    outline: 2px dashed #667eea;
-}
-
-body.dark tbody tr.drag-over {
-    background: #4a5568 !important;
-    outline-color: #90cdf4;
-}
-
-body.dark tbody tr.dragging {
-    opacity: 0.4;
-}
-
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
 
       body {
         font-family: "Vazirmatn", Tahoma, sans-serif;
@@ -91,10 +26,7 @@ body.dark tbody tr.dragging {
         padding: 20px;
       }
 
-      .container {
-        max-width: 1400px;
-        margin: 0 auto;
-      }
+      .container { max-width: 1400px; margin: 0 auto; }
 
       .header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -109,10 +41,7 @@ body.dark tbody tr.dragging {
         gap: 15px;
       }
 
-      .header h1 {
-        margin: 0;
-        font-size: 20px;
-      }
+      .header h1 { margin: 0; font-size: 20px; }
 
       .toolbar {
         background: white;
@@ -166,12 +95,9 @@ body.dark tbody tr.dragging {
         transition: background 0.2s;
       }
 
-      .add-root-btn:hover {
-        background: #218838;
-      }
+      .add-root-btn:hover { background: #218838; }
 
-      .tree-container,
-      .table-container {
+      .tree-container, .table-container {
         background: white;
         border-radius: 10px;
         padding: 20px;
@@ -179,7 +105,22 @@ body.dark tbody tr.dragging {
         min-height: 400px;
       }
 
+      /* ============ Chart View (فلوچارت سازمانی) ============ */
+      #chart-view {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        min-height: 600px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      }
 
+      #org-chart-tree {
+        width: 100%;
+        height: 650px;
+        direction: rtl;
+        background: #f8f9fa;
+        border-radius: 10px;
+      }
 
       /* ============ Context Menu ============ */
       .context-menu {
@@ -194,19 +135,11 @@ body.dark tbody tr.dragging {
         animation: fadeIn 0.15s;
       }
 
-      .context-menu.open {
-        display: block;
-      }
+      .context-menu.open { display: block; }
 
       @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(-5px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(-5px); }
+        to { opacity: 1; transform: translateY(0); }
       }
 
       .context-menu button {
@@ -226,23 +159,10 @@ body.dark tbody tr.dragging {
         gap: 10px;
       }
 
-      .context-menu button:hover {
-        background: #f0f2f5;
-      }
-
-      .context-menu button.danger {
-        color: #e74c3c;
-      }
-
-      .context-menu button.danger:hover {
-        background: #fee;
-      }
-
-      .context-menu .divider {
-        height: 1px;
-        background: #e9ecef;
-        margin: 5px 0;
-      }
+      .context-menu button:hover { background: #f0f2f5; }
+      .context-menu button.danger { color: #e74c3c; }
+      .context-menu button.danger:hover { background: #fee; }
+      .context-menu .divider { height: 1px; background: #e9ecef; margin: 5px 0; }
 
       /* ============ Modal ============ */
       .modal-overlay {
@@ -256,9 +176,7 @@ body.dark tbody tr.dragging {
         padding: 20px;
       }
 
-      .modal-overlay.open {
-        display: flex;
-      }
+      .modal-overlay.open { display: flex; }
 
       .modal {
         background: white;
@@ -271,14 +189,8 @@ body.dark tbody tr.dragging {
       }
 
       @keyframes slideUp {
-        from {
-          transform: translateY(20px);
-          opacity: 0;
-        }
-        to {
-          transform: translateY(0);
-          opacity: 1;
-        }
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
       }
 
       .modal h3 {
@@ -290,9 +202,7 @@ body.dark tbody tr.dragging {
         gap: 8px;
       }
 
-      .modal .form-group {
-        margin-bottom: 15px;
-      }
+      .modal .form-group { margin-bottom: 15px; }
 
       .modal label {
         display: block;
@@ -302,8 +212,7 @@ body.dark tbody tr.dragging {
         font-size: 13px;
       }
 
-      .modal input,
-      .modal textarea {
+      .modal input, .modal textarea {
         width: 100%;
         padding: 10px;
         border: 1px solid #ddd;
@@ -313,16 +222,12 @@ body.dark tbody tr.dragging {
         transition: border-color 0.2s;
       }
 
-      .modal input:focus,
-      .modal textarea:focus {
+      .modal input:focus, .modal textarea:focus {
         outline: none;
         border-color: #667eea;
       }
 
-      .modal textarea {
-        resize: vertical;
-        min-height: 70px;
-      }
+      .modal textarea { resize: vertical; min-height: 70px; }
 
       .modal .info-row {
         padding: 10px 12px;
@@ -336,9 +241,7 @@ body.dark tbody tr.dragging {
         flex-wrap: wrap;
       }
 
-      .modal .info-row span b {
-        color: #333;
-      }
+      .modal .info-row span b { color: #333; }
 
       .modal-actions {
         display: flex;
@@ -357,28 +260,11 @@ body.dark tbody tr.dragging {
         transition: all 0.2s;
       }
 
-      .btn-cancel {
-        background: #e9ecef;
-        color: #333;
-      }
-
-      .btn-cancel:hover {
-        background: #dee2e6;
-      }
-
-      .btn-save {
-        background: #667eea;
-        color: white;
-      }
-
-      .btn-save:hover {
-        background: #5a67d8;
-      }
-
-      .btn-save:disabled {
-        background: #ccc;
-        cursor: not-allowed;
-      }
+      .btn-cancel { background: #e9ecef; color: #333; }
+      .btn-cancel:hover { background: #dee2e6; }
+      .btn-save { background: #667eea; color: white; }
+      .btn-save:hover { background: #5a67d8; }
+      .btn-save:disabled { background: #ccc; cursor: not-allowed; }
 
       /* ============ Toast ============ */
       .toast {
@@ -397,20 +283,12 @@ body.dark tbody tr.dragging {
         font-family: "Vazirmatn", Tahoma, sans-serif;
       }
 
-      .toast.show {
-        transform: translateX(-50%) translateY(0);
-      }
-
-      .toast.success {
-        background: #28a745;
-      }
-      .toast.error {
-        background: #dc3545;
-      }
+      .toast.show { transform: translateX(-50%) translateY(0); }
+      .toast.success { background: #28a745; }
+      .toast.error { background: #dc3545; }
 
       /* ============ Loading / Empty ============ */
-      .loading,
-      .empty-state {
+      .loading, .empty-state {
         text-align: center;
         padding: 60px 20px;
         color: #999;
@@ -428,473 +306,129 @@ body.dark tbody tr.dragging {
         margin-bottom: 15px;
       }
 
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
+      @keyframes spin { to { transform: rotate(360deg); } }
 
       /* ============ Dark Mode ============ */
-      body.dark {
-        background: #1a202c;
-        color: #e2e8f0;
-      }
+      body.dark { background: #1a202c; color: #e2e8f0; }
 
       body.dark .toolbar,
       body.dark .tree-container,
+      body.dark .table-container,
       body.dark .modal,
       body.dark .context-menu {
         background: #2d3748;
         color: #e2e8f0;
       }
 
-      body.dark .tree-node .title {
-        color: #e2e8f0;
-      }
-      body.dark .tree-node:hover {
-        background: #4a5568;
-      }
-      body.dark .tree-node.selected {
-        background: #4a5568;
-      }
-      body.dark .tree-children {
-        border-right-color: #4a5568;
-      }
+      body.dark .tree-node .title { color: #e2e8f0; }
+      body.dark .tree-node:hover { background: #4a5568; }
+      body.dark .tree-node.selected { background: #4a5568; }
+      body.dark .tree-children { border-right-color: #4a5568; }
       
-      body.dark .level-0 {
-        background: #3b4a6b !important;
-      }
-      body.dark .level-1 {
-        background: #37415b !important;
-      }
-      body.dark .modal input,
-      body.dark .modal textarea {
+      body.dark .level-0 { background: #3b4a6b !important; }
+      body.dark .level-1 { background: #37415b !important; }
+      body.dark .modal input, body.dark .modal textarea {
         background: #1a202c;
         border-color: #4a5568;
         color: #e2e8f0;
       }
-      body.dark .modal .info-row {
-        background: #1a202c;
-      }
-      body.dark .modal h3 {
-        color: #e2e8f0;
-      }
-      body.dark .modal label {
-        color: #cbd5e0;
-      }
-      body.dark .view-switch {
-        background: #1a202c;
-      }
-      body.dark .view-switch button.active {
-        background: #4a5568;
-      }
-      body.dark .btn-cancel {
-        background: #4a5568;
-        color: #e2e8f0;
-      }
+      body.dark .modal .info-row { background: #1a202c; }
+      body.dark .modal h3 { color: #e2e8f0; }
+      body.dark .modal label { color: #cbd5e0; }
+      body.dark .view-switch { background: #1a202c; }
+      body.dark .view-switch button.active { background: #4a5568; }
+      body.dark .btn-cancel { background: #4a5568; color: #e2e8f0; }
+      body.dark #chart-view { background: #1a202c; }
+      body.dark #org-chart-tree { background: #1a202c; }
 
       /* ============ Responsive ============ */
       @media (max-width: 768px) {
-        .header {
-          padding: 15px 20px;
-        }
-        .header h1 {
-          font-size: 17px;
-        }
-        .toolbar {
-          padding: 12px 15px;
-        }
-        .tree-node {
-          padding: 10px;
-        }
-        .tree-node .title {
-          font-size: 13px;
-        }
-        .tree-children {
-          padding-right: 15px;
-          margin-right: 6px;
-        }
-        .table-container {
-          overflow-x: auto;
-        }
-        .table-container table {
-          min-width: 600px;
-        }
+        .header, .toolbar { padding: 15px 20px; }
+        .header h1 { font-size: 17px; }
+        .tree-node { padding: 10px; }
+        .tree-node .title { font-size: 13px; }
+        .tree-children { padding-right: 15px; margin-right: 6px; }
+        .table-container { overflow-x: auto; }
+        .table-container table { min-width: 600px; }
       }
 
-
-      /* ============ Chart View (فلوچارت سازمانی) ============ */
-      .chart-container {
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 30px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        min-height: 400px;
-        overflow-x: auto;
+      /* ============ Drag & Drop ============ */
+      .tree-node[draggable="true"] { cursor: grab; }
+      .tree-node.dragging { opacity: 0.4; cursor: grabbing; }
+      .tree-node.drag-over {
+        background: #eef1ff !important;
+        border-right: 4px solid #667eea;
+        outline: 2px dashed #667eea;
       }
-
-      .org-chart {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0;
-        min-width: 100%;
-      }
-
-      /* باکس سازمان */
-      .org-box {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        border: 2px solid #e0e0e0;
-        min-width: 260px;
-        max-width: 320px;
-        margin-bottom: 10px;
-        transition: all 0.2s;
-        overflow: hidden;
-        position: relative;
-      }
-
-      .org-box:hover {
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
-        border-color: #667eea;
-      }
-
-      .org-box.level-0 {
-        border-color: #667eea;
-        background: linear-gradient(135deg, #ffffff 0%, #f0f2ff 100%);
-      }
-
-      .org-box.level-1 {
-        border-color: #764ba2;
-        background: linear-gradient(135deg, #ffffff 0%, #f5f0ff 100%);
-      }
-
-      .org-box.level-2 {
-        border-color: #17a2b8;
-      }
-
-      /* هدر باکس */
-      .org-box-header {
-        padding: 12px 16px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
+      .tree-node .drag-handle {
+        cursor: grab;
+        color: #999;
+        font-size: 14px;
+        margin-left: 4px;
+        padding: 2px 6px;
+        border-radius: 4px;
         user-select: none;
-        background: rgba(255,255,255,0.5);
-      }
-
-      .org-box-header:hover {
-        background: rgba(102, 126, 234, 0.08);
-      }
-
-      .org-box-title {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex: 1;
-        min-width: 0;
-      }
-
-      .org-box-title-icon {
-        font-size: 18px;
+        letter-spacing: -2px;
         flex-shrink: 0;
       }
+      .tree-node .drag-handle:hover { background: #e9ecef; color: #333; }
+      body.dark .tree-node.drag-over { background: #4a5568 !important; outline-color: #90cdf4; }
+      body.dark .tree-node .drag-handle:hover { background: #4a5568; color: #e2e8f0; }
 
-      .org-box-title-text {
-        font-size: 14px;
-        font-weight: bold;
-        color: #333;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .org-box-code {
-        font-family: monospace;
-        font-size: 11px;
-        color: #667eea;
-        background: #eef1ff;
-        padding: 2px 8px;
-        border-radius: 10px;
-        flex-shrink: 0;
-      }
-
-      .org-box-toggle {
-        font-size: 11px;
-        color: #999;
-        transition: transform 0.25s;
-        flex-shrink: 0;
-      }
-
-      .org-box.open .org-box-toggle {
-        transform: rotate(180deg);
-      }
-
-      /* بدنه باکس (پست‌ها) */
-      .org-box-body {
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.35s ease;
-        background: rgba(255,255,255,0.3);
-      }
-
-      .org-box.open .org-box-body {
-        max-height: 1000px;
-        padding: 8px 12px 12px;
-        border-top: 1px dashed #e0e0e0;
-      }
-
-      /* پست */
-      .position-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        padding: 8px 10px;
-        background: white;
-        border-radius: 6px;
-        margin-bottom: 6px;
-        border-right: 3px solid #ccc;
-        font-size: 12px;
-      }
-
-      .position-item.filled {
-        border-right-color: #28a745;
-        background: #f0f9f4;
-      }
-
-      .position-item.empty {
-        border-right-color: #fd7e14;
-        background: #fff8f0;
-      }
-
-      .position-title {
-        font-weight: bold;
-        color: #333;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex: 1;
-        min-width: 0;
-      }
-
-      .position-title-icon {
-        font-size: 14px;
-      }
-
-      .position-person {
-        font-size: 11px;
-        color: #667eea;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        padding: 3px 10px;
-        border-radius: 12px;
-        background: #eef1ff;
-        transition: all 0.2s;
-        white-space: nowrap;
-        max-width: 130px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        flex-shrink: 0;
-      }
-
-      .position-person:hover {
-        background: #667eea;
-        color: white;
-      }
-
-      .position-person.empty-text {
-        color: #999;
-        background: transparent;
-        cursor: default;
-      }
-
-      .position-person.empty-text:hover {
-        background: transparent;
-        color: #999;
-      }
-
-      /* فرزندان */
-      .org-children {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 20px;
-        margin-top: 20px;
-        position: relative;
-        padding-top: 20px;
-      }
-
-      .org-children::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 50%;
-        width: 2px;
-        height: 20px;
-        background: #ccc;
-        transform: translateX(-50%);
-      }
-
-      .org-child-wrapper {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-
-      .org-child-wrapper::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 50%;
-        width: 2px;
-        height: 20px;
-        background: #ccc;
-      }
-
-      /* وقتی فرزندان جابجا می‌شن */
-      .org-children:has(> .org-child-wrapper:not(:only-child))::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        height: 2px;
-        background: #ccc;
-        /* خط افقی بین فرزندان */
-      }
-
-      /* Dark mode */
-      body.dark .chart-container {
-        background: #1a202c;
-      }
-      body.dark .org-box {
-        background: #2d3748;
-        border-color: #4a5568;
-      }
-      body.dark .org-box.level-0 {
-        background: linear-gradient(135deg, #2d3748 0%, #37415b 100%);
-        border-color: #667eea;
-      }
-      body.dark .org-box.level-1 {
-        background: linear-gradient(135deg, #2d3748 0%, #3b3054 100%);
-        border-color: #764ba2;
-      }
-      body.dark .org-box-title-text {
-        color: #e2e8f0;
-      }
-      body.dark .org-box-body {
-        background: rgba(0,0,0,0.1);
-      }
-      body.dark .position-item {
-        background: #374151;
-      }
-      body.dark .position-item.filled {
-        background: #2d4a3e;
-      }
-      body.dark .position-item.empty {
-        background: #4a3f1e;
-      }
-      body.dark .position-title {
-        color: #e2e8f0;
-      }
+      tbody tr[draggable="true"] { cursor: grab; }
+      tbody tr.dragging { opacity: 0.4; }
+      tbody tr.drag-over { background: #eef1ff !important; outline: 2px dashed #667eea; }
+      body.dark tbody tr.drag-over { background: #4a5568 !important; outline-color: #90cdf4; }
+      body.dark tbody tr.dragging { opacity: 0.4; }
 
       /* ============ استایل Select (نوع) ============ */
-#input-level-name {
-    width: 100%;
-    padding: 10px 40px 10px 14px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-family: 'Vazirmatn', Tahoma, sans-serif;
-    font-size: 13px;
-    background-color: white;
-    color: #333;
-    cursor: pointer;
-    transition: all 0.2s;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: left 12px center;
-    background-size: 18px;
-}
+      #input-level-name {
+        width: 100%;
+        padding: 10px 40px 10px 14px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-family: 'Vazirmatn', Tahoma, sans-serif;
+        font-size: 13px;
+        background-color: white;
+        color: #333;
+        cursor: pointer;
+        transition: all 0.2s;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: left 12px center;
+        background-size: 18px;
+      }
 
-#input-level-name:hover {
-    border-color: #667eea;
-    background-color: #f8f9ff;
-}
+      #input-level-name:hover { border-color: #667eea; background-color: #f8f9ff; }
+      #input-level-name:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15); }
+      body.dark #input-level-name { background-color: #1a202c; border-color: #4a5568; color: #e2e8f0; }
+      body.dark #input-level-name:hover { border-color: #667eea; background-color: #2d3748; }
 
-#input-level-name:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
-}
-
-/* Dark mode */
-body.dark #input-level-name {
-    background-color: #1a202c;
-    border-color: #4a5568;
-    color: #e2e8f0;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2390cdf4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-}
-
-body.dark #input-level-name:hover {
-    border-color: #667eea;
-    background-color: #2d3748;
-}
-
-    
-.level-pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.level-pill {
-    padding: 8px 16px;
-    border-radius: 20px;
-    border: 2px solid #e0e0e0;
-    background: white;
-    cursor: pointer;
-    font-family: 'Vazirmatn', Tahoma, sans-serif;
-    font-size: 13px;
-    color: #666;
-    transition: all 0.2s;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.level-pill:hover {
-    border-color: #667eea;
-    color: #667eea;
-    background: #f8f9ff;
-}
-
-.level-pill.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-color: transparent;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-}
-
-body.dark .level-pill {
-    background: #1a202c;
-    border-color: #4a5568;
-    color: #a0aec0;
-}
-
-body.dark .level-pill.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-color: transparent;
-}
-
+      .level-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+      .level-pill {
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: 2px solid #e0e0e0;
+        background: white;
+        cursor: pointer;
+        font-family: 'Vazirmatn', Tahoma, sans-serif;
+        font-size: 13px;
+        color: #666;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .level-pill:hover { border-color: #667eea; color: #667eea; background: #f8f9ff; }
+      .level-pill.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+      }
+      body.dark .level-pill { background: #1a202c; border-color: #4a5568; color: #a0aec0; }
+      body.dark .level-pill.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-color: transparent; }
     </style>
   </head>
   <body>
@@ -905,16 +439,13 @@ body.dark .level-pill.active {
 
       <div class="toolbar">
         <div class="view-switch">
-          <button id="btn-tree" class="active" onclick="switchView('tree')">
-            🌳 درختی
-          </button>
+          <button id="btn-tree" class="active" onclick="switchView('tree')">🌳 درختی</button>
           <button id="btn-table" onclick="switchView('table')">📋 جدولی</button>
           <button id="btn-chart" onclick="switchView('chart')">📊 فلوچارت</button>
         </div>
-        <button class="add-root-btn" onclick="openAddModal(null)">
-          ➕ افزودن ریشه
-        </button>
+        <button class="add-root-btn" onclick="openAddModal(null)">➕ افزودن ریشه</button>
       </div>
+      
       <div id="tree-view" class="tree-container">
         <div class="loading">
           <div class="spinner"></div>
@@ -936,16 +467,20 @@ body.dark .level-pill.active {
         </table>
       </div>
 
-
       <div id="chart-view" class="chart-container" style="display: none;">
-        <div id="chart-loading" class="loading">
-          <div class="spinner"></div>
-          <div>در حال بارگذاری فلوچارت...</div>
+        <div style="margin-bottom: 15px; display: flex; gap: 10px; justify-content: flex-end;">
+          <button class="btn btn-cancel" onclick="orgChartInstance.fit()">🔍 نمایش کامل</button>
+          <button class="btn btn-cancel" onclick="orgChartInstance.zoomIn()">➕ زوم</button>
+          <button class="btn btn-cancel" onclick="orgChartInstance.zoomOut()">➖ زوم</button>
         </div>
+        
+        <div id="chart-loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <div>در حال بارگذاری فلوچارت...</div>
+        </div>
+        
         <div id="org-chart-tree"></div>
       </div>
-
-
     </div>
 
     <!-- Context Menu -->
@@ -973,45 +508,27 @@ body.dark .level-pill.active {
 
         <div class="form-group">
           <label>عنوان <span style="color: #e74c3c">*</span></label>
-          <input
-            type="text"
-            id="input-title"
-            placeholder="عنوان را وارد کنید"
-          />
+          <input type="text" id="input-title" placeholder="عنوان را وارد کنید" />
         </div>
-
 
         <div class="form-group" id="group-level-name">
           <label>نوع <span style="color: #e74c3c">*</span></label>
-          <div class="level-pills" id="level-pills">
-            <!-- دکمه‌ها داینامیک -->
-          </div>
+          <div class="level-pills" id="level-pills"></div>
         </div>
 
         <div class="form-group">
           <label>توضیحات</label>
-          <textarea
-            id="input-description"
-            placeholder="توضیحات (اختیاری)"
-          ></textarea>
+          <textarea id="input-description" placeholder="توضیحات (اختیاری)"></textarea>
         </div>
 
         <div class="form-group" id="group-digit-count">
           <label>تعداد ارقام کد</label>
-          <input
-            type="number"
-            id="input-digit-count"
-            value="3"
-            min="2"
-            max="20"
-          />
+          <input type="number" id="input-digit-count" value="3" min="2" max="20" />
         </div>
 
         <div class="modal-actions">
           <button class="btn-cancel" onclick="closeModal()">انصراف</button>
-          <button class="btn-save" id="btn-save" onclick="saveModal()">
-            ذخیره
-          </button>
+          <button class="btn-save" id="btn-save" onclick="saveModal()">ذخیره</button>
         </div>
       </div>
     </div>
@@ -1035,14 +552,20 @@ body.dark .level-pill.active {
       const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
       const SECTION = "organization";
       const PREFIX = "س";
-     const LEVEL_NAMES = ["حوزه", "معاونت", "سازمان", "اداره", "واحد"];
+      const LEVEL_NAMES = ["حوزه", "معاونت", "سازمان", "اداره", "واحد"];
 
       let treeData = [];
       let flatData = [];
       let currentView = localStorage.getItem("org-view") || "tree";
       let selectedNode = null;
       let editingNode = null;
-      let currentParentId = null; // ✅ اضافه شد
+      let currentParentId = null;
+      let ctxNodeId = null;
+      let chartData = [];
+      let chartLoaded = false;
+      let orgChartInstance = null;
+      let currentFilteredData = null;
+      let currentIsFiltered = false;
 
       // ============================================
       // توابع کمکی
@@ -1066,429 +589,366 @@ body.dark .level-pill.active {
       // ============================================
       // لود دیتا
       // ============================================
-async function loadData() {
-    try {
-        const [treeRes, flatRes] = await Promise.all([
-            fetch(`/api/base-data/tree?section=${SECTION}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            }),
-            fetch(`/api/base-data?section=${SECTION}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            }),
-        ]);
+      async function loadData() {
+          try {
+              const [treeRes, flatRes] = await Promise.all([
+                  fetch(`/api/base-data/tree?section=${SECTION}`, {
+                      headers: { Authorization: `Bearer ${token}` },
+                  }),
+                  fetch(`/api/base-data?section=${SECTION}`, {
+                      headers: { Authorization: `Bearer ${token}` },
+                  }),
+              ]);
 
-        treeData = await treeRes.json();
-        flatData = await flatRes.json();
+              treeData = await treeRes.json();
+              flatData = await flatRes.json();
 
-        // رندر اولیه
-        renderTree();
-        renderTable();
+              renderTree();
+              renderTable();
 
-        // 👇 راه‌اندازی کامپوننت جستجو (فقط یک بار)
-        if (!window._bdsInitialized) {
-            window._bdsInitialized = true;
+              if (!window._bdsInitialized) {
+                  window._bdsInitialized = true;
+                  if (typeof window.initBaseDataSearch !== 'function') {
+                      const script = document.createElement('script');
+                      script.src = '/base-data-search.js';
+                      script.onload = () => startSearchComponent();
+                      document.head.appendChild(script);
+                  } else {
+                      startSearchComponent();
+                  }
+              } else if (typeof window.refreshBds === 'function') {
+                  window.refreshBds();
+              }
 
-            // ایمپورت CSS اگه لود نشده
-            if (!document.getElementById('bds-css')) {
-                const link = document.createElement('link');
-                link.id = 'bds-css';
-                link.rel = 'stylesheet';
-                link.href = '/base-data-search.css';
-                document.head.appendChild(link);
-            }
+              if (!window._dragEnabled) {
+                  enableDragAndDrop();
+                  window._dragEnabled = true;
+              }
+          } catch (error) {
+              console.error("Load error:", error);
+              showToast("خطا در بارگذاری", "error");
+          }
+      }
 
-            // ایمپورت JS اگه لود نشده
-            if (typeof window.initBaseDataSearch !== 'function') {
-                const script = document.createElement('script');
-                script.src = '/base-data-search.js';
-                script.onload = () => startSearchComponent();
-                document.head.appendChild(script);
-            } else {
-                startSearchComponent();
-            }
-        } else if (typeof window.refreshBds === 'function') {
-            window.refreshBds();
-        }
+      function startSearchComponent() {
+          initBaseDataSearch(
+              {
+                  section: 'organization',
+                  levelNames: ['حوزه', 'معاونت', 'سازمان', 'اداره', 'واحد'],
+                  levelIcons: ['🏛️', '⭐', '🏢', '📁', '👥'],
+              },
+              {
+                  getFlatData: () => flatData,
+                  onUpdate: ({ allData, filteredData, isFiltered }) => {
+                      currentFilteredData = isFiltered ? filteredData : null;
+                      currentIsFiltered = isFiltered;
 
-        // drag & drop
-        if (!window._dragEnabled) {
-            enableDragAndDrop();
-            window._dragEnabled = true;
-        }
-    } catch (error) {
-        console.error("Load error:", error);
-        showToast("خطا در بارگذاری", "error");
-    }
-}
+                      if (currentView === 'tree') {
+                          renderTree(filteredData, isFiltered);
+                      } else if (currentView === 'table') {
+                          renderTable(filteredData, isFiltered);
+                      }
+                  },
+              }
+          );
+      }
 
-function startSearchComponent() {
-    initBaseDataSearch(
-        {
-            section: 'organization',
-            levelNames: ['حوزه', 'معاونت', 'سازمان', 'اداره', 'واحد'],
-            levelIcons: ['🏛️', '⭐', '🏢', '📁', '👥'],
-        },
-        {
-            getFlatData: () => flatData,
-            onUpdate: ({ allData, filteredData, isFiltered, breadcrumbMap }) => {
-                currentFilteredData = filteredData;
-                currentIsFiltered = isFiltered;
+      // ============================================
+      // ساخت درخت از لیست تخت
+      // ============================================
+      function buildTree(items) {
+          const map = {};
+          const roots = [];
 
-                if (currentView === 'tree') {
-                    renderTree(filteredData, isFiltered);
-                } else if (currentView === 'table') {
-                    renderTable(filteredData, isFiltered);
-                }
-            },
-        }
-    );
-}
-      
+          items.forEach(item => {
+              map[item.id] = { ...item, children: [] };
+          });
 
+          items.forEach(item => {
+              if (item.parent_id && map[item.parent_id]) {
+                  map[item.parent_id].children.push(map[item.id]);
+              } else {
+                  roots.push(map[item.id]);
+              }
+          });
 
+          const sortFn = (a, b) => {
+              if (a.sort_order !== b.sort_order) {
+                  return (a.sort_order || 0) - (b.sort_order || 0);
+              }
+              return a.code.localeCompare(b.code);
+          };
 
-// ============================================
-// ساخت درخت از لیست تخت
-// ============================================
-function buildTree(items) {
-    const map = {};
-    const roots = [];
+          const sortRecursive = (nodes) => {
+              nodes.sort(sortFn);
+              nodes.forEach(n => sortRecursive(n.children));
+          };
 
-    items.forEach(item => {
-        map[item.id] = { ...item, children: [] };
-    });
+          sortRecursive(roots);
 
-    items.forEach(item => {
-        if (item.parent_id && map[item.parent_id]) {
-            map[item.parent_id].children.push(map[item.id]);
-        } else {
-            roots.push(map[item.id]);
-        }
-    });
+          return roots;
+      }
 
-    const sortFn = (a, b) => {
-        if (a.sort_order !== b.sort_order) {
-            return (a.sort_order || 0) - (b.sort_order || 0);
-        }
-        return a.code.localeCompare(b.code);
-    };
-
-    const sortRecursive = (nodes) => {
-        nodes.sort(sortFn);
-        nodes.forEach(n => sortRecursive(n.children));
-    };
-
-    sortRecursive(roots);
-
-    return roots;
-}
-
-      
       // ============================================
       // رندر درخت
       // ============================================
-
       function renderTree(items, isFiltered) {
-    const container = document.getElementById("tree-view");
+          const container = document.getElementById("tree-view");
 
-    // اگه items پاس نشده، از flatData استفاده کن
-    if (items === undefined) items = flatData;
-    if (typeof isFiltered !== 'boolean') isFiltered = false;
+          if (items === undefined) items = flatData;
+          if (typeof isFiltered !== 'boolean') isFiltered = false;
 
-    if (!items || items.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div style="font-size: 40px; margin-bottom: 15px;">📭</div>
-                <div>${isFiltered ? 'نتیجه‌ای یافت نشد' : 'هنوز سازمانی ثبت نشده'}</div>
-                ${!isFiltered ? `<div style="margin-top: 15px;">
-                    <button class="add-root-btn" onclick="openAddModal(null)">➕ افزودن اولین سازمان</button>
-                </div>` : ''}
-            </div>`;
-        return;
-    }
+          if (!items || items.length === 0) {
+              container.innerHTML = `
+                  <div class="empty-state">
+                      <div style="font-size: 40px; margin-bottom: 15px;">📭</div>
+                      <div>${isFiltered ? 'نتیجه‌ای یافت نشد' : 'هنوز سازمانی ثبت نشده'}</div>
+                      ${!isFiltered ? `<div style="margin-top: 15px;">
+                          <button class="add-root-btn" onclick="openAddModal(null)">➕ افزودن اولین سازمان</button>
+                      </div>` : ''}
+                  </div>`;
+              return;
+          }
 
-    // اگه فیلتر فعاله، از filteredData به عنوان data استفاده کن
-    const dataSource = items;
+          const dataSource = items;
+          const tree = buildTree(dataSource);
 
-    // ساخت درخت از dataSource
-    const tree = buildTree(dataSource);
-
-    container.innerHTML = '';
-    tree.forEach((node) => {
-        container.appendChild(renderTreeNode(node, 0));
-    });
-}
-      function renderTreeNode(node, depth) {
-        const wrapper = document.createElement("div");
-
-        const nodeEl = document.createElement("div");
-        nodeEl.className = "tree-node";
-        nodeEl.dataset.id = node.id;
-        nodeEl.draggable = true;
-
-        if (selectedNode && selectedNode.id === node.id)
-          nodeEl.classList.add("selected");
-        if (!node.is_active) nodeEl.style.opacity = "0.5";
-
-        const hasChildren = node.children && node.children.length > 0;
-        const isCollapsed =
-          localStorage.getItem(`org-collapsed-${node.id}`) === "1";
-
-        nodeEl.innerHTML = `
-                <span class="drag-handle" title="برای جابجایی بکشید">⋮⋮</span>
-                <span class="toggle ${hasChildren ? "" : "empty"}">${
-          isCollapsed ? "◀" : "▼"
-        }</span>
-                <span class="icon">${hasChildren ? "📁" : "📄"}</span>
-                <span class="title" title="${node.code}">${node.title}${
-          !node.is_active ? " (غیرفعال)" : ""
-        }</span>
-                <button class="menu-btn" onclick="event.stopPropagation(); openContextMenu(event, ${
-                  node.id
-                })">⋮</button>
-            `;
-
-        // کلیک روی toggle
-        const toggleEl = nodeEl.querySelector(".toggle");
-        if (hasChildren) {
-          toggleEl.addEventListener("click", (e) => {
-            e.stopPropagation();
-            if (isCollapsed) {
-              localStorage.removeItem(`org-collapsed-${node.id}`);
-            } else {
-              localStorage.setItem(`org-collapsed-${node.id}`, "1");
-            }
-            renderTree();
+          container.innerHTML = '';
+          tree.forEach((node) => {
+              container.appendChild(renderTreeNode(node, 0));
           });
-        }
-
-        // کلیک روی node
-        nodeEl.addEventListener("click", () => {
-          selectedNode = node;
-          renderTree();
-        });
-
-        // راست‌کلیک
-        nodeEl.addEventListener("contextmenu", (e) => {
-          e.preventDefault();
-          selectedNode = node;
-          renderTree();
-          openContextMenu(e, node.id);
-        });
-
-        wrapper.appendChild(nodeEl);
-
-        // فرزندان
-        if (hasChildren && !isCollapsed) {
-          const childrenEl = document.createElement("div");
-          childrenEl.className = "tree-children";
-          node.children.forEach((child) => {
-            childrenEl.appendChild(renderTreeNode(child, depth + 1));
-          });
-          wrapper.appendChild(childrenEl);
-        }
-
-        return wrapper;
       }
+
+      function renderTreeNode(node, depth) {
+          const wrapper = document.createElement("div");
+          const nodeEl = document.createElement("div");
+          nodeEl.className = "tree-node";
+          nodeEl.dataset.id = node.id;
+          nodeEl.draggable = true;
+
+          if (selectedNode && selectedNode.id === node.id) nodeEl.classList.add("selected");
+          if (!node.is_active) nodeEl.style.opacity = "0.5";
+
+          const hasChildren = node.children && node.children.length > 0;
+          const isCollapsed = localStorage.getItem(`org-collapsed-${node.id}`) === "1";
+
+          nodeEl.innerHTML = `
+              <span class="drag-handle" title="برای جابجایی بکشید">⋮⋮</span>
+              <span class="toggle ${hasChildren ? "" : "empty"}">${isCollapsed ? "◀" : "▼"}</span>
+              <span class="icon">${hasChildren ? "📁" : "📄"}</span>
+              <span class="title" title="${node.code}">${node.title}${!node.is_active ? " (غیرفعال)" : ""}</span>
+              <button class="menu-btn" onclick="event.stopPropagation(); openContextMenu(event, ${node.id})">⋮</button>
+          `;
+
+          const toggleEl = nodeEl.querySelector(".toggle");
+          if (hasChildren) {
+              toggleEl.addEventListener("click", (e) => {
+                  e.stopPropagation();
+                  if (isCollapsed) {
+                      localStorage.removeItem(`org-collapsed-${node.id}`);
+                  } else {
+                      localStorage.setItem(`org-collapsed-${node.id}`, "1");
+                  }
+                  renderTree(currentFilteredData, currentIsFiltered);
+              });
+          }
+
+          nodeEl.addEventListener("click", () => {
+              selectedNode = node;
+              renderTree(currentFilteredData, currentIsFiltered);
+          });
+
+          nodeEl.addEventListener("contextmenu", (e) => {
+              e.preventDefault();
+              selectedNode = node;
+              renderTree(currentFilteredData, currentIsFiltered);
+              openContextMenu(e, node.id);
+          });
+
+          wrapper.appendChild(nodeEl);
+
+          if (hasChildren && !isCollapsed) {
+              const childrenEl = document.createElement("div");
+              childrenEl.className = "tree-children";
+              node.children.forEach((child) => {
+                  childrenEl.appendChild(renderTreeNode(child, depth + 1));
+              });
+              wrapper.appendChild(childrenEl);
+          }
+
+          return wrapper;
+      }
+
       // ============================================
       // رندر جدول
       // ============================================
-function renderTable(items, isFiltered) {
-    const tbody = document.getElementById("table-body");
+      function renderTable(items, isFiltered) {
+          const tbody = document.getElementById("table-body");
 
-    if (items === undefined) items = flatData;
-    if (typeof isFiltered !== 'boolean') isFiltered = false;
+          if (items === undefined) items = flatData;
+          if (typeof isFiltered !== 'boolean') isFiltered = false;
 
-    if (!items || items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:40px; color:#999;">${isFiltered ? 'نتیجه‌ای یافت نشد' : 'هنوز سازمانی ثبت نشده'}</td></tr>`;
-        return;
-    }
-
-    const sorted = [...items].sort((a, b) => a.code.localeCompare(b.code));
-    const breadcrumbMap = window.bdsBuildBreadcrumbMap 
-    ? window.bdsBuildBreadcrumbMap(flatData) 
-    : {};
-
-    tbody.innerHTML = '';
-    sorted.forEach((item) => {
-        const tr = document.createElement("tr");
-        tr.className = `level-${Math.min(item.level, 3)}`;
-        tr.style.cursor = "pointer";
-        tr.dataset.id = item.id;
-        tr.draggable = true;
-
-        if (!item.is_active) tr.style.opacity = "0.5";
-
-        const indent = "　".repeat(item.level);
-        const bc = breadcrumbMap[item.id] || item.code;
-        const showBreadcrumb = isFiltered || item.level > 0;
-
-        tr.innerHTML = `
-            <td><span class="drag-handle" title="برای جابجایی بکشید">⋮⋮</span></td>
-            <td>
-                <span class="indent-marker">${indent}</span>
-                <span style="margin-left: 6px;">📄</span>
-                <span>${item.title}</span>
-                ${showBreadcrumb && bc !== item.code ? `<span class="bds-breadcrumb-code">${bc}</span>` : ''}
-            </td>
-            <td><span class="level-badge ${getLevelClass(item.level)}">${item.level_name || getLevelName(item.level)}</span></td>
-            <td>${item.is_active ? "✅ فعال" : "❌ غیرفعال"}</td>
-        `;
-
-        tr.addEventListener("click", () => {
-            selectedNode = item;
-            renderTable(items, isFiltered);
-        });
-
-        tr.addEventListener("contextmenu", (e) => {
-            e.preventDefault();
-            selectedNode = item;
-            renderTable(items, isFiltered);
-            openContextMenu(e, item.id);
-        });
-
-        tbody.appendChild(tr);
-    });
-}
-      
-      
-      
-      // ============================================
-        // فعال‌سازی Drag & Drop برای مرتب‌سازی
-        // ============================================
-      function enableDragAndDrop() {
-        // حذف listenerهای قبلی
-        const treeContainer = document.getElementById("tree-view");
-        const tableContainer = document.getElementById("table-view");
-
-        // state
-        let draggedNode = null;
-        let draggedParentId = null;
-
-        const handleDragStart = (e) => {
-          const target = e.target.closest(
-            ".tree-node[data-id], #table-view tbody tr[data-id]"
-          );
-          if (!target) return;
-
-          const id = parseInt(target.dataset.id);
-          const node = flatData.find((n) => n.id === id);
-          if (!node) return;
-
-          draggedNode = node;
-          draggedParentId = node.parent_id;
-          target.classList.add("dragging");
-          e.dataTransfer.effectAllowed = "move";
-          e.dataTransfer.setData("text/plain", id);
-        };
-
-        const handleDragEnd = (e) => {
-          const target = e.target.closest(
-            ".tree-node[data-id], #table-view tbody tr[data-id]"
-          );
-          if (target) target.classList.remove("dragging");
-          document
-            .querySelectorAll(".drag-over")
-            .forEach((el) => el.classList.remove("drag-over"));
-          draggedNode = null;
-          draggedParentId = null;
-        };
-
-        const handleDragOver = (e) => {
-          if (!draggedNode) return;
-          const target = e.target.closest(
-            ".tree-node[data-id], #table-view tbody tr[data-id]"
-          );
-          if (!target) return;
-
-          const id = parseInt(target.dataset.id);
-          const targetNode = flatData.find((n) => n.id === id);
-          if (!targetNode) return;
-          if (targetNode.parent_id !== draggedParentId) return;
-
-          e.preventDefault();
-          e.dataTransfer.dropEffect = "move";
-
-          document
-            .querySelectorAll(".drag-over")
-            .forEach((el) => el.classList.remove("drag-over"));
-          target.classList.add("drag-over");
-        };
-
-        const handleDrop = async (e) => {
-          e.preventDefault();
-          const target = e.target.closest(
-            ".tree-node[data-id], #table-view tbody tr[data-id]"
-          );
-          if (!target) return;
-
-          target.classList.remove("drag-over");
-          if (!draggedNode) return;
-
-          const targetId = parseInt(target.dataset.id);
-          const targetNode = flatData.find((n) => n.id === targetId);
-          if (!targetNode) return;
-          if (targetNode.parent_id !== draggedParentId) {
-            showToast("فقط می‌تونید ردیف‌های هم‌سطح رو جابجا کنید", "error");
-            return;
+          if (!items || items.length === 0) {
+              tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:40px; color:#999;">${isFiltered ? 'نتیجه‌ای یافت نشد' : 'هنوز سازمانی ثبت نشده'}</td></tr>`;
+              return;
           }
-          if (draggedNode.id === targetNode.id) return;
 
-          const siblings = flatData
-            .filter((n) => n.parent_id === draggedParentId)
-            .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+          const sorted = [...items].sort((a, b) => a.code.localeCompare(b.code));
+          const breadcrumbMap = window.bdsBuildBreadcrumbMap ? window.bdsBuildBreadcrumbMap(flatData) : {};
 
-          const filtered = siblings.filter((n) => n.id !== draggedNode.id);
-          const targetIndex = filtered.findIndex((n) => n.id === targetNode.id);
-          filtered.splice(targetIndex, 0, draggedNode);
+          tbody.innerHTML = '';
+          sorted.forEach((item) => {
+              const tr = document.createElement("tr");
+              tr.className = `level-${Math.min(item.level, 3)}`;
+              tr.style.cursor = "pointer";
+              tr.dataset.id = item.id;
+              tr.draggable = true;
 
-          const items = filtered.map((n, idx) => ({
-            id: n.id,
-            sort_order: idx + 1,
-          }));
+              if (!item.is_active) tr.style.opacity = "0.5";
 
-          try {
-            const res = await fetch("/api/base-data/reorder", {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({ items }),
-            });
+              const indent = "　".repeat(item.level);
+              const bc = breadcrumbMap[item.id] || item.code;
+              const showBreadcrumb = isFiltered || item.level > 0;
 
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "خطا");
+              tr.innerHTML = `
+                  <td><span class="drag-handle" title="برای جابجایی بکشید">⋮⋮</span></td>
+                  <td>
+                      <span class="indent-marker">${indent}</span>
+                      <span style="margin-left: 6px;">📄</span>
+                      <span>${item.title}</span>
+                      ${showBreadcrumb && bc !== item.code ? `<span class="bds-breadcrumb-code">${bc}</span>` : ''}
+                  </td>
+                  <td><span class="level-badge ${getLevelClass(item.level)}">${item.level_name || getLevelName(item.level)}</span></td>
+                  <td>${item.is_active ? "✅ فعال" : "❌ غیرفعال"}</td>
+              `;
 
-            showToast("ترتیب با موفقیت ذخیره شد");
-            await loadData();
-          } catch (error) {
-            showToast(error.message, "error");
-          }
-        };
+              tr.addEventListener("click", () => {
+                  selectedNode = item;
+                  renderTable(currentFilteredData, currentIsFiltered);
+              });
 
-        // ثبت listenerها روی container
-        if (treeContainer) {
-          treeContainer.addEventListener("dragstart", handleDragStart);
-          treeContainer.addEventListener("dragend", handleDragEnd);
-          treeContainer.addEventListener("dragover", handleDragOver);
-          treeContainer.addEventListener("drop", handleDrop);
-        }
+              tr.addEventListener("contextmenu", (e) => {
+                  e.preventDefault();
+                  selectedNode = item;
+                  renderTable(currentFilteredData, currentIsFiltered);
+                  openContextMenu(e, item.id);
+              });
 
-        if (tableContainer) {
-          tableContainer.addEventListener("dragstart", handleDragStart);
-          tableContainer.addEventListener("dragend", handleDragEnd);
-          tableContainer.addEventListener("dragover", handleDragOver);
-          tableContainer.addEventListener("drop", handleDrop);
-        }
+              tbody.appendChild(tr);
+          });
       }
-        // ============================================
-        // فلوچارت سازمانی
-        // ============================================
-        let chartData = [];
-        let chartLoaded = false;
 
-        async function loadChartData() {
+      // ============================================
+      // Drag & Drop
+      // ============================================
+      function enableDragAndDrop() {
+          const treeContainer = document.getElementById("tree-view");
+          const tableContainer = document.getElementById("table-view");
+
+          let draggedNode = null;
+          let draggedParentId = null;
+
+          const handleDragStart = (e) => {
+              const target = e.target.closest(".tree-node[data-id], #table-view tbody tr[data-id]");
+              if (!target) return;
+              const id = parseInt(target.dataset.id);
+              const node = flatData.find((n) => n.id === id);
+              if (!node) return;
+
+              draggedNode = node;
+              draggedParentId = node.parent_id;
+              target.classList.add("dragging");
+              e.dataTransfer.effectAllowed = "move";
+              e.dataTransfer.setData("text/plain", id);
+          };
+
+          const handleDragEnd = (e) => {
+              const target = e.target.closest(".tree-node[data-id], #table-view tbody tr[data-id]");
+              if (target) target.classList.remove("dragging");
+              document.querySelectorAll(".drag-over").forEach((el) => el.classList.remove("drag-over"));
+              draggedNode = null;
+              draggedParentId = null;
+          };
+
+          const handleDragOver = (e) => {
+              if (!draggedNode) return;
+              const target = e.target.closest(".tree-node[data-id], #table-view tbody tr[data-id]");
+              if (!target) return;
+              const id = parseInt(target.dataset.id);
+              const targetNode = flatData.find((n) => n.id === id);
+              if (!targetNode) return;
+              if (targetNode.parent_id !== draggedParentId) return;
+
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              document.querySelectorAll(".drag-over").forEach((el) => el.classList.remove("drag-over"));
+              target.classList.add("drag-over");
+          };
+
+          const handleDrop = async (e) => {
+              e.preventDefault();
+              const target = e.target.closest(".tree-node[data-id], #table-view tbody tr[data-id]");
+              if (!target) return;
+
+              target.classList.remove("drag-over");
+              if (!draggedNode) return;
+
+              const targetId = parseInt(target.dataset.id);
+              const targetNode = flatData.find((n) => n.id === targetId);
+              if (!targetNode) return;
+              if (targetNode.parent_id !== draggedParentId) {
+                  showToast("فقط می‌تونید ردیف‌های هم‌سطح رو جابجا کنید", "error");
+                  return;
+              }
+              if (draggedNode.id === targetNode.id) return;
+
+              const siblings = flatData
+                  .filter((n) => n.parent_id === draggedParentId)
+                  .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+              const filtered = siblings.filter((n) => n.id !== draggedNode.id);
+              const targetIndex = filtered.findIndex((n) => n.id === targetNode.id);
+              filtered.splice(targetIndex, 0, draggedNode);
+
+              const items = filtered.map((n, idx) => ({ id: n.id, sort_order: idx + 1 }));
+
+              try {
+                  const res = await fetch("/api/base-data/reorder", {
+                      method: "PUT",
+                      headers: {
+                          "Content-Type": "application/json",
+                          Authorization: `Bearer ${token}`,
+                      },
+                      body: JSON.stringify({ items }),
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error || "خطا");
+                  showToast("ترتیب با موفقیت ذخیره شد");
+                  await loadData();
+              } catch (error) {
+                  showToast(error.message, "error");
+              }
+          };
+
+          if (treeContainer) {
+              treeContainer.addEventListener("dragstart", handleDragStart);
+              treeContainer.addEventListener("dragend", handleDragEnd);
+              treeContainer.addEventListener("dragover", handleDragOver);
+              treeContainer.addEventListener("drop", handleDrop);
+          }
+
+          if (tableContainer) {
+              tableContainer.addEventListener("dragstart", handleDragStart);
+              tableContainer.addEventListener("dragend", handleDragEnd);
+              tableContainer.addEventListener("dragover", handleDragOver);
+              tableContainer.addEventListener("drop", handleDrop);
+          }
+      }
+
+      // ============================================
+      // فلوچارت سازمانی با d3-org-chart
+      // ============================================
+      async function loadChartData() {
           const loading = document.getElementById('chart-loading');
           const container = document.getElementById('org-chart-tree');
 
@@ -1496,708 +956,663 @@ function renderTable(items, isFiltered) {
           container.innerHTML = '';
 
           try {
-            const res = await fetch('/api/organizations-chart', {
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
+              const res = await fetch('/api/organizations-chart', {
+                  headers: { 'Authorization': `Bearer ${token}` }
+              });
 
-            if (!res.ok) throw new Error('خطا در دریافت فلوچارت');
+              if (!res.ok) throw new Error('خطا در دریافت فلوچارت');
 
-            chartData = await res.json();
-            chartLoaded = true;
+              chartData = await res.json();
+              chartLoaded = true;
 
-            loading.style.display = 'none';
-            renderChart();
+              loading.style.display = 'none';
+              renderChart();
           } catch (error) {
-            loading.innerHTML = `<div style="color:#dc3545;">❌ ${error.message}</div>`;
+              loading.innerHTML = `<div style="color:#dc3545;">❌ ${error.message}</div>`;
           }
-        }
+      }
 
-        function renderChart() {
-          const container = document.getElementById('org-chart-tree');
-          container.innerHTML = '';
+// تابع کمکی برای تبدیل اعداد انگلیسی به فارسی
+function toPersianNum(str) {
+    const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    return str.toString().replace(/\d/g, d => persianDigits[parseInt(d)]);
+}
 
-          if (!chartData || chartData.length === 0) {
-            container.innerHTML = `
-              <div style="text-align:center; padding:40px; color:#999;">
-                هنوز سازمانی ثبت نشده
-              </div>`;
-            return;
-          }
+function renderChart() {
+    const container = document.getElementById('org-chart-tree');
+    container.innerHTML = '';
 
-          const tree = document.createElement('div');
-          tree.className = 'org-chart';
-
-          chartData.forEach(rootOrg => {
-            tree.appendChild(renderOrgBox(rootOrg, 0));
-          });
-
-          container.appendChild(tree);
-        }
-
-        function renderOrgBox(org, depth) {
-          const wrapper = document.createElement('div');
-          wrapper.className = 'org-child-wrapper';
-          wrapper.style.marginTop = depth === 0 ? '0' : '20px';
-
-          const box = document.createElement('div');
-          box.className = `org-box level-${Math.min(org.level, 2)}`;
-          box.dataset.orgId = org.id;
-
-          // آیا پست داره؟
-          const hasPositions = org.positions && org.positions.length > 0;
-          const hasChildren = org.children && org.children.length > 0;
-          const isOpen = false;
-
-          // هدر باکس
-          const header = document.createElement('div');
-          header.className = 'org-box-header';
-
-          let positionsHtml = '';
-          if (hasPositions) {
-            org.positions.forEach(pos => {
-              const isFilled = pos.assigned_person && pos.assigned_person.full_name;
-              
-              let personHtml;
-              if (isFilled) {
-                personHtml = `
-                  <a href="/employee-profile.html?id=${pos.assigned_person.person_id}" 
-                     class="position-person" 
-                     title="مشاهده پرونده"
-                     onclick="event.stopPropagation()">
-                    👤 ${pos.assigned_person.full_name}
-                  </a>
-                `;
-              } else {
-                personHtml = `<span class="position-person empty-text">تعیین نشده</span>`;
-              }
-
-              positionsHtml += `
-                <div class="position-item ${isFilled ? 'filled' : 'empty'}">
-                  <span class="position-title">
-                    <span class="position-title-icon">${getPositionIcon(pos.position_level)}</span>
-                    ${pos.position_title}
-                  </span>
-                  ${personHtml}
-                </div>
-              `;
-            });
-          }
-
-          header.innerHTML = `
-            <div class="org-box-title">
-              <span class="org-box-title-icon">🏢</span>
-              <span class="org-box-title-text">${org.title}</span>
-              <span class="org-box-code">${org.code}</span>
-            </div>
-            <span class="org-box-toggle">${hasChildren || hasPositions ? '▼' : ''}</span>
-          `;
-
-          // کلیک روی هدر → باز/بسته
-          if (hasPositions || hasChildren) {
-            header.addEventListener('click', () => {
-              box.classList.toggle('open');
-            });
-          }
-
-          box.appendChild(header);
-
-          // بدنه (پست‌ها)
-          if (hasPositions) {
-            const body = document.createElement('div');
-            body.className = 'org-box-body';
-            body.innerHTML = positionsHtml;
-            box.appendChild(body);
-          }
-
-          wrapper.appendChild(box);
-
-          // فرزندان
-          if (hasChildren) {
-            const childrenContainer = document.createElement('div');
-            childrenContainer.className = 'org-children';
-
-            org.children.forEach(child => {
-              childrenContainer.appendChild(renderOrgBox(child, depth + 1));
-            });
-
-            wrapper.appendChild(childrenContainer);
-          }
-
-          return wrapper;
-        }
-
-        function getPositionIcon(level) {
-          const icons = {
-            0: '👔', // شهردار
-            1: '⭐', // معاون
-            2: '📋', // رئیس
-            3: '💼', // کارشناس
-            4: '👤', // کارمند
-          };
-          return icons[level] || '💼';
-        }
-
-      // ============================================
-      // سوئیچ نما
-      // ============================================
-let currentFilteredData = null;
-let currentIsFiltered = false;
-
-function switchView(view) {
-    currentView = view;
-    localStorage.setItem("org-view", view);
-
-    document.getElementById("btn-tree").classList.toggle("active", view === "tree");
-    document.getElementById("btn-table").classList.toggle("active", view === "table");
-    document.getElementById("btn-chart").classList.toggle("active", view === "chart");
-
-    document.getElementById("tree-view").style.display = view === "tree" ? "block" : "none";
-    document.getElementById("table-view").style.display = view === "table" ? "block" : "none";
-    document.getElementById("chart-view").style.display = view === "chart" ? "block" : "none";
-
-    // اگه فیلتر فعاله، دوباره رندر کن
-    if (currentFilteredData !== null) {
-        if (view === 'tree') renderTree(currentFilteredData, currentIsFiltered);
-        if (view === 'table') renderTable(currentFilteredData, currentIsFiltered);
+    if (!chartData || chartData.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:40px; color:#999;">هنوز سازمانی ثبت نشده</div>`;
+        return;
     }
 
-    if (view === 'chart') {
-        loadChartData();
+    const flatData = [];
+    const VIRTUAL_ROOT_ID = 'root';
+
+    flatData.push({
+        id: VIRTUAL_ROOT_ID,
+        parentId: null,
+        title: '',
+        code: '',
+        level: -1,
+        positions: [],
+        _isVirtual: true
+    });
+
+    function flatten(nodes, parentId) {
+        nodes.forEach(node => {
+            flatData.push({
+                id: node.id,
+                parentId: parentId,
+                title: node.title,
+                code: node.code,
+                level: node.level,
+                positions: node.positions || []
+            });
+            if (node.children && node.children.length > 0) {
+                flatten(node.children, node.id);
+            }
+        });
+    }
+
+    flatten(chartData, VIRTUAL_ROOT_ID);
+
+    orgChartInstance = new d3.OrgChart()
+        .container(container)
+        .data(flatData)
+        .nodeId(d => d.id)
+        .parentNodeId(d => d.parentId)
+        .childrenMargin(() => 80)
+        .neighbourMargin(() => 60)
+        .siblingsMargin(() => 30)
+        // 👇 خطوط اتصال پررنگ‌تر
+        .linkUpdate(function(d) {
+            d3.select(this)
+                .attr('stroke', '#9ca3af') // رنگ خاکستری پررنگ‌تر
+                .attr('stroke-width', 2.5); // ضخامت ۲.۵ پیکسل
+        })
+        .nodeHeight(d => d.data._isVirtual ? 50 : 140)
+        .nodeWidth(d => d.data._isVirtual ? 50 : 260)
+        .buttonContent(({ node, state }) => {
+            const count = node.data._directSubordinates;
+            if (!count) return '';
+            
+            const faCount = toPersianNum(count);
+            const isExpanded = !!node.children;
+
+            return `
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border: 1px solid #E4E2E9;
+                    border-radius: 12px;
+                    padding: 2px 8px;
+                    font-size: 11px;
+                    background-color: white;
+                    color: #716E7B;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    font-family: 'Vazirmatn', Tahoma, sans-serif;
+                    gap: 4px;
+                    direction: ltr;
+                ">
+                    <span>${isExpanded ? '−' : '+'}</span>
+                    <span>${faCount}</span>
+                </div>
+            `;
+        })
+        .nodeContent(d => {
+            const data = d.data;
+
+            if (data._isVirtual) {
+                return `
+                    <div style="
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 50px;
+                        height: 50px;
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        border-radius: 50%;
+                        color: white;
+                        font-size: 24px;
+                        box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+                        border: 2px solid white;
+                    ">
+                        🏛️
+                    </div>
+                `;
+            }
+
+            let positionsHtml = '';
+            if (data.positions.length > 0) {
+                positionsHtml = data.positions.map(p => {
+                    const person = p.assigned_person ? p.assigned_person.full_name : 'تعیین نشده';
+                    return `<div style="font-size: 11px; color: #666; margin-top: 4px; display: flex; justify-content: space-between; border-top: 1px dashed #eee; padding-top: 4px;">
+                                <span>👤 ${p.position_title}</span>
+                                <span style="font-weight: bold;">${person}</span>
+                            </div>`;
+                }).join('');
+            }
+
+            let bgColor = 'white';
+            let borderColor = '#17a2b8';
+            if (data.level === 0) { bgColor = '#f0f2ff'; borderColor = '#667eea'; }
+            else if (data.level === 1) { bgColor = '#f5f0ff'; borderColor = '#764ba2'; }
+
+            return `
+                <div style="
+                    background: ${bgColor};
+                    border: 2px solid ${borderColor};
+                    border-radius: 12px;
+                    padding: 12px;
+                    width: 260px;
+                    min-height: 100px;
+                    box-sizing: border-box;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    font-family: 'Vazirmatn', Tahoma, sans-serif;
+                    direction: rtl;
+                    text-align: right;
+                    position: relative;
+                ">
+                    <div style="font-weight: bold; font-size: 14px; color: #333;">${data.title}</div>
+                    <div style="font-size: 11px; color: #667eea; margin-top: 2px;">کد: ${toPersianNum(data.code || '—')}</div>
+                    ${positionsHtml}
+                </div>
+            `;
+        })
+        .nodeUpdate(function(d) {
+            if (d.data && d.data._isVirtual) {
+                d3.select(this).select('.node-button-g').style('display', 'none');
+                d3.select(this).selectAll('text').style('display', 'none');
+            }
+        })
+        .render();
+
+    if (orgChartInstance) {
+        setTimeout(() => orgChartInstance.fit(), 300);
     }
 }
-     
-        // ============================================
+// ============================================
+      // سوئیچ نما
+      // ============================================
+      function switchView(view) {
+          currentView = view;
+          localStorage.setItem("org-view", view);
+
+          document.getElementById("btn-tree").classList.toggle("active", view === "tree");
+          document.getElementById("btn-table").classList.toggle("active", view === "table");
+          document.getElementById("btn-chart").classList.toggle("active", view === "chart");
+
+          document.getElementById("tree-view").style.display = view === "tree" ? "block" : "none";
+          document.getElementById("table-view").style.display = view === "table" ? "block" : "none";
+          document.getElementById("chart-view").style.display = view === "chart" ? "block" : "none";
+
+          if (currentFilteredData !== null) {
+              if (view === 'tree') renderTree(currentFilteredData, currentIsFiltered);
+              if (view === 'table') renderTable(currentFilteredData, currentIsFiltered);
+          }
+
+          if (view === 'chart') {
+              if (chartLoaded && chartData.length > 0) {
+                  renderChart();
+              } else {
+                  loadChartData();
+              }
+          }
+      }
+
+      // ============================================
       // Context Menu
       // ============================================
-      let ctxNodeId = null;
-
       function openContextMenu(event, nodeId) {
-        ctxNodeId = nodeId;
-        const menu = document.getElementById("context-menu");
-        const node = flatData.find((n) => n.id === nodeId);
+          ctxNodeId = nodeId;
+          const menu = document.getElementById("context-menu");
+          const node = flatData.find((n) => n.id === nodeId);
 
-        // دکمه toggle
-        const toggleBtn = document.getElementById("ctx-toggle");
-        toggleBtn.textContent =
-          node && node.is_active ? "🔄 غیرفعال کردن" : "🔄 فعال کردن";
+          const toggleBtn = document.getElementById("ctx-toggle");
+          toggleBtn.textContent = node && node.is_active ? "🔄 غیرفعال کردن" : "🔄 فعال کردن";
 
-menu.classList.add("open");
+          menu.classList.add("open");
 
-// موقعیت رو با ابعاد واقعی منو حساب کن
-requestAnimationFrame(() => {
-    const menuRect = menu.getBoundingClientRect();
-    const menuWidth = menuRect.width;
-    const menuHeight = menuRect.height;
-    
-    let x = event.clientX;
-    let y = event.clientY;
-    
-    // اگه از راست بیرون زد، بذار سمت چپ
-    if (x + menuWidth > window.innerWidth) {
-        x = window.innerWidth - menuWidth - 10;
-    }
-    // اگه از چپ بیرون زد
-    if (x < 10) x = 10;
-    
-    // اگه از پایین بیرون زد، بذار بالای کلیک
-    if (y + menuHeight > window.innerHeight) {
-        y = window.innerHeight - menuHeight - 10;
-    }
-    // اگه از بالا بیرون زد
-    if (y < 10) y = 10;
-    
-    menu.style.left = x + "px";
-    menu.style.top = y + "px";
-});
+          requestAnimationFrame(() => {
+              const menuRect = menu.getBoundingClientRect();
+              const menuWidth = menuRect.width;
+              const menuHeight = menuRect.height;
+              
+              let x = event.clientX;
+              let y = event.clientY;
+              
+              if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
+              if (x < 10) x = 10;
+              if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
+              if (y < 10) y = 10;
+              
+              menu.style.left = x + "px";
+              menu.style.top = y + "px";
+          });
       }
 
       function closeContextMenu() {
-        document.getElementById("context-menu").classList.remove("open");
+          document.getElementById("context-menu").classList.remove("open");
       }
 
-        async function ctxAction(action) {
-            const node = flatData.find(n => n.id === ctxNodeId);
-            closeContextMenu();
+      async function ctxAction(action) {
+          const node = flatData.find(n => n.id === ctxNodeId);
+          closeContextMenu();
 
-            if (!node) return;
+          if (!node) return;
 
-            if (action === 'add') {
-                openAddModal(node);
-            } else if (action === 'add-sibling') {
-                const parent = node.parent_id 
-                    ? flatData.find(n => n.id === node.parent_id) 
-                    : null;
-                openAddModal(parent);
-            } else if (action === 'manage-positions') {
-                openPositionsModal(node);
-            } else if (action === 'edit') {
-                openEditModal(node);
-            } else if (action === 'delete') {
-                await deleteNode(node);
-            } else if (action === 'toggle') {
-                await toggleNode(node);
-            }
-        }
-     
-     
+          if (action === 'add') {
+              openAddModal(node);
+          } else if (action === 'add-sibling') {
+              const parent = node.parent_id ? flatData.find(n => n.id === node.parent_id) : null;
+              openAddModal(parent);
+          } else if (action === 'manage-positions') {
+              openPositionsModal(node);
+          } else if (action === 'edit') {
+              openEditModal(node);
+          } else if (action === 'delete') {
+              await deleteNode(node);
+          } else if (action === 'toggle') {
+              await toggleNode(node);
+          }
+      }
+
       // ============================================
-      // پر کردن dropdown نوع
-      // ============================================
-function fillLevelNames(selectedLevel = null, selectedName = null) {
-    const container = document.getElementById('level-pills');
-    if (!container) {
-        console.warn('level-pills not found');
-        return;
-    }
-    container.innerHTML = '';
-
-    LEVEL_NAMES.forEach((name, idx) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'level-pill';
-        btn.dataset.value = name;
-        btn.textContent = name;
-
-        if (selectedName === name || (!selectedName && selectedLevel === idx)) {
-            btn.classList.add('active');
-        }
-
-        btn.addEventListener('click', () => {
-            container.querySelectorAll('.level-pill').forEach(p => p.classList.remove('active'));
-            btn.classList.add('active');
-        });
-
-        container.appendChild(btn);
-    });
-}
-        // ============================================
       // Modal: افزودن
       // ============================================
-async function openAddModal(parent) {
-    editingNode = null;
-    currentParentId = parent ? parent.id : null;
-    
-    document.getElementById("modal-title").textContent =
-        "➕ افزودن " + (parent ? "زیرشاخه" : "ریشه");
-    document.getElementById("input-title").value = "";
-    document.getElementById("input-description").value = "";
-    document.getElementById("input-digit-count").value = "3";
-    document.getElementById("input-digit-count").parentElement.style.display = "block";
+      function fillLevelNames(selectedLevel = null, selectedName = null) {
+          const container = document.getElementById('level-pills');
+          if (!container) return;
+          container.innerHTML = '';
 
-    // نمایش dropdown نوع
-    document.getElementById("group-level-name").style.display = "block";
+          LEVEL_NAMES.forEach((name, idx) => {
+              const btn = document.createElement('button');
+              btn.type = 'button';
+              btn.className = 'level-pill';
+              btn.dataset.value = name;
+              btn.textContent = name;
 
-    if (parent) {
-        document.getElementById("modal-info").style.display = "flex";
-        document.getElementById("info-parent").textContent = parent.title;
-        document.getElementById("info-level").textContent = getLevelName(parent.level + 1);
+              if (selectedName === name || (!selectedName && selectedLevel === idx)) {
+                  btn.classList.add('active');
+              }
 
-        // پر کردن dropdown
-        const nextLevel = parent.level + 1;
-        fillLevelNames(nextLevel, null);
+              btn.addEventListener('click', () => {
+                  container.querySelectorAll('.level-pill').forEach(p => p.classList.remove('active'));
+                  btn.classList.add('active');
+              });
 
-        try {
-            const res = await fetch(
-                `/api/base-data/next-code?section=${SECTION}&parent_id=${parent.id}&digit_count=${parent.digit_count}&prefix=${PREFIX}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            const data = await res.json();
-            document.getElementById("info-code").textContent = data.next_code || "...";
-        } catch {
-            document.getElementById("info-code").textContent = "...";
-        }
-    } else {
-        document.getElementById("modal-info").style.display = "none";
-        fillLevelNames(0, null);
-    }
+              container.appendChild(btn);
+          });
+      }
 
-    document.getElementById("modal-overlay").classList.add("open");
-    setTimeout(() => document.getElementById("input-title").focus(), 100);
-}
+      async function openAddModal(parent) {
+          editingNode = null;
+          currentParentId = parent ? parent.id : null;
+          
+          document.getElementById("modal-title").textContent = "➕ افزودن " + (parent ? "زیرشاخه" : "ریشه");
+          document.getElementById("input-title").value = "";
+          document.getElementById("input-description").value = "";
+          document.getElementById("input-digit-count").value = "3";
+          document.getElementById("input-digit-count").parentElement.style.display = "block";
+          document.getElementById("group-level-name").style.display = "block";
+
+          if (parent) {
+              document.getElementById("modal-info").style.display = "flex";
+              document.getElementById("info-parent").textContent = parent.title;
+              document.getElementById("info-level").textContent = getLevelName(parent.level + 1);
+
+              const nextLevel = parent.level + 1;
+              fillLevelNames(nextLevel, null);
+
+              try {
+                  const res = await fetch(`/api/base-data/next-code?section=${SECTION}&parent_id=${parent.id}&digit_count=${parent.digit_count}&prefix=${PREFIX}`, {
+                      headers: { Authorization: `Bearer ${token}` }
+                  });
+                  const data = await res.json();
+                  document.getElementById("info-code").textContent = data.next_code || "...";
+              } catch {
+                  document.getElementById("info-code").textContent = "...";
+              }
+          } else {
+              document.getElementById("modal-info").style.display = "none";
+              fillLevelNames(0, null);
+          }
+
+          document.getElementById("modal-overlay").classList.add("open");
+          setTimeout(() => document.getElementById("input-title").focus(), 100);
+      }
+
       // ============================================
       // Modal: ویرایش
       // ============================================
-function openEditModal(node) {
-    editingNode = node;
-    currentParentId = null;
-    document.getElementById("modal-title").textContent = "✏️ ویرایش";
-    document.getElementById("input-title").value = node.title;
-    document.getElementById("input-description").value = node.description || "";
-    document.getElementById("group-digit-count").style.display = "none";
-    document.getElementById("group-level-name").style.display = "block";  // ← این
-    
-    fillLevelNames(node.level, node.level_name);  // ← این
-    
-    document.getElementById("modal-info").style.display = "flex";
-    document.getElementById("info-parent").textContent = node.code;
-    document.getElementById("info-level").textContent = node.level_name || getLevelName(node.level);
-    document.getElementById("info-code").textContent = "-";
+      function openEditModal(node) {
+          editingNode = node;
+          currentParentId = null;
+          document.getElementById("modal-title").textContent = "✏️ ویرایش";
+          document.getElementById("input-title").value = node.title;
+          document.getElementById("input-description").value = node.description || "";
+          document.getElementById("group-digit-count").style.display = "none";
+          document.getElementById("group-level-name").style.display = "block";
+          
+          fillLevelNames(node.level, node.level_name);
+          
+          document.getElementById("modal-info").style.display = "flex";
+          document.getElementById("info-parent").textContent = node.code;
+          document.getElementById("info-level").textContent = node.level_name || getLevelName(node.level);
+          document.getElementById("info-code").textContent = "-";
 
-    document.getElementById("modal-overlay").classList.add("open");
-    setTimeout(() => document.getElementById("input-title").focus(), 100);
-}
+          document.getElementById("modal-overlay").classList.add("open");
+          setTimeout(() => document.getElementById("input-title").focus(), 100);
+      }
+
       function closeModal() {
-        document.getElementById("modal-overlay").classList.remove("open");
-        editingNode = null;
-        currentParentId = null; // ✅ اضافه شد
+          document.getElementById("modal-overlay").classList.remove("open");
+          editingNode = null;
+          currentParentId = null;
       }
 
       // ============================================
       // ذخیره Modal
       // ============================================
       async function saveModal() {
-        // ✅ خواندن از level-pills (به جای select)
-const levelNameEl = document.querySelector('#level-pills .level-pill.active');
-const levelName = levelNameEl ? levelNameEl.dataset.value : (LEVEL_NAMES[0] || 'حوزه');
-        const title = document.getElementById("input-title").value.trim();
-        const description = document
-          .getElementById("input-description")
-          .value.trim();
+          const levelNameEl = document.querySelector('#level-pills .level-pill.active');
+          const levelName = levelNameEl ? levelNameEl.dataset.value : (LEVEL_NAMES[0] || 'حوزه');
+          const title = document.getElementById("input-title").value.trim();
+          const description = document.getElementById("input-description").value.trim();
 
-        if (!title) {
-          showToast("عنوان الزامی است", "error");
-          return;
-        }
-
-        const btn = document.getElementById("btn-save");
-        btn.disabled = true;
-        btn.textContent = "در حال ذخیره...";
-
-        try {
-          if (editingNode) {
-            // ویرایش
-            const res = await fetch(`/api/base-data/${editingNode.id}`, {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                title,
-                description,
-               level_name: levelName,
-                is_active: editingNode.is_active,
-              }),
-            });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "خطا");
-
-            showToast("با موفقیت ویرایش شد");
-          } else {
-           
-           
-           
-            // افزودن
-            const digitCount =
-              parseInt(document.getElementById("input-digit-count").value) || 3;
-            const parentId = currentParentId; // ✅ از currentParentId
-            const parentLevel = parentId
-              ? flatData.find((n) => n.id === parentId)?.level ?? -1
-              : -1;
-            const nextLevel = parentLevel + 1;
-
-            const body = {
-              section: SECTION,
-              type: "general",
-              prefix: PREFIX,
-              title,
-              description,
-              digit_count: digitCount,
-              parent_id: parentId,
-              level_name: levelName,
-            };
-
-            const res = await fetch("/api/base-data", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify(body),
-            });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "خطا");
-
-            showToast(`با موفقیت ثبت شد (کد: ${data.code})`);
+          if (!title) {
+              showToast("عنوان الزامی است", "error");
+              return;
           }
 
-          closeModal();
-          await loadData();
-        } catch (error) {
-          showToast(error.message, "error");
-        } finally {
-          btn.disabled = false;
-          btn.textContent = "ذخیره";
-        }
+          const btn = document.getElementById("btn-save");
+          btn.disabled = true;
+          btn.textContent = "در حال ذخیره...";
+
+          try {
+              if (editingNode) {
+                  const res = await fetch(`/api/base-data/${editingNode.id}`, {
+                      method: "PUT",
+                      headers: {
+                          "Content-Type": "application/json",
+                          Authorization: `Bearer ${token}`,
+                      },
+                      body: JSON.stringify({
+                          title,
+                          description,
+                          level_name: levelName,
+                          is_active: editingNode.is_active,
+                      }),
+                  });
+
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error || "خطا");
+                  showToast("با موفقیت ویرایش شد");
+              } else {
+                  const digitCount = parseInt(document.getElementById("input-digit-count").value) || 3;
+                  const parentId = currentParentId;
+                  const body = {
+                      section: SECTION,
+                      type: "general",
+                      prefix: PREFIX,
+                      title,
+                      description,
+                      digit_count: digitCount,
+                      parent_id: parentId,
+                      level_name: levelName,
+                  };
+
+                  const res = await fetch("/api/base-data", {
+                      method: "POST",
+                      headers: {
+                          "Content-Type": "application/json",
+                          Authorization: `Bearer ${token}`,
+                      },
+                      body: JSON.stringify(body),
+                  });
+
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error || "خطا");
+                  showToast(`با موفقیت ثبت شد (کد: ${data.code})`);
+              }
+
+              closeModal();
+              await loadData();
+          } catch (error) {
+              showToast(error.message, "error");
+          } finally {
+              btn.disabled = false;
+              btn.textContent = "ذخیره";
+          }
       }
 
       // ============================================
-      // حذف
+      // حذف و تغییر وضعیت
       // ============================================
       async function deleteNode(node) {
-        if (!confirm(`مطمئن هستید "${node.title}" حذف شود؟`)) return;
+          if (!confirm(`مطمئن هستید "${node.title}" حذف شود؟`)) return;
 
-        try {
-          const res = await fetch(`/api/base-data/${node.id}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          try {
+              const res = await fetch(`/api/base-data/${node.id}`, {
+                  method: "DELETE",
+                  headers: { Authorization: `Bearer ${token}` },
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || "خطا");
+              showToast("با موفقیت حذف شد");
+              await loadData();
+          } catch (error) {
+              showToast(error.message, "error");
+          }
+      }
 
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || "خطا");
-
-          showToast("با موفقیت حذف شد");
-          await loadData();
-        } catch (error) {
-          showToast(error.message, "error");
-        }
+      async function toggleNode(node) {
+          try {
+              const res = await fetch(`/api/base-data/${node.id}`, {
+                  method: "PUT",
+                  headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({
+                      title: node.title,
+                      description: node.description,
+                      is_active: !node.is_active,
+                  }),
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || "خطا");
+              showToast("وضعیت تغییر کرد");
+              await loadData();
+          } catch (error) {
+              showToast(error.message, "error");
+          }
       }
 
       // ============================================
-      // تغییر وضعیت
+      // مدیریت پست‌ها
       // ============================================
-      async function toggleNode(node) {
-        try {
-          const res = await fetch(`/api/base-data/${node.id}`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              title: node.title,
-              description: node.description,
-              is_active: !node.is_active,
-            }),
+      let currentPositionsOrgId = null;
+      let currentPositions = [];
+      let editingPositionId = null;
+
+      async function openPositionsModal(node) {
+          currentPositionsOrgId = node.id;
+          document.getElementById('positions-org-title').textContent = `${node.title} (${node.code})`;
+          document.getElementById('positions-list').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+          document.getElementById('positions-modal-overlay').classList.add('open');
+          await loadPositions();
+      }
+
+      function closePositionsModal() {
+          document.getElementById('positions-modal-overlay').classList.remove('open');
+          currentPositionsOrgId = null;
+          currentPositions = [];
+      }
+
+      async function loadPositions() {
+          try {
+              const res = await fetch(`/api/org-positions?organization_id=${currentPositionsOrgId}`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+              });
+              if (!res.ok) throw new Error('خطا');
+              currentPositions = await res.json();
+              renderPositions();
+          } catch (error) {
+              document.getElementById('positions-list').innerHTML = `<div style="color:red; text-align:center; padding:20px;">${error.message}</div>`;
+          }
+      }
+
+      function renderPositions() {
+          const container = document.getElementById('positions-list');
+          if (currentPositions.length === 0) {
+              container.innerHTML = `<div style="text-align:center; padding:30px; color:#999;">هنوز پستی تعریف نشده</div>`;
+              return;
+          }
+
+          const levelLabels = { 0: 'شهردار', 1: 'معاون', 2: 'رئیس', 3: 'کارشناس', 4: 'کارمند' };
+          let html = '';
+          currentPositions.forEach(pos => {
+              const assigned = pos.assigned_person;
+              const hasAssigned = assigned && assigned.full_name;
+
+              html += `
+                  <div class="position-row" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:#f8f9fa; border-radius:8px; margin-bottom:8px; border-right:4px solid ${hasAssigned ? '#28a745' : '#fd7e14'};">
+                      <div style="flex:1;">
+                          <div style="font-weight:bold; font-size:13px; color:#333;">
+                              ${pos.position_title}
+                              <span style="font-size:10px; background:#e9ecef; padding:2px 8px; border-radius:8px; color:#666; margin-right:5px;">${levelLabels[pos.position_level] || '—'}</span>
+                              ${pos.is_primary ? '<span style="font-size:10px; background:#667eea; color:white; padding:2px 8px; border-radius:8px;">اصلی</span>' : ''}
+                          </div>
+                          <div style="font-size:11px; color:#666; margin-top:3px;">
+                              ${hasAssigned ? `👤 متصل به: <b>${assigned.full_name}</b>` : '<span style="color:#fd7e14;">تعیین نشده</span>'}
+                          </div>
+                      </div>
+                      <div style="display:flex; gap:5px;">
+                          <button class="dep-btn dep-edit-btn" onclick="editPosition(${pos.id})" title="ویرایش">✏️</button>
+                          <button class="dep-btn dep-delete-btn" onclick="deletePosition(${pos.id})" title="حذف">🗑️</button>
+                      </div>
+                  </div>
+              `;
           });
+          container.innerHTML = html;
+      }
 
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || "خطا");
+      function openPositionForm(posId = null) {
+          editingPositionId = posId;
+          document.getElementById('position-form-title').textContent = posId ? '✏️ ویرایش پست' : '➕ افزودن پست';
 
-          showToast("وضعیت تغییر کرد");
-          await loadData();
-        } catch (error) {
-          showToast(error.message, "error");
-        }
+          if (posId) {
+              const pos = currentPositions.find(p => p.id === posId);
+              if (pos) {
+                  document.getElementById('position-form-title-input').value = pos.position_title || '';
+                  document.getElementById('position-form-level').value = pos.position_level || 3;
+                  document.getElementById('position-form-code').value = pos.position_code || '';
+                  document.getElementById('position-form-order').value = pos.position_order || 0;
+                  document.getElementById('position-form-primary').checked = !!pos.is_primary;
+                  document.getElementById('position-form-description').value = pos.description || '';
+              }
+          } else {
+              document.getElementById('position-form-title-input').value = '';
+              document.getElementById('position-form-level').value = 3;
+              document.getElementById('position-form-code').value = '';
+              document.getElementById('position-form-order').value = 0;
+              document.getElementById('position-form-primary').checked = false;
+              document.getElementById('position-form-description').value = '';
+          }
+
+          document.getElementById('position-form-overlay').classList.add('open');
+          setTimeout(() => document.getElementById('position-form-title-input').focus(), 100);
+      }
+
+      function closePositionForm() {
+          document.getElementById('position-form-overlay').classList.remove('open');
+          editingPositionId = null;
+      }
+
+      function editPosition(posId) {
+          openPositionForm(posId);
+      }
+
+      async function savePosition() {
+          const title = document.getElementById('position-form-title-input').value.trim();
+          if (!title) { alert('عنوان پست الزامی است'); return; }
+
+          const data = {
+              id: editingPositionId || null,
+              organization_id: currentPositionsOrgId,
+              position_title: title,
+              position_level: parseInt(document.getElementById('position-form-level').value),
+              position_code: document.getElementById('position-form-code').value.trim() || null,
+              position_order: parseInt(document.getElementById('position-form-order').value) || 0,
+              is_primary: document.getElementById('position-form-primary').checked,
+              description: document.getElementById('position-form-description').value.trim() || null,
+          };
+
+          const btn = document.getElementById('btn-save-position');
+          btn.disabled = true;
+          btn.textContent = '⏳ در حال ذخیره...';
+
+          try {
+              const res = await fetch('/api/org-positions', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify(data)
+              });
+              const result = await res.json();
+              if (!res.ok) throw new Error(result.error || 'خطا');
+              closePositionForm();
+              await loadPositions();
+          } catch (error) {
+              alert(error.message);
+          } finally {
+              btn.disabled = false;
+              btn.textContent = '💾 ذخیره';
+          }
+      }
+
+      async function deletePosition(posId) {
+          if (!confirm('مطمئن هستید این پست حذف شود؟')) return;
+          try {
+              const res = await fetch(`/api/org-positions/${posId}`, {
+                  method: 'DELETE',
+                  headers: { 'Authorization': `Bearer ${token}` }
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || 'خطا');
+              await loadPositions();
+          } catch (error) {
+              alert(error.message);
+          }
       }
 
       // ============================================
       // Event Listeners
       // ============================================
       document.addEventListener("click", (e) => {
-        if (
-          !e.target.closest(".context-menu") &&
-          !e.target.closest(".menu-btn")
-        ) {
-          closeContextMenu();
-        }
+          if (!e.target.closest(".context-menu") && !e.target.closest(".menu-btn")) {
+              closeContextMenu();
+          }
       });
 
       document.addEventListener("contextmenu", (e) => {
-        if (!e.target.closest(".tree-node") && !e.target.closest("tr")) {
-          closeContextMenu();
-        }
+          if (!e.target.closest(".tree-node") && !e.target.closest("tr")) {
+              closeContextMenu();
+          }
       });
 
-      // بستن modal با Escape
       document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          closeModal();
-          closeContextMenu();
-        }
+          if (e.key === "Escape") {
+              closeModal();
+              closeContextMenu();
+          }
       });
-
-              // ============================================
-        // مدیریت پست‌ها
-        // ============================================
-        let currentPositionsOrgId = null;
-        let currentPositions = [];
-        let editingPositionId = null;
-
-        async function openPositionsModal(node) {
-            currentPositionsOrgId = node.id;
-
-            document.getElementById('positions-org-title').textContent = `${node.title} (${node.code})`;
-            document.getElementById('positions-list').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-            document.getElementById('positions-modal-overlay').classList.add('open');
-
-            await loadPositions();
-        }
-
-        function closePositionsModal() {
-            document.getElementById('positions-modal-overlay').classList.remove('open');
-            currentPositionsOrgId = null;
-            currentPositions = [];
-        }
-
-        async function loadPositions() {
-            try {
-                const res = await fetch(`/api/org-positions?organization_id=${currentPositionsOrgId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (!res.ok) throw new Error('خطا');
-
-                currentPositions = await res.json();
-                renderPositions();
-            } catch (error) {
-                document.getElementById('positions-list').innerHTML = `<div style="color:red; text-align:center; padding:20px;">${error.message}</div>`;
-            }
-        }
-
-        function renderPositions() {
-            const container = document.getElementById('positions-list');
-
-            if (currentPositions.length === 0) {
-                container.innerHTML = `
-                    <div style="text-align:center; padding:30px; color:#999;">
-                        هنوز پستی تعریف نشده
-                    </div>`;
-                return;
-            }
-
-            const levelLabels = {
-                0: 'شهردار',
-                1: 'معاون',
-                2: 'رئیس',
-                3: 'کارشناس',
-                4: 'کارمند'
-            };
-
-            let html = '';
-            currentPositions.forEach(pos => {
-                const assigned = pos.assigned_person;
-                const hasAssigned = assigned && assigned.full_name;
-
-                html += `
-                    <div class="position-row" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:#f8f9fa; border-radius:8px; margin-bottom:8px; border-right:4px solid ${hasAssigned ? '#28a745' : '#fd7e14'};">
-                        <div style="flex:1;">
-                            <div style="font-weight:bold; font-size:13px; color:#333;">
-                                ${pos.position_title}
-                                <span style="font-size:10px; background:#e9ecef; padding:2px 8px; border-radius:8px; color:#666; margin-right:5px;">${levelLabels[pos.position_level] || '—'}</span>
-                                ${pos.is_primary ? '<span style="font-size:10px; background:#667eea; color:white; padding:2px 8px; border-radius:8px;">اصلی</span>' : ''}
-                            </div>
-                            <div style="font-size:11px; color:#666; margin-top:3px;">
-                                ${hasAssigned 
-                                    ? `👤 متصل به: <b>${assigned.full_name}</b>` 
-                                    : '<span style="color:#fd7e14;">تعیین نشده</span>'}
-                            </div>
-                        </div>
-                        <div style="display:flex; gap:5px;">
-                            <button class="dep-btn dep-edit-btn" onclick="editPosition(${pos.id})" title="ویرایش">✏️</button>
-                            <button class="dep-btn dep-delete-btn" onclick="deletePosition(${pos.id})" title="حذف">🗑️</button>
-                        </div>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-        }
-
-        function openPositionForm(posId = null) {
-            editingPositionId = posId;
-
-            const title = posId ? '✏️ ویرایش پست' : '➕ افزودن پست';
-            document.getElementById('position-form-title').textContent = title;
-
-            if (posId) {
-                const pos = currentPositions.find(p => p.id === posId);
-                if (pos) {
-                    document.getElementById('position-form-title-input').value = pos.position_title || '';
-                    document.getElementById('position-form-level').value = pos.position_level || 3;
-                    document.getElementById('position-form-code').value = pos.position_code || '';
-                    document.getElementById('position-form-order').value = pos.position_order || 0;
-                    document.getElementById('position-form-primary').checked = !!pos.is_primary;
-                    document.getElementById('position-form-description').value = pos.description || '';
-                }
-            } else {
-                document.getElementById('position-form-title-input').value = '';
-                document.getElementById('position-form-level').value = 3;
-                document.getElementById('position-form-code').value = '';
-                document.getElementById('position-form-order').value = 0;
-                document.getElementById('position-form-primary').checked = false;
-                document.getElementById('position-form-description').value = '';
-            }
-
-            document.getElementById('position-form-overlay').classList.add('open');
-            setTimeout(() => document.getElementById('position-form-title-input').focus(), 100);
-        }
-
-        function closePositionForm() {
-            document.getElementById('position-form-overlay').classList.remove('open');
-            editingPositionId = null;
-        }
-
-        function editPosition(posId) {
-            openPositionForm(posId);
-        }
-
-        async function savePosition() {
-            const titleInput = document.getElementById('position-form-title-input');
-            const title = titleInput.value.trim();
-
-            if (!title) {
-                alert('عنوان پست الزامی است');
-                return;
-            }
-
-            const data = {
-                id: editingPositionId || null,
-                organization_id: currentPositionsOrgId,
-                position_title: title,
-                position_level: parseInt(document.getElementById('position-form-level').value),
-                position_code: document.getElementById('position-form-code').value.trim() || null,
-                position_order: parseInt(document.getElementById('position-form-order').value) || 0,
-                is_primary: document.getElementById('position-form-primary').checked,
-                description: document.getElementById('position-form-description').value.trim() || null,
-            };
-
-            const btn = document.getElementById('btn-save-position');
-            btn.disabled = true;
-            btn.textContent = '⏳ در حال ذخیره...';
-
-            try {
-                const res = await fetch('/api/org-positions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await res.json();
-                if (!res.ok) throw new Error(result.error || 'خطا');
-
-                closePositionForm();
-                await loadPositions();
-            } catch (error) {
-                alert(error.message);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '💾 ذخیره';
-            }
-        }
-
-        async function deletePosition(posId) {
-            if (!confirm('مطمئن هستید این پست حذف شود؟')) return;
-
-            try {
-                const res = await fetch(`/api/org-positions/${posId}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'خطا');
-
-                await loadPositions();
-            } catch (error) {
-                alert(error.message);
-            }
-        }
 
       // ============================================
       // شروع
@@ -2206,22 +1621,17 @@ const levelName = levelNameEl ? levelNameEl.dataset.value : (LEVEL_NAMES[0] || '
       loadData();
     </script>
 
-
     <!-- Modal مدیریت پست‌ها -->
     <div class="modal-overlay" id="positions-modal-overlay">
         <div class="modal" style="max-width: 700px;">
             <h3 id="positions-modal-title">💼 مدیریت پست‌ها</h3>
-
             <div class="info-row" style="display: flex;">
                 <span>سازمان: <b id="positions-org-title">—</b></span>
             </div>
-
             <div id="positions-list" style="max-height: 400px; overflow-y: auto; margin-bottom: 15px;"></div>
-
             <button class="add-position-btn" onclick="openPositionForm()" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 13px;">
                 ➕ افزودن پست جدید
             </button>
-
             <div class="modal-actions" style="margin-top: 20px;">
                 <button class="btn-cancel" onclick="closePositionsModal()">بستن</button>
             </div>
@@ -2232,12 +1642,10 @@ const levelName = levelNameEl ? levelNameEl.dataset.value : (LEVEL_NAMES[0] || '
     <div class="modal-overlay" id="position-form-overlay">
         <div class="modal" style="max-width: 500px;">
             <h3 id="position-form-title">➕ افزودن پست</h3>
-
             <div class="form-group">
                 <label>عنوان پست <span style="color:#e74c3c;">*</span></label>
                 <input type="text" id="position-form-title-input" placeholder="مثلاً رئیس، کارشناس، شهردار" />
             </div>
-
             <div class="form-group">
                 <label>سطح پست</label>
                 <select id="position-form-level">
@@ -2248,29 +1656,24 @@ const levelName = levelNameEl ? levelNameEl.dataset.value : (LEVEL_NAMES[0] || '
                     <option value="4">کارمند</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <label>کد پست (اختیاری)</label>
                 <input type="text" id="position-form-code" dir="ltr" placeholder="P001" />
             </div>
-
             <div class="form-group">
                 <label>ترتیب نمایش</label>
                 <input type="number" id="position-form-order" value="0" min="0" />
             </div>
-
             <div class="form-group">
                 <label>
                     <input type="checkbox" id="position-form-primary" style="width: auto;" />
                     پست اصلی سازمان
                 </label>
             </div>
-
             <div class="form-group">
                 <label>توضیحات</label>
                 <textarea id="position-form-description"></textarea>
             </div>
-
             <div class="modal-actions">
                 <button class="btn-cancel" onclick="closePositionForm()">انصراف</button>
                 <button class="btn-save" id="btn-save-position" onclick="savePosition()">💾 ذخیره</button>

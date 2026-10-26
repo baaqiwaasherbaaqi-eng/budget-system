@@ -10765,6 +10765,11 @@ if (url.pathname.match(/^\/api\/dependents\/\d+\/approve$/) && request.method ==
   "/base-data-search.js",     
   "/base-data-search.css",    
   "/save-shortcut.js",
+  "/d3.min.js",            // 👈 این را تغییر دهید
+  "/d3-org-chart@3.js",    // 👈 این را تغییر دهید
+  "/d3-flextree.js",
+
+
 
       ];
 
