@@ -742,28 +742,40 @@
 
           const toggleEl = nodeEl.querySelector(".toggle");
           if (hasChildren) {
-              toggleEl.addEventListener("click", (e) => {
-                  e.stopPropagation();
-                  if (isCollapsed) {
-                      localStorage.removeItem(`org-collapsed-${node.id}`);
-                  } else {
-                      localStorage.setItem(`org-collapsed-${node.id}`, "1");
-                  }
-                  renderTree(currentFilteredData, currentIsFiltered);
-              });
+            toggleEl.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (isCollapsed) {
+        localStorage.removeItem(`org-collapsed-${node.id}`);
+    } else {
+        localStorage.setItem(`org-collapsed-${node.id}`, "1");
+    }
+    if (currentFilteredData !== null) {
+        renderTree(currentFilteredData, currentIsFiltered);
+    } else {
+        renderTree();
+    }
+});
           }
 
           nodeEl.addEventListener("click", () => {
-              selectedNode = node;
-              renderTree(currentFilteredData, currentIsFiltered);
-          });
+    selectedNode = node;
+    if (currentFilteredData !== null) {
+        renderTree(currentFilteredData, currentIsFiltered);
+    } else {
+        renderTree();
+    }
+});
 
-          nodeEl.addEventListener("contextmenu", (e) => {
-              e.preventDefault();
-              selectedNode = node;
-              renderTree(currentFilteredData, currentIsFiltered);
-              openContextMenu(e, node.id);
-          });
+nodeEl.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    selectedNode = node;
+    if (currentFilteredData !== null) {
+        renderTree(currentFilteredData, currentIsFiltered);
+    } else {
+        renderTree();
+    }
+    openContextMenu(e, node.id);
+});
 
           wrapper.appendChild(nodeEl);
 
@@ -1354,16 +1366,22 @@ function renderChart() {
               } else {
                   const digitCount = parseInt(document.getElementById("input-digit-count").value) || 3;
                   const parentId = currentParentId;
-                  const body = {
-                      section: SECTION,
-                      type: "general",
-                      prefix: PREFIX,
-                      title,
-                      description,
-                      digit_count: digitCount,
-                      parent_id: parentId,
-                      level_name: levelName,
-                  };
+// محاسبه sort_order (برای ریشه‌های جدید)
+const maxSort = flatData.length > 0
+    ? Math.max(...flatData.map(n => n.sort_order || 0))
+    : 0;
+
+const body = {
+    section: SECTION,
+    type: "general",
+    prefix: PREFIX,
+    title,
+    description,
+    digit_count: digitCount,
+    parent_id: parentId,
+    level_name: levelName,
+    sort_order: maxSort + 1,  // 👈 اضافه شد
+};
 
                   const res = await fetch("/api/base-data", {
                       method: "POST",
