@@ -521,7 +521,7 @@ body.dark tbody tr.dragging {
         <script src="/base-data-search.js"></script>
 
     <script>
-
+let unitsData = [];
         let currentFilteredData = null;
 let currentIsFiltered = false;
         // ============================================
@@ -555,13 +555,20 @@ let currentIsFiltered = false;
         // ============================================
         // لود دیتا
         // ============================================
-async function loadData() {
+        async function loadData() {
     try {
-        const res = await fetch(`/api/base-data?section=${SECTION}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const [res, unitsRes] = await Promise.all([
+            fetch(`/api/base-data?section=${SECTION}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }),
+            fetch(`/api/base-data?section=goods_unit`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+        ]);
+        
         flatData = await res.json();
-
+        unitsData = await unitsRes.json();
+        
         // باز کردن نودهای سطح ۱ به صورت پیش‌فرض
         if (expandedNodes.size === 0) {
             flatData.filter(n => n.level === 1).forEach(n => expandedNodes.add(n.id));
@@ -589,8 +596,7 @@ async function loadData() {
         console.error('Load error:', error);
         showToast('خطا در بارگذاری', 'error');
     }
-}
-       
+} 
 function startSearchComponent() {
     initBaseDataSearch(
         {
@@ -1082,87 +1088,110 @@ function switchView(view) {
                 await toggleNode(node);
             }
         }
+
+
+
+        function fillUnitOptions(selectedValue = '') {
+    const select = document.getElementById('input-unit');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">— انتخاب کنید —</option>';
+    
+    unitsData.forEach(unit => {
+        const opt = document.createElement('option');
+        opt.value = unit.title;
+        opt.textContent = unit.title;
+        if (unit.title === selectedValue) opt.selected = true;
+        select.appendChild(opt);
+    });
+    
+    // گزینه «سایر» برای واحد دستی
+    const otherOpt = document.createElement('option');
+    otherOpt.value = 'سایر';
+    otherOpt.textContent = 'سایر (دستی)';
+    if (selectedValue === 'سایر') otherOpt.selected = true;
+    select.appendChild(otherOpt);
+}
+
         // ============================================
         // Modal: افزودن
         // ============================================
         async function openAddModal(parentNode) {
-            editingNode = null;
-            addingParent = parentNode;
+    editingNode = null;
+    addingParent = parentNode;
 
-            document.getElementById('modal-title').textContent = parentNode
-                ? `➕ افزودن زیرشاخه به «${parentNode.title}»`
-                : '➕ افزودن گروه اصلی';
+    document.getElementById('modal-title').textContent = parentNode
+        ? `➕ افزودن زیرشاخه به «${parentNode.title}»`
+        : '➕ افزودن گروه اصلی';
 
-            document.getElementById('input-title').value = '';
-            document.getElementById('input-unit').value = '';
-            document.getElementById('input-unit-custom').value = '';
-            document.getElementById('input-specs').value = '';
-            document.getElementById('input-description').value = '';
-            document.getElementById('custom-unit-group').style.display = 'none';
+    document.getElementById('input-title').value = '';
+    fillUnitOptions();
+    document.getElementById('input-unit-custom').value = '';
+    document.getElementById('input-specs').value = '';
+    document.getElementById('input-description').value = '';
+    document.getElementById('custom-unit-group').style.display = 'none';
 
-            document.getElementById('modal-info').style.display = 'flex';
+    document.getElementById('modal-info').style.display = 'flex';
 
-            if (parentNode) {
-                document.getElementById('info-parent').style.display = 'inline';
-                document.getElementById('info-parent-title').textContent = `${parentNode.title} (${parentNode.code})`;
-            } else {
-                document.getElementById('info-parent').style.display = 'none';
-            }
+    if (parentNode) {
+        document.getElementById('info-parent').style.display = 'inline';
+        document.getElementById('info-parent-title').textContent = `${parentNode.title} (${parentNode.code})`;
+    } else {
+        document.getElementById('info-parent').style.display = 'none';
+    }
 
-            try {
-                const url = parentNode
-                    ? `/api/base-data/next-code?section=${SECTION}&type=${TYPE}&parent_id=${parentNode.id}`
-                    : `/api/base-data/next-code?section=${SECTION}&type=${TYPE}`;
+    try {
+        const url = parentNode
+            ? `/api/base-data/next-code?section=${SECTION}&type=${TYPE}&parent_id=${parentNode.id}`
+            : `/api/base-data/next-code?section=${SECTION}&type=${TYPE}`;
 
-                const res = await fetch(url, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await res.json();
-                document.getElementById('info-code').textContent = data.next_code || '...';
-            } catch {
-                document.getElementById('info-code').textContent = '...';
-            }
+        const res = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        document.getElementById('info-code').textContent = data.next_code || '...';
+    } catch {
+        document.getElementById('info-code').textContent = '...';
+    }
 
-            document.getElementById('modal-overlay').classList.add('open');
-            setTimeout(() => document.getElementById('input-title').focus(), 100);
-        }
-
+    document.getElementById('modal-overlay').classList.add('open');
+    setTimeout(() => document.getElementById('input-title').focus(), 100);
+}
         // ============================================
         // Modal: ویرایش
         // ============================================
         function openEditModal(node) {
-            editingNode = node;
-            addingParent = null;
+    editingNode = node;
+    addingParent = null;
 
-            document.getElementById('modal-title').textContent = '✏️ ویرایش';
-            document.getElementById('input-title').value = node.title;
-            document.getElementById('input-description').value = node.description || '';
+    document.getElementById('modal-title').textContent = '✏️ ویرایش';
+    document.getElementById('input-title').value = node.title;
+    document.getElementById('input-description').value = node.description || '';
 
-            // extra_data
-            let unit = '', unitCustom = '', specs = '';
-            try {
-                const extra = node.extra_data ? JSON.parse(node.extra_data) : null;
-                if (extra) {
-                    if (extra.unit) unit = extra.unit;
-                    if (extra.unit_custom) unitCustom = extra.unit_custom;
-                    if (extra.specs) specs = extra.specs;
-                }
-            } catch {}
-
-            document.getElementById('input-unit').value = unit;
-            document.getElementById('input-unit-custom').value = unitCustom;
-            document.getElementById('input-specs').value = specs;
-
-            document.getElementById('custom-unit-group').style.display = unit === 'سایر' ? 'block' : 'none';
-
-            document.getElementById('modal-info').style.display = 'flex';
-            document.getElementById('info-parent').style.display = 'none';
-            document.getElementById('info-code').textContent = node.code;
-
-            document.getElementById('modal-overlay').classList.add('open');
-            setTimeout(() => document.getElementById('input-title').focus(), 100);
+    // extra_data
+    let unit = '', unitCustom = '', specs = '';
+    try {
+        const extra = node.extra_data ? JSON.parse(node.extra_data) : null;
+        if (extra) {
+            if (extra.unit) unit = extra.unit;
+            if (extra.unit_custom) unitCustom = extra.unit_custom;
+            if (extra.specs) specs = extra.specs;
         }
+    } catch {}
 
+    fillUnitOptions(unit);
+    document.getElementById('input-unit-custom').value = unitCustom;
+    document.getElementById('input-specs').value = specs;
+
+    document.getElementById('custom-unit-group').style.display = unit === 'سایر' ? 'block' : 'none';
+
+    document.getElementById('modal-info').style.display = 'flex';
+    document.getElementById('info-parent').style.display = 'none';
+    document.getElementById('info-code').textContent = node.code;
+
+    document.getElementById('modal-overlay').classList.add('open');
+    setTimeout(() => document.getElementById('input-title').focus(), 100);
+}
         function closeModal() {
             document.getElementById('modal-overlay').classList.remove('open');
             editingNode = null;

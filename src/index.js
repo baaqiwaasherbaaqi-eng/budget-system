@@ -4204,6 +4204,7 @@ if (url.pathname.match(/^\/api\/dependents\/\d+\/approve$/) && request.method ==
 
           const nowShamsi = toShamsi(new Date());
 
+          
           // ثبت در جدول signatures
           const result = await env.DB.prepare(
             `INSERT INTO signatures 
@@ -10527,6 +10528,9 @@ if (url.pathname.match(/^\/api\/dependents\/\d+\/approve$/) && request.method ==
 
           const nowShamsi = toShamsi(new Date());
 
+          const currentRow = await env.DB.prepare("SELECT sort_order FROM base_data WHERE id = ?").bind(id).first();
+          const finalSortOrder = (sort_order !== undefined && sort_order !== null) ? sort_order : (currentRow?.sort_order || 0);
+
           const result = await env.DB.prepare(
             `
             UPDATE base_data SET
@@ -10545,7 +10549,7 @@ if (url.pathname.match(/^\/api\/dependents\/\d+\/approve$/) && request.method ==
               title,
               description || null,
               extra_data ? JSON.stringify(extra_data) : null,
-              sort_order || 0,
+              finalSortOrder,
               is_active !== undefined ? (is_active ? 1 : 0) : 1,
               level_name || null,
               nowShamsi,
@@ -10693,6 +10697,7 @@ if (url.pathname.match(/^\/api\/dependents\/\d+\/approve$/) && request.method ==
           }
 
           const nowShamsi = toShamsi(new Date());
+          
           const stmts = [];
 
           for (const item of items) {
