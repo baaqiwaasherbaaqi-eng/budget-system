@@ -10,6 +10,13 @@
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <style>
 
+body.dark #units-modal .modal {
+    background: #2d3748;
+}
+body.dark #units-list div {
+    background: #374151 !important;
+    color: #e2e8f0;
+}
 
 /* ============ Drag & Drop ============ */
 .tree-node[draggable="true"] {
@@ -413,6 +420,9 @@ body.dark tbody tr.dragging {
                 <button id="btn-tree" class="active" onclick="switchView('tree')">🌳 درختی</button>
                 <button id="btn-table" onclick="switchView('table')">📋 جدولی</button>
             </div>
+            <button class="add-btn" onclick="openUnitsModal()" style="background:#17a2b8;">
+                📏 مدیریت واحدها
+            </button>
             <button class="add-btn" onclick="openAddModal(null)">
                 ➕ افزودن گروه اصلی
             </button>
@@ -521,9 +531,46 @@ body.dark tbody tr.dragging {
         <script src="/base-data-search.js"></script>
 
     <script>
+
+let measurementUnits = [];
 let unitsData = [];
         let currentFilteredData = null;
 let currentIsFiltered = false;
+
+
+async function loadMeasurementUnits() {
+    try {
+        const res = await fetch('/api/base-data?section=goods_unit&type=unit&is_active=1', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        measurementUnits = await res.json();
+    } catch (e) {
+        console.error('Load units error:', e);
+        measurementUnits = [];
+    }
+}
+function fillUnitSelect(selectedValue = null) {
+    const select = document.getElementById('input-unit');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">— انتخاب کنید —</option>';
+
+    measurementUnits.forEach(unit => {
+        const opt = document.createElement('option');
+        opt.value = unit.title;
+        opt.textContent = unit.title;
+        if (selectedValue === unit.title) opt.selected = true;
+        select.appendChild(opt);
+    });
+
+    const otherOpt = document.createElement('option');
+    otherOpt.value = 'سایر';
+    otherOpt.textContent = 'سایر (دستی)';
+    if (selectedValue === 'سایر') otherOpt.selected = true;
+    select.appendChild(otherOpt);
+}
+
+
         // ============================================
         // وضعیت
         // ============================================
@@ -557,6 +604,9 @@ let currentIsFiltered = false;
         // ============================================
         async function loadData() {
     try {
+
+        await loadMeasurementUnits();  // 👈 اضافه کن (قبل از fetch اصلی)
+
         const [res, unitsRes] = await Promise.all([
             fetch(`/api/base-data?section=${SECTION}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -1127,6 +1177,7 @@ function switchView(view) {
     document.getElementById('input-title').value = '';
     fillUnitOptions();
     document.getElementById('input-unit-custom').value = '';
+    fillUnitSelect();  // 👈 اضافه کن
     document.getElementById('input-specs').value = '';
     document.getElementById('input-description').value = '';
     document.getElementById('custom-unit-group').style.display = 'none';
@@ -1181,6 +1232,7 @@ function switchView(view) {
 
     fillUnitOptions(unit);
     document.getElementById('input-unit-custom').value = unitCustom;
+    fillUnitSelect(unit);  // 👈 اضافه کن
     document.getElementById('input-specs').value = specs;
 
     document.getElementById('custom-unit-group').style.display = unit === 'سایر' ? 'block' : 'none';
@@ -1378,11 +1430,111 @@ function switchView(view) {
             }
         });
 
+
+        function openUnitsModal() {
+    document.getElementById('units-modal').classList.add('open');
+    renderUnitsList();
+}
+
+function closeUnitsModal() {
+    document.getElementById('units-modal').classList.remove('open');
+}
+
+function renderUnitsList() {
+    const container = document.getElementById('units-list');
+    if (!container) return;
+
+    if (measurementUnits.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">واحدی ثبت نشده</div>';
+        return;
+    }
+
+    container.innerHTML = measurementUnits.map(unit => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8f9fa; border-radius: 6px; margin-bottom: 6px;">
+            <span>${unit.title}</span>
+            <button onclick="deleteUnit(${unit.id})" style="background:#e74c3c; color:white; border:none; padding: 4px 10px; border-radius: 4px; cursor:pointer; font-size:12px;">🗑️</button>
+        </div>
+    `).join('');
+}
+
+async function addUnit() {
+    const input = document.getElementById('new-unit-input');
+    const title = input.value.trim();
+    if (!title) return;
+
+    try {
+        const res = await fetch('/api/base-data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                section: 'goods_unit',
+                type: 'unit',
+                title: title,
+                level_name: 'واحد',
+            })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'خطا');
+
+        input.value = '';
+        await loadMeasurementUnits();
+        renderUnitsList();
+        fillUnitSelect();
+        showToast('واحد با موفقیت اضافه شد');
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+
+async function deleteUnit(id) {
+    if (!confirm('مطمئن هستید این واحد حذف شود؟')) return;
+
+    try {
+        const res = await fetch(`/api/base-data/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('خطا در حذف');
+        await loadMeasurementUnits();
+        renderUnitsList();
+        fillUnitSelect();
+        showToast('واحد حذف شد');
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+
+
+
+
         // ============================================
         // شروع
         // ============================================
         switchView(currentView);
         loadData();
     </script>
+    <div class="modal-overlay" id="units-modal">
+        <div class="modal" style="max-width: 500px;">
+            <h3>📏 مدیریت واحدهای اندازه‌گیری</h3>
+    
+            <div id="units-list" style="max-height: 350px; overflow-y: auto; margin-bottom: 15px;"></div>
+    
+            <div class="form-group">
+                <label>واحد جدید</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="new-unit-input" placeholder="مثلاً: کیلووات" style="flex:1;" />
+                    <button class="btn-save" onclick="addUnit()" style="padding: 10px 20px;">➕ افزودن</button>
+                </div>
+            </div>
+    
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeUnitsModal()">بستن</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
