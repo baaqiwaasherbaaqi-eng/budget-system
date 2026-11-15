@@ -479,6 +479,11 @@ function renderBreadcrumb() {
       title: "پرونده پرسنلی",
       parent: "/persons.html",
     },
+    "/economic-rates.html": {
+    icon: "📊",
+    title: "نرخ‌های اقتصادی",
+    parent: "/base-info.html",
+},
   };
   
   const current = pathMap[currentPath];
@@ -674,6 +679,12 @@ function renderBreadcrumb() {
       title: "حضور و غیاب",
       parent: "/dashboard.html",
     },
+
+    "/economic-rates.html": {
+    icon: "📊",
+    title: "نرخ‌های اقتصادی",
+    parent: "/base-info.html",
+},
   };
   
   const current = pathMap[currentPath];
@@ -882,6 +893,7 @@ function renderTopBar() {
     "/accounting.html": { icon: "📒", title: "حسابداری" },
     "/budget-types.html": { icon: "🏷️", title: "نوع اعتبار و مصرف" },
     "/goods.html": { icon: "📦", title: "کالا و خدمات" },
+    "/economic-rates.html": { icon: "📊", title: "نرخ‌های اقتصادی" },
   };
 
   const pageInfo = pageTitles[currentPath] || {

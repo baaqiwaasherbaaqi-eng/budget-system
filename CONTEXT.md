@@ -1,8 +1,8 @@
 # پروژه: سامانه بودجه شهرداری
 
-## تاریخ آخرین آپدیت: 1405/08/02
+## تاریخ آخرین آپدیت: 1405/08/05
 
-## وضعیت: بخش ۷ (اشخاص) — تکمیل شد ✅ + بخش ۸ (Permission) — تکمیل شد ✅ + ایمپورت اکسل عملیاتی — تکمیل شد ✅ + Drag & Drop — تکمیل شد ✅ + جستجو و فیلتر سطح — تکمیل شد ✅ + کلید میانبر Ctrl+S — تکمیل شد ✅
+## وضعیت: بخش ۷ (اشخاص) ✅ + بخش ۸ (Permission) ✅ + ایمپورت اکسل ✅ + Drag & Drop ✅ + جستجو و فیلتر سطح ✅ + Ctrl+S ✅ + نرخ‌های اقتصادی ✅
 
 ## کارهای انجام شده:
 - [x] فاز ۰ تا ۱۸
@@ -100,8 +100,67 @@
   - [x] پررنگ‌تر کردن خطوط اتصال (`#9ca3af` با ضخامت `2.5`)
   - [x] دکمه‌های زوم و نمایش کامل
   - [x] فایل‌های `d3.min.js`, `d3-org-chart@3.js`, `d3-flextree.js` در `public/`
+- [x] **Migration 051** — اصلاح `level` در goods بر اساس طول code
+- [x] **Migration 052** — واحدهای اندازه‌گیری (`section='goods_unit'`)
+- [x] **Migration 053** — Seed واحدهای اندازه‌گیری (`section='unit'`) — ⚠️ نیاز به یکدست‌سازی با 052
+- [x] **Migration 054 — نرخ‌های کلان اقتصادی** ✅ (جدید)
+  - [x] جدول `economic_rates` (۶ نرخ)
+  - [x] نرخ تورم
+  - [x] قیمت بنزین + درصد رشد سالانه
+  - [x] قیمت گازوئیل + درصد رشد سالانه
+  - [x] درصد رشد حقوق
+  - [x] `fiscal_year_id` اختیاری (NULL = نرخ جاری)
+  - [x] API: `GET /api/economic-rates` + `POST /api/economic-rates` (bulk)
+  - [x] صفحه `economic-rates.html` با ۶ کارت + انتخاب سال مالی
+  - [x] کارت جدید در `base-info.html`
+  - [x] آیتم منو در `sidebar.js` + breadcrumb + top-bar title
+  - [x] دسترسی `admin`, `manager` (مشاهده + ویرایش)
+  - [x] آماده برای اتصال به محاسبات بودجه (فاز بعد)
 
-## 🔥 بخش جدید: کامپوننت جستجو و فیلتر سطح
+## 🔥 بخش جدید: نرخ‌های اقتصادی (economic_rates)
+
+### جدول: `economic_rates`
+| ستون | توضیح |
+|---|---|
+| `fiscal_year_id` | اختیاری — NULL = نرخ جاری |
+| `rate_key` | inflation, gasoline_price, gasoline_growth, diesel_price, diesel_growth, salary_growth |
+| `rate_value` | مقدار (عدد) |
+| `rate_type` | percent / amount |
+| `unit` | ٪ / ریال/لیتر |
+| `title`, `description` | عنوان و توضیح نمایشی |
+| `sort_order`, `is_active` | ترتیب و وضعیت |
+
+**کلید یکتا:** `(fiscal_year_id, rate_key)`
+
+### ۶ نرخ تعریف‌شده:
+1. `inflation` — نرخ تورم سالانه (٪)
+2. `gasoline_price` — قیمت بنزین (ریال/لیتر)
+3. `gasoline_growth` — درصد رشد سالانه بنزین (٪)
+4. `diesel_price` — قیمت گازوئیل (ریال/لیتر)
+5. `diesel_growth` — درصد رشد سالانه گازوئیل (٪)
+6. `salary_growth` — درصد رشد حقوق (٪)
+
+### APIها:
+- `GET /api/economic-rates?fiscal_year_id=X` — لیست نرخ‌ها (اگه `fiscal_year_id` داده نشه، نرخ جاری برمی‌گرده)
+- `POST /api/economic-rates` — ذخیره bulk (جایگزینی کامل برای سال انتخاب‌شده)
+  - Body: `{ fiscal_year_id, rates: [...] }`
+  - دسترسی: `admin`, `manager`
+
+### فایل‌ها:
+- `migrations/054_economic_rates.sql`
+- `public/economic-rates.html`
+- `public/base-info.html` (کارت جدید)
+- `public/sidebar.js` (منو + breadcrumb + top-bar)
+
+### اتصال به محاسبات (فاز بعد):
+این نرخ‌ها بعداً در محاسبات بودجه استفاده می‌شن:
+- **تورم** → پیش‌بینی افزایش قیمت کالا/خدمات در بودجه سنوات بعد
+- **قیمت سوخت** → محاسبه هزینه سوخت وسایل نقلیه
+- **رشد حقوق** → پیش‌بینی هزینه حقوق و دستمزد
+
+---
+
+## 🔥 بخش جستجو و فیلتر سطح
 
 ### فایل‌ها:
 - `public/base-data-search.js` — منطق کامپوننت (مشترک بین همه صفحات)

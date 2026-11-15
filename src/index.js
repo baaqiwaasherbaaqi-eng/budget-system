@@ -2339,6 +2339,114 @@ export default {
         );
       }
 
+
+// ============================================
+// نرخ‌های کلان اقتصادی (economic_rates)
+// ============================================
+
+// GET: لیست نرخ‌ها
+if (url.pathname === "/api/economic-rates" && request.method === "GET") {
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        }
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), { status: 401, headers });
+        }
+
+        const fiscalYearId = url.searchParams.get("fiscal_year_id");
+
+        let query = "SELECT * FROM economic_rates WHERE is_active = 1";
+        const params = [];
+
+        if (fiscalYearId && fiscalYearId !== "null" && fiscalYearId !== "") {
+            query += " AND (fiscal_year_id = ? OR fiscal_year_id IS NULL)";
+            params.push(parseInt(fiscalYearId));
+        } else {
+            query += " AND fiscal_year_id IS NULL";
+        }
+
+        query += " ORDER BY sort_order, id";
+
+        const items = await env.DB.prepare(query).bind(...params).all();
+        return new Response(JSON.stringify(items.results), { status: 200, headers });
+    } catch (error) {
+        console.error("economic-rates GET error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
+}
+
+// POST: ذخیره نرخ‌ها (bulk — جایگزینی کامل برای سال انتخاب‌شده)
+if (url.pathname === "/api/economic-rates" && request.method === "POST") {
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        }
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+        }
+
+        const body = await request.json();
+        const { fiscal_year_id, rates } = body;
+
+        if (!Array.isArray(rates) || rates.length === 0) {
+            return new Response(JSON.stringify({ error: "لیست نرخ‌ها خالی است" }), { status: 400, headers });
+        }
+
+        const nowShamsi = toShamsi(new Date());
+        const fyId = (fiscal_year_id !== null && fiscal_year_id !== undefined && fiscal_year_id !== "")
+            ? parseInt(fiscal_year_id)
+            : null;
+
+        // حذف قبلی‌های همین سال
+        if (fyId === null) {
+            await env.DB.prepare("DELETE FROM economic_rates WHERE fiscal_year_id IS NULL").run();
+        } else {
+            await env.DB.prepare("DELETE FROM economic_rates WHERE fiscal_year_id = ?").bind(fyId).run();
+        }
+
+        // درج جدید
+        let inserted = 0;
+        for (const r of rates) {
+            if (!r.rate_key) continue;
+            if (r.rate_value === undefined || r.rate_value === null || r.rate_value === "") continue;
+
+            await env.DB.prepare(
+                `INSERT INTO economic_rates
+                 (fiscal_year_id, rate_key, rate_value, rate_type, unit, title, description, sort_order, is_active, created_at_shamsi)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`
+            ).bind(
+                fyId,
+                r.rate_key,
+                parseFloat(r.rate_value) || 0,
+                r.rate_type || "percent",
+                r.unit || "٪",
+                r.title || r.rate_key,
+                r.description || null,
+                r.sort_order || 0,
+                nowShamsi
+            ).run();
+            inserted++;
+        }
+
+        ctx.waitUntil(logAction(env, request, userData, "economic_rates_updated", "economic_rates", null, {
+            fiscal_year_id: fyId,
+            count: inserted
+        }));
+
+        return new Response(JSON.stringify({ success: true, count: inserted }), { status: 200, headers });
+    } catch (error) {
+        console.error("economic-rates POST error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
+}
+
       // ========== Permissions ==========
 
       // GET: لیست کلیدهای دسترسی

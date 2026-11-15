@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+    <head>
+        <meta charset="UTF-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <title>نرخ‌های اقتصادی</title>
+        <link rel="stylesheet" href="/sidebar.css"/>
+        <script src="/sidebar.js"></script>
+        <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css"/>
+
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: "Vazirmatn", Tahoma, sans-serif;
+                background: #f0f2f5;
+                margin: 0;
+                padding: 20px;
+            }
+
+            .container {
+                max-width: 1400px;
+                margin: 0 auto;
+            }
+
+            .header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px 30px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+
+            .header h1 {
+                margin: 0;
+                font-size: 20px;
+            }
+
+            .toolbar {
+                background: white;
+                padding: 20px 25px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                flex-wrap: wrap;
+            }
+
+            .toolbar label {
+                font-weight: bold;
+                color: #444;
+                font-size: 13px;
+            }
+
+            .toolbar select {
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                font-family: "Vazirmatn", Tahoma, sans-serif;
+                font-size: 13px;
+                min-width: 200px;
+            }
+
+            .rates-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                gap: 20px;
+            }
+
+            .rate-card {
+                background: white;
+                padding: 25px;
+                border-radius: 12px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+                border-right: 4px solid #667eea;
+                transition: all 0.2s;
+            }
+
+            .rate-card:hover {
+                box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+                transform: translateY(-2px);
+            }
+
+            .rate-card .rate-icon {
+                font-size: 32px;
+                margin-bottom: 10px;
+                display: block;
+            }
+
+            .rate-card .rate-title {
+                font-size: 15px;
+                font-weight: bold;
+                color: #333;
+                margin-bottom: 5px;
+            }
+
+            .rate-card .rate-desc {
+                font-size: 12px;
+                color: #888;
+                margin-bottom: 18px;
+                line-height: 1.6;
+            }
+
+            .rate-card .rate-input-group {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .rate-card input {
+                flex: 1;
+                padding: 12px;
+                border: 2px solid #e0e0e0;
+                border-radius: 8px;
+                font-family: "Sahel", "Vazirmatn", Tahoma, sans-serif;
+                font-size: 16px;
+                direction: ltr;
+                text-align: left;
+                transition: border-color 0.2s;
+            }
+
+            .rate-card input:focus {
+                outline: none;
+                border-color: #667eea;
+            }
+
+            .rate-card .rate-unit {
+                font-size: 13px;
+                color: #666;
+                font-weight: bold;
+                white-space: nowrap;
+                padding: 0 5px;
+            }
+
+            .actions-bar {
+                display: flex;
+                gap: 10px;
+                justify-content: flex-end;
+                margin-top: 25px;
+                padding-top: 20px;
+                border-top: 1px solid #e9ecef;
+            }
+
+            .btn {
+                padding: 12px 30px;
+                border-radius: 8px;
+                border: none;
+                cursor: pointer;
+                font-family: "Vazirmatn", Tahoma, sans-serif;
+                font-size: 14px;
+                transition: all 0.2s;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .btn-save {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            }
+
+            .btn-save:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+            }
+
+            .btn-save:disabled {
+                background: #ccc;
+                cursor: not-allowed;
+                transform: none;
+                box-shadow: none;
+            }
+
+            .btn-cancel {
+                background: #e9ecef;
+                color: #333;
+            }
+            .btn-cancel:hover {
+                background: #dee2e6;
+            }
+
+            .toast {
+                position: fixed;
+                bottom: 30px;
+                left: 50%;
+                transform: translateX(-50%) translateY(100px);
+                background: #333;
+                color: white;
+                padding: 12px 24px;
+                border-radius: 8px;
+                font-size: 14px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                z-index: 10002;
+                transition: transform 0.3s;
+                font-family: "Vazirmatn", Tahoma, sans-serif;
+            }
+            .toast.show {
+                transform: translateX(-50%) translateY(0);
+            }
+            .toast.success {
+                background: #28a745;
+            }
+            .toast.error {
+                background: #dc3545;
+            }
+
+            .loading {
+                text-align: center;
+                padding: 60px 20px;
+                color: #999;
+            }
+            .loading .spinner {
+                display: inline-block;
+                width: 30px;
+                height: 30px;
+                border: 3px solid #e9ecef;
+                border-top-color: #667eea;
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+                margin-bottom: 15px;
+            }
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .info-banner {
+                background: #e7f3ff;
+                border-right: 4px solid #17a2b8;
+                padding: 12px 18px;
+                border-radius: 6px;
+                margin-bottom: 20px;
+                font-size: 13px;
+                color: #0c5460;
+                line-height: 1.7;
+            }
+
+            body.dark {
+                background: #1a202c;
+                color: #e2e8f0;
+            }
+            body.dark .toolbar,
+            body.dark .rate-card {
+                background: #2d3748;
+            }
+            body.dark .rate-card .rate-title {
+                color: #e2e8f0;
+            }
+            body.dark .rate-card .rate-desc {
+                color: #a0aec0;
+            }
+            body.dark .rate-card input {
+                background: #1a202c;
+                border-color: #4a5568;
+                color: #e2e8f0;
+            }
+            body.dark .toolbar select {
+                background: #1a202c;
+                border-color: #4a5568;
+                color: #e2e8f0;
+            }
+            body.dark .actions-bar {
+                border-top-color: #4a5568;
+            }
+            body.dark .btn-cancel {
+                background: #4a5568;
+                color: #e2e8f0;
+            }
+            body.dark .info-banner {
+                background: #1a202c;
+                color: #90cdf4;
+            }
+
+            @media (max-width: 768px) {
+                .rates-grid {
+                    grid-template-columns: 1fr;
+                }
+                .header {
+                    padding: 15px 20px;
+                }
+                .header h1 {
+                    font-size: 17px;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>📊 نرخ‌های اقتصادی</h1>
+            </div>
+
+            <div class="toolbar">
+                <label>📅 سال مالی:</label>
+                <select id="fiscal-year-select">
+                    <option value="">— نرخ جاری (بدون سال) —</option>
+                </select>
+            </div>
+
+            <div class="info-banner">
+                💡 این نرخ‌ها بعداً در <b>محاسبات بودجه</b> استفاده می‌شن:
+                تورم برای پیش‌بینی افزایش قیمت کالا و خدمات، قیمت سوخت برای هزینه وسایل نقلیه،
+                و درصد رشد حقوق برای پیش‌بینی هزینه حقوق و دستمزد.
+            </div>
+
+            <div id="rates-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <div>در حال بارگذاری...</div>
+                </div>
+            </div>
+
+            <div class="actions-bar">
+                <button class="btn btn-cancel" onclick="reloadRates()">🔄 بازخوانی</button>
+                <button class="btn btn-save" id="btn-save" onclick="saveRates()">💾 ذخیره نرخ‌ها</button>
+            </div>
+        </div>
+
+        <div class="toast" id="toast"></div>
+
+        <script src="/common.js"></script>
+
+        <script>
+            if (!isTokenValid()) {
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+                window.location.href = "/login.html";
+            }
+
+            const token = localStorage.getItem("token");
+            const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+            // ============================================
+            // تعریف ۶ نرخ ثابت (کلیدها = rate_key در DB)
+            // ============================================
+            const RATE_DEFS = [
+                {
+                    key: "inflation",
+                    icon: "📈",
+                    title: "نرخ تورم سالانه",
+                    desc: "برای پیش‌بینی افزایش قیمت کالا و خدمات در بودجه سنوات بعد",
+                    type: "percent",
+                    unit: "٪",
+                    sort_order: 1,
+                },
+                {
+                    key: "gasoline_price",
+                    icon: "⛽",
+                    title: "قیمت بنزین",
+                    desc: "قیمت هر لیتر بنزین (برای محاسبه هزینه سوخت وسایل نقلیه)",
+                    type: "amount",
+                    unit: "ریال/لیتر",
+                    sort_order: 2,
+                },
+                {
+                    key: "gasoline_growth",
+                    icon: "📊",
+                    title: "درصد رشد سالانه بنزین",
+                    desc: "درصد رشد سالانه قیمت بنزین (برای پیش‌بینی بودجه سوخت)",
+                    type: "percent",
+                    unit: "٪",
+                    sort_order: 3,
+                },
+                {
+                    key: "diesel_price",
+                    icon: "🛢️",
+                    title: "قیمت گازوئیل",
+                    desc: "قیمت هر لیتر گازوئیل (برای محاسبه هزینه سوخت وسایل نقلیه)",
+                    type: "amount",
+                    unit: "ریال/لیتر",
+                    sort_order: 4,
+                },
+                {
+                    key: "diesel_growth",
+                    icon: "📊",
+                    title: "درصد رشد سالانه گازوئیل",
+                    desc: "درصد رشد سالانه قیمت گازوئیل (برای پیش‌بینی بودجه سوخت)",
+                    type: "percent",
+                    unit: "٪",
+                    sort_order: 5,
+                },
+                {
+                    key: "salary_growth",
+                    icon: "💼",
+                    title: "درصد رشد حقوق",
+                    desc: "برای پیش‌بینی هزینه حقوق و دستمزد در بودجه سنوات بعد",
+                    type: "percent",
+                    unit: "٪",
+                    sort_order: 6,
+                },
+            ];
+
+            let currentRates = {}; // { inflation: 35, gasoline_price: 30000, ... }
+            let fiscalYears = [];
+
+            // ============================================
+            // ابزارها
+            // ============================================
+            function showToast(message, type = "success") {
+                const toast = document.getElementById("toast");
+                toast.textContent = message;
+                toast.className = `toast ${type} show`;
+                setTimeout(() => toast.classList.remove("show"), 3000);
+            }
+
+            function formatRial(amount) {
+                if (!amount && amount !== 0) return "";
+                const num = Math.round(Number(amount));
+                const formatted = num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                const persianDigits = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
+                return formatted.replace(/\d/g, (d) => persianDigits[parseInt(d)]);
+            }
+
+            function toEnglishNumber(str) {
+                if (!str) return "";
+                const persianDigits = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
+                const persianStr = persianDigits.join("");
+                return str
+                    .toString()
+                    .replace(new RegExp("[" + persianStr + "]", "g"), function (d) {
+                        return persianStr.indexOf(d);
+                    })
+                    .replace(/,/g, "");
+            }
+
+            function formatPercent(value) {
+                if (value === null || value === undefined || value === "") return "";
+                const num = parseFloat(value);
+                if (isNaN(num)) return "";
+                // اگه عدد صحیح بود، بدون اعشار
+                const str = Number.isInteger(num) ? num.toString() : num.toFixed(2);
+                const persianDigits = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
+                return str.replace(/\d/g, (d) => persianDigits[parseInt(d)]);
+            }
+
+            // ============================================
+            // لود سال‌های مالی
+            // ============================================
+            async function loadFiscalYears() {
+                try {
+                    const res = await fetch("/api/fiscal-years", {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    if (!res.ok) throw new Error("خطا در دریافت سال‌های مالی");
+                    fiscalYears = await res.json();
+
+                    const select = document.getElementById("fiscal-year-select");
+                    fiscalYears.forEach((y) => {
+                        const opt = document.createElement("option");
+                        opt.value = y.id;
+                        // تبدیل سال به فارسی
+                        const yearStr = y.year
+                            .toString()
+                            .replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(d)]);
+                        opt.textContent = `سال مالی ${yearStr}${y.is_active ? " (فعال)" : ""}`;
+                        select.appendChild(opt);
+                    });
+                } catch (e) {
+                    console.error("loadFiscalYears error:", e);
+                }
+            }
+
+            // ============================================
+            // رندر کارت‌ها
+            // ============================================
+            function renderRates() {
+                const container = document.getElementById("rates-container");
+
+                let html = '<div class="rates-grid">';
+                RATE_DEFS.forEach((def) => {
+                    const val = currentRates[def.key];
+                    const displayValue =
+                        def.type === "amount"
+                            ? val !== undefined && val !== null
+                                ? formatRial(val)
+                                : ""
+                            : val !== undefined && val !== null
+                              ? formatPercent(val)
+                              : "";
+
+                    html += `
+                    <div class="rate-card">
+                        <span class="rate-icon">${def.icon}</span>
+                        <div class="rate-title">${def.title}</div>
+                        <div class="rate-desc">${def.desc}</div>
+                        <div class="rate-input-group">
+                            <input
+                                type="text"
+                                id="rate-${def.key}"
+                                value="${displayValue}"
+                                data-key="${def.key}"
+                                data-type="${def.type}"
+                                placeholder="۰"
+                            />
+                            <span class="rate-unit">${def.unit}</span>
+                        </div>
+                    </div>
+                `;
+                });
+                html += "</div>";
+
+                container.innerHTML = html;
+
+                // راه‌اندازی فرمت ورودی‌ها
+                RATE_DEFS.forEach((def) => {
+                    const input = document.getElementById(`rate-${def.key}`);
+                    if (!input) return;
+
+                    input.addEventListener("input", function () {
+                        let raw = toEnglishNumber(this.value).replace(/[^\d.]/g, "");
+                        this.dataset.rawValue = raw;
+
+                        if (def.type === "amount") {
+                            // اعداد با کاما
+                            const parts = raw.split(".");
+                            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                            this.value = parts.join(".");
+                        } else {
+                            // درصد: فقط اعداد + حداکثر یک نقطه
+                            const parts = raw.split(".");
+                            if (parts.length > 2)
+                                raw = parts[0] + "." + parts.slice(1).join("");
+                            this.value = raw;
+                        }
+                    });
+                });
+            }
+
+            // ============================================
+            // لود نرخ‌ها
+            // ============================================
+            async function loadRates() {
+                const container = document.getElementById("rates-container");
+                container.innerHTML = `<div class="loading"><div class="spinner"></div><div>در حال بارگذاری...</div></div>`;
+
+                const fyId = document.getElementById("fiscal-year-select").value;
+
+                try {
+                    const url = fyId
+                        ? `/api/economic-rates?fiscal_year_id=${fyId}`
+                        : "/api/economic-rates";
+
+                    const res = await fetch(url, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    if (!res.ok) throw new Error("خطا در دریافت نرخ‌ها");
+
+                    const items = await res.json();
+
+                    // تبدیل به map
+                    currentRates = {};
+                    items.forEach((item) => {
+                        currentRates[item.rate_key] = item.rate_value;
+                    });
+
+                    renderRates();
+                } catch (e) {
+                    console.error("loadRates error:", e);
+                    container.innerHTML = `<div class="loading" style="color:#dc3545;">❌ ${e.message}</div>`;
+                }
+            }
+
+            function reloadRates() {
+                loadRates();
+            }
+
+            // ============================================
+            // ذخیره
+            // ============================================
+            async function saveRates() {
+                const btn = document.getElementById("btn-save");
+                btn.disabled = true;
+                btn.textContent = "⏳ در حال ذخیره...";
+
+                try {
+                    const fyId = document.getElementById("fiscal-year-select").value;
+                    const rates = [];
+
+                    RATE_DEFS.forEach((def) => {
+                        const input = document.getElementById(`rate-${def.key}`);
+                        if (!input) return;
+
+                        // مقدار خام
+                        let raw = input.dataset.rawValue;
+                        if (raw === undefined || raw === "") {
+                            raw = toEnglishNumber(input.value).replace(/,/g, "");
+                        }
+                        const value = raw === "" ? null : parseFloat(raw);
+
+                        rates.push({
+                            rate_key: def.key,
+                            rate_value: value === null ? 0 : value,
+                            rate_type: def.type,
+                            unit: def.unit,
+                            title: def.title,
+                            description: def.desc,
+                            sort_order: def.sort_order,
+                        });
+                    });
+
+                    const res = await fetch("/api/economic-rates", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({
+                            fiscal_year_id: fyId ? parseInt(fyId) : null,
+                            rates,
+                        }),
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || "خطا در ذخیره");
+
+                    showToast(`✅ ${data.count} نرخ با موفقیت ذخیره شد`);
+
+                    // رفرش
+                    await loadRates();
+                } catch (e) {
+                    console.error("saveRates error:", e);
+                    showToast("❌ " + e.message, "error");
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = "💾 ذخیره نرخ‌ها";
+                }
+            }
+
+            // ============================================
+            // شروع
+            // ============================================
+            (async function init() {
+                await loadFiscalYears();
+                await loadRates();
+
+                document
+                    .getElementById("fiscal-year-select")
+                    .addEventListener("change", loadRates);
+            })();
+        </script>
+    </body>
+
+</html>
