@@ -111,7 +111,7 @@ async function renderSidebar() {
       title: "بودجه",
       permission: "budget.view",
       children: [
-        { icon: "💰", title: "بودجه پیشنهادی", url: "/budget-proposals.html", permission: "budget.view", isDisabled: true },
+        { icon: "💰", title: "بودجه پیشنهادی", url: "/budget-proposals.html", permission: "budget.view"},
         { icon: "💳", title: "تخصیص اعتبار", url: "/allocations.html", permission: "allocations.view", isDisabled: true },
         { icon: "💸", title: "تامین اعتبار", url: "/executions.html", permission: "executions.view", isDisabled: true },
         { icon: "🔄", title: "اصلاح بودجه", url: "/revisions.html", permission: "budget.view", isDisabled: true },
