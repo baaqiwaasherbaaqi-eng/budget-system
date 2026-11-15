@@ -64,7 +64,6 @@ async function renderSidebar() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const currentPath = window.location.pathname;
 
-  // بررسی اعتبار توکن
   if (!isTokenValid()) {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -72,14 +71,14 @@ async function renderSidebar() {
     return;
   }
 
-  // لود permission ها
   await loadUserPermissions();
+
   const allMenus = [
     {
       icon: "🏠",
       title: "داشبورد",
       url: "/dashboard.html",
-      permission: null, // همه
+      permission: null,
     },
     {
       icon: "📂",
@@ -91,82 +90,35 @@ async function renderSidebar() {
       icon: "👥",
       title: hasPermission('persons.view') ? "اشخاص" : "پرونده من",
       url: hasPermission('persons.view') ? "/persons.html" : "/employee-profile.html?my=1",
-      permission: null,  // ← همه باید ببینن
-  },
+      permission: null,
+    },
     {
       icon: "💼",
       title: "حقوق و دستمزد",
       permission: "budget.view",
       children: [
-        {
-          icon: "🧮",
-          title: "محاسبه حقوق",
-          url: "/payroll-calculate.html",
-          permission: "budget.view",
-        },
-        {
-          icon: "💰",
-          title: "کسورات و وام‌ها",
-          url: "/employee-deductions.html",
-          permission: "budget.view",
-        },
-        {
-          icon: "📅",
-          title: "حضور و غیاب",
-          url: "/attendance.html",
-          permission: "budget.view",
-        },
+        { icon: "🧮", title: "محاسبه حقوق", url: "/payroll-calculate.html", permission: "budget.view" },
+        { icon: "💰", title: "کسورات و وام‌ها", url: "/employee-deductions.html", permission: "budget.view" },
+        { icon: "📅", title: "حضور و غیاب", url: "/attendance.html", permission: "budget.view" },
       ],
     },
 
+    // ============================================
+    // گروه جدید: بودجه
+    // ============================================
     {
       icon: "💰",
-      title: "بودجه پیشنهادی",
-      url: "/budget-proposals.html",
+      title: "بودجه",
       permission: "budget.view",
-      isDisabled: true, // ← این خط رو اضافه کن
-    },
-    {
-      icon: "💳",
-      title: "تخصیص اعتبار",
-      url: "/allocations.html",
-      permission: "allocations.view",
-      isDisabled: true, // ← این خط رو اضافه کن
-    },
-    {
-      icon: "💸",
-      title: "تامین اعتبار",
-      url: "/executions.html",
-      permission: "executions.view",
-      isDisabled: true, // ← این خط رو اضافه کن
-    },
-    {
-      icon: "🔄",
-      title: "اصلاح بودجه",
-      url: "/revisions.html",
-      permission: "budget.view",
-      isDisabled: true, // ← این خط رو اضافه کن
-    },
-    {
-      icon: "📋",
-      title: "تفریغ بودجه",
-      url: "/tafriq.html",
-      permission: "reports.view",
-      isDisabled: true, // ← این خط رو اضافه کن
-    },
-    {
-      icon: "📈",
-      title: "گزارشات",
-      url: "/reports.html",
-      permission: "reports.view",
-      isDisabled: true, // ← این خط رو اضافه کن
-    },
-    {
-      icon: "📊",
-      title: "گزارش پیشرفته",
-      url: "/advanced-reports.html",
-      permission: "reports.view",
-      isDisabled: true, // ← این خط رو اضافه کن
+      children: [
+        { icon: "💰", title: "بودجه پیشنهادی", url: "/budget-proposals.html", permission: "budget.view", isDisabled: true },
+        { icon: "💳", title: "تخصیص اعتبار", url: "/allocations.html", permission: "allocations.view", isDisabled: true },
+        { icon: "💸", title: "تامین اعتبار", url: "/executions.html", permission: "executions.view", isDisabled: true },
+        { icon: "🔄", title: "اصلاح بودجه", url: "/revisions.html", permission: "budget.view", isDisabled: true },
+        { icon: "📋", title: "تفریغ بودجه", url: "/tafriq.html", permission: "reports.view", isDisabled: true },
+        { icon: "📈", title: "گزارشات", url: "/reports.html", permission: "reports.view", isDisabled: true },
+        { icon: "📊", title: "گزارش پیشرفته", url: "/advanced-reports.html", permission: "reports.view", isDisabled: true },
+      ],
     },
 
     {
@@ -195,16 +147,11 @@ async function renderSidebar() {
     },
   ];
 
-  // فیلتر بر اساس Permission
   let visibleMenus = allMenus.filter((m) => {
-    // اگه permission نداره، برای همه نمایش بده
     if (!m.permission) return true;
-
-    // چک Permission
     return hasPermission(m.permission);
   });
 
-  // ساخت HTML
   const sidebarHTML = `
         <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebar-toggle">☰</button>
         <div class="sidebar" id="sidebar">
@@ -219,7 +166,9 @@ async function renderSidebar() {
             <nav class="sidebar-nav">
                 ${visibleMenus
                   .map((menu) => {
-                    // اگه children داره، Submenu
+                    // ============================================
+                    // گروه با Submenu
+                    // ============================================
                     if (menu.children && menu.children.length > 0) {
                       const childrenVisible = menu.children.filter((child) => {
                         if (!child.permission) return true;
@@ -228,7 +177,6 @@ async function renderSidebar() {
 
                       if (childrenVisible.length === 0) return "";
 
-                      // آیا یکی از فرزندان فعاله؟
                       const hasActiveChild = childrenVisible.some(
                         (child) => currentPath === child.url
                       );
@@ -242,25 +190,35 @@ async function renderSidebar() {
               </button>
               <div class="sidebar-submenu ${hasActiveChild ? "open" : ""}">
                 ${childrenVisible
-                  .map(
-                    (child) => `
-                      <a href="${
-                        child.url
-                      }" class="sidebar-link sidebar-sublink ${
-                      currentPath === child.url ? "active" : ""
-                    }">
+                  .map((child) => {
+                    // 👇 اگه فرزند isDisabled بود
+                    if (child.isDisabled) {
+                      return `
+                        <a href="#" class="sidebar-link sidebar-sublink disabled-link" onclick="event.preventDefault(); showDisabledMessage();" title="به‌زودی فعال می‌شود">
+                          <span class="sidebar-icon">${child.icon}</span>
+                          <span class="sidebar-text">${child.title}</span>
+                          <span style="margin-right: auto; font-size: 11px; color: #999;">🔒</span>
+                        </a>
+                      `;
+                    }
+                    return `
+                      <a href="${child.url}" class="sidebar-link sidebar-sublink ${
+                        currentPath === child.url ? "active" : ""
+                      }">
                         <span class="sidebar-icon">${child.icon}</span>
                         <span class="sidebar-text">${child.title}</span>
                       </a>
-                    `
-                  )
+                    `;
+                  })
                   .join("")}
               </div>
             </div>
           `;
                     }
 
-                    // آیتم معمولی
+                    // ============================================
+                    // آیتم معمولی (بدون فرزند)
+                    // ============================================
                     if (menu.isDisabled) {
                       return `
           <a href="#" class="sidebar-link disabled-link" onclick="event.preventDefault(); showDisabledMessage();" title="به‌زودی فعال می‌شود">
@@ -291,10 +249,8 @@ async function renderSidebar() {
         <div class="sidebar-overlay" onclick="toggleSidebar()" id="sidebar-overlay"></div>
     `;
 
-  // اضافه به body
   document.body.insertAdjacentHTML("afterbegin", sidebarHTML);
 }
-
 function getRoleLabel(role) {
   const labels = {
     admin: "مدیر سیستم",
