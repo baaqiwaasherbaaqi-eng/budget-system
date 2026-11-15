@@ -2447,6 +2447,253 @@ if (url.pathname === "/api/economic-rates" && request.method === "POST") {
     }
 }
 
+
+// ============================================
+// جزئیات کالا و خدمات (goods_details + goods_persons)
+// ============================================
+
+// GET: دریافت جزئیات یک کالا + اشخاص مربوط
+if (url.pathname.match(/^\/api\/goods\/\d+\/details$/) && request.method === "GET") {
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        }
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), { status: 401, headers });
+        }
+
+        const goodsId = parseInt(url.pathname.split("/")[3]);
+
+        const details = await env.DB.prepare(
+            "SELECT * FROM goods_details WHERE base_data_id = ?"
+        ).bind(goodsId).first();
+
+        const persons = await env.DB.prepare(
+            `SELECT gp.*, 
+                    p.full_name as person_full_name,
+                    p.national_id as person_national_id,
+                    p.code as person_code,
+                    et.task_type as task_type,
+                    et.task_title as task_title
+             FROM goods_persons gp
+             LEFT JOIN persons p ON gp.person_id = p.id
+             LEFT JOIN employee_tasks et ON gp.task_id = et.id
+             WHERE gp.base_data_id = ?
+             ORDER BY gp.id`
+        ).bind(goodsId).all();
+
+        // پارس JSONها
+        let customFields = [], vehicleCustomFields = [];
+        let serviceVehicle = null, serviceOilFilter = null, serviceAirFilter = null;
+        let serviceAcFilter = null, serviceAntifreeze = null, serviceTimingBelt = null;
+        let fuelStandard = null;
+
+        if (details) {
+            const parseSafe = (str) => {
+                if (!str) return null;
+                try { return JSON.parse(str); } catch { return null; }
+            };
+            customFields = parseSafe(details.custom_fields) || [];
+            vehicleCustomFields = parseSafe(details.vehicle_custom_fields) || [];
+            serviceVehicle = parseSafe(details.service_vehicle_standard);
+            serviceOilFilter = parseSafe(details.service_oil_filter_standard);
+            serviceAirFilter = parseSafe(details.service_air_filter_standard);
+            serviceAcFilter = parseSafe(details.service_ac_filter_standard);
+            serviceAntifreeze = parseSafe(details.service_antifreeze_standard);
+            serviceTimingBelt = parseSafe(details.service_timing_belt_standard);
+            fuelStandard = parseSafe(details.fuel_standard);
+        }
+
+        return new Response(JSON.stringify({
+            details: details ? {
+                ...details,
+                custom_fields_parsed: customFields,
+                vehicle_custom_fields_parsed: vehicleCustomFields,
+                service_vehicle_parsed: serviceVehicle,
+                service_oil_filter_parsed: serviceOilFilter,
+                service_air_filter_parsed: serviceAirFilter,
+                service_ac_filter_parsed: serviceAcFilter,
+                service_antifreeze_parsed: serviceAntifreeze,
+                service_timing_belt_parsed: serviceTimingBelt,
+                fuel_standard_parsed: fuelStandard
+            } : null,
+            persons: persons.results || []
+        }), { status: 200, headers });
+    } catch (error) {
+        console.error("goods details GET error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
+}
+
+// POST: ذخیره جزئیات کالا (upsert)
+if (url.pathname.match(/^\/api\/goods\/\d+\/details$/) && request.method === "POST") {
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        }
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+        }
+
+        const goodsId = parseInt(url.pathname.split("/")[3]);
+        const body = await request.json();
+
+        const goods = await env.DB.prepare(
+            "SELECT id FROM base_data WHERE id = ? AND section = 'goods'"
+        ).bind(goodsId).first();
+        if (!goods) {
+            return new Response(JSON.stringify({ error: "کالا یافت نشد" }), { status: 404, headers });
+        }
+
+        const {
+            asset_number, purchase_date_shamsi, operation_date_shamsi,
+            storage_location, purchase_price, custom_fields,
+            is_vehicle,
+            tire_count, tire_basis,
+            battery_count, battery_last_replace_shamsi,
+            service_vehicle_standard, service_oil_filter_standard,
+            service_air_filter_standard, service_ac_filter_standard,
+            service_antifreeze_standard, service_timing_belt_standard,
+            fuel_standard, vehicle_custom_fields,
+            notes
+        } = body;
+
+        const nowShamsi = toShamsi(new Date());
+
+        // تبدیل‌ها به JSON
+        const jsonify = (val) => {
+            if (val === null || val === undefined) return null;
+            if (typeof val === 'string') return val || null;
+            return JSON.stringify(val);
+        };
+
+        const existing = await env.DB.prepare(
+            "SELECT id FROM goods_details WHERE base_data_id = ?"
+        ).bind(goodsId).first();
+
+        if (existing) {
+            await env.DB.prepare(
+                `UPDATE goods_details SET
+                    asset_number = ?, purchase_date_shamsi = ?, operation_date_shamsi = ?,
+                    storage_location = ?, purchase_price = ?, custom_fields = ?,
+                    is_vehicle = ?, tire_count = ?, tire_basis = ?,
+                    battery_count = ?, battery_last_replace_shamsi = ?,
+                    service_vehicle_standard = ?, service_oil_filter_standard = ?,
+                    service_air_filter_standard = ?, service_ac_filter_standard = ?,
+                    service_antifreeze_standard = ?, service_timing_belt_standard = ?,
+                    fuel_standard = ?, vehicle_custom_fields = ?, notes = ?,
+                    updated_at = CURRENT_TIMESTAMP, updated_at_shamsi = ?
+                 WHERE base_data_id = ?`
+            ).bind(
+                asset_number || null, purchase_date_shamsi || null, operation_date_shamsi || null,
+                storage_location || null, purchase_price || null, jsonify(custom_fields),
+                is_vehicle ? 1 : 0, tire_count || null, tire_basis || null,
+                battery_count || null, battery_last_replace_shamsi || null,
+                jsonify(service_vehicle_standard), jsonify(service_oil_filter_standard),
+                jsonify(service_air_filter_standard), jsonify(service_ac_filter_standard),
+                jsonify(service_antifreeze_standard), jsonify(service_timing_belt_standard),
+                jsonify(fuel_standard), jsonify(vehicle_custom_fields), notes || null,
+                nowShamsi, goodsId
+            ).run();
+        } else {
+            await env.DB.prepare(
+                `INSERT INTO goods_details
+                    (base_data_id, asset_number, purchase_date_shamsi, operation_date_shamsi,
+                     storage_location, purchase_price, custom_fields,
+                     is_vehicle, tire_count, tire_basis,
+                     battery_count, battery_last_replace_shamsi,
+                     service_vehicle_standard, service_oil_filter_standard,
+                     service_air_filter_standard, service_ac_filter_standard,
+                     service_antifreeze_standard, service_timing_belt_standard,
+                     fuel_standard, vehicle_custom_fields, notes,
+                     created_at_shamsi, updated_at_shamsi)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            ).bind(
+                goodsId, asset_number || null, purchase_date_shamsi || null, operation_date_shamsi || null,
+                storage_location || null, purchase_price || null, jsonify(custom_fields),
+                is_vehicle ? 1 : 0, tire_count || null, tire_basis || null,
+                battery_count || null, battery_last_replace_shamsi || null,
+                jsonify(service_vehicle_standard), jsonify(service_oil_filter_standard),
+                jsonify(service_air_filter_standard), jsonify(service_ac_filter_standard),
+                jsonify(service_antifreeze_standard), jsonify(service_timing_belt_standard),
+                jsonify(fuel_standard), jsonify(vehicle_custom_fields), notes || null,
+                nowShamsi, nowShamsi
+            ).run();
+        }
+
+        ctx.waitUntil(logAction(env, request, userData, "goods_details_saved", "goods", goodsId, { asset_number }));
+        return new Response(JSON.stringify({ success: true }), { status: 200, headers });
+    } catch (error) {
+        console.error("goods details POST error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
+}
+
+// POST: افزودن شخص به کالا
+if (url.pathname.match(/^\/api\/goods\/\d+\/persons$/) && request.method === "POST") {
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        }
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+        }
+
+        const goodsId = parseInt(url.pathname.split("/")[3]);
+        const { person_id, task_id, relation_type, notes } = await request.json();
+
+        if (!person_id) {
+            return new Response(JSON.stringify({ error: "شخص الزامی است" }), { status: 400, headers });
+        }
+
+        const nowShamsi = toShamsi(new Date());
+        const result = await env.DB.prepare(
+            `INSERT INTO goods_persons
+                (base_data_id, person_id, task_id, relation_type, notes, created_at_shamsi)
+             VALUES (?, ?, ?, ?, ?, ?)`
+        ).bind(
+            goodsId, person_id, task_id || null,
+            relation_type || "owner", notes || null, nowShamsi
+        ).run();
+
+        return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), { status: 201, headers });
+    } catch (error) {
+        console.error("goods persons POST error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
+}
+
+// DELETE: حذف شخص از کالا
+if (url.pathname.match(/^\/api\/goods\/persons\/\d+$/) && request.method === "DELETE") {
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        }
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+        }
+
+        const gpId = parseInt(url.pathname.split("/")[4]);
+        await env.DB.prepare("DELETE FROM goods_persons WHERE id = ?").bind(gpId).run();
+        return new Response(JSON.stringify({ success: true }), { status: 200, headers });
+    } catch (error) {
+        console.error("goods persons DELETE error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
+}
+
       // ========== Permissions ==========
 
       // GET: لیست کلیدهای دسترسی

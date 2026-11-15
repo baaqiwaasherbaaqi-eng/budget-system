@@ -1,0 +1,217 @@
+/* ============================================
+   goods-details.css — استایل تب‌های جزئیات کالا
+   ============================================ */
+
+/* مودال بزرگ‌تر */
+#modal-overlay .modal { max-width: 750px; }
+
+/* تب‌ها */
+.modal-tabs {
+    display: flex;
+    gap: 5px;
+    background: #f0f2f5;
+    padding: 6px;
+    border-radius: 8px;
+    margin-bottom: 18px;
+}
+
+.modal-tab {
+    flex: 1;
+    padding: 10px 14px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    font-size: 13px;
+    color: #666;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.modal-tab:hover { background: #e9ecef; color: #333; }
+.modal-tab.active {
+    background: white;
+    color: #667eea;
+    font-weight: bold;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.modal-tab-panel { display: none; }
+.modal-tab-panel.active { display: block; }
+
+/* فیلدهای سفارشی */
+.custom-field-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+}
+
+.custom-field-row input { flex: 1; }
+
+.custom-field-row .btn-remove-field {
+    background: #dc3545;
+    color: white;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.btn-add-field {
+    background: #17a2b8;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+/* استاندارد سرویس */
+.service-standard-box {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin-bottom: 12px;
+    border-right: 3px solid #667eea;
+}
+
+.service-standard-header {
+    font-weight: bold;
+    font-size: 13px;
+    color: #333;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.service-basis-radio {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+    font-size: 12px;
+}
+
+.service-basis-radio label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    font-weight: normal !important;
+}
+
+.service-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 12px;
+}
+
+.service-field label {
+    margin: 0;
+    font-weight: normal;
+    min-width: auto;
+    white-space: nowrap;
+}
+
+.service-field input {
+    width: 100px !important;
+    padding: 6px 10px !important;
+}
+
+/* اشخاص مربوط */
+.goods-persons-list { margin-bottom: 15px; }
+
+.goods-person-item {
+    background: #f8f9fa;
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border-right: 3px solid #667eea;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.goods-person-info { flex: 1; min-width: 200px; }
+.goods-person-name { font-weight: bold; color: #333; font-size: 14px; margin-bottom: 3px; }
+.goods-person-meta { font-size: 12px; color: #666; }
+
+.goods-person-meta .badge-relation {
+    background: #667eea;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    margin-left: 5px;
+}
+
+.goods-person-meta .badge-task {
+    background: #17a2b8;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    margin-left: 5px;
+}
+
+.btn-remove-person {
+    background: #dc3545;
+    color: white;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.person-search-results {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 5px;
+}
+
+.person-search-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.15s;
+}
+
+.person-search-item:hover { background: #eef1ff; }
+.person-search-item:last-child { border-bottom: none; }
+.person-search-item .ps-name { font-weight: bold; font-size: 13px; color: #333; }
+.person-search-item .ps-meta { font-size: 11px; color: #888; margin-top: 2px; }
+
+/* Dark Mode */
+body.dark .modal-tabs { background: #1a202c; }
+body.dark .modal-tab:hover { background: #4a5568; }
+body.dark .modal-tab.active { background: #4a5568; color: #90cdf4; }
+body.dark .goods-person-item { background: #374151; }
+body.dark .goods-person-name { color: #e2e8f0; }
+body.dark .goods-person-meta { color: #a0aec0; }
+body.dark .person-search-results { background: #1a202c; border-color: #4a5568; }
+body.dark .person-search-item { border-bottom-color: #4a5568; }
+body.dark .person-search-item:hover { background: #4a5568; }
+body.dark .person-search-item .ps-name { color: #e2e8f0; }
+body.dark .service-standard-box { background: #374151; }
+body.dark .service-standard-header { color: #e2e8f0; }

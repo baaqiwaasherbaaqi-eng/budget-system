@@ -8,6 +8,11 @@
     <script src="/sidebar.js"></script>
         <link rel="stylesheet" href="/base-data-search.css">
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+        <link rel="stylesheet" href="/goods-details.css">
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/persian-date@1.1.0/dist/persian-date.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css"/>
     <style>
 
 body.dark #units-modal .modal {
@@ -464,66 +469,384 @@ body.dark tbody tr.dragging {
     </div>
 
     <!-- Modal -->
-    <div class="modal-overlay" id="modal-overlay">
-        <div class="modal">
-            <h3 id="modal-title">افزودن</h3>
+        <div class="modal-overlay" id="modal-overlay">
+            <div class="modal">
+                <h3 id="modal-title">افزودن</h3>
 
-            <div class="info-row" id="modal-info" style="display:none;">
-                <span>کد بعدی: <b id="info-code"></b></span>
-                <span id="info-parent" style="display:none;">والد: <b id="info-parent-title"></b></span>
-            </div>
+                <div class="info-row" id="modal-info" style="display:none;">
+                    <span>کد بعدی: <b id="info-code"></b></span>
+                    <span id="info-parent" style="display:none;">والد: <b id="info-parent-title"></b></span>
+                </div>
 
-            <div class="form-group">
-                <label>عنوان <span style="color:#e74c3c;">*</span></label>
-                <input type="text" id="input-title" placeholder="عنوان را وارد کنید" />
-            </div>
+                <!-- تب‌ها (فقط سطح ۴) -->
+                <div class="modal-tabs" id="modal-tabs" style="display:none;">
+                    <button type="button" class="modal-tab active" data-tab="basic" onclick="switchModalTab('basic')">📋 اطلاعات پایه</button>
+                    <button type="button" class="modal-tab" data-tab="details" onclick="switchModalTab('details')">🔧 جزئیات</button>
+                    <button type="button" class="modal-tab" data-tab="vehicle" onclick="switchModalTab('vehicle')" style="display:none;">🚗 مشخصات خودرو</button>
+                    <button type="button" class="modal-tab" data-tab="persons" onclick="switchModalTab('persons')">👥 اشخاص مربوط</button>
+                </div>
 
-            <div class="form-group">
-                <label>واحد اندازه‌گیری</label>
-                <select id="input-unit">
-                    <option value="">— انتخاب کنید —</option>
-                    <option value="عدد">عدد</option>
-                    <option value="کیلوگرم">کیلوگرم</option>
-                    <option value="گرم">گرم</option>
-                    <option value="تن">تن</option>
-                    <option value="متر">متر</option>
-                    <option value="مترمربع">مترمربع</option>
-                    <option value="مترمکعب">مترمکعب</option>
-                    <option value="لیتر">لیتر</option>
-                    <option value="بسته">بسته</option>
-                    <option value="کارتن">کارتن</option>
-                    <option value="دستگاه">دستگاه</option>
-                    <option value="حلقه">حلقه</option>
-                    <option value="جفت">جفت</option>
-                    <option value="نفر-ساعت">نفر-ساعت</option>
-                    <option value="نفر-روز">نفر-روز</option>
-                    <option value="ماه">ماه</option>
-                    <option value="سال">سال</option>
-                    <option value="سایر">سایر (دستی)</option>
-                </select>
-            </div>
+                <!-- تب ۱: اطلاعات پایه -->
+                <div class="modal-tab-panel active" id="panel-basic">
+                    <div class="form-group">
+                        <label>عنوان <span style="color:#e74c3c;">*</span></label>
+                        <input type="text" id="input-title" placeholder="عنوان را وارد کنید"/>
+                    </div>
+                    <div class="form-group">
+                        <label>واحد اندازه‌گیری</label>
+                        <select id="input-unit"><option value="">— انتخاب کنید —</option></select>
+                    </div>
+                    <div class="form-group" id="custom-unit-group" style="display:none;">
+                        <label>واحد سفارشی</label>
+                        <input type="text" id="input-unit-custom" placeholder="واحد را وارد کنید"/>
+                    </div>
+                    <div class="form-group">
+                        <label>مشخصات فنی</label>
+                        <textarea id="input-specs" placeholder="مشخصات فنی (اختیاری)"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>توضیحات</label>
+                        <textarea id="input-description" placeholder="توضیحات (اختیاری)"></textarea>
+                    </div>
+                </div>
 
-            <div class="form-group" id="custom-unit-group" style="display:none;">
-                <label>واحد سفارشی</label>
-                <input type="text" id="input-unit-custom" placeholder="واحد را وارد کنید" />
-            </div>
+                <!-- تب ۲: جزئیات -->
+                <div class="modal-tab-panel" id="panel-details">
+                    <div class="form-group">
+                        <label>شماره اموال</label>
+                        <input type="text" id="detail-asset-number" placeholder="مثلاً: ۱۲۳۴۵۶" dir="ltr"/>
+                    </div>
 
-            <div class="form-group">
-                <label>مشخصات فنی</label>
-                <textarea id="input-specs" placeholder="مشخصات فنی (اختیاری)"></textarea>
-            </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>تاریخ خرید</label>
+                            <input type="text" id="detail-purchase-date" placeholder="۱۴۰۵/۰۱/۰۱"/>
+                        </div>
+                        <div class="form-group">
+                            <label>تاریخ بهره‌برداری</label>
+                            <input type="text" id="detail-operation-date" placeholder="۱۴۰۵/۰۱/۰۱"/>
+                        </div>
+                    </div>
 
-            <div class="form-group">
-                <label>توضیحات</label>
-                <textarea id="input-description" placeholder="توضیحات (اختیاری)"></textarea>
-            </div>
+                    <div class="form-group">
+                        <label>محل نگهداری</label>
+                        <input type="text" id="detail-storage-location" placeholder="مثلاً: انبار مرکزی"/>
+                    </div>
 
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeModal()">انصراف</button>
-                <button class="btn-save" id="btn-save" onclick="saveModal()">ذخیره</button>
+                    <div class="form-group">
+                        <label>قیمت خرید (ریال)</label>
+                        <input type="text" id="detail-purchase-price" class="amount-input" placeholder="۰" dir="ltr"/>
+                    </div>
+
+                    <div class="form-group">
+                        <label>یادداشت</label>
+                        <textarea id="detail-notes" placeholder="اختیاری"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px; background:#fff3cd; border-radius:6px;">
+                            <input type="checkbox" id="detail-is-vehicle" onchange="onVehicleToggleChange()" style="width:auto; margin:0;"/>
+                            <span>🚗 این ردیف یک خودرو است (نمایش تب مشخصات خودرو)</span>
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label>فیلدهای سفارشی (عمومی)</label>
+                        <div id="custom-fields-list"></div>
+                        <button type="button" class="btn-add-field" onclick="addCustomFieldTo('general')">➕ افزودن فیلد</button>
+                    </div>
+                </div>
+
+                <!-- تب ۳: مشخصات خودرو -->
+                <div class="modal-tab-panel" id="panel-vehicle">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>🔘 تعداد لاستیک</label>
+                            <input type="number" id="veh-tire-count" min="0" placeholder="مثلاً ۴"/>
+                        </div>
+                        <div class="form-group">
+                            <label>مبنای تعویض لاستیک</label>
+                            <select id="veh-tire-basis">
+                                <option value="">— انتخاب —</option>
+                                <option value="km">کیلومتر</option>
+                                <option value="date">تاریخ</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>🔋 تعداد باتری</label>
+                            <input type="number" id="veh-battery-count" min="0" placeholder="مثلاً ۱"/>
+                        </div>
+                        <div class="form-group">
+                            <label>آخرین تعویض باتری</label>
+                            <input type="text" id="veh-battery-last-replace" placeholder="۱۴۰۴/۰۱/۰۱"/>
+                        </div>
+                    </div>
+
+                    <div class="section-divider" style="margin: 20px 0 12px 0; padding-bottom:8px; border-bottom:2px solid #e9ecef; font-weight:bold; color:#667eea; font-size:13px;">🔧 استانداردهای سرویس</div>
+
+                    <!-- ۱. سرویس خودرو -->
+                    <div class="service-standard-box" data-key="vehicle">
+                        <div class="service-standard-header"><span>🚗 سرویس خودرو</span></div>
+                        <div class="service-standard-body">
+                            <div class="service-basis-radio">
+                                <label><input type="radio" name="basis-vehicle" value="km" checked onchange="onServiceBasisChange('vehicle', 'km')"/> کیلومتر</label>
+                                <label><input type="radio" name="basis-vehicle" value="date" onchange="onServiceBasisChange('vehicle', 'date')"/> تاریخ</label>
+                                <label><input type="radio" name="basis-vehicle" value="amount" onchange="onServiceBasisChange('vehicle', 'amount')"/> مقدار</label>
+                            </div>
+                            <div class="service-field" data-field="km" style="display: flex;">
+                                <label>کیلومتر:</label><input type="number" class="svc-km-value" step="1" placeholder="مثلاً ۱۰۰۰۰"/>
+                                <label>± تلرانس:</label><input type="number" class="svc-km-tolerance" step="100" placeholder="مضرب ۱۰۰"/>
+                            </div>
+                            <div class="service-field" data-field="date" style="display: none;">
+                                <label>هر:</label><input type="number" class="svc-date-months" step="1" placeholder="مثلاً ۱۲"/>
+                                <label>ماه ± </label><input type="number" class="svc-date-tolerance" step="1" placeholder="مثلاً ۱"/><label>ماه</label>
+                            </div>
+                            <div class="service-field" data-field="amount" style="display: none;">
+                                <label>مقدار:</label><input type="number" class="svc-amount-value" step="0.01" placeholder="مثلاً ۴"/>
+                            </div>
+                            <div class="service-field" style="display: flex;">
+                                <label>یادداشت:</label><input type="text" class="svc-notes" placeholder="اختیاری" style="flex:1;"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ۲. فیلتر روغن -->
+                    <div class="service-standard-box" data-key="oil_filter">
+                        <div class="service-standard-header"><span>🛢️ سرویس فیلتر روغن</span></div>
+                        <div class="service-standard-body">
+                            <div class="service-basis-radio">
+                                <label><input type="radio" name="basis-oil_filter" value="km" checked onchange="onServiceBasisChange('oil_filter', 'km')"/> کیلومتر</label>
+                                <label><input type="radio" name="basis-oil_filter" value="date" onchange="onServiceBasisChange('oil_filter', 'date')"/> تاریخ</label>
+                                <label><input type="radio" name="basis-oil_filter" value="amount" onchange="onServiceBasisChange('oil_filter', 'amount')"/> مقدار</label>
+                            </div>
+                            <div class="service-field" data-field="km" style="display: flex;">
+                                <label>کیلومتر:</label><input type="number" class="svc-km-value" step="1" placeholder="مثلاً ۵۰۰۰"/>
+                                <label>± تلرانس:</label><input type="number" class="svc-km-tolerance" step="100" placeholder="مضرب ۱۰۰"/>
+                            </div>
+                            <div class="service-field" data-field="date" style="display: none;">
+                                <label>هر:</label><input type="number" class="svc-date-months" step="1" placeholder="مثلاً ۳"/>
+                                <label>ماه ± </label><input type="number" class="svc-date-tolerance" step="1" placeholder="مثلاً ۱"/><label>ماه</label>
+                            </div>
+                            <div class="service-field" data-field="amount" style="display: none;">
+                                <label>مقدار:</label><input type="number" class="svc-amount-value" step="0.01" placeholder="مثلاً ۴"/>
+                            </div>
+                            <div class="service-field" style="display: flex;">
+                                <label>یادداشت:</label><input type="text" class="svc-notes" placeholder="اختیاری" style="flex:1;"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ۳. فیلتر هوا -->
+                    <div class="service-standard-box" data-key="air_filter">
+                        <div class="service-standard-header"><span>💨 سرویس فیلتر هوا</span></div>
+                        <div class="service-standard-body">
+                            <div class="service-basis-radio">
+                                <label><input type="radio" name="basis-air_filter" value="km" checked onchange="onServiceBasisChange('air_filter', 'km')"/> کیلومتر</label>
+                                <label><input type="radio" name="basis-air_filter" value="date" onchange="onServiceBasisChange('air_filter', 'date')"/> تاریخ</label>
+                                <label><input type="radio" name="basis-air_filter" value="amount" onchange="onServiceBasisChange('air_filter', 'amount')"/> مقدار</label>
+                            </div>
+                            <div class="service-field" data-field="km" style="display: flex;">
+                                <label>کیلومتر:</label><input type="number" class="svc-km-value" step="1" placeholder="مثلاً ۱۵۰۰۰"/>
+                                <label>± تلرانس:</label><input type="number" class="svc-km-tolerance" step="100" placeholder="مضرب ۱۰۰"/>
+                            </div>
+                            <div class="service-field" data-field="date" style="display: none;">
+                                <label>هر:</label><input type="number" class="svc-date-months" step="1" placeholder="مثلاً ۱۲"/>
+                                <label>ماه ± </label><input type="number" class="svc-date-tolerance" step="1" placeholder="مثلاً ۱"/><label>ماه</label>
+                            </div>
+                            <div class="service-field" data-field="amount" style="display: none;">
+                                <label>مقدار:</label><input type="number" class="svc-amount-value" step="0.01" placeholder="مثلاً ۱"/>
+                            </div>
+                            <div class="service-field" style="display: flex;">
+                                <label>یادداشت:</label><input type="text" class="svc-notes" placeholder="اختیاری" style="flex:1;"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ۴. فیلتر کولر -->
+                    <div class="service-standard-box" data-key="ac_filter">
+                        <div class="service-standard-header"><span>❄️ سرویس فیلتر کولر</span></div>
+                        <div class="service-standard-body">
+                            <div class="service-basis-radio">
+                                <label><input type="radio" name="basis-ac_filter" value="km" checked onchange="onServiceBasisChange('ac_filter', 'km')"/> کیلومتر</label>
+                                <label><input type="radio" name="basis-ac_filter" value="date" onchange="onServiceBasisChange('ac_filter', 'date')"/> تاریخ</label>
+                                <label><input type="radio" name="basis-ac_filter" value="amount" onchange="onServiceBasisChange('ac_filter', 'amount')"/> مقدار</label>
+                            </div>
+                            <div class="service-field" data-field="km" style="display: flex;">
+                                <label>کیلومتر:</label><input type="number" class="svc-km-value" step="1" placeholder="مثلاً ۲۰۰۰۰"/>
+                                <label>± تلرانس:</label><input type="number" class="svc-km-tolerance" step="100" placeholder="مضرب ۱۰۰"/>
+                            </div>
+                            <div class="service-field" data-field="date" style="display: none;">
+                                <label>هر:</label><input type="number" class="svc-date-months" step="1" placeholder="مثلاً ۱۲"/>
+                                <label>ماه ± </label><input type="number" class="svc-date-tolerance" step="1" placeholder="مثلاً ۱"/><label>ماه</label>
+                            </div>
+                            <div class="service-field" data-field="amount" style="display: none;">
+                                <label>مقدار:</label><input type="number" class="svc-amount-value" step="0.01" placeholder="مثلاً ۱"/>
+                            </div>
+                            <div class="service-field" style="display: flex;">
+                                <label>یادداشت:</label><input type="text" class="svc-notes" placeholder="اختیاری" style="flex:1;"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ۵. ضدیخ -->
+                    <div class="service-standard-box" data-key="antifreeze">
+                        <div class="service-standard-header"><span>🧊 سرویس ضدیخ</span></div>
+                        <div class="service-standard-body">
+                            <div class="service-basis-radio">
+                                <label><input type="radio" name="basis-antifreeze" value="km" checked onchange="onServiceBasisChange('antifreeze', 'km')"/> کیلومتر</label>
+                                <label><input type="radio" name="basis-antifreeze" value="date" onchange="onServiceBasisChange('antifreeze', 'date')"/> تاریخ</label>
+                                <label><input type="radio" name="basis-antifreeze" value="amount" onchange="onServiceBasisChange('antifreeze', 'amount')"/> مقدار</label>
+                            </div>
+                            <div class="service-field" data-field="km" style="display: flex;">
+                                <label>کیلومتر:</label><input type="number" class="svc-km-value" step="1" placeholder="مثلاً ۴۰۰۰۰"/>
+                                <label>± تلرانس:</label><input type="number" class="svc-km-tolerance" step="100" placeholder="مضرب ۱۰۰"/>
+                            </div>
+                            <div class="service-field" data-field="date" style="display: none;">
+                                <label>هر:</label><input type="number" class="svc-date-months" step="1" placeholder="مثلاً ۲۴"/>
+                                <label>ماه ± </label><input type="number" class="svc-date-tolerance" step="1" placeholder="مثلاً ۲"/><label>ماه</label>
+                            </div>
+                            <div class="service-field" data-field="amount" style="display: none;">
+                                <label>مقدار:</label><input type="number" class="svc-amount-value" step="0.01" placeholder="مثلاً ۴"/>
+                            </div>
+                            <div class="service-field" style="display: flex;">
+                                <label>یادداشت:</label><input type="text" class="svc-notes" placeholder="اختیاری" style="flex:1;"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ۶. تسمه تایم -->
+                    <div class="service-standard-box" data-key="timing_belt">
+                        <div class="service-standard-header"><span>⚙️ سرویس تسمه تایم</span></div>
+                        <div class="service-standard-body">
+                            <div class="service-basis-radio">
+                                <label><input type="radio" name="basis-timing_belt" value="km" checked onchange="onServiceBasisChange('timing_belt', 'km')"/> کیلومتر</label>
+                                <label><input type="radio" name="basis-timing_belt" value="date" onchange="onServiceBasisChange('timing_belt', 'date')"/> تاریخ</label>
+                                <label><input type="radio" name="basis-timing_belt" value="amount" onchange="onServiceBasisChange('timing_belt', 'amount')"/> مقدار</label>
+                            </div>
+                            <div class="service-field" data-field="km" style="display: flex;">
+                                <label>کیلومتر:</label><input type="number" class="svc-km-value" step="1" placeholder="مثلاً ۶۰۰۰۰"/>
+                                <label>± تلرانس:</label><input type="number" class="svc-km-tolerance" step="100" placeholder="مضرب ۱۰۰"/>
+                            </div>
+                            <div class="service-field" data-field="date" style="display: none;">
+                                <label>هر:</label><input type="number" class="svc-date-months" step="1" placeholder="مثلاً ۳۶"/>
+                                <label>ماه ± </label><input type="number" class="svc-date-tolerance" step="1" placeholder="مثلاً ۳"/><label>ماه</label>
+                            </div>
+                            <div class="service-field" data-field="amount" style="display: none;">
+                                <label>مقدار:</label><input type="number" class="svc-amount-value" step="0.01" placeholder="مثلاً ۱"/>
+                            </div>
+                            <div class="service-field" style="display: flex;">
+                                <label>یادداشت:</label><input type="text" class="svc-notes" placeholder="اختیاری" style="flex:1;"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-divider" style="margin: 20px 0 12px 0; padding-bottom:8px; border-bottom:2px solid #e9ecef; font-weight:bold; color:#667eea; font-size:13px;">⛽ استاندارد سوخت‌گیری</div>
+
+                    <div class="form-group">
+                        <label>نوع سوخت</label>
+                        <select id="fuel-type">
+                            <option value="">— انتخاب —</option>
+                            <option value="gasoline">بنزین</option>
+                            <option value="gas">گاز</option>
+                            <option value="both">هردو</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>مبنا</label>
+                        <select id="fuel-basis" onchange="onFuelBasisChange(this.value)">
+                            <option value="km">کیلومتر</option>
+                            <option value="date">تاریخ</option>
+                        </select>
+                    </div>
+
+                    <div class="service-field" id="fuel-km-field" style="display:flex;">
+                        <label>کیلومتر:</label>
+                        <input type="number" id="fuel-km-value" placeholder="مثلاً ۵۰۰"/>
+                        <label>± </label>
+                        <input type="number" id="fuel-km-tolerance" step="10" placeholder="مضرب ۱۰"/>
+                    </div>
+
+                    <div class="service-field" id="fuel-date-field" style="display:none;">
+                        <label>هر:</label>
+                        <input type="number" id="fuel-date-value" placeholder="مثلاً ۱"/>
+                        <select id="fuel-date-unit">
+                            <option value="day">روز</option>
+                            <option value="month">ماه</option>
+                        </select>
+                        <label>± </label>
+                        <input type="number" id="fuel-date-tolerance" placeholder="مثلاً ۱"/>
+                    </div>
+
+                    <div class="form-group">
+                        <label>مقدار (لیتر)</label>
+                        <input type="number" id="fuel-amount" step="0.01" placeholder="مثلاً ۵۰"/>
+                    </div>
+
+                    <div class="form-group">
+                        <label>یادداشت</label>
+                        <input type="text" id="fuel-notes" placeholder="اختیاری"/>
+                    </div>
+
+                    <div class="section-divider" style="margin: 20px 0 12px 0; padding-bottom:8px; border-bottom:2px solid #e9ecef; font-weight:bold; color:#667eea; font-size:13px;">📝 فیلدهای سفارشی خودرو</div>
+                    <div id="vehicle-custom-fields-list"></div>
+                    <button type="button" class="btn-add-field" onclick="addCustomFieldTo('vehicle')">➕ افزودن فیلد</button>
+                </div>
+
+                <!-- تب ۴: اشخاص مربوط -->
+                <div class="modal-tab-panel" id="panel-persons">
+                    <div id="goods-persons-list" class="goods-persons-list">
+                        <div style="text-align:center; padding:20px; color:#999;">هنوز شخصی اضافه نشده</div>
+                    </div>
+
+                    <hr style="margin: 20px 0; border: none; border-top: 1px dashed #ddd;"/>
+
+                    <div class="form-group">
+                        <label>جستجوی شخص (کد ملی یا نام)</label>
+                        <input type="text" id="person-search-input" placeholder="کد ملی یا نام..." oninput="searchPersonsDebounced()"/>
+                        <div id="person-search-results" class="person-search-results" style="display:none;"></div>
+                    </div>
+
+                    <div id="selected-person-box" style="display:none; background:#d4edda; padding:12px 15px; border-radius:6px; margin-bottom:15px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <div style="font-weight:bold; font-size:13px;" id="selected-person-name"></div>
+                                <div style="font-size:11px; color:#666;" id="selected-person-meta"></div>
+                            </div>
+                            <button type="button" onclick="clearSelectedPerson()" style="background:#6c757d; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:11px;">✕ تغییر</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="task-select-group" style="display:none;">
+                        <label>وظیفه‌ی این شخص (اختیاری)</label>
+                        <select id="person-task-select"><option value="">— بدون وظیفه —</option></select>
+                    </div>
+
+                    <div class="form-group" id="relation-select-group" style="display:none;">
+                        <label>نوع ارتباط</label>
+                        <select id="person-relation-select">
+                            <option value="owner">مالک</option>
+                            <option value="user">کاربر</option>
+                            <option value="responsible">مسئول</option>
+                            <option value="custodian">امین امانت</option>
+                            <option value="other">سایر</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="person-add-btn-group" style="display:none;">
+                        <button type="button" class="btn-save" onclick="addPersonToGoods()" style="width:100%;">➕ افزودن شخص به این کالا</button>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-cancel" onclick="closeModal()">انصراف</button>
+                    <button class="btn-save" id="btn-save" onclick="saveModal()">ذخیره</button>
+                </div>
             </div>
         </div>
-    </div>
 
     <div class="toast" id="toast"></div>
 
@@ -1166,7 +1489,7 @@ function switchView(view) {
         // ============================================
         // Modal: افزودن
         // ============================================
-        async function openAddModal(parentNode) {
+async function openAddModal(parentNode) {
     editingNode = null;
     addingParent = parentNode;
 
@@ -1177,11 +1500,10 @@ function switchView(view) {
     document.getElementById('input-title').value = '';
     fillUnitOptions();
     document.getElementById('input-unit-custom').value = '';
-    fillUnitSelect();  // 👈 اضافه کن
+    fillUnitSelect();
     document.getElementById('input-specs').value = '';
     document.getElementById('input-description').value = '';
     document.getElementById('custom-unit-group').style.display = 'none';
-
     document.getElementById('modal-info').style.display = 'flex';
 
     if (parentNode) {
@@ -1195,31 +1517,36 @@ function switchView(view) {
         const url = parentNode
             ? `/api/base-data/next-code?section=${SECTION}&type=${TYPE}&parent_id=${parentNode.id}`
             : `/api/base-data/next-code?section=${SECTION}&type=${TYPE}`;
-
-        const res = await fetch(url, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
         const data = await res.json();
         document.getElementById('info-code').textContent = data.next_code || '...';
     } catch {
         document.getElementById('info-code').textContent = '...';
     }
 
+    // تنظیم تب‌ها بعد از باز شدن مودال
+    const parentLevel = parentNode ? parentNode.level : -1;
+    const level = parentLevel + 1;
+    updateModalTabsVisibility(level, false);
+
     document.getElementById('modal-overlay').classList.add('open');
     setTimeout(() => document.getElementById('input-title').focus(), 100);
 }
-        // ============================================
+
+
+
+// ============================================
         // Modal: ویرایش
         // ============================================
-        function openEditModal(node) {
+function openEditModal(node) {
     editingNode = node;
+    editingGoodsId = node.id;
     addingParent = null;
 
     document.getElementById('modal-title').textContent = '✏️ ویرایش';
     document.getElementById('input-title').value = node.title;
     document.getElementById('input-description').value = node.description || '';
 
-    // extra_data
     let unit = '', unitCustom = '', specs = '';
     try {
         const extra = node.extra_data ? JSON.parse(node.extra_data) : null;
@@ -1232,9 +1559,8 @@ function switchView(view) {
 
     fillUnitOptions(unit);
     document.getElementById('input-unit-custom').value = unitCustom;
-    fillUnitSelect(unit);  // 👈 اضافه کن
+    fillUnitSelect(unit);
     document.getElementById('input-specs').value = specs;
-
     document.getElementById('custom-unit-group').style.display = unit === 'سایر' ? 'block' : 'none';
 
     document.getElementById('modal-info').style.display = 'flex';
@@ -1243,113 +1569,179 @@ function switchView(view) {
 
     document.getElementById('modal-overlay').classList.add('open');
     setTimeout(() => document.getElementById('input-title').focus(), 100);
+
+    const level = getGoodsLevel(node);
+
+    if (level === 3) {
+        updateModalTabsVisibility(3, false);
+        loadGoodsDetailsForEdit(node.id).then(() => {
+            const isVehicle = currentGoodsDetails?.is_vehicle === 1;
+            document.getElementById('detail-is-vehicle').checked = isVehicle;
+            const vehicleTab = document.querySelector('.modal-tab[data-tab="vehicle"]');
+            if (vehicleTab) vehicleTab.style.display = isVehicle ? 'flex' : 'none';
+        });
+    } else {
+        updateModalTabsVisibility(level, false);
+    }
 }
-        function closeModal() {
-            document.getElementById('modal-overlay').classList.remove('open');
-            editingNode = null;
-            addingParent = null;
-        }
+
+
+function onVehicleToggleChange() {
+    const isVehicle = document.getElementById('detail-is-vehicle').checked;
+    const vehicleTab = document.querySelector('.modal-tab[data-tab="vehicle"]');
+    if (vehicleTab) vehicleTab.style.display = isVehicle ? 'flex' : 'none';
+    if (!isVehicle && currentModalTab === 'vehicle') {
+        switchModalTab('details');
+    }
+}
+function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+    editingNode = null;
+    addingParent = null;
+    editingGoodsId = null;          // ← اضافه
+    currentGoodsDetails = null;     // ← اضافه
+    currentGoodsPersons = [];       // ← اضافه
+    customFieldsArray = [];         // ← اضافه
+    vehicleCustomFieldsArray = [];  // ← اضافه
+    selectedPerson = null;          // ← اضافه
+    switchModalTab('basic');        // ← اضافه
+}
 
         // ============================================
         // ذخیره Modal
         // ============================================
-        async function saveModal() {
-            const title = document.getElementById('input-title').value.trim();
-            const unit = document.getElementById('input-unit').value;
-            const unitCustom = document.getElementById('input-unit-custom').value.trim();
-            const specs = document.getElementById('input-specs').value.trim();
-            const description = document.getElementById('input-description').value.trim();
 
-            if (!title) {
-                showToast('عنوان الزامی است', 'error');
-                return;
+async function saveModal() {
+    const title = document.getElementById('input-title').value.trim();
+    const unit = document.getElementById('input-unit').value;
+    const unitCustom = document.getElementById('input-unit-custom').value.trim();
+    const specs = document.getElementById('input-specs').value.trim();
+    const description = document.getElementById('input-description').value.trim();
+
+    if (!title) {
+        showToast('عنوان الزامی است', 'error');
+        return;
+    }
+
+    // ساخت extra_data
+    const extraData = {};
+    if (unit) extraData.unit = unit;
+    if (unit === 'سایر' && unitCustom) extraData.unit_custom = unitCustom;
+    if (specs) extraData.specs = specs;
+
+    const btn = document.getElementById('btn-save');
+    btn.disabled = true;
+    btn.textContent = 'در حال ذخیره...';
+
+    // 👇 این دو متغیر بیرون از if/else تعریف می‌شن تا بعداً قابل استفاده باشن
+    let savedGoodsId = editingNode ? editingNode.id : null;
+    let savedLevel = null;
+
+    try {
+        // ============================================
+        // مرحله ۱: ذخیره‌ی اطلاعات پایه (base_data)
+        // ============================================
+        if (editingNode) {
+            // ---- ویرایش ----
+            const res = await fetch(`/api/base-data/${editingNode.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    title,
+                    description,
+                    level_name: editingNode.level_name,
+                    is_active: editingNode.is_active,
+                    extra_data: Object.keys(extraData).length > 0 ? extraData : null
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'خطا در ویرایش');
+
+            savedGoodsId = editingNode.id;
+            savedLevel = getGoodsLevel(editingNode);
+
+            showToast('اطلاعات پایه با موفقیت ویرایش شد');
+        } else {
+            // ---- افزودن ----
+            const maxSort = flatData.length > 0
+                ? Math.max(...flatData.map(n => n.sort_order || 0))
+                : 0;
+
+            // level_name بر اساس سطح والد
+            let levelName = 'گروه اصلی';
+            let newLevel = 0;
+
+            if (addingParent) {
+                const parentLevel = getGoodsLevel(addingParent);
+                newLevel = parentLevel + 1;
+                const levelNames = { 1: 'گروه فرعی', 2: 'زیرگروه', 3: 'کالا/خدمت' };
+                levelName = levelNames[newLevel] || 'کالا/خدمت';
             }
 
-            // ساخت extra_data
-            const extraData = {};
-            if (unit) extraData.unit = unit;
-            if (unit === 'سایر' && unitCustom) extraData.unit_custom = unitCustom;
-            if (specs) extraData.specs = specs;
+            const body = {
+                section: SECTION,
+                type: TYPE,
+                title,
+                description,
+                parent_id: addingParent ? addingParent.id : null,
+                level_name: levelName,
+                sort_order: maxSort + 1,
+                extra_data: Object.keys(extraData).length > 0 ? extraData : null
+            };
 
-            const btn = document.getElementById('btn-save');
-            btn.disabled = true;
-            btn.textContent = 'در حال ذخیره...';
+            const res = await fetch('/api/base-data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(body)
+            });
 
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'خطا در افزودن');
+
+            savedGoodsId = data.id;
+            savedLevel = newLevel;
+
+            // باز کردن والد
+            if (addingParent) expandedNodes.add(addingParent.id);
+
+            showToast(`با موفقیت ثبت شد (کد: ${data.code})`);
+        }
+
+        // ============================================
+        // مرحله ۲: اگه سطح ۴ بود، ذخیره‌ی جزئیات
+        // ============================================
+        if (savedLevel === 3 && savedGoodsId) {
             try {
-                if (editingNode) {
-                    // ویرایش
-                    const res = await fetch(`/api/base-data/${editingNode.id}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({
-                            title,
-                            description,
-                            level_name: editingNode.level_name,
-                            is_active: editingNode.is_active,
-                            extra_data: Object.keys(extraData).length > 0 ? extraData : null
-                        })
-                    });
-
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || 'خطا');
-
-                    showToast('با موفقیت ویرایش شد');
-                } else {
-                    // افزودن
-                    const maxSort = flatData.length > 0
-                        ? Math.max(...flatData.map(n => n.sort_order || 0))
-                        : 0;
-
-                    // level_name
-                    let levelName = 'گروه اصلی';
-                    if (addingParent) {
-                        const levelNames = { 1: 'گروه فرعی', 2: 'زیرگروه', 3: 'کالا/خدمت' };
-                        levelName = levelNames[addingParent.level] || 'کالا/خدمت';
-                    }
-
-                    const body = {
-                        section: SECTION,
-                        type: TYPE,
-                        title,
-                        description,
-                        parent_id: addingParent ? addingParent.id : null,
-                        level_name: levelName,
-                        sort_order: maxSort + 1,
-                        extra_data: Object.keys(extraData).length > 0 ? extraData : null
-                    };
-
-                    const res = await fetch('/api/base-data', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify(body)
-                    });
-
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || 'خطا');
-
-                    // باز کردن والد برای دیدن فرزند جدید
-                    if (addingParent) {
-                        expandedNodes.add(addingParent.id);
-                    }
-
-                    showToast(`با موفقیت ثبت شد (کد: ${data.code})`);
-                }
-
-                closeModal();
-                await loadData();
-            } catch (error) {
-                showToast(error.message, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'ذخیره';
+                editingGoodsId = savedGoodsId;   // برای saveGoodsDetails لازمه
+                await saveGoodsDetails();
+                showToast('جزئیات کالا نیز ذخیره شد');
+            } catch (detailErr) {
+                console.error('saveGoodsDetails error:', detailErr);
+                showToast('اطلاعات پایه ذخیره شد، ولی خطا در ذخیره جزئیات: ' + detailErr.message, 'error');
+                // ⚠️ اینجا throw نمی‌کنیم تا اطلاعات پایه‌ای که ذخیره شده از دست نره
             }
         }
+
+        // ============================================
+        // مرحله ۳: بستن و رفرش
+        // ============================================
+        closeModal();
+        await loadData();
+
+    } catch (error) {
+        showToast(error.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'ذخیره';
+    }
+}
 
         // ============================================
         // حذف
@@ -1536,5 +1928,6 @@ async function deleteUnit(id) {
             </div>
         </div>
     </div>
+        <script src="/goods-details.js"></script>
 </body>
 </html>
