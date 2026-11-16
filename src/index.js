@@ -2694,6 +2694,188 @@ if (url.pathname.match(/^\/api\/goods\/persons\/\d+$/) && request.method === "DE
     }
 }
 
+// ============================================
+// Budget Entity Links (ارتباط اشخاص/کالاها با اقتصادی/سازمانی)
+// ============================================
+
+// GET: لیست ارتباطات یک موجودیت
+if (url.pathname === "/api/budget-links" && request.method === "GET") {
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData) return new Response(JSON.stringify({ error: "توکن نامعتبر" }), { status: 401, headers });
+
+        const sourceType = url.searchParams.get("source_type");
+        const sourceId = url.searchParams.get("source_id");
+        const targetType = url.searchParams.get("target_type");
+
+        if (!sourceType || !sourceId) {
+            return new Response(JSON.stringify({ error: "source_type و source_id الزامی است" }), { status: 400, headers });
+        }
+
+        let query = `
+            SELECT bel.*, 
+                   bd.title as target_title,
+                   bd.code as target_code_full,
+                   bd.level as target_level,
+                   bd.level_name as target_level_name,
+                   p.full_name as source_person_name,
+                   gd.title as source_goods_title
+            FROM budget_entity_links bel
+            LEFT JOIN base_data bd ON bel.target_id = bd.id
+            LEFT JOIN persons p ON bel.source_type = 'person' AND bel.source_id = p.id
+            LEFT JOIN base_data gd ON bel.source_type = 'goods' AND bel.source_id = gd.id
+            WHERE bel.source_type = ? AND bel.source_id = ? AND bel.is_active = 1
+        `;
+        const params = [sourceType, parseInt(sourceId)];
+
+        if (targetType) {
+            query += " AND bel.target_type = ?";
+            params.push(targetType);
+        }
+
+        query += " ORDER BY bel.target_type, bel.target_code, bel.id";
+
+        const items = await env.DB.prepare(query).bind(...params).all();
+        return new Response(JSON.stringify(items.results), { status: 200, headers });
+    } catch (error) {
+        console.error("budget-links GET error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
+}
+
+// POST: افزودن ارتباط (با گسترش زیرمجموعه‌ها)
+if (url.pathname === "/api/budget-links" && request.method === "POST") {
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+        }
+
+        const body = await request.json();
+        const { source_type, source_id, target_type, target_ids, is_primary } = body;
+
+        if (!source_type || !source_id || !target_type || !Array.isArray(target_ids) || target_ids.length === 0) {
+            return new Response(JSON.stringify({ error: "اطلاعات ناقص" }), { status: 400, headers });
+        }
+
+        // گرفتن کد مبدا
+        let sourceCode = null;
+        if (source_type === "person") {
+            const p = await env.DB.prepare("SELECT code FROM persons WHERE id = ?").bind(source_id).first();
+            if (!p) return new Response(JSON.stringify({ error: "شخص یافت نشد" }), { status: 404, headers });
+            sourceCode = p.code;
+        } else if (source_type === "goods") {
+            const g = await env.DB.prepare("SELECT code FROM base_data WHERE id = ? AND section = 'goods'").bind(source_id).first();
+            if (!g) return new Response(JSON.stringify({ error: "کالا یافت نشد" }), { status: 404, headers });
+            sourceCode = g.code;
+        } else {
+            return new Response(JSON.stringify({ error: "source_type نامعتبر" }), { status: 400, headers });
+        }
+
+        const nowShamsi = toShamsi(new Date());
+        let inserted = 0;
+        const errors = [];
+
+        // برای هر target_id، برگ‌های زیرشاخه رو پیدا کن
+        for (const targetId of target_ids) {
+            // گرفتن target
+            const target = await env.DB.prepare("SELECT id, code, title FROM base_data WHERE id = ?").bind(targetId).first();
+            if (!target) {
+                errors.push(`target_id ${targetId} یافت نشد`);
+                continue;
+            }
+
+            // پیدا کردن برگ‌ها (فرزندانی که خودشون فرزند ندارن)
+            const allDescendants = await env.DB.prepare(
+                `WITH RECURSIVE tree AS (
+                    SELECT id, code, parent_id, 0 as depth FROM base_data WHERE id = ?
+                    UNION ALL
+                    SELECT b.id, b.code, b.parent_id, tree.depth + 1
+                    FROM base_data b INNER JOIN tree ON b.parent_id = tree.id
+                )
+                SELECT id, code FROM tree WHERE id != ?`
+            ).bind(targetId, targetId).all();
+
+            const descendants = allDescendants.results || [];
+
+            // اگه فرزندی نداره، خودش برگه
+            let leafIds = [];
+            if (descendants.length === 0) {
+                leafIds = [{ id: target.id, code: target.code }];
+            } else {
+                // فقط اونایی که فرزند ندارن
+                const descIds = descendants.map(d => d.id);
+                if (descIds.length > 0) {
+                    const placeholders = descIds.map(() => "?").join(",");
+                    const withChildren = await env.DB.prepare(
+                        `SELECT DISTINCT parent_id FROM base_data WHERE parent_id IN (${placeholders})`
+                    ).bind(...descIds).all();
+                    const parentsWithChildren = new Set((withChildren.results || []).map(r => r.parent_id));
+                    leafIds = descendants.filter(d => !parentsWithChildren.has(d.id));
+                }
+            }
+
+            // درج برگ‌ها
+            for (const leaf of leafIds) {
+                const uniqueCode = `${source_type}_${sourceCode}_${target_type}_${leaf.code}`;
+
+                // چک تکراری
+                const existing = await env.DB.prepare(
+                    "SELECT id FROM budget_entity_links WHERE unique_code = ?"
+                ).bind(uniqueCode).first();
+
+                if (existing) continue;
+
+                await env.DB.prepare(
+                    `INSERT INTO budget_entity_links 
+                        (unique_code, source_type, source_id, source_code, target_type, target_id, target_code, parent_target_id, is_primary, created_at_shamsi)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                ).bind(
+                    uniqueCode, source_type, source_id, sourceCode,
+                    target_type, leaf.id, leaf.code,
+                    targetId, is_primary ? 1 : 0, nowShamsi
+                ).run();
+                inserted++;
+            }
+        }
+
+        ctx.waitUntil(logAction(env, request, userData, "budget_links_added", "budget_entity_links", null, {
+            source_type, source_id, target_type, count: inserted
+        }));
+
+        return new Response(JSON.stringify({ success: true, inserted, errors }), { status: 200, headers });
+    } catch (error) {
+        console.error("budget-links POST error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
+}
+
+// DELETE: حذف ارتباط
+if (url.pathname.match(/^\/api\/budget-links\/\d+$/) && request.method === "DELETE") {
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+        }
+
+        const linkId = parseInt(url.pathname.split("/").pop());
+        await env.DB.prepare("DELETE FROM budget_entity_links WHERE id = ?").bind(linkId).run();
+        return new Response(JSON.stringify({ success: true }), { status: 200, headers });
+    } catch (error) {
+        console.error("budget-links DELETE error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
+}
+
       // ========== Permissions ==========
 
       // GET: لیست کلیدهای دسترسی

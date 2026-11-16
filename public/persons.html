@@ -839,6 +839,40 @@
 
             </div>
 
+
+                <!-- ============================================ -->
+                <!-- تب ارتباطات (فقط سطح ۴) -->
+                <!-- ============================================ -->
+                <div id="person-links-section" style="display:none; margin-top:20px; border-top:2px dashed #e9ecef; padding-top:20px;">
+                    <h4 style="margin:0 0 15px 0; font-size:15px; color:#667eea;">🔗 ارتباطات بودجه</h4>
+    
+                    <!-- طبقه‌بندی اقتصادی -->
+                    <div style="margin-bottom:20px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <label style="margin:0; font-size:14px;">📊 طبقه‌بندی اقتصادی</label>
+                            <button
+                                type="button"
+                                onclick="openEconomicPickerForPerson()"
+                                style="background:#28a745; color:white; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-size:12px;"
+                            >➕ افزودن</button>
+                        </div>
+                        <div id="person-economic-list" style="max-height:200px; overflow-y:auto;"></div>
+                    </div>
+    
+                    <!-- سازمان مدیریت‌کننده -->
+                    <div style="margin-bottom:20px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <label style="margin:0; font-size:14px;">🏢 سازمان مدیریت‌کننده هزینه</label>
+                            <button
+                                type="button"
+                                onclick="openOrganizationPickerForPerson()"
+                                style="background:#28a745; color:white; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-size:12px;"
+                            >➕ افزودن</button>
+                        </div>
+                        <div id="person-organization-list" style="max-height:200px; overflow-y:auto;"></div>
+                    </div>
+                </div>
+
             <div class="modal-actions">
                 <button class="btn-cancel" onclick="closeModal()">انصراف</button>
                 <button class="btn-save" id="btn-save" onclick="saveModal()">ذخیره</button>
@@ -849,7 +883,7 @@
     <div class="toast" id="toast"></div>
 
     <script src="/common.js"></script>
-
+        <script src="/budget-links.js"></script>
     <script>
         // ============================================
         // وضعیت
@@ -1467,7 +1501,7 @@ if (node.level === 4 && node.person_type === 'employee') {
             else if (newLevel === 4) title += 'شخص';
 
             document.getElementById('modal-title').textContent = title;
-
+document.getElementById('person-links-section').style.display = 'none';
             resetForm();
 
             // نمایش/مخفی کردن فیلدها
@@ -1519,7 +1553,7 @@ if (node.level === 4 && node.person_type === 'employee') {
         // ============================================
         // Modal: ویرایش
         // ============================================
-        function openEditModal(node) {
+       async function openEditModal(node) {
             editingNode = node;
             addingParent = null;
 
@@ -1534,6 +1568,15 @@ if (node.level === 4 && node.person_type === 'employee') {
             document.getElementById('group-full-name').style.display = isPerson ? 'none' : 'block';
             document.getElementById('group-description').style.display = isPerson ? 'none' : 'block';
             document.getElementById('person-fields').style.display = isPerson ? 'block' : 'none';
+
+
+if (isPerson) {
+    document.getElementById('person-links-section').style.display = 'block';
+    await loadPersonLinks(node.id);
+} else {
+    document.getElementById('person-links-section').style.display = 'none';
+}
+
 
             if (isPerson) {
                 document.getElementById('input-first-name').value = node.first_name || '';
@@ -1575,6 +1618,79 @@ if (node.level === 4 && node.person_type === 'employee') {
                 setTimeout(initDatePickers, 100);
             }
         }
+
+
+// ============================================
+// ارتباطات بودجه (برای شخص سطح ۴)
+// ============================================
+async function loadPersonLinks(personId) {
+    await renderBudgetLinksList('person-economic-list', 'person', personId, 'economic', 'refreshPersonLinks');
+    await renderBudgetLinksList('person-organization-list', 'person', personId, 'organization', 'refreshPersonLinks');
+}
+
+async function refreshPersonLinks() {
+    if (editingNode && editingNode.level === 4) {
+        await loadPersonLinks(editingNode.id);
+    }
+}
+
+function openEconomicPickerForPerson() {
+    if (!editingNode || editingNode.level !== 4) return;
+    
+    // انتخاب نوع اقتصادی (مصارف) — چون برای اشخاص معمولاً مصارف مهمه
+    openTreePickerModal({
+        targetType: 'economic',
+        economicType: 'expense',
+        onConfirm: async (selectedIds) => {
+            try {
+                const res = await fetch('/api/budget-links', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({
+                        source_type: 'person',
+                        source_id: editingNode.id,
+                        target_type: 'economic',
+                        target_ids: selectedIds
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'خطا');
+                showToast(`${data.inserted} ردیف اقتصادی اضافه شد`);
+                await refreshPersonLinks();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+    });
+}
+
+function openOrganizationPickerForPerson() {
+    if (!editingNode || editingNode.level !== 4) return;
+    
+    openTreePickerModal({
+        targetType: 'organization',
+        onConfirm: async (selectedIds) => {
+            try {
+                const res = await fetch('/api/budget-links', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({
+                        source_type: 'person',
+                        source_id: editingNode.id,
+                        target_type: 'organization',
+                        target_ids: selectedIds
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'خطا');
+                showToast(`${data.inserted} سازمان اضافه شد`);
+                await refreshPersonLinks();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+    });
+}
 
         function resetForm() {
             const fields = [

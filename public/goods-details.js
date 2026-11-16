@@ -329,6 +329,11 @@ async function loadGoodsDetailsForEdit(goodsId) {
         renderCustomFieldsList('vehicle-custom-fields-list', vehicleCustomFieldsArray, 'vehicle');
 
         renderGoodsPersonsList();
+
+renderGoodsPersonsList();
+await loadGoodsLinks(goodsId);   // ← اضافه کن
+initDetailsDatePickers();
+
         initDetailsDatePickers();
     } catch (e) {
         console.error('loadGoodsDetailsForEdit error:', e);
@@ -445,4 +450,49 @@ function formatRialForInput(amount) {
     const formatted = num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     const persianDigits = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
     return formatted.replace(/\d/g, d => persianDigits[parseInt(d)]);
+}
+
+// ============================================
+// ارتباطات بودجه (برای کالا سطح ۴)
+// ============================================
+async function loadGoodsLinks(goodsId) {
+    await renderBudgetLinksList('goods-economic-list', 'goods', goodsId, 'economic', 'refreshGoodsLinks');
+}
+
+async function refreshGoodsLinks() {
+    if (editingGoodsId) {
+        await loadGoodsLinks(editingGoodsId);
+    }
+}
+
+function openEconomicPickerForGoods() {
+    if (!editingGoodsId) {
+        showToast('ابتدا کالا را ذخیره کنید', 'error');
+        return;
+    }
+    
+    openTreePickerModal({
+        targetType: 'economic',
+        economicType: 'expense',
+        onConfirm: async (selectedIds) => {
+            try {
+                const res = await fetch('/api/budget-links', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({
+                        source_type: 'goods',
+                        source_id: editingGoodsId,
+                        target_type: 'economic',
+                        target_ids: selectedIds
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'خطا');
+                showToast(`${data.inserted} ردیف اقتصادی اضافه شد`);
+                await refreshGoodsLinks();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+    });
 }

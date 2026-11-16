@@ -839,6 +839,24 @@ body.dark tbody tr.dragging {
                     <div class="form-group" id="person-add-btn-group" style="display:none;">
                         <button type="button" class="btn-save" onclick="addPersonToGoods()" style="width:100%;">➕ افزودن شخص به این کالا</button>
                     </div>
+
+
+
+                    <!-- ارتباط اقتصادی -->
+                    <div style="margin-top:20px; border-top:2px dashed #e9ecef; padding-top:20px;">
+                        <h4 style="margin:0 0 15px 0; font-size:15px; color:#667eea;">📊 طبقه‌بندی اقتصادی</h4>
+    
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <label style="margin:0; font-size:13px;">ارتباط با طبقه‌بندی اقتصادی</label>
+                            <button
+                                type="button"
+                                onclick="openEconomicPickerForGoods()"
+                                style="background:#28a745; color:white; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-size:12px;"
+                            >➕ افزودن</button>
+                        </div>
+                        <div id="goods-economic-list" style="max-height:200px; overflow-y:auto;"></div>
+                    </div>
+
                 </div>
 
                 <div class="modal-actions">
@@ -851,7 +869,9 @@ body.dark tbody tr.dragging {
     <div class="toast" id="toast"></div>
 
     <script src="/common.js"></script>
+        <script src="/budget-links.js"></script>
         <script src="/base-data-search.js"></script>
+
 
     <script>
 
