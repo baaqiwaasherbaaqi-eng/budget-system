@@ -449,6 +449,7 @@ body.dark tbody tr.dragging {
                         <th style="width: 35%;">عنوان</th>
                         <th style="width: 12%;">واحد</th>
                         <th style="width: 23%;">مشخصات</th>
+                            <th style="width: 12%;">ارتباطات</th>
                         <th style="width: 15%;">وضعیت</th>
                     </tr>
                 </thead>
@@ -876,6 +877,7 @@ body.dark tbody tr.dragging {
     <script>
 
 let measurementUnits = [];
+let linkCounts = {};
 let unitsData = [];
         let currentFilteredData = null;
 let currentIsFiltered = false;
@@ -950,17 +952,15 @@ function fillUnitSelect(selectedValue = null) {
 
         await loadMeasurementUnits();  // 👈 اضافه کن (قبل از fetch اصلی)
 
-        const [res, unitsRes] = await Promise.all([
-            fetch(`/api/base-data?section=${SECTION}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            }),
-            fetch(`/api/base-data?section=goods_unit`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-        ]);
-        
-        flatData = await res.json();
-        unitsData = await unitsRes.json();
+const [res, unitsRes, countsRes] = await Promise.all([
+    fetch(`/api/base-data?section=${SECTION}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+    fetch(`/api/base-data?section=goods_unit`, { headers: { 'Authorization': `Bearer ${token}` } }),
+    fetch(`/api/budget-links/counts?source_type=goods`, { headers: { 'Authorization': `Bearer ${token}` } })
+]);
+
+flatData = await res.json();
+unitsData = await unitsRes.json();
+linkCounts = await countsRes.json();
         
         // باز کردن نودهای سطح ۱ به صورت پیش‌فرض
         if (expandedNodes.size === 0) {
@@ -1204,45 +1204,43 @@ function renderTable(items, isFiltered) {
     if (typeof isFiltered !== 'boolean') isFiltered = false;
 
     if (!items || items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:40px; color:#999;">${isFiltered ? 'نتیجه‌ای یافت نشد' : 'موردی ثبت نشده'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:#999;">${isFiltered ? 'نتیجه‌ای یافت نشد' : 'موردی ثبت نشده'}</td></tr>`;
         return;
     }
 
-// 👇 ساخت درخت و پیمایش DFS (هر فرزند زیر والدش)
-const map = {};
-const roots = [];
-const itemsCopy = [...items];
+    // ساخت درخت و پیمایش DFS
+    const map = {};
+    const roots = [];
+    const itemsCopy = [...items];
 
-itemsCopy.forEach(item => {
-    map[item.id] = { ...item, children: [] };
-});
+    itemsCopy.forEach(item => {
+        map[item.id] = { ...item, children: [] };
+    });
 
-itemsCopy.forEach(item => {
-    if (item.parent_id && map[item.parent_id]) {
-        map[item.parent_id].children.push(map[item.id]);
-    } else {
-        roots.push(map[item.id]);
-    }
-});
-
-// مرتب کردن فرزندان هر والد بر اساس code
-const sortRecursive = (nodes) => {
-    nodes.sort((a, b) => String(a.code || '').localeCompare(String(b.code || ''), undefined, { numeric: true }));
-    nodes.forEach(n => sortRecursive(n.children));
-};
-sortRecursive(roots);
-
-// DFS traversal (والد، بعد فرزندانش، بعد فرزندان فرزند و...)
-const sorted = [];
-const dfs = (nodes) => {
-    nodes.forEach(node => {
-        sorted.push(node);
-        if (node.children && node.children.length > 0) {
-            dfs(node.children);
+    itemsCopy.forEach(item => {
+        if (item.parent_id && map[item.parent_id]) {
+            map[item.parent_id].children.push(map[item.id]);
+        } else {
+            roots.push(map[item.id]);
         }
     });
-};
-dfs(roots);
+
+    const sortRecursive = (nodes) => {
+        nodes.sort((a, b) => String(a.code || '').localeCompare(String(b.code || ''), undefined, { numeric: true }));
+        nodes.forEach(n => sortRecursive(n.children));
+    };
+    sortRecursive(roots);
+
+    const sorted = [];
+    const dfs = (nodes) => {
+        nodes.forEach(node => {
+            sorted.push(node);
+            if (node.children && node.children.length > 0) {
+                dfs(node.children);
+            }
+        });
+    };
+    dfs(roots);
 
     tbody.innerHTML = '';
     sorted.forEach(item => {
@@ -1267,17 +1265,28 @@ dfs(roots);
         const len = codeStr.length;
         const indentPx = len <= 1 ? 0 : len <= 3 ? 20 : len <= 6 ? 40 : 60;
 
+        // ============================================
+        // ستون ارتباطات
+        // ============================================
+        let linksHtml = '—';
+        const counts = linkCounts[item.id] || {};
+        const ecoCount = counts.economic || 0;
+        if (len > 6 && ecoCount > 0) {
+            linksHtml = `<span style="background:#17a2b8; color:white; padding:2px 8px; border-radius:10px; font-size:11px;" title="اقتصادی">📊 ${ecoCount}</span>`;
+        }
+
         tr.innerHTML = `
             <td><span class="drag-handle" title="برای جابجایی بکشید">⋮⋮</span></td>
             <td class="code-cell">${item.code}</td>
-<td>
-    <div style="margin-right: ${indentPx}px; display: inline-flex; align-items: center; gap: 6px;">
-        <span>📄</span>
-        <span>${item.title}</span>
-    </div>
-</td>
+            <td>
+                <div style="margin-right: ${indentPx}px; display: inline-flex; align-items: center; gap: 6px;">
+                    <span>📄</span>
+                    <span>${item.title}</span>
+                </div>
+            </td>
             <td>${unit !== '—' ? `<span class="badge unit">${unit}</span>` : '—'}</td>
             <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${specs}</td>
+            <td>${linksHtml}</td>
             <td>${item.is_active ? '✅ فعال' : '❌ غیرفعال'}</td>
         `;
 
@@ -1296,8 +1305,6 @@ dfs(roots);
         tbody.appendChild(tr);
     });
 }
-
-
 
 // ============================================
         // فعال‌سازی Drag & Drop

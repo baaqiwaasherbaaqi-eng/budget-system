@@ -2876,6 +2876,43 @@ if (url.pathname.match(/^\/api\/budget-links\/\d+$/) && request.method === "DELE
     }
 }
 
+
+// ============================================
+// GET: شمارش ارتباطات بودجه (bulk)
+// ============================================
+if (url.pathname === "/api/budget-links/counts" && request.method === "GET") {
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData) return new Response(JSON.stringify({ error: "توکن نامعتبر" }), { status: 401, headers });
+
+        const sourceType = url.searchParams.get("source_type");
+        if (!sourceType) {
+            return new Response(JSON.stringify({ error: "source_type الزامی است" }), { status: 400, headers });
+        }
+
+        const result = await env.DB.prepare(
+            `SELECT source_id, target_type, COUNT(*) as cnt
+             FROM budget_entity_links
+             WHERE source_type = ? AND is_active = 1
+             GROUP BY source_id, target_type`
+        ).bind(sourceType).all();
+
+        const counts = {};
+        for (const row of result.results || []) {
+            if (!counts[row.source_id]) counts[row.source_id] = { economic: 0, organization: 0 };
+            counts[row.source_id][row.target_type] = row.cnt;
+        }
+
+        return new Response(JSON.stringify(counts), { status: 200, headers });
+    } catch (error) {
+        console.error("budget-links counts error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
+}
+
       // ========== Permissions ==========
 
       // GET: لیست کلیدهای دسترسی
