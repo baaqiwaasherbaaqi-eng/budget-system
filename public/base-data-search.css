@@ -246,3 +246,36 @@ body.dark .bds-breadcrumb-code {
         padding: 10px 6px;
     }
 }
+
+
+/* ============================================
+   Sticky Search Bar — نوار جستجوی شناور
+   ============================================ */
+#bds-search-bar,
+.bds-search-bar,
+.base-data-search-container {
+    position: sticky !important;
+    top: 70px !important;   /* 👈 ارتفاع هدر Sticky + 10px فاصله */
+    z-index: 500 !important;
+    background: white !important;
+    border-radius: 10px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+    padding: 12px 18px !important;
+    margin: 0 0 15px 0 !important;
+    direction: rtl;
+}
+
+body.dark #bds-search-bar,
+body.dark .bds-search-bar,
+body.dark .base-data-search-container {
+    background: #2d3748 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+@media (max-width: 768px) {
+    #bds-search-bar,
+    .bds-search-bar,
+    .base-data-search-container {
+        padding: 10px 12px !important;
+    }
+}
