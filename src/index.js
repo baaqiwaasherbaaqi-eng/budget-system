@@ -2660,6 +2660,17 @@ if (url.pathname.match(/^\/api\/goods\/\d+\/details$/) && request.method === "GE
              ORDER BY gp.id`
         ).bind(goodsId).all();
 
+
+// 👇👇👇 این را اضافه کنید 👇👇👇
+const tires = await env.DB.prepare(
+    "SELECT * FROM goods_tires WHERE base_data_id = ? ORDER BY is_active DESC, tire_number, sort_order"
+).bind(goodsId).all();
+
+const batteries = await env.DB.prepare(
+    "SELECT * FROM goods_batteries WHERE base_data_id = ? ORDER BY is_active DESC, battery_number, sort_order"
+).bind(goodsId).all();
+// 👆👆👆 تا اینجا 👆👆👆
+
         // پارس JSONها
         let customFields = [], vehicleCustomFields = [];
         let serviceVehicle = null, serviceOilFilter = null, serviceAirFilter = null;
@@ -2695,7 +2706,9 @@ if (url.pathname.match(/^\/api\/goods\/\d+\/details$/) && request.method === "GE
                 service_timing_belt_parsed: serviceTimingBelt,
                 fuel_standard_parsed: fuelStandard
             } : null,
-            persons: persons.results || []
+            persons: persons.results || [],
+                tires: tires.results || [],           // ← این خط
+    batteries: batteries.results || []    // ← این خط
         }), { status: 200, headers });
     } catch (error) {
         console.error("goods details GET error:", error);
@@ -2735,7 +2748,7 @@ if (url.pathname.match(/^\/api\/goods\/\d+\/details$/) && request.method === "PO
             service_vehicle_standard, service_oil_filter_standard,
             service_air_filter_standard, service_ac_filter_standard,
             service_antifreeze_standard, service_timing_belt_standard,
-            fuel_standard, vehicle_custom_fields,
+            fuel_standard, vehicle_custom_fields, current_km, 
             notes
         } = body;
 
@@ -2759,6 +2772,8 @@ if (url.pathname.match(/^\/api\/goods\/\d+\/details$/) && request.method === "PO
                     storage_location = ?, purchase_price = ?, custom_fields = ?,
                     is_vehicle = ?, tire_count = ?, tire_basis = ?,
                     battery_count = ?, battery_last_replace_shamsi = ?,
+                        current_km = ?,
+    current_km_updated_at_shamsi = ?,
                     service_vehicle_standard = ?, service_oil_filter_standard = ?,
                     service_air_filter_standard = ?, service_ac_filter_standard = ?,
                     service_antifreeze_standard = ?, service_timing_belt_standard = ?,
@@ -2782,18 +2797,19 @@ if (url.pathname.match(/^\/api\/goods\/\d+\/details$/) && request.method === "PO
                     (base_data_id, asset_number, purchase_date_shamsi, operation_date_shamsi,
                      storage_location, purchase_price, custom_fields,
                      is_vehicle, tire_count, tire_basis,
-                     battery_count, battery_last_replace_shamsi,
+                     battery_count, battery_last_replace_shamsi, current_km, current_km_updated_at_shamsi,
                      service_vehicle_standard, service_oil_filter_standard,
                      service_air_filter_standard, service_ac_filter_standard,
                      service_antifreeze_standard, service_timing_belt_standard,
                      fuel_standard, vehicle_custom_fields, notes,
                      created_at_shamsi, updated_at_shamsi)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
             ).bind(
                 goodsId, asset_number || null, purchase_date_shamsi || null, operation_date_shamsi || null,
                 storage_location || null, purchase_price || null, jsonify(custom_fields),
                 is_vehicle ? 1 : 0, tire_count || null, tire_basis || null,
-                battery_count || null, battery_last_replace_shamsi || null,
+                battery_count || null, battery_last_replace_shamsi || null, current_km != null ? parseInt(current_km) : null,
+current_km != null ? nowShamsi : null,   // 
                 jsonify(service_vehicle_standard), jsonify(service_oil_filter_standard),
                 jsonify(service_air_filter_standard), jsonify(service_ac_filter_standard),
                 jsonify(service_antifreeze_standard), jsonify(service_timing_belt_standard),
@@ -2865,6 +2881,189 @@ if (url.pathname.match(/^\/api\/goods\/persons\/\d+$/) && request.method === "DE
         return new Response(JSON.stringify({ success: true }), { status: 200, headers });
     } catch (error) {
         console.error("goods persons DELETE error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
+}
+
+
+
+
+// ============================================
+// لاستیک‌ها (goods_tires)
+// ============================================
+
+// GET: لیست لاستیک‌های یک کالا
+if (url.pathname.match(/^\/api\/goods\/\d+\/tires$/) && request.method === "GET") {
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData) return new Response(JSON.stringify({ error: "توکن نامعتبر" }), { status: 401, headers });
+
+        const goodsId = parseInt(url.pathname.split("/")[3]);
+        const items = await env.DB.prepare(
+            "SELECT * FROM goods_tires WHERE base_data_id = ? ORDER BY is_active DESC, tire_number, sort_order"
+        ).bind(goodsId).all();
+        return new Response(JSON.stringify(items.results), { status: 200, headers });
+    } catch (error) {
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
+}
+
+// POST: ذخیره bulk (جایگزینی کامل)
+if (url.pathname.match(/^\/api\/goods\/\d+\/tires$/) && request.method === "POST") {
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+        }
+
+        const goodsId = parseInt(url.pathname.split("/")[3]);
+        const { tires } = await request.json();
+        const nowShamsi = toShamsi(new Date());
+
+        const goods = await env.DB.prepare(
+            "SELECT id FROM base_data WHERE id = ? AND section = 'goods'"
+        ).bind(goodsId).first();
+        if (!goods) return new Response(JSON.stringify({ error: "کالا یافت نشد" }), { status: 404, headers });
+
+        // استراتژی: حذف همه و درج مجدد (چون تعداد کم است و ساده‌تر است)
+        await env.DB.prepare("DELETE FROM goods_tires WHERE base_data_id = ?").bind(goodsId).run();
+
+        let inserted = 0;
+        for (const t of (tires || [])) {
+            if (!t.tire_number && !t.position && !t.install_date_shamsi) continue; // ردیف خالی
+
+            await env.DB.prepare(
+                `INSERT INTO goods_tires
+                 (base_data_id, tire_number, position, brand, size,
+                  install_date_shamsi, install_km, expected_life_km, expected_life_months,
+                  tolerance_km, tolerance_months,
+                  removed_date_shamsi, removed_km, removal_reason,
+                  is_active, notes, sort_order, created_at_shamsi, updated_at_shamsi)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            ).bind(
+                goodsId,
+                t.tire_number || (inserted + 1),
+                t.position || null,
+                t.brand || null,
+                t.size || null,
+                t.install_date_shamsi || null,
+                t.install_km != null ? parseInt(t.install_km) : null,
+                t.expected_life_km != null ? parseInt(t.expected_life_km) : null,
+                t.expected_life_months != null ? parseInt(t.expected_life_months) : null,
+                t.tolerance_km != null ? parseInt(t.tolerance_km) : null,
+                t.tolerance_months != null ? parseInt(t.tolerance_months) : null,
+                t.removed_date_shamsi || null,
+                t.removed_km != null ? parseInt(t.removed_km) : null,
+                t.removal_reason || null,
+                t.is_active === 0 ? 0 : 1,
+                t.notes || null,
+                t.sort_order != null ? t.sort_order : inserted,
+                nowShamsi,
+                nowShamsi
+            ).run();
+            inserted++;
+        }
+
+        ctx.waitUntil(logAction(env, request, userData, "goods_tires_saved", "goods", goodsId, { count: inserted }));
+        return new Response(JSON.stringify({ success: true, count: inserted }), { status: 200, headers });
+    } catch (error) {
+        console.error("goods tires POST error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
+}
+
+// ============================================
+// باتری‌ها (goods_batteries)
+// ============================================
+
+if (url.pathname.match(/^\/api\/goods\/\d+\/batteries$/) && request.method === "GET") {
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData) return new Response(JSON.stringify({ error: "توکن نامعتبر" }), { status: 401, headers });
+
+        const goodsId = parseInt(url.pathname.split("/")[3]);
+        const items = await env.DB.prepare(
+            "SELECT * FROM goods_batteries WHERE base_data_id = ? ORDER BY is_active DESC, battery_number, sort_order"
+        ).bind(goodsId).all();
+        return new Response(JSON.stringify(items.results), { status: 200, headers });
+    } catch (error) {
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
+}
+
+if (url.pathname.match(/^\/api\/goods\/\d+\/batteries$/) && request.method === "POST") {
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+        }
+
+        const goodsId = parseInt(url.pathname.split("/")[3]);
+        const { batteries } = await request.json();
+        const nowShamsi = toShamsi(new Date());
+
+        const goods = await env.DB.prepare(
+            "SELECT id FROM base_data WHERE id = ? AND section = 'goods'"
+        ).bind(goodsId).first();
+        if (!goods) return new Response(JSON.stringify({ error: "کالا یافت نشد" }), { status: 404, headers });
+
+        await env.DB.prepare("DELETE FROM goods_batteries WHERE base_data_id = ?").bind(goodsId).run();
+
+        let inserted = 0;
+        for (const b of (batteries || [])) {
+            if (!b.battery_number && !b.brand && !b.install_date_shamsi) continue;
+
+            await env.DB.prepare(
+                `INSERT INTO goods_batteries
+                 (base_data_id, battery_number, brand, model, capacity_amp,
+                  install_date_shamsi, install_km,
+                  expected_life_months, expected_life_km,
+                  tolerance_months, tolerance_km,
+                  warranty_until_shamsi,
+                  removed_date_shamsi, removed_km, removal_reason,
+                  is_active, notes, sort_order, created_at_shamsi, updated_at_shamsi)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            ).bind(
+                goodsId,
+                b.battery_number || (inserted + 1),
+                b.brand || null,
+                b.model || null,
+                b.capacity_amp != null ? parseFloat(b.capacity_amp) : null,
+                b.install_date_shamsi || null,
+                b.install_km != null ? parseInt(b.install_km) : null,
+                b.expected_life_months != null ? parseInt(b.expected_life_months) : null,
+                b.expected_life_km != null ? parseInt(b.expected_life_km) : null,
+                b.tolerance_months != null ? parseInt(b.tolerance_months) : null,
+                b.tolerance_km != null ? parseInt(b.tolerance_km) : null,
+                b.warranty_until_shamsi || null,
+                b.removed_date_shamsi || null,
+                b.removed_km != null ? parseInt(b.removed_km) : null,
+                b.removal_reason || null,
+                b.is_active === 0 ? 0 : 1,
+                b.notes || null,
+                b.sort_order != null ? b.sort_order : inserted,
+                nowShamsi,
+                nowShamsi
+            ).run();
+            inserted++;
+        }
+
+        ctx.waitUntil(logAction(env, request, userData, "goods_batteries_saved", "goods", goodsId, { count: inserted }));
+        return new Response(JSON.stringify({ success: true, count: inserted }), { status: 200, headers });
+    } catch (error) {
+        console.error("goods batteries POST error:", error);
         return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
     }
 }

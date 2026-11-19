@@ -1275,10 +1275,7 @@ tasksHtml += `
       cascadeState.levels.forEach((levelData, levelIndex) => {
         if (!levelData) return;
         if (levelData.options.length === 0) return;
-        if (lockedTaskType && levelIndex > 0) {
-          const optionTypes = [...new Set(levelData.options.map((o) => o.type))];
-          if (!optionTypes.includes(lockedTaskType)) return;
-        }
+
         const levelNum = levelIndex + 1;
         const levelLabel = levelIndex === 0 ? "سطح ۱ - مأموریت" : `سطح ${toPersianNumbers(levelNum)}`;
         const isSelected = levelData.selected !== null;
@@ -1321,7 +1318,7 @@ tasksHtml += `
       employeeTasks.push(task);
       document.getElementById("new-task-percentage").value = 0;
       document.getElementById("new-task-notes").value = "";
-      initCascade();
+      
       const panel = document.getElementById("panel-tasks");
       if (panel) panel.innerHTML = renderTasksTab();
       setTimeout(initCascade, 100);

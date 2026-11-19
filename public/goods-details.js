@@ -11,6 +11,9 @@ let customFieldsArray = [];
 let vehicleCustomFieldsArray = [];
 let selectedPerson = null;
 let searchDebounceTimer = null;
+let currentTires = [];
+let currentBatteries = [];
+let currentGoodsCurrentKm = null;
 
 // ============================================
 // سوئیچ تب
@@ -285,6 +288,19 @@ async function loadGoodsDetailsForEdit(goodsId) {
         const data = await res.json();
         currentGoodsDetails = data.details || null;
         currentGoodsPersons = data.persons || [];
+
+currentTires = data.tires || [];
+currentBatteries = data.batteries || [];
+currentGoodsCurrentKm = data.details?.current_km || null;
+
+// پر کردن فیلد کیلومتر فعلی
+const kmInput = document.getElementById('veh-current-km');
+if (kmInput) kmInput.value = currentGoodsCurrentKm != null ? currentGoodsCurrentKm : '';
+
+// رندر لیست‌ها
+renderTiresList();
+renderBatteriesList();
+
         const d = currentGoodsDetails;
 
         const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
@@ -297,10 +313,7 @@ async function loadGoodsDetailsForEdit(goodsId) {
         setVal('detail-purchase-price', d?.purchase_price ? formatRialForInput(d.purchase_price) : '');
         setVal('detail-notes', d?.notes);
         setCheck('detail-is-vehicle', d?.is_vehicle === 1);
-        setVal('veh-tire-count', d?.tire_count);
-        setVal('veh-tire-basis', d?.tire_basis);
-        setVal('veh-battery-count', d?.battery_count);
-        setVal('veh-battery-last-replace', d?.battery_last_replace_shamsi);
+ 
 
         // ============ استانداردهای سرویس: حالا از HTML می‌خونیم ============
         fillServiceStandardFromData('vehicle', d?.service_vehicle_parsed);
@@ -383,10 +396,10 @@ async function saveGoodsDetails() {
         notes: document.getElementById('detail-notes').value.trim() || null
     };
     if (body.is_vehicle) {
-        body.tire_count = parseInt(document.getElementById('veh-tire-count').value) || null;
-        body.tire_basis = document.getElementById('veh-tire-basis').value || null;
-        body.battery_count = parseInt(document.getElementById('veh-battery-count').value) || null;
-        body.battery_last_replace_shamsi = cleanDateSimple(document.getElementById('veh-battery-last-replace').value);
+
+        body.current_km = document.getElementById('veh-current-km')?.value
+    ? parseInt(document.getElementById('veh-current-km').value)
+    : null;
         body.service_vehicle_standard = collectServiceStandard('vehicle');
         body.service_oil_filter_standard = collectServiceStandard('oil_filter');
         body.service_air_filter_standard = collectServiceStandard('air_filter');
@@ -413,6 +426,36 @@ async function saveGoodsDetails() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'خطا در ذخیره جزئیات');
+
+     // ذخیره لاستیک‌ها
+    try {
+        const tiresRes = await fetch(`/api/goods/${editingGoodsId}/tires`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ tires: collectTiresFromUI() })
+        });
+        if (!tiresRes.ok) {
+            const err = await tiresRes.json();
+            console.error('save tires error:', err);
+        }
+    } catch (e) {
+        console.error('save tires exception:', e);
+    }
+
+    // ذخیره باتری‌ها
+    try {
+        const batteriesRes = await fetch(`/api/goods/${editingGoodsId}/batteries`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ batteries: collectBatteriesFromUI() })
+        });
+        if (!batteriesRes.ok) {
+            const err = await batteriesRes.json();
+            console.error('save batteries error:', err);
+        }
+    } catch (e) {
+        console.error('save batteries exception:', e);
+    }
 }
 
 // ============================================
@@ -449,3 +492,600 @@ function formatRialForInput(amount) {
 
 
 
+// ============================================
+// لاستیک‌ها (goods_tires)
+// ============================================
+
+const TIRE_POSITIONS = {
+    front_left: 'جلو چپ',
+    front_right: 'جلو راست',
+    rear_left: 'عقب چپ',
+    rear_right: 'عقب راست',
+    spare: 'زاپاس'
+};
+
+const BATTERY_POSITIONS = {
+    engine_bay: 'محفظه موتور',
+    trunk: 'صندوق عقب',
+    under_seat: 'زیر صندلی',
+    other: 'سایر'
+};
+
+// محاسبه تعداد ماه از یک تاریخ شمسی تا امروز
+function monthsSince(shamsiDate) {
+    if (!shamsiDate) return 0;
+    try {
+        const normalized = String(shamsiDate).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
+        const parts = normalized.split('/');
+        if (parts.length !== 3) return 0;
+        const [jy, jm, jd] = parts.map(Number);
+        if (!jy || !jm || !jd) return 0;
+
+        // تبدیل شمسی به میلادی
+        function jalaliToGregorian(jy, jm, jd) {
+            let jy2 = jy + 1595;
+            let days = -355668 + (365 * jy2) + (Math.floor(jy2 / 33) * 8) +
+                       Math.floor(((jy2 % 33) + 3) / 4) + jd +
+                       ((jm < 7) ? (jm - 1) * 31 : ((jm - 7) * 30) + 186);
+            let gy = 400 * Math.floor(days / 146097);
+            days %= 146097;
+            if (days > 36524) {
+                gy += 100 * Math.floor(--days / 36524);
+                days %= 36524;
+                if (days >= 365) days++;
+            }
+            gy += 4 * Math.floor(days / 1461);
+            days %= 1461;
+            if (days > 365) {
+                gy += Math.floor((days - 1) / 365);
+                days = (days - 1) % 365;
+            }
+            let gd = days + 1;
+            const sal_a = [0, 31, ((gy % 4 === 0 && gy % 100 !== 0) || (gy % 400 === 0)) ? 29 : 28,
+                           31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+            let gm = 0;
+            for (gm = 0; gm < 13; gm++) {
+                const v = sal_a[gm];
+                if (gd <= v) break;
+                gd -= v;
+            }
+            return [gy, gm, gd];
+        }
+
+        const [gy, gm, gd] = jalaliToGregorian(jy, jm, jd);
+        const installDate = new Date(gy, gm - 1, gd);
+        const now = new Date();
+        const diffMs = now - installDate;
+        if (diffMs < 0) return 0;
+        return Math.floor(diffMs / (1000 * 60 * 60 * 24 * 30.44));
+    } catch (e) {
+        console.error('monthsSince error:', e);
+        return 0;
+    }
+}
+
+// محاسبه وضعیت سایش (مشترک بین لاستیک و باتری)
+function calcWearStatus(item, currentKm) {
+    if (item.is_active === 0 || item.removed_date_shamsi) {
+        return { label: '📜 تعویض شده', color: '#6c757d' };
+    }
+
+    const warnings = [];
+    const nearWarnings = [];
+
+    // چک کیلومتر
+    if (item.expected_life_km && item.install_km != null && currentKm != null) {
+        const used = currentKm - item.install_km;
+        const limit = item.expected_life_km;
+        const tol = item.tolerance_km || 0;
+        if (used >= limit + tol) warnings.push('کیلومتر');
+        else if (used >= limit - tol) nearWarnings.push('کیلومتر');
+    }
+
+    // چک تاریخ
+    if (item.expected_life_months && item.install_date_shamsi) {
+        const used = monthsSince(item.install_date_shamsi);
+        const limit = item.expected_life_months;
+        const tol = item.tolerance_months || 0;
+        if (used >= limit + tol) warnings.push('تاریخ');
+        else if (used >= limit - tol) nearWarnings.push('تاریخ');
+    }
+
+    if (warnings.length > 0) {
+        return { label: `🔴 نیاز به تعویض (${warnings.join(' + ')})`, color: '#dc3545' };
+    }
+    if (nearWarnings.length > 0) {
+        return { label: `🟡 نزدیک تعویض (${nearWarnings.join(' + ')})`, color: '#fd7e14' };
+    }
+    return { label: '🟢 سالم', color: '#28a745' };
+}
+
+// ============================================
+// رندر لیست لاستیک‌ها
+// ============================================
+function renderTiresList() {
+    const activeContainer = document.getElementById('tires-active-list');
+    const historyContainer = document.getElementById('tires-history-list');
+    const historySection = document.getElementById('tires-history-section');
+    const historyCount = document.getElementById('tires-history-count');
+    if (!activeContainer) return;
+
+    const active = currentTires.filter(t => t.is_active !== 0 && !t.removed_date_shamsi);
+    const replaced = currentTires.filter(t => t.is_active === 0 || t.removed_date_shamsi);
+
+    if (active.length === 0) {
+        activeContainer.innerHTML = '<div style="text-align:center; padding:15px; color:#999; font-size:12px;">لاستیک فعالی ثبت نشده</div>';
+    } else {
+        activeContainer.innerHTML = active.map(t => renderTireRow(t, false)).join('');
+    }
+
+    if (replaced.length > 0) {
+        if (historySection) historySection.style.display = 'block';
+        if (historyCount) historyCount.textContent = toPersianNumbers(replaced.length);
+        if (historyContainer) historyContainer.innerHTML = replaced.map(t => renderTireRow(t, true)).join('');
+    } else {
+        if (historySection) historySection.style.display = 'none';
+    }
+
+    setTimeout(() => initTireDatePickers(), 50);
+}
+
+function renderTireRow(tire, isReplaced) {
+    const idx = currentTires.indexOf(tire);
+    const status = getTireStatus(tire);
+    const disabled = isReplaced ? 'disabled' : '';
+
+    return `
+    <div class="tire-row ${isReplaced ? 'is-replaced' : ''}" data-index="${idx}">
+        <div class="row-header">
+            <div class="row-title">
+                <span>🔘 لاستیک #${toPersianNumbers(tire.tire_number || idx + 1)}</span>
+                <span class="tire-status-badge" style="background:${status.color};">${status.label}</span>
+            </div>
+            <div class="row-actions">
+                ${!isReplaced ? `<button type="button" onclick="markTireReplaced(${idx})" title="ثبت تعویض" style="background:#fd7e14; color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:11px;">🔁 تعویض شد</button>` : ''}
+                ${!isReplaced ? `<button type="button" onclick="removeTireRow(${idx})" style="background:#e74c3c; color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:11px;">🗑️</button>` : ''}
+            </div>
+        </div>
+        <div class="row-fields">
+            <div class="form-group">
+                <label>موقعیت</label>
+                <select class="tire-position" ${disabled} onchange="updateTireField(${idx}, 'position', this.value)">
+                    <option value="">—</option>
+                    ${Object.entries(TIRE_POSITIONS).map(([k, v]) => `<option value="${k}" ${tire.position === k ? 'selected' : ''}>${v}</option>`).join('')}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>برند</label>
+                <input type="text" class="tire-brand" value="${tire.brand || ''}" ${disabled} onchange="updateTireField(${idx}, 'brand', this.value)"/>
+            </div>
+            <div class="form-group">
+                <label>سایز</label>
+                <input type="text" class="tire-size" value="${tire.size || ''}" ${disabled} placeholder="مثلاً 195/65R15" onchange="updateTireField(${idx}, 'size', this.value)"/>
+            </div>
+            <div class="form-group">
+                <label>تاریخ نصب</label>
+                <input type="text" class="tire-install-date datepicker" value="${tire.install_date_shamsi || ''}" ${disabled} placeholder="۱۴۰۴/۰۱/۰۱" onchange="updateTireField(${idx}, 'install_date_shamsi', this.value)"/>
+            </div>
+            <div class="form-group">
+                <label>کیلومتر نصب</label>
+                <input type="number" class="tire-install-km" value="${tire.install_km != null ? tire.install_km : ''}" ${disabled} onchange="updateTireField(${idx}, 'install_km', this.value)"/>
+            </div>
+            <div class="form-group">
+                <label>عمر مفید (کیلومتر)</label>
+                <input type="number" class="tire-life-km" value="${tire.expected_life_km != null ? tire.expected_life_km : ''}" ${disabled} onchange="updateTireField(${idx}, 'expected_life_km', this.value)"/>
+            </div>
+            <div class="form-group">
+                <label>عمر مفید (ماه)</label>
+                <input type="number" class="tire-life-months" value="${tire.expected_life_months != null ? tire.expected_life_months : ''}" ${disabled} onchange="updateTireField(${idx}, 'expected_life_months', this.value)"/>
+            </div>
+            <div class="form-group">
+                <label>تلرانس (کیلومتر)</label>
+                <input type="number" class="tire-tolerance-km" value="${tire.tolerance_km != null ? tire.tolerance_km : ''}" ${disabled} onchange="updateTireField(${idx}, 'tolerance_km', this.value)"/>
+            </div>
+            <div class="form-group">
+                <label>تلرانس (ماه)</label>
+                <input type="number" class="tire-tolerance-months" value="${tire.tolerance_months != null ? tire.tolerance_months : ''}" ${disabled} onchange="updateTireField(${idx}, 'tolerance_months', this.value)"/>
+            </div>
+        </div>
+        ${!isReplaced ? `
+        <div class="row-fields" style="margin-top:8px; grid-template-columns: 1fr;">
+            <div class="form-group">
+                <label>یادداشت</label>
+                <input type="text" class="tire-notes" value="${tire.notes || ''}" placeholder="اختیاری" onchange="updateTireField(${idx}, 'notes', this.value)"/>
+            </div>
+        </div>
+        ` : `
+        <div style="margin-top:8px; padding:8px 12px; background:#e9ecef; border-radius:6px; font-size:12px;">
+            <b>تعویض شده:</b>
+            ${tire.removed_date_shamsi ? `تاریخ: ${toPersianNumbers(tire.removed_date_shamsi)}` : ''}
+            ${tire.removed_km != null ? ` | کیلومتر: ${toPersianNumbers(tire.removed_km)}` : ''}
+            ${tire.removal_reason ? ` | دلیل: ${tire.removal_reason}` : ''}
+        </div>
+        `}
+    </div>
+    `;
+}
+
+function getTireStatus(tire) {
+    const currentKm = parseInt(document.getElementById('veh-current-km')?.value) || currentGoodsCurrentKm;
+    return calcWearStatus(tire, currentKm);
+}
+
+function addTireRow() {
+    const activeCount = currentTires.filter(t => t.is_active !== 0 && !t.removed_date_shamsi).length;
+    currentTires.push({
+        id: null,
+        tire_number: activeCount + 1,
+        position: '',
+        brand: '',
+        size: '',
+        install_date_shamsi: '',
+        install_km: null,
+        expected_life_km: null,
+        expected_life_months: null,
+        tolerance_km: null,
+        tolerance_months: null,
+        removed_date_shamsi: null,
+        removed_km: null,
+        removal_reason: null,
+        is_active: 1,
+        notes: '',
+        sort_order: currentTires.length
+    });
+    renderTiresList();
+}
+
+function removeTireRow(index) {
+    if (!confirm('این لاستیک از لیست حذف شود؟')) return;
+    currentTires.splice(index, 1);
+    renderTiresList();
+}
+
+function updateTireField(index, field, value) {
+    if (!currentTires[index]) return;
+    if (field === 'install_km' || field === 'expected_life_km' ||
+        field === 'expected_life_months' || field === 'tolerance_km' ||
+        field === 'tolerance_months') {
+        currentTires[index][field] = value === '' || value == null ? null : parseInt(value);
+    } else {
+        currentTires[index][field] = value;
+    }
+}
+
+function markTireReplaced(index) {
+    const tire = currentTires[index];
+    if (!tire) return;
+
+    const currentKm = parseInt(document.getElementById('veh-current-km')?.value) || currentGoodsCurrentKm;
+    const todayShamsi = getTodayShamsi();
+
+    const dateStr = prompt('تاریخ تعویض (شمسی):', todayShamsi);
+    if (dateStr === null) return;
+
+    const kmStr = prompt('کیلومتر تعویض:', currentKm != null ? String(currentKm) : '');
+    if (kmStr === null) return;
+
+    const reason = prompt('دلیل تعویض (اختیاری):', 'ساییدگی');
+    if (reason === null) return;
+
+    tire.removed_date_shamsi = dateStr || todayShamsi;
+    tire.removed_km = kmStr ? parseInt(kmStr) : currentKm;
+    tire.removal_reason = reason || null;
+    tire.is_active = 0;
+
+    renderTiresList();
+    showToast('لاستیک به تاریخچه منتقل شد', 'success');
+}
+
+function toggleTiresHistory() {
+    const list = document.getElementById('tires-history-list');
+    const arrow = document.getElementById('tires-history-arrow');
+    if (!list) return;
+    const isHidden = list.style.display === 'none';
+    list.style.display = isHidden ? 'block' : 'none';
+    if (arrow) arrow.textContent = isHidden ? '▲' : '▼';
+}
+
+function initTireDatePickers() {
+    if (typeof $ === 'undefined' || !$.fn.persianDatepicker) return;
+    document.querySelectorAll('.tire-install-date:not(.has-datepicker)').forEach(el => {
+        try {
+            $(el).persianDatepicker({
+                format: 'YYYY/MM/DD',
+                autoClose: true,
+                persianDigit: true,
+                initialValue: !!el.value,
+                onSelect: function () {
+                    const idx = parseInt(el.closest('.tire-row')?.dataset.index);
+                    if (!isNaN(idx)) updateTireField(idx, 'install_date_shamsi', el.value);
+                }
+            });
+            el.classList.add('has-datepicker');
+        } catch (e) { /* ignore */ }
+    });
+}
+
+// ============================================
+// رندر لیست باتری‌ها
+// ============================================
+function renderBatteriesList() {
+    const activeContainer = document.getElementById('batteries-active-list');
+    const historyContainer = document.getElementById('batteries-history-list');
+    const historySection = document.getElementById('batteries-history-section');
+    const historyCount = document.getElementById('batteries-history-count');
+    if (!activeContainer) return;
+
+    const active = currentBatteries.filter(b => b.is_active !== 0 && !b.removed_date_shamsi);
+    const replaced = currentBatteries.filter(b => b.is_active === 0 || b.removed_date_shamsi);
+
+    if (active.length === 0) {
+        activeContainer.innerHTML = '<div style="text-align:center; padding:15px; color:#999; font-size:12px;">باتری فعالی ثبت نشده</div>';
+    } else {
+        activeContainer.innerHTML = active.map(b => renderBatteryRow(b, false)).join('');
+    }
+
+    if (replaced.length > 0) {
+        if (historySection) historySection.style.display = 'block';
+        if (historyCount) historyCount.textContent = toPersianNumbers(replaced.length);
+        if (historyContainer) historyContainer.innerHTML = replaced.map(b => renderBatteryRow(b, true)).join('');
+    } else {
+        if (historySection) historySection.style.display = 'none';
+    }
+
+    setTimeout(() => initBatteryDatePickers(), 50);
+}
+
+function renderBatteryRow(battery, isReplaced) {
+    const idx = currentBatteries.indexOf(battery);
+    const status = getBatteryStatus(battery);
+    const disabled = isReplaced ? 'disabled' : '';
+
+    return `
+    <div class="battery-row ${isReplaced ? 'is-replaced' : ''}" data-index="${idx}">
+        <div class="row-header">
+            <div class="row-title">
+                <span>🔋 باتری #${toPersianNumbers(battery.battery_number || idx + 1)}</span>
+                <span class="battery-status-badge" style="background:${status.color};">${status.label}</span>
+            </div>
+            <div class="row-actions">
+                ${!isReplaced ? `<button type="button" onclick="markBatteryReplaced(${idx})" title="ثبت تعویض" style="background:#fd7e14; color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:11px;">🔁 تعویض شد</button>` : ''}
+                ${!isReplaced ? `<button type="button" onclick="removeBatteryRow(${idx})" style="background:#e74c3c; color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:11px;">🗑️</button>` : ''}
+            </div>
+        </div>
+        <div class="row-fields">
+            <div class="form-group">
+                <label>برند</label>
+                <input type="text" class="battery-brand" value="${battery.brand || ''}" ${disabled} onchange="updateBatteryField(${idx}, 'brand', this.value)"/>
+            </div>
+            <div class="form-group">
+                <label>مدل</label>
+                <input type="text" class="battery-model" value="${battery.model || ''}" ${disabled} onchange="updateBatteryField(${idx}, 'model', this.value)"/>
+            </div>
+            <div class="form-group">
+                <label>آمپر</label>
+                <input type="number" step="0.1" class="battery-capacity" value="${battery.capacity_amp != null ? battery.capacity_amp : ''}" ${disabled} placeholder="مثلاً ۶۰" onchange="updateBatteryField(${idx}, 'capacity_amp', this.value)"/>
+            </div>
+            <div class="form-group">
+                <label>تاریخ نصب</label>
+                <input type="text" class="battery-install-date datepicker" value="${battery.install_date_shamsi || ''}" ${disabled} placeholder="۱۴۰۴/۰۱/۰۱" onchange="updateBatteryField(${idx}, 'install_date_shamsi', this.value)"/>
+            </div>
+            <div class="form-group">
+                <label>کیلومتر نصب</label>
+                <input type="number" class="battery-install-km" value="${battery.install_km != null ? battery.install_km : ''}" ${disabled} onchange="updateBatteryField(${idx}, 'install_km', this.value)"/>
+            </div>
+            <div class="form-group">
+                <label>عمر مفید (ماه)</label>
+                <input type="number" class="battery-life-months" value="${battery.expected_life_months != null ? battery.expected_life_months : ''}" ${disabled} onchange="updateBatteryField(${idx}, 'expected_life_months', this.value)"/>
+            </div>
+            <div class="form-group">
+                <label>عمر مفید (کیلومتر)</label>
+                <input type="number" class="battery-life-km" value="${battery.expected_life_km != null ? battery.expected_life_km : ''}" ${disabled} onchange="updateBatteryField(${idx}, 'expected_life_km', this.value)"/>
+            </div>
+            <div class="form-group">
+                <label>تلرانس (ماه)</label>
+                <input type="number" class="battery-tolerance-months" value="${battery.tolerance_months != null ? battery.tolerance_months : ''}" ${disabled} onchange="updateBatteryField(${idx}, 'tolerance_months', this.value)"/>
+            </div>
+            <div class="form-group">
+                <label>گارانتی تا</label>
+                <input type="text" class="battery-warranty datepicker" value="${battery.warranty_until_shamsi || ''}" ${disabled} placeholder="اختیاری" onchange="updateBatteryField(${idx}, 'warranty_until_shamsi', this.value)"/>
+            </div>
+        </div>
+        ${!isReplaced ? `
+        <div class="row-fields" style="margin-top:8px; grid-template-columns: 1fr;">
+            <div class="form-group">
+                <label>یادداشت</label>
+                <input type="text" class="battery-notes" value="${battery.notes || ''}" placeholder="اختیاری" onchange="updateBatteryField(${idx}, 'notes', this.value)"/>
+            </div>
+        </div>
+        ` : `
+        <div style="margin-top:8px; padding:8px 12px; background:#e9ecef; border-radius:6px; font-size:12px;">
+            <b>تعویض شده:</b>
+            ${battery.removed_date_shamsi ? `تاریخ: ${toPersianNumbers(battery.removed_date_shamsi)}` : ''}
+            ${battery.removed_km != null ? ` | کیلومتر: ${toPersianNumbers(battery.removed_km)}` : ''}
+            ${battery.removal_reason ? ` | دلیل: ${battery.removal_reason}` : ''}
+        </div>
+        `}
+    </div>
+    `;
+}
+
+function getBatteryStatus(battery) {
+    const currentKm = parseInt(document.getElementById('veh-current-km')?.value) || currentGoodsCurrentKm;
+    return calcWearStatus(battery, currentKm);
+}
+
+function addBatteryRow() {
+    const activeCount = currentBatteries.filter(b => b.is_active !== 0 && !b.removed_date_shamsi).length;
+    currentBatteries.push({
+        id: null,
+        battery_number: activeCount + 1,
+        brand: '',
+        model: '',
+        capacity_amp: null,
+        install_date_shamsi: '',
+        install_km: null,
+        expected_life_months: null,
+        expected_life_km: null,
+        tolerance_months: null,
+        tolerance_km: null,
+        warranty_until_shamsi: null,
+        removed_date_shamsi: null,
+        removed_km: null,
+        removal_reason: null,
+        is_active: 1,
+        notes: '',
+        sort_order: currentBatteries.length
+    });
+    renderBatteriesList();
+}
+
+function removeBatteryRow(index) {
+    if (!confirm('این باتری از لیست حذف شود؟')) return;
+    currentBatteries.splice(index, 1);
+    renderBatteriesList();
+}
+
+function updateBatteryField(index, field, value) {
+    if (!currentBatteries[index]) return;
+    if (['install_km', 'expected_life_km', 'expected_life_months',
+         'tolerance_km', 'tolerance_months'].includes(field)) {
+        currentBatteries[index][field] = value === '' || value == null ? null : parseInt(value);
+    } else if (field === 'capacity_amp') {
+        currentBatteries[index][field] = value === '' || value == null ? null : parseFloat(value);
+    } else {
+        currentBatteries[index][field] = value;
+    }
+}
+
+function markBatteryReplaced(index) {
+    const battery = currentBatteries[index];
+    if (!battery) return;
+
+    const currentKm = parseInt(document.getElementById('veh-current-km')?.value) || currentGoodsCurrentKm;
+    const todayShamsi = getTodayShamsi();
+
+    const dateStr = prompt('تاریخ تعویض (شمسی):', todayShamsi);
+    if (dateStr === null) return;
+
+    const kmStr = prompt('کیلومتر تعویض:', currentKm != null ? String(currentKm) : '');
+    if (kmStr === null) return;
+
+    const reason = prompt('دلیل تعویض (اختیاری):', 'ضعف باتری');
+    if (reason === null) return;
+
+    battery.removed_date_shamsi = dateStr || todayShamsi;
+    battery.removed_km = kmStr ? parseInt(kmStr) : currentKm;
+    battery.removal_reason = reason || null;
+    battery.is_active = 0;
+
+    renderBatteriesList();
+    showToast('باتری به تاریخچه منتقل شد', 'success');
+}
+
+function toggleBatteriesHistory() {
+    const list = document.getElementById('batteries-history-list');
+    const arrow = document.getElementById('batteries-history-arrow');
+    if (!list) return;
+    const isHidden = list.style.display === 'none';
+    list.style.display = isHidden ? 'block' : 'none';
+    if (arrow) arrow.textContent = isHidden ? '▲' : '▼';
+}
+
+function initBatteryDatePickers() {
+    if (typeof $ === 'undefined' || !$.fn.persianDatepicker) return;
+    document.querySelectorAll('.battery-install-date:not(.has-datepicker), .battery-warranty:not(.has-datepicker)').forEach(el => {
+        try {
+            $(el).persianDatepicker({
+                format: 'YYYY/MM/DD',
+                autoClose: true,
+                persianDigit: true,
+                initialValue: !!el.value,
+                onSelect: function () {
+                    const idx = parseInt(el.closest('.battery-row')?.dataset.index);
+                    if (isNaN(idx)) return;
+                    const field = el.classList.contains('battery-install-date') ? 'install_date_shamsi' : 'warranty_until_shamsi';
+                    updateBatteryField(idx, field, el.value);
+                }
+            });
+            el.classList.add('has-datepicker');
+        } catch (e) { /* ignore */ }
+    });
+}
+
+// ============================================
+// توابع کمکی
+// ============================================
+function getTodayShamsi() {
+    if (typeof toShamsi === 'function') {
+        return toShamsi(new Date());
+    }
+    // fallback ساده
+    const now = new Date();
+    const gy = now.getFullYear(), gm = now.getMonth() + 1, gd = now.getDate();
+    function gregorianToJalali(gy, gm, gd) {
+        const g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+        let jy = (gy <= 1600) ? 0 : 979;
+        gy -= (gy <= 1600) ? 621 : 1600;
+        const gy2 = (gm > 2) ? (gy + 1) : gy;
+        let days = (365 * gy) + Math.floor((gy2 + 3) / 4) - Math.floor((gy2 + 99) / 100) + Math.floor((gy2 + 399) / 400) - 80 + gd + g_d_m[gm - 1];
+        jy += 33 * Math.floor(days / 12053);
+        days %= 12053;
+        jy += 4 * Math.floor(days / 1461);
+        days %= 1461;
+        if (days > 365) {
+            jy += Math.floor((days - 1) / 365);
+            days = (days - 1) % 365;
+        }
+        const jm = (days < 186) ? 1 + Math.floor(days / 31) : 7 + Math.floor((days - 186) / 30);
+        const jd = 1 + ((days < 186) ? (days % 31) : ((days - 186) % 30));
+        return [jy, jm, jd];
+    }
+    const [jy, jm, jd] = gregorianToJalali(gy, gm, gd);
+    return `${jy}/${String(jm).padStart(2, '0')}/${String(jd).padStart(2, '0')}`;
+}
+
+// جمع‌آوری لاستیک‌ها برای ذخیره
+function collectTiresFromUI() {
+    return currentTires.map(t => ({
+        tire_number: t.tire_number,
+        position: t.position || null,
+        brand: t.brand || null,
+        size: t.size || null,
+        install_date_shamsi: t.install_date_shamsi || null,
+        install_km: t.install_km,
+        expected_life_km: t.expected_life_km,
+        expected_life_months: t.expected_life_months,
+        tolerance_km: t.tolerance_km,
+        tolerance_months: t.tolerance_months,
+        removed_date_shamsi: t.removed_date_shamsi || null,
+        removed_km: t.removed_km,
+        removal_reason: t.removal_reason || null,
+        is_active: t.is_active,
+        notes: t.notes || null,
+        sort_order: t.sort_order
+    }));
+}
+
+// جمع‌آوری باتری‌ها برای ذخیره
+function collectBatteriesFromUI() {
+    return currentBatteries.map(b => ({
+        battery_number: b.battery_number,
+        brand: b.brand || null,
+        model: b.model || null,
+        capacity_amp: b.capacity_amp,
+        install_date_shamsi: b.install_date_shamsi || null,
+        install_km: b.install_km,
+        expected_life_months: b.expected_life_months,
+        expected_life_km: b.expected_life_km,
+        tolerance_months: b.tolerance_months,
+        tolerance_km: b.tolerance_km,
+        warranty_until_shamsi: b.warranty_until_shamsi || null,
+        removed_date_shamsi: b.removed_date_shamsi || null,
+        removed_km: b.removed_km,
+        removal_reason: b.removal_reason || null,
+        is_active: b.is_active,
+        notes: b.notes || null,
+        sort_order: b.sort_order
+    }));
+}

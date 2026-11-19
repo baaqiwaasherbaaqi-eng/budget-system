@@ -2,7 +2,7 @@
 
 ## تاریخ آخرین آپدیت: 1405/08/05
 
-## وضعیت: بخش ۷ (اشخاص) ✅ + بخش ۸ (Permission) ✅ + ایمپورت اکسل ✅ + Drag & Drop ✅ + جستجو و فیلتر سطح ✅ + Ctrl+S ✅ + نرخ‌های اقتصادی ✅
+## وضعیت: بخش ۷ (اشخاص) ✅ + بخش ۸ (Permission) ✅ + ایمپورت اکسل ✅ + Drag & Drop ✅ + جستجو و فیلتر سطح ✅ + Ctrl+S ✅ + نرخ‌های اقتصادی ✅ + عمر مستقل لاستیک و باتری ✅
 
 ## کارهای انجام شده:
 - [x] فاز ۰ تا ۱۸
@@ -103,7 +103,7 @@
 - [x] **Migration 051** — اصلاح `level` در goods بر اساس طول code
 - [x] **Migration 052** — واحدهای اندازه‌گیری (`section='goods_unit'`)
 - [x] **Migration 053** — Seed واحدهای اندازه‌گیری (`section='unit'`) — ⚠️ نیاز به یکدست‌سازی با 052
-- [x] **Migration 054 — نرخ‌های کلان اقتصادی** ✅ (جدید)
+- [x] **Migration 054 — نرخ‌های کلان اقتصادی** ✅
   - [x] جدول `economic_rates` (۶ نرخ)
   - [x] نرخ تورم
   - [x] قیمت بنزین + درصد رشد سالانه
@@ -116,6 +116,27 @@
   - [x] آیتم منو در `sidebar.js` + breadcrumb + top-bar title
   - [x] دسترسی `admin`, `manager` (مشاهده + ویرایش)
   - [x] آماده برای اتصال به محاسبات بودجه (فاز بعد)
+- [x] **Migration 057 — ارتباط طبقه‌بندی اقتصادی (`economic_links`)** ✅
+  - [x] جدول `economic_links` (economic_id, link_type, target_id)
+  - [x] `link_type`: goods / organization / decree_type
+  - [x] API: `GET/POST/DELETE /api/economic-links` + `GET /api/economic-links/summary`
+  - [x] Denormalized: `target_code`, `target_title`
+- [x] **Migration 055 — جزئیات کالا (`goods_details`)** ✅
+  - [x] جدول `goods_details` (asset_number, purchase_date, storage, price, is_vehicle, service standards, fuel standard, custom_fields, ...)
+  - [x] جدول `goods_persons` (اشخاص مربوط به کالا)
+- [x] **Migration 058 — عمر مستقل لاستیک‌ها و باتری‌ها** ✅ (جدید)
+  - [x] جدول `goods_tires` (عمر مستقل هر لاستیک)
+  - [x] جدول `goods_batteries` (عمر مستقل هر باتری)
+  - [x] `ALTER TABLE goods_details` → افزودن `current_km` + `current_km_updated_at_shamsi`
+  - [x] محاسبه وضعیت سایش بر اساس کیلومتر و تاریخ
+  - [x] هشدار 🟢 سالم / 🟡 نزدیک تعویض / 🔴 نیاز به تعویض
+  - [x] دکمه «🔁 تعویض شد» → انتقال به تاریخچه (`is_active=0`)
+  - [x] حفظ تاریخچه تعویض‌شده‌ها (برای حسابرسی و ردیابی هزینه)
+  - [x] API: `GET/POST /api/goods/:id/tires`
+  - [x] API: `GET/POST /api/goods/:id/batteries`
+  - [x] `GET /api/goods/:id/details` حالا `tires` و `batteries` را هم برمی‌گرداند
+  - [x] UI: تب «مشخصات خودرو» → بخش لاستیک‌ها + باتری‌ها + کیلومتر فعلی
+  - [x] `goods-details.js` → توابع کامل رندر/ویرایش/ذخیره لاستیک و باتری
 
 ## 🔥 بخش جدید: نرخ‌های اقتصادی (economic_rates)
 
@@ -160,62 +181,117 @@
 
 ---
 
-## 🔥 بخش جستجو و فیلتر سطح
+## 🔥 بخش جدید: ارتباط طبقه‌بندی اقتصادی (economic_links)
+
+### جدول: `economic_links`
+| ستون | توضیح |
+|---|---|
+| `economic_id` | ردیف اقتصادی (مرکز) — FK به `base_data` |
+| `link_type` | goods / organization / decree_type |
+| `target_id` | شناسه مقصد در `base_data` |
+| `target_code`, `target_title` | denormalized برای نمایش سریع |
+| `sort_order`, `is_active` | ترتیب و وضعیت |
+
+**کلید یکتا:** `(economic_id, link_type, target_id)`
+
+### منطق:
+- هر ردیف اقتصادی می‌تونه به **کالا/خدمات**، **سازمان**، و **نوع حکم** وصل بشه
+- همه اجباری نیستن — ممکنه ردیف اقتصادی به هیچی وصل نباشه
+
+### APIها:
+- `GET /api/economic-links?economic_id=X&link_type=Y` — لیست ارتباطات
+- `POST /api/economic-links` — افزودن bulk (`{ economic_id, link_type, target_ids: [...] }`)
+- `DELETE /api/economic-links/:id` — حذف یک ارتباط
+- `GET /api/economic-links/summary` — خلاصه تعداد ارتباطات هر ردیف اقتصادی (برای نمایش در جدول)
 
 ### فایل‌ها:
-- `public/base-data-search.js` — منطق کامپوننت (مشترک بین همه صفحات)
-- `public/base-data-search.css` — استایل کامپوننت
+- `migrations/057_economic_links.sql`
+- `index.js` (APIها)
 
-### قابلیت‌ها:
-1. **جستجوی real-time** (debounce 250ms)
-   - جستجو بر اساس **کد** یا **عنوان**
-   - تشخیص خودکار عدد/متن (اگه عدد بود → فقط کد، اگه متن بود → کد + عنوان)
-   - دکمه «✕» برای پاک کردن
-2. **فیلتر سطح (Pills)**
-   - «همه» + سطح‌های مربوط به هر صفحه
-   - وقتی یه سطح فیلتر میشه، والدها هم نمایش داده میشن (ساختار درخت حفظ میشه)
-   - آیکون مخصوص برای هر سطح
-3. **جستجو + فیلتر با هم**
-4. **نمایش breadcrumb code** (مسیر کامل) زیر عنوان در نمای جدولی (وقتی فیلتر فعاله)
-5. **نمایش تعداد نتایج** (مثلاً «۲۳ از ۴۵ ردیف»)
-6. **`useType: true`** — برای صفحاتی مثل `operational` که `type` معناداره (نه `level`)
-7. **`hidePills: true`** — برای صفحاتی مثل `budget-types` که سطح‌بندی ندارن
-8. **باز کردن خودکار همه نودها** وقتی فیلتر/سرچ فعاله (تا نتایج دیده بشن)
-9. **`localStorage` غیرفعال** — هر بار صفحه لود میشه، فیلتر/سرچ ری‌ست میشه
-10. **`currentFilteredData` / `currentIsFiltered`** — برای حفظ state درون‌session (مثلاً موقع باز/بسته کردن شاخه)
+---
 
-### نحوه استفاده در هر صفحه:
+## 🔥 بخش جدید: جزئیات کالا (goods_details) + اشخاص مربوط (goods_persons)
+
+### جدول: `goods_details`
+| ستون | توضیح |
+|---|---|
+| `base_data_id` | FK به `base_data` (سطح ۴ کالا) |
+| `asset_number` | شماره اموال |
+| `purchase_date_shamsi`, `operation_date_shamsi` | تاریخ خرید / بهره‌برداری |
+| `storage_location` | محل نگهداری |
+| `purchase_price` | قیمت خرید (ریال) |
+| `is_vehicle` | خودرو است؟ (نمایش تب مشخصات خودرو) |
+| `tire_count`, `tire_basis` | (قدیمی — جایگزین شد با `goods_tires`) |
+| `battery_count`, `battery_last_replace_shamsi` | (قدیمی — جایگزین شد با `goods_batteries`) |
+| `current_km`, `current_km_updated_at_shamsi` | کیلومتر فعلی خودرو (برای محاسبه عمر لاستیک/باتری) |
+| `service_vehicle_standard` | استاندارد سرویس خودرو (JSON: basis, km_value, ...) |
+| `service_oil_filter_standard` | استاندارد سرویس فیلتر روغن |
+| `service_air_filter_standard` | استاندارد سرویس فیلتر هوا |
+| `service_ac_filter_standard` | استاندارد سرویس فیلتر کولر |
+| `service_antifreeze_standard` | استاندارد سرویس ضدیخ |
+| `service_timing_belt_standard` | استاندارد سرویس تسمه تایم |
+| `fuel_standard` | استاندارد سوخت‌گیری (JSON) |
+| `custom_fields` | فیلدهای سفارشی (JSON array) |
+| `vehicle_custom_fields` | فیلدهای سفارشی خودرو (JSON array) |
+| `notes` | یادداشت |
+
+### جدول: `goods_persons`
+| ستون | توضیح |
+|---|---|
+| `base_data_id` | FK به `base_data` (کالا) |
+| `person_id` | FK به `persons` |
+| `task_id` | FK اختیاری به `employee_tasks` (وظیفه مرتبط) |
+| `relation_type` | owner / user / responsible / custodian / other |
+| `notes` | یادداشت |
+
+### APIها:
+- `GET /api/goods/:id/details` — جزئیات + اشخاص + لاستیک‌ها + باتری‌ها
+- `POST /api/goods/:id/details` — ذخیره جزئیات (upsert)
+- `POST /api/goods/:id/persons` — افزودن شخص
+- `DELETE /api/goods/persons/:id` — حذف شخص
+
+### فایل‌ها:
+- `migrations/055_goods_details.sql`
+- `index.js` (APIها)
+- `public/goods.html` (تب‌های مودال: اطلاعات پایه / جزئیات / مشخصات خودرو / اشخاص مربوط)
+- `public/goods-details.js` (منطق)
+- `public/goods-details.css` (استایل)
+
+---
+
+## 🔥 بخش جدید: عمر مستقل لاستیک‌ها و باتری‌ها (goods_tires + goods_batteries)
+
+### منطق:
+- هر لاستیک و هر باتری **ردیف عمر مستقل** دارد
+- هر ردیف می‌تونه بر اساس **کیلومتر** یا **تاریخ** (یا هر دو) عمر مفید داشته باشه
+- هر کدوم زودتر به آستانه برسه، هشدار می‌ده
+- لاستیک/باتری تعویض‌شده از لیست فعال حذف نمی‌شه، بلکه به **تاریخچه** می‌ره (`is_active=0`)
+- تاریخچه برای **حسابرسی و ردیابی هزینه** حفظ می‌شه
+
+### جدول: `goods_tires`
+| ستون | توضیح |
+|---|---|
+| `base_data_id` | FK به `base_data` (کالا) |
+| `tire_number` | شماره لاستیک (۱، ۲، ۳...) |
+| `position` | front_left / front_right / rear_left / rear_right / spare |
+| `brand`, `size` | برند و سایز |
+| `install_date_shamsi`, `install_km` | تاریخ و کیلومتر نصب |
+| `expected_life_km`, `expected_life_months` | عمر مفید (کیلومتر / ماه) |
+| `tolerance_km`, `tolerance_months` | تلرانس |
+| `removed_date_shamsi`, `removed_km`, `removal_reason` | اطلاعات تعویض |
+| `is_active` | 1 = در حال استفاده، 0 = تعویض شده |
+| `notes`, `sort_order` | یادداشت و ترتیب |
+
+### جدول: `goods_batteries`
+مشابه `goods_tires` با فیلدهای اضافی:
+- `brand`, `model`, `capacity_amp` (آمپر)
+- `warranty_until_shamsi` (پایان گارانتی)
+
+### محاسبه وضعیت سایش (مشترک):
 ```javascript
-// ۱. در <head>
-<link rel="stylesheet" href="/base-data-search.css">
-
-// ۲. بعد از common.js
-<script src="/base-data-search.js"></script>
-
-// ۳. بعد از رندر اولیه در loadData
-if (!window._bdsInitialized) {
-    window._bdsInitialized = true;
-    startSearchComponent();
-} else if (typeof window.refreshBds === 'function') {
-    window.refreshBds();
-}
-
-// ۴. تعریف startSearchComponent
-function startSearchComponent() {
-    initBaseDataSearch(
-        {
-            section: 'organization',
-            levelNames: ['حوزه', 'معاونت', 'سازمان', 'اداره', 'واحد'],
-            levelIcons: ['🏛️', '⭐', '🏢', '📁', '👥'],
-        },
-        {
-            getFlatData: () => flatData,
-            onUpdate: ({ filteredData, isFiltered }) => {
-                currentFilteredData = isFiltered ? filteredData : null;
-                currentIsFiltered = isFiltered;
-                renderTree(filteredData, isFiltered);
-                renderTable(filteredData, isFiltered);
-            },
-        }
-    );
-}
+calcWearStatus(item, currentKm):
+  - چک کیلومتر: used = currentKm - install_km
+  - چک تاریخ: used = monthsSince(install_date_shamsi)
+  - اگر هر کدام >= limit + tolerance → 🔴 نیاز به تعویض
+  - اگر هر کدام >= limit - tolerance → 🟡 نزدیک تعویض
+  - در غیر این صورت → 🟢 سالم

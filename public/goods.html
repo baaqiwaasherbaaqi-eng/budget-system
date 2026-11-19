@@ -15,6 +15,74 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css"/>
     <style>
 
+/* ============ Tire & Battery Rows ============ */
+.tire-row, .battery-row {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-right: 4px solid #17a2b8;
+    transition: all 0.2s;
+}
+.tire-row.is-replaced, .battery-row.is-replaced {
+    border-right-color: #6c757d;
+    opacity: 0.75;
+    background: #f0f0f0;
+}
+.tire-row .row-header, .battery-row .row-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.tire-row .row-title, .battery-row .row-title {
+    font-weight: bold;
+    font-size: 13px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.tire-status-badge, .battery-status-badge {
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    color: white;
+    font-weight: bold;
+}
+.tire-row .row-actions, .battery-row .row-actions {
+    display: flex;
+    gap: 5px;
+}
+.tire-row .row-fields, .battery-row .row-fields {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+.tire-row .form-group, .battery-row .form-group {
+    margin-bottom: 0;
+}
+.tire-row .form-group label, .battery-row .form-group label {
+    font-size: 11px;
+    margin-bottom: 3px;
+}
+.tire-row .form-group input, .tire-row .form-group select,
+.battery-row .form-group input, .battery-row .form-group select {
+    padding: 6px 8px;
+    font-size: 12px;
+}
+body.dark .tire-row, body.dark .battery-row { background: #374151; }
+body.dark .tire-row.is-replaced, body.dark .battery-row.is-replaced { background: #2d3748; }
+body.dark .tire-row .row-title, body.dark .battery-row .row-title { color: #e2e8f0; }
+
+@media (max-width: 768px) {
+    .tire-row .row-fields, .battery-row .row-fields {
+        grid-template-columns: 1fr;
+    }
+}
+
 body.dark #units-modal .modal {
     background: #2d3748;
 }
@@ -560,32 +628,55 @@ body.dark tbody tr.dragging {
 
                 <!-- تب ۳: مشخصات خودرو -->
                 <div class="modal-tab-panel" id="panel-vehicle">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        <div class="form-group">
-                            <label>🔘 تعداد لاستیک</label>
-                            <input type="number" id="veh-tire-count" min="0" placeholder="مثلاً ۴"/>
-                        </div>
-                        <div class="form-group">
-                            <label>مبنای تعویض لاستیک</label>
-                            <select id="veh-tire-basis">
-                                <option value="">— انتخاب —</option>
-                                <option value="km">کیلومتر</option>
-                                <option value="date">تاریخ</option>
-                            </select>
-                        </div>
+            
+                    <!-- کیلومتر فعلی خودرو -->
+                    <div class="form-group" style="background:#e7f3ff; border-right:4px solid #17a2b8; padding:12px 15px; border-radius:6px;">
+                        <label>🔢 کیلومتر فعلی خودرو</label>
+                        <input type="number" id="veh-current-km" min="0" placeholder="مثلاً ۱۲۵۰۰۰"/>
+                        <small style="color:#666;font-size:11px; display:block; margin-top:5px;">
+                            برای محاسبه عمر باقیمانده لاستیک‌ها و باتری‌ها استفاده می‌شود
+                        </small>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        <div class="form-group">
-                            <label>🔋 تعداد باتری</label>
-                            <input type="number" id="veh-battery-count" min="0" placeholder="مثلاً ۱"/>
-                        </div>
-                        <div class="form-group">
-                            <label>آخرین تعویض باتری</label>
-                            <input type="text" id="veh-battery-last-replace" placeholder="۱۴۰۴/۰۱/۰۱"/>
-                        </div>
+                    <!-- ============================================ -->
+                    <!-- لاستیک‌ها -->
+                    <!-- ============================================ -->
+                    <div class="section-divider" style="margin: 20px 0 12px 0; padding-bottom:8px; border-bottom:2px solid #e9ecef; font-weight:bold; color:#17a2b8; font-size:13px;">
+                        🔘 لاستیک‌ها — عمر مستقل هر لاستیک
                     </div>
 
+                    <div id="tires-active-list"></div>
+                    <button type="button" class="btn-add-field" onclick="addTireRow()" style="background:#17a2b8; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; margin-bottom:15px;">
+                        ➕ افزودن لاستیک جدید
+                    </button>
+
+                    <div id="tires-history-section" style="display:none; margin-top:15px;">
+                        <div onclick="toggleTiresHistory()" style="cursor:pointer; background:#f8f9fa; padding:10px 15px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; font-size:13px; color:#666;">
+                            <span>📜 تاریخچه لاستیک‌های تعویض‌شده (<span id="tires-history-count">۰</span>)</span>
+                            <span id="tires-history-arrow">▼</span>
+                        </div>
+                        <div id="tires-history-list" style="display:none; margin-top:10px;"></div>
+                    </div>
+
+                    <!-- ============================================ -->
+                    <!-- باتری‌ها -->
+                    <!-- ============================================ -->
+                    <div class="section-divider" style="margin: 20px 0 12px 0; padding-bottom:8px; border-bottom:2px solid #e9ecef; font-weight:bold; color:#17a2b8; font-size:13px;">
+                        🔋 باتری‌ها — عمر مستقل هر باتری
+                    </div>
+
+                    <div id="batteries-active-list"></div>
+                    <button type="button" class="btn-add-field" onclick="addBatteryRow()" style="background:#17a2b8; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; margin-bottom:15px;">
+                        ➕ افزودن باتری جدید
+                    </button>
+
+                    <div id="batteries-history-section" style="display:none; margin-top:15px;">
+                        <div onclick="toggleBatteriesHistory()" style="cursor:pointer; background:#f8f9fa; padding:10px 15px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; font-size:13px; color:#666;">
+                            <span>📜 تاریخچه باتری‌های تعویض‌شده (<span id="batteries-history-count">۰</span>)</span>
+                            <span id="batteries-history-arrow">▼</span>
+                        </div>
+                        <div id="batteries-history-list" style="display:none; margin-top:10px;"></div>
+                    </div>
                     <div class="section-divider" style="margin: 20px 0 12px 0; padding-bottom:8px; border-bottom:2px solid #e9ecef; font-weight:bold; color:#667eea; font-size:13px;">🔧 استانداردهای سرویس</div>
 
                     <!-- ۱. سرویس خودرو -->
