@@ -1021,7 +1021,7 @@ tasksHtml += `
         ...
         <div class="tasks-container" id="tasks-container">${tasksHtml}</div>
         ${cascadeHtml}
-        <div class="total-bar" style="border-color: ${totalColor}; margin-top: 20px;"><span>جمع درصدها:</span><strong style="color: ${totalColor};">${totalPercentage}٪</strong>${totalPercentage === 100 ? '<span style="color:#28a745;margin-right:10px;">✅ کامل</span>' : totalPercentage > 100 ? '<span style="color:#dc3545;margin-right:10px;">❌ بیش از ۱۰۰٪</span>' : '<span style="color:#fd7e14;margin-right:10px;">⚠️ کمتر از ۱۰۰٪</span>'}</div>
+        <div class="total-bar" style="border-color: ${totalColor}; margin-top: 20px;"><span>جمع درصدها:</span><strong style="color: ${totalColor};">${toPersianNumbers(totalPercentage)}٪</strong>${totalPercentage === 100 ? '<span style="color:#28a745;margin-right:10px;">✅ کامل</span>' : totalPercentage > 100 ? '<span style="color:#dc3545;margin-right:10px;">❌ بیش از ۱۰۰٪</span>' : '<span style="color:#fd7e14;margin-right:10px;">⚠️ کمتر از ۱۰۰٪</span>'}</div>
         ${canEdit ? `<div class="actions-bar"><button class="btn btn-save" id="btn-save-tasks" onclick="saveTasks()">💾 ذخیره وظایف</button></div>` : ''}
       `;
     }
