@@ -16,7 +16,155 @@
     
     <style>
 
+/* اگر modal-overlay تعریف نشده */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+    overflow-y: auto;
+}
 
+.modal-content {
+    background: #fff;
+    border-radius: 12px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #1f2937;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.modal-close:hover {
+    background: #f3f4f6;
+    color: #ef4444;
+}
+
+.modal-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+/* استایل دکمه‌های مدال */
+.btn-cancel {
+    background: #fff;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+    padding: 8px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.btn-cancel:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+.btn-save {
+    background: #3b82f6;
+    color: #fff;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.btn-save:hover:not(:disabled) {
+    background: #2563eb;
+}
+
+.btn-save:disabled {
+    background: #d1d5db;
+    cursor: not-allowed;
+}
+
+
+
+.import-step { margin-bottom: 20px; }
+.import-section { margin-bottom: 20px; padding: 15px; background: #f9fafb; border-radius: 8px; }
+.import-section h4 { margin-top: 0; margin-bottom: 10px; color: #1f2937; }
+.import-tree {
+  max-height: 300px; overflow-y: auto; border: 1px solid #e5e7eb;
+  border-radius: 8px; padding: 10px; background: #fff;
+}
+.import-tree .tree-node {
+  padding: 6px 8px; margin: 2px 0; border-radius: 4px; cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+}
+.import-tree .tree-node:hover { background: #f3f4f6; }
+.import-tree .tree-node.disabled { opacity: 0.4; cursor: not-allowed; }
+.import-tree .tree-node.selected { background: #dbeafe; border: 1px solid #3b82f6; }
+.import-tree .tree-node.level-3 { font-weight: 600; }
+.import-tree .tree-node .badge-level {
+  font-size: 0.7rem; padding: 1px 6px; border-radius: 10px;
+  background: #e5e7eb; color: #374151;
+}
+.import-tree .tree-node.level-3 .badge-level { background: #fef3c7; color: #92400e; }
+.selected-branch-info {
+  margin-top: 12px; padding: 10px 14px; background: #ecfdf5;
+  border: 1px solid #10b981; border-radius: 8px; color: #065f46;
+}
+.import-preview { margin-top: 15px; }
+.import-preview table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.import-preview th, .import-preview td { padding: 6px 8px; border: 1px solid #e5e7eb; text-align: right; }
+.import-preview th { background: #f3f4f6; }
+.loading-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center; z-index: 10000;
+}
+.loading-box {
+  background: #fff; padding: 30px 40px; border-radius: 12px; text-align: center;
+}
+.spinner {
+  width: 40px; height: 40px; border: 4px solid #e5e7eb; border-top-color: #3b82f6;
+  border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
         * { box-sizing: border-box; }
 
@@ -641,15 +789,22 @@
             </button>
         </div>
 
-        <div class="toolbar">
-            <div class="view-switch">
-                <button id="btn-tree" class="active" onclick="switchView('tree')">🌳 درختی</button>
-                <button id="btn-table" onclick="switchView('table')">📋 جدولی</button>
+            <div class="toolbar">
+                <div class="view-switch">
+                    <button id="btn-tree" class="active" onclick="switchView('tree')">🌳 درختی</button>
+                    <button id="btn-table" onclick="switchView('table')">📋 جدولی</button>
+                </div>
+
+                <!-- همه دکمه‌های عملیاتی با هم -->
+                <div class="toolbar-actions">
+                    <button class="add-btn" onclick="openAddModal(null)">
+                        ➕ افزودن گروه اصلی
+                    </button>
+                    <button class="add-btn" onclick="openImportModal()">
+                        📥 ایمپورت از اکسل
+                    </button>
+                </div>
             </div>
-            <button class="add-btn" onclick="openAddModal(null)">
-                ➕ افزودن گروه اصلی
-            </button>
-        </div>
 
         <div id="tree-view" class="tree-container">
             <div class="loading">
@@ -849,8 +1004,108 @@
         </div>
     </div>
 
-    <div class="toast" id="toast"></div>
 
+
+        <!-- مدال ایمپورت اشخاص -->
+        <div id="importPersonsModal" class="modal-overlay" style="display:none;">
+            <div class="modal-content" style="max-width:800px;">
+                <div class="modal-header">
+                    <h3>📥 ایمپورت اشخاص از اکسل</h3>
+                    <button class="modal-close" onclick="closeImportModal()">✕</button>
+                </div>
+
+                <div class="modal-body">
+                    <!-- مرحله ۱ -->
+                    <div class="import-step" id="importStep1">
+                        <p class="hint">
+                            📌 ابتدا شاخه مقصد را از درخت زیر انتخاب کنید.
+                            <br>
+                            <small style="color:#ef4444;">⚠️ فقط شاخه‌های سطح ۳ قابل انتخاب هستند.</small>
+                        </p>
+                        <div id="importTreeContainer" class="import-tree"></div>
+                        <div id="selectedBranchInfo" class="selected-branch-info" style="display:none;"></div>
+                    </div>
+
+                    <!-- مرحله ۲ -->
+                    <div class="import-step" id="importStep2" style="display:none;">
+                        <div class="import-section">
+                            <h4>۱. دانلود فایل نمونه</h4>
+                            <button class="add-btn" onclick="downloadTemplate()">
+                                📥 دانلود فایل اکسل نمونه
+                            </button>
+
+
+
+                            <!-- بعد از دکمه دانلود، این رو اضافه کن -->
+                            <div class="import-help" style="margin-top:15px; padding:12px 16px; background:#eff6ff; border:1px solid #3b82f6; border-radius:8px; font-size:0.88rem; line-height:1.8;">
+                                <b>📌 راهنمای سریع مقادیر:</b>
+                                <ul style="margin:8px 0; padding-right:20px;">
+                                    <li><b>نوع شخص:</b> کارمند / شهروند / حقوقی / اتباع</li>
+                                    <li><b>جنسیت:</b> مرد / زن</li>
+                                    <li><b>تاریخ تولد:</b> YYYY/MM/DD (مثال: 1370/05/12)</li>
+                                    <li><b>موبایل:</b> ۱۱ رقم، با 09 شروع شود</li>
+                                    <li><b>کد ملی:</b> ۱۰ رقم عددی</li>
+                                    <li><b>شبا:</b> IR + ۲۴ رقم</li>
+                                    <li><b>کد پستی:</b> ۱۰ رقم</li>
+                                </ul>
+                                <small style="color:#6b7280;">💡 شیت دوم فایل اکسل، راهنمای کامل همه ستون‌ها را دارد.</small>
+                            </div>
+
+                        </div>
+
+                        <div class="import-section">
+                            <h4>۲. آپلود فایل تکمیل‌شده</h4>
+                            <input type="file" id="importFileInput" accept=".xlsx" style="display:none;">
+                            <button class="add-btn" onclick="document.getElementById('importFileInput').click()">
+                                📤 انتخاب فایل اکسل
+                            </button>
+                            <span id="importFileName" style="margin-right:10px;"></span>
+                        </div>
+
+                        <div id="importPreview" style="display:none;" class="import-preview">
+                            <h4>۳. پیش‌نمایش</h4>
+                            <div id="importPreviewContent"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-cancel" onclick="closeImportModal()">انصراف</button>
+                    <button class="btn-save" id="importSubmitBtn" onclick="submitImport()" disabled>
+                        ✅ شروع ایمپورت
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- مدال نتیجه -->
+        <div id="importResultModal" class="modal-overlay" style="display:none;">
+            <div class="modal-content" style="max-width:700px;">
+                <div class="modal-header">
+                    <h3 id="importResultTitle">نتیجه ایمپورت</h3>
+                    <button class="modal-close" onclick="closeResultModal()">✕</button>
+                </div>
+                <div class="modal-body" id="importResultBody"></div>
+                <div class="modal-actions">
+                    <button class="btn-save" onclick="closeResultModal(); location.reload();">باشه</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="importLoading" class="loading-overlay" style="display:none;">
+            <div class="loading-box">
+                <div class="spinner"></div>
+                <p>در حال ایمپورت...</p>
+                <p id="importProgressText" style="font-size:0.9rem; color:#666;"></p>
+            </div>
+        </div>
+
+
+
+    <div class="toast" id="toast"></div>
+        <!-- کتابخانه XLSX برای خواندن فایل اکسل در مرورگر -->
+        <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/common.js"></script>
     <script>
         // ============================================
@@ -1819,6 +2074,348 @@ if (node.level === 4 && node.person_type === 'employee') {
             }
         });
 
+
+
+
+// ============================================
+// ایمپورت اشخاص از اکسل
+// ============================================
+let importSelectedParentId = null;
+let importParsedRows = null;
+
+function openImportModal() {
+  importSelectedParentId = null;
+  importParsedRows = null;
+  document.getElementById("importFileInput").value = "";
+  document.getElementById("importFileName").textContent = "";
+  document.getElementById("importPreview").style.display = "none";
+  document.getElementById("importSubmitBtn").disabled = true;
+  document.getElementById("selectedBranchInfo").style.display = "none";
+  document.getElementById("importPersonsModal").style.display = "flex";
+  renderImportTree();
+}
+
+function closeImportModal() {
+  document.getElementById("importPersonsModal").style.display = "none";
+}
+
+async function renderImportTree() {
+  const container = document.getElementById("importTreeContainer");
+  container.innerHTML = "<p>در حال بارگذاری...</p>";
+  try {
+    const res = await fetch("/api/persons/tree", {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
+    const tree = await res.json();
+    container.innerHTML = "";
+    renderImportTreeNodes(tree, container, 0);
+  } catch (e) {
+    container.innerHTML = "<p style='color:red'>خطا در بارگذاری درخت</p>";
+  }
+}
+
+function renderImportTreeNodes(nodes, container, depth) {
+  nodes.forEach((node) => {
+    const div = document.createElement("div");
+    div.className = "tree-node";
+    div.style.paddingRight = `${depth * 20 + 8}px`;
+
+    const level = node.level;
+    const canSelect = level === 3;
+    if (!canSelect) div.classList.add("disabled");
+
+    div.innerHTML = `
+      <span class="badge-level">سطح ${level}</span>
+      <span>${node.full_name}</span>
+      <span style="color:#9ca3af; font-size:0.8rem;">(${node.code})</span>
+    `;
+
+    if (canSelect) {
+      div.onclick = () => selectImportParent(node, div);
+    } else {
+      div.onclick = () => {
+        if (level === 4) alert("این شخص خودش سطح ۴ است. لطفاً والد سطح ۳ آن را انتخاب کنید.");
+        else if (level < 3) alert("لطفاً یک شاخه سطح ۳ انتخاب کنید (نه سطح ۱ یا ۲).");
+      };
+    }
+
+    container.appendChild(div);
+
+    if (node.children && node.children.length > 0) {
+      renderImportTreeNodes(node.children, container, depth + 1);
+    }
+  });
+}
+
+function selectImportParent(node, el) {
+  document.querySelectorAll("#importTreeContainer .tree-node.selected")
+    .forEach(e => e.classList.remove("selected"));
+  el.classList.add("selected");
+  importSelectedParentId = node.id;
+
+  const info = document.getElementById("selectedBranchInfo");
+  info.style.display = "block";
+  info.innerHTML = `✅ شاخه انتخاب‌شده: <b>${node.full_name}</b> (${node.code}) — سطح ۳`;
+  document.getElementById("importStep2").style.display = "block";
+}
+
+function downloadTemplate() {
+  const token = localStorage.getItem("token");
+  fetch("/api/persons/import-template", {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("خطا در دانلود");
+      return res.blob();
+    })
+    .then((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "persons-import-template.xlsx";
+      a.click();
+      URL.revokeObjectURL(url);
+    })
+    .catch((e) => alert("خطا: " + e.message));
+}
+
+document.getElementById("importFileInput").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById("importFileName").textContent = file.name;
+
+  try {
+    const data = await file.arrayBuffer();
+    const wb = XLSX.read(data, { type: "array" });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+
+    if (rows.length === 0) {
+      alert("فایل خالی است");
+      return;
+    }
+
+    importParsedRows = rows;
+    showImportPreview(rows);
+    document.getElementById("importSubmitBtn").disabled = false;
+  } catch (e) {
+    alert("خطا در خواندن فایل: " + e.message);
+  }
+});
+
+function showImportPreview(rows) {
+  const preview = document.getElementById("importPreview");
+  const content = document.getElementById("importPreviewContent");
+
+  // اعتبارسنجی سریع سمت کلاینت
+  const PERSON_TYPES = [
+    "کارمند", "شهروند", "حقوقی", "اتباع",
+    "employee", "citizen", "legal", "foreigner",
+  ];
+  const GENDERS = ["مرد", "زن", "male", "female", "M", "F", "m", "f"];
+
+  const validateRow = (r) => {
+    const issues = [];
+    const warnings = [];
+
+    // نام
+    if (!r.full_name || String(r.full_name).trim() === "") {
+      issues.push("نام خالی");
+    }
+
+    // کد ملی
+    let nid = String(r.national_id || "").trim().replace(/[^\d]/g, "");
+    if (!nid) {
+      issues.push("کد ملی خالی");
+    } else if (nid.length < 10) {
+      warnings.push(`کد ملی ${nid.length} رقم → با صفر تکمیل می‌شود`);
+    } else if (nid.length > 10) {
+      issues.push("کد ملی بیش از ۱۰ رقم");
+    }
+
+    // موبایل
+    const mob = String(r.mobile || "").trim();
+    if (!mob) {
+      issues.push("موبایل خالی");
+    } else if (!/^09\d{9}$/.test(mob)) {
+      issues.push("موبایل نامعتبر");
+    }
+
+    // نوع شخص
+    const pt = String(r.person_type || "").trim();
+    if (!PERSON_TYPES.includes(pt)) {
+      issues.push("نوع شخص");
+    }
+
+    // تاریخ تولد
+    const bd = String(r.birth_date_shamsi || "").trim();
+    if (bd && !/^\d{4}\/\d{2}\/\d{2}$/.test(bd)) {
+      issues.push("تاریخ تولد");
+    }
+
+    // جنسیت
+    const g = String(r.gender || "").trim();
+    if (g && !GENDERS.includes(g)) {
+      issues.push("جنسیت");
+    }
+
+    // ایمیل
+    const em = String(r.email || "").trim();
+    if (em && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
+      issues.push("ایمیل");
+    }
+
+    // کد پستی
+    const pc = String(r.postal_code || "").trim();
+    if (pc && !/^\d{10}$/.test(pc)) {
+      issues.push("کد پستی");
+    }
+
+    // شبا
+    const ib = String(r.iban || "").trim();
+    if (ib && !/^IR\d{24}$/i.test(ib)) {
+      issues.push("شبا");
+    }
+
+    return { issues, warnings };
+  };
+
+  const shown = rows.slice(0, 10);
+  let html = `<p><b>${rows.length}</b> ردیف شناسایی شد. پیش‌نمایش ۱۰ ردیف اول:</p>`;
+  html += "<table><thead><tr>";
+  html += "<th>#</th><th>نام</th><th>کد ملی</th><th>موبایل</th><th>نوع</th><th>وضعیت</th>";
+  html += "</tr></thead><tbody>";
+
+  shown.forEach((r, i) => {
+    const { issues, warnings } = validateRow(r);
+    let status;
+    if (issues.length > 0) {
+      status = `<span style="color:#dc2626;">❌ ${issues.join("، ")}</span>`;
+    } else if (warnings.length > 0) {
+      status = `<span style="color:#d97706;">⚠️ ${warnings.join("، ")}</span>`;
+    } else {
+      status = '<span style="color:#059669;">✅ معتبر</span>';
+    }
+
+    html += `<tr>
+      <td>${i + 2}</td>
+      <td>${r.full_name || "-"}</td>
+      <td>${r.national_id || "-"}</td>
+      <td>${r.mobile || "-"}</td>
+      <td>${r.person_type || "-"}</td>
+      <td>${status}</td>
+    </tr>`;
+  });
+  html += "</tbody></table>";
+
+  // شمارش کل
+  let totalInvalid = 0;
+  let totalWarning = 0;
+  rows.forEach(r => {
+    const { issues, warnings } = validateRow(r);
+    if (issues.length > 0) totalInvalid++;
+    else if (warnings.length > 0) totalWarning++;
+  });
+
+  if (totalInvalid > 0) {
+    html += `<p style="color:#dc2626; margin-top:10px;">❌ ${totalInvalid} ردیف مشکل‌دار است. می‌توانید ادامه دهید (آن‌ها رد می‌شوند) یا فایل را اصلاح کنید.</p>`;
+  }
+  if (totalWarning > 0) {
+    html += `<p style="color:#d97706; margin-top:6px;">⚠️ ${totalWarning} ردیف هشدار دارد (مثلاً کد ملی با صفر تکمیل می‌شود) ولی ایمپورت می‌شود.</p>`;
+  }
+  if (totalInvalid === 0 && totalWarning === 0) {
+    html += `<p style="color:#059669; margin-top:10px;">✅ همه ردیف‌ها معتبر هستند.</p>`;
+  }
+
+  content.innerHTML = html;
+  preview.style.display = "block";
+}
+async function submitImport() {
+  if (!importSelectedParentId) return alert("شاخه انتخاب نشده");
+  if (!importParsedRows || importParsedRows.length === 0) return alert("فایل خالی است");
+
+  // حذف ردیف نمونه اگه کاربر فراموش کرد
+  const cleanRows = importParsedRows.filter(r => {
+    const note = String(r.notes || "").trim();
+    return !note.includes("ردیف نمونه");
+  });
+
+  if (cleanRows.length === 0) {
+    return alert("همه ردیف‌ها نمونه بودند. لطفاً فایل را با اطلاعات واقعی پر کنید.");
+  }
+
+  document.getElementById("importLoading").style.display = "flex";
+  document.getElementById("importProgressText").textContent =
+    `در حال ارسال ${cleanRows.length} ردیف...`;
+
+  try {
+    const res = await fetch("/api/persons/import-excel", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify({ parent_id: importSelectedParentId, rows: cleanRows }),
+    });
+
+    const result = await res.json();
+    document.getElementById("importLoading").style.display = "none";
+
+    if (!res.ok) {
+      alert("خطا: " + (result.error || "خطای ناشناخته"));
+      return;
+    }
+
+    showImportResult(result);
+    closeImportModal();
+  } catch (e) {
+    document.getElementById("importLoading").style.display = "none";
+    alert("خطای شبکه: " + e.message);
+  }
+}
+
+function showImportResult(result) {
+  const title = document.getElementById("importResultTitle");
+  const body = document.getElementById("importResultBody");
+
+  title.textContent = "📊 نتیجه ایمپورت";
+  let html = `
+    <div style="display:flex; gap:15px; margin-bottom:20px; flex-wrap:wrap;">
+      <div style="flex:1; padding:15px; background:#eff6ff; border-radius:8px; text-align:center;">
+        <div style="font-size:1.8rem; font-weight:bold; color:#1e40af;">${result.total}</div>
+        <div style="color:#6b7280;">کل ردیف‌ها</div>
+      </div>
+      <div style="flex:1; padding:15px; background:#ecfdf5; border-radius:8px; text-align:center;">
+        <div style="font-size:1.8rem; font-weight:bold; color:#059669;">${result.imported}</div>
+        <div style="color:#6b7280;">موفق</div>
+      </div>
+      <div style="flex:1; padding:15px; background:#fef2f2; border-radius:8px; text-align:center;">
+        <div style="font-size:1.8rem; font-weight:bold; color:#dc2626;">${result.failed}</div>
+        <div style="color:#6b7280;">ناموفق</div>
+      </div>
+    </div>
+  `;
+
+  if (result.errors && result.errors.length > 0) {
+    html += `<h4 style="color:#dc2626;">❌ خطاها:</h4><ol style="padding-right:20px; font-size:0.9rem;">`;
+    result.errors.forEach((err) => {
+      html += `<li style="margin-bottom:6px;"><b>ردیف ${err.row} — ${err.name}:</b> ${err.reason}</li>`;
+    });
+    html += "</ol>";
+  } else {
+    html += `<p style="color:#059669;">✅ همه ردیف‌ها با موفقیت ایمپورت شدند.</p>`;
+  }
+
+  body.innerHTML = html;
+  document.getElementById("importResultModal").style.display = "flex";
+}
+
+function closeResultModal() {
+  document.getElementById("importResultModal").style.display = "none";
+}
+
+
+
         // ============================================
         // شروع
         // ============================================
@@ -1827,7 +2424,7 @@ if (node.level === 4 && node.person_type === 'employee') {
         ['employee', 'citizen', 'legal', 'foreigner'].forEach(t => {
             document.getElementById('tab-' + t).classList.toggle('active', t === currentType);
         });
-
+        
         loadData();
     </script>
 </body>

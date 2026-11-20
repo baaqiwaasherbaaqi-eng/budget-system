@@ -1275,6 +1275,452 @@ export default {
         }
       }
 
+
+
+// ============================================
+// دانلود فایل اکسل نمونه اشخاص
+// ============================================
+if (url.pathname === "/api/persons/import-template" && request.method === "GET") {
+  try {
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const userData = await verifyToken(token, env.JWT_SECRET);
+    if (!userData || !["admin", "manager"].includes(userData.role)) {
+      return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+    }
+
+    // ===== شیت ۱: داده‌ها =====
+    const dataSheet = [
+      [
+        "full_name", "national_id", "mobile", "person_type",
+        "first_name", "last_name", "father_name", "mother_name",
+        "id_number", "birth_date_shamsi", "birth_place", "gender",
+        "nationality", "phone", "address", "postal_code", "email",
+        "bank_name", "bank_account", "iban", "economic_code",
+        "registration_number", "level_name", "notes",
+      ],
+      [
+        "علی رضایی", "0012345678", "09121234567", "کارمند",
+        "علی", "رضایی", "حسن", "فاطمه",
+        "1234", "1370/05/12", "تهران", "مرد",
+        "ایرانی", "02112345678", "تهران، خیابان ولیعصر", "1234567890",
+        "ali@example.com", "ملت", "1234567890",
+        "IR123456789012345678901234", "4112345678", "", "کارمند",
+        "ردیف نمونه — این ردیف را حذف کنید",
+      ],
+    ];
+
+    const ws1 = XLSX.utils.aoa_to_sheet(dataSheet);
+    ws1["!cols"] = [
+      { wch: 20 }, { wch: 14 }, { wch: 14 }, { wch: 12 },
+      { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 12 },
+      { wch: 10 }, { wch: 16 }, { wch: 14 }, { wch: 8 },
+      { wch: 10 }, { wch: 14 }, { wch: 30 }, { wch: 12 },
+      { wch: 22 }, { wch: 12 }, { wch: 16 }, { wch: 28 },
+      { wch: 14 }, { wch: 16 }, { wch: 12 }, { wch: 30 },
+    ];
+
+    // ===== شیت ۲: راهنما =====
+    const helpSheet = [
+      ["📖 راهنمای تکمیل فایل ایمپورت اشخاص", "", "", ""],
+      ["", "", "", ""],
+      ["ستون", "اجباری؟", "فرمت / مقادیر مجاز", "توضیح"],
+      ["full_name", "✅ بله", "متن", "نام کامل شخص"],
+      ["national_id", "✅ بله", "۱۰ رقم عددی", "کد ملی — باید یکتا باشد"],
+      ["mobile", "✅ بله", "۰۹xxxxxxxxx (۱۱ رقم)", "شماره موبایل — با 09 شروع شود"],
+      ["person_type", "✅ بله", "کارمند / شهروند / حقوقی / اتباع", "نوع شخص (انگلیسی هم قبول: employee, citizen, legal, foreigner)"],
+      ["first_name", "❌ خیر", "متن", "نام"],
+      ["last_name", "❌ خیر", "متن", "نام خانوادگی"],
+      ["father_name", "❌ خیر", "متن", "نام پدر"],
+      ["mother_name", "❌ خیر", "متن", "نام مادر"],
+      ["id_number", "❌ خیر", "متن", "شماره شناسنامه"],
+      ["birth_date_shamsi", "❌ خیر", "YYYY/MM/DD (مثال: 1370/05/12)", "تاریخ تولد شمسی"],
+      ["birth_place", "❌ خیر", "متن", "محل تولد"],
+      ["gender", "❌ خیر", "مرد / زن", "جنسیت (male/female هم قبول)"],
+      ["nationality", "❌ خیر", "متن (پیش‌فرض: ایرانی)", "ملیت"],
+      ["phone", "❌ خیر", "متن", "تلفن ثابت"],
+      ["address", "❌ خیر", "متن", "آدرس کامل"],
+      ["postal_code", "❌ خیر", "۱۰ رقم عددی", "کد پستی"],
+      ["email", "❌ خیر", "example@domain.com", "ایمیل"],
+      ["bank_name", "❌ خیر", "متن", "نام بانک"],
+      ["bank_account", "❌ خیر", "متن", "شماره حساب"],
+      ["iban", "❌ خیر", "IR + ۲۴ رقم", "شماره شبا (مثال: IR123456789012345678901234)"],
+      ["economic_code", "❌ خیر", "متن", "کد اقتصادی (برای اشخاص حقوقی)"],
+      ["registration_number", "❌ خیر", "متن", "شماره ثبت (برای اشخاص حقوقی)"],
+      ["level_name", "❌ خیر", "متن", "عنوان سطح (مثال: کارمند)"],
+      ["notes", "❌ خیر", "متن", "یادداشت"],
+      ["", "", "", ""],
+      ["⚠️ نکات مهم:", "", "", ""],
+      ["۱", "", "ردیف نمونه (ردیف دوم) را حذف کنید یا با اطلاعات واقعی جایگزین کنید.", ""],
+      ["۲", "", "همه ردیف‌ها زیر شاخه سطح ۳ انتخاب‌شده در سامانه قرار می‌گیرند.", ""],
+      ["۳", "", "برای هر شخص، به صورت خودکار یک کاربر با نقش viewer ساخته می‌شود.", ""],
+      ["۴", "", "کد ملی تکراری (در فایل یا دیتابیس) باعث رد شدن ردیف می‌شود.", ""],
+      ["۵", "", "کاربر می‌تواند از مقادیر انگلیسی هم استفاده کند (employee, male, ...).", ""],
+      ["⚠️ نکته مهم درباره صفرهای اول", "", "ستون‌های national_id, mobile, postal_code, iban, bank_account را در اکسل به فرمت Text تغییر دهید تا صفرهای اول حفظ شوند.", ""],
+    ];
+
+    const ws2 = XLSX.utils.aoa_to_sheet(helpSheet);
+    ws2["!cols"] = [
+      { wch: 22 }, { wch: 10 }, { wch: 45 }, { wch: 35 },
+    ];
+
+    // استایل هدر (ضخیم)
+    ws2["A3"].s = { font: { bold: true }, fill: { fgColor: { rgb: "FFE5E7EB" } } };
+    ws2["B3"].s = { font: { bold: true }, fill: { fgColor: { rgb: "FFE5E7EB" } } };
+    ws2["C3"].s = { font: { bold: true }, fill: { fgColor: { rgb: "FFE5E7EB" } } };
+    ws2["D3"].s = { font: { bold: true }, fill: { fgColor: { rgb: "FFE5E7EB" } } };
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws1, "اشخاص");
+    XLSX.utils.book_append_sheet(wb, ws2, "راهنما");
+
+    const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" });
+
+    return new Response(buf, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": 'attachment; filename="persons-import-template.xlsx"',
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
+  } catch (error) {
+    console.error("Template error:", error);
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+  }
+}
+
+// ============================================
+// ایمپورت اشخاص از اکسل
+// ============================================
+if (url.pathname === "/api/persons/import-excel" && request.method === "POST") {
+  try {
+    // ----- احراز هویت -----
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const userData = await verifyToken(token, env.JWT_SECRET);
+    if (!userData || !["admin", "manager"].includes(userData.role)) {
+      return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+    }
+
+    const body = await request.json();
+    const { parent_id, rows } = body;
+
+    // ----- اعتبارسنجی parent -----
+    if (!parent_id) {
+      return new Response(JSON.stringify({ error: "شاخه مقصد انتخاب نشده است" }), { status: 400, headers });
+    }
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return new Response(JSON.stringify({ error: "فایل خالی است یا ردیفی ندارد" }), { status: 400, headers });
+    }
+
+    const parent = await env.DB.prepare(
+      "SELECT id, level, code, full_name FROM persons WHERE id = ? AND is_active = 1"
+    ).bind(parent_id).first();
+
+    if (!parent) {
+      return new Response(JSON.stringify({ error: "شاخه مقصد یافت نشد" }), { status: 400, headers });
+    }
+    if (parent.level !== 3) {
+      return new Response(JSON.stringify({
+        error: `شاخه انتخاب‌شده باید در سطح ۳ باشد (سطح فعلی: ${parent.level})`
+      }), { status: 400, headers });
+    }
+
+    // ----- نگاشت نوع شخص -----
+    const PERSON_TYPE_MAP = {
+      employee: "employee", citizen: "citizen", legal: "legal", foreigner: "foreigner",
+      "کارمند": "employee", "شهروند": "citizen", "حقوقی": "legal",
+      "شخص حقوقی": "legal", "اتباع": "foreigner", "اتباع خارجی": "foreigner",
+      "خارجی": "foreigner",
+    };
+    const GENDER_MAP = {
+  "مرد": "male", "male": "male", "M": "male", "m": "male",
+  "زن": "female", "female": "female", "F": "female", "f": "female",
+};
+
+    // ----- ابزار اعتبارسنجی -----
+    const isValidShamsiDate = (s) => {
+      if (!/^\d{4}\/\d{2}\/\d{2}$/.test(s)) return false;
+      const [y, m, d] = s.split("/").map(Number);
+      if (y < 1300 || y > 1500) return false;
+      if (m < 1 || m > 12) return false;
+      if (d < 1 || d > 31) return false;
+      return true;
+    };
+    const clean = (v) => (v === null || v === undefined ? "" : String(v).trim());
+
+    // ----- چک کدهای ملی موجود در دیتابیس -----
+    const incomingNationalIds = rows
+      .map(r => clean(r.national_id))
+      .filter(id => id.length > 0);
+
+    const existingNationalIds = new Set();
+    if (incomingNationalIds.length > 0) {
+      // در گروه‌های ۵۰تایی چک کن (محدودیت D1)
+      for (let i = 0; i < incomingNationalIds.length; i += 50) {
+        const chunk = incomingNationalIds.slice(i, i + 50);
+        const placeholders = chunk.map(() => "?").join(",");
+        const found = await env.DB.prepare(
+          `SELECT national_id FROM persons WHERE national_id IN (${placeholders})`
+        ).bind(...chunk).all();
+        for (const f of found.results) existingNationalIds.add(f.national_id);
+      }
+    }
+
+    // ----- پردازش ردیف‌ها -----
+    const errors = [];
+    const validRows = [];
+    const seenInFile = new Set();
+    const nowShamsi = toShamsi(new Date());
+
+    // کد بعدی برای سطح ۴ زیر این parent
+    // (کد بر اساس الگوی generatePersonCode ساخته می‌شه، ولی برای bulk خودمون می‌سازیم)
+    const lastChild = await env.DB.prepare(
+      "SELECT code FROM persons WHERE parent_id = ? ORDER BY code DESC LIMIT 1"
+    ).bind(parent_id).first();
+
+    let nextSeq = 1;
+    if (lastChild && lastChild.code) {
+      // فرض: کد ۴ رقمی سطح ۴ مثل "001-002-003-004"
+      const parts = lastChild.code.split("-");
+      const lastPart = parseInt(parts[parts.length - 1]);
+      if (!isNaN(lastPart)) nextSeq = lastPart + 1;
+    }
+
+    const seqWidth = 4; // عرض ثابت شماره آخر
+    const basePrefix = parent.code; // مثل "001-002-003"
+
+    for (let idx = 0; idx < rows.length; idx++) {
+      const r = rows[idx];
+      const rowNum = idx + 2; // +2 چون هدر ردیف ۱ است
+      const fullName = clean(r.full_name);
+      const displayName = fullName || `ردیف ${rowNum}`;
+
+      const fail = (reason) => {
+        errors.push({ row: rowNum, name: displayName, reason });
+      };
+
+      // ۱. نام کامل
+      if (!fullName) { fail("نام کامل خالی است"); continue; }
+
+      // ۲. کد ملی
+      let nationalId = clean(r.national_id);
+      if (!nationalId) { fail("کد ملی خالی است"); continue; }
+
+      // حذف کاراکترهای غیر عددی
+      nationalId = nationalId.replace(/[^\d]/g, "");
+
+      if (!nationalId) { fail("کد ملی باید فقط عدد باشد"); continue; }
+
+      // اگه کمتر از ۱۰ رقم بود → صفرهای اول اضافه کن
+      if (nationalId.length < 10) {
+        nationalId = nationalId.padStart(10, "0");
+        console.log(`⚠️ ردیف ${rowNum}: کد ملی با صفر تکمیل شد → ${nationalId}`);
+      }
+
+      if (nationalId.length !== 10) {
+        fail(`کد ملی باید ۱۰ رقم باشد (مقدار: ${nationalId}). اگر صفرهای اول در اکسل حذف شده‌اند، ستون را به Text تبدیل کنید.`);
+        continue;
+      }
+      if (existingNationalIds.has(nationalId)) {
+        fail(`کد ملی تکراری است (${nationalId})`);
+        continue;
+      }
+      if (seenInFile.has(nationalId)) {
+        fail(`کد ملی تکراری در فایل اکسل (${nationalId})`);
+        continue;
+      }
+
+      // ۳. موبایل
+      let mobile = clean(r.mobile);
+      if (!mobile) { fail("شماره موبایل خالی است"); continue; }
+
+      // حذف کاراکترهای غیر عددی
+      mobile = mobile.replace(/[^\d]/g, "");
+
+      // اگه ۱۰ رقم بود و با 9 شروع می‌شد → صفر اول اضافه کن
+      if (mobile.length === 10 && mobile.startsWith("9")) {
+        mobile = "0" + mobile;
+        console.log(`⚠️ ردیف ${rowNum}: موبایل با صفر تکمیل شد → ${mobile}`);
+      }
+
+      if (!/^09\d{9}$/.test(mobile)) {
+        fail(`فرمت موبایل نامعتبر است. باید ۱۱ رقم و با 09 شروع شود (مقدار: ${mobile})`);
+        continue;
+      }
+
+      // ۴. نوع شخص
+      const rawType = clean(r.person_type);
+      const personType = PERSON_TYPE_MAP[rawType];
+      if (!personType) {
+        fail(`نوع شخص نامعتبر (${rawType || "خالی"}). مقادیر مجاز: کارمند / شهروند / حقوقی / اتباع`);
+        continue;
+      }
+
+      // ۵. تاریخ تولد
+      const birthDate = clean(r.birth_date_shamsi);
+      if (birthDate && !isValidShamsiDate(birthDate)) {
+        fail(`تاریخ تولد نامعتبر (${birthDate}). فرمت: YYYY/MM/DD`);
+        continue;
+      }
+
+      // ۶. جنسیت
+      const rawGender = clean(r.gender);
+      let gender = null;
+      if (rawGender) {
+        gender = GENDER_MAP[rawGender];
+        if (!gender) { fail(`جنسیت نامعتبر (${rawGender}). مقادیر مجاز: مرد / زن`); continue; }
+      }
+
+      // ۷. ایمیل
+      const email = clean(r.email);
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        fail(`فرمت ایمیل نامعتبر است (${email})`);
+        continue;
+      }
+
+      // ۸. کد پستی
+      const postalCode = clean(r.postal_code);
+      if (postalCode && !/^\d{10}$/.test(postalCode)) {
+        fail(`کد پستی باید ۱۰ رقم باشد (${postalCode})`);
+        continue;
+      }
+
+      // ۹. شبا
+      const iban = clean(r.iban);
+      if (iban && !/^IR\d{24}$/i.test(iban)) {
+        fail(`شماره شبا نامعتبر است. باید IR + ۲۴ رقم باشد (${iban})`);
+        continue;
+      }
+
+      // ✅ ردیف معتبر
+      seenInFile.add(nationalId);
+      const codeSuffix = String(nextSeq).padStart(seqWidth, "0");
+      const code = `${basePrefix}-${codeSuffix}`;
+      nextSeq++;
+
+      validRows.push({
+        code,
+        full_name: fullName,
+        national_id: nationalId,
+        mobile,
+        person_type: personType,
+        first_name: clean(r.first_name) || null,
+        last_name: clean(r.last_name) || null,
+        father_name: clean(r.father_name) || null,
+        mother_name: clean(r.mother_name) || null,
+        id_number: clean(r.id_number) || null,
+        birth_date_shamsi: birthDate || null,
+        birth_place: clean(r.birth_place) || null,
+        gender: gender,
+        nationality: clean(r.nationality) || "ایرانی",
+        phone: clean(r.phone) || null,
+        address: clean(r.address) || null,
+        postal_code: postalCode || null,
+        email: email || null,
+        bank_name: clean(r.bank_name) || null,
+        bank_account: clean(r.bank_account) || null,
+        iban: iban || null,
+        economic_code: clean(r.economic_code) || null,
+        registration_number: clean(r.registration_number) || null,
+        level_name: clean(r.level_name) || null,
+        notes: clean(r.notes) || null,
+        row_num: rowNum,
+      });
+    }
+
+    // ----- درج گروهی با batch (هر ۲۰ ردیف) -----
+    let imported = 0;
+    for (let i = 0; i < validRows.length; i += 20) {
+      const chunk = validRows.slice(i, i + 20);
+      const stmts = [];
+
+      for (const v of chunk) {
+        // درج شخص
+        stmts.push(
+          env.DB.prepare(
+            `INSERT INTO persons
+             (person_type, code, parent_id, level, level_name, full_name,
+              first_name, last_name, national_id, economic_code, registration_number,
+              father_name, mother_name, id_number, birth_date_shamsi, birth_place, gender, nationality,
+              phone, mobile, address, postal_code, email,
+              bank_name, bank_account, iban, notes,
+              created_at_shamsi, updated_at_shamsi)
+             VALUES (?, ?, ?, 4, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          ).bind(
+            v.person_type, v.code, parent_id, v.level_name,
+            v.full_name, v.first_name, v.last_name, v.national_id,
+            v.economic_code, v.registration_number,
+            v.father_name, v.mother_name, v.id_number,
+            v.birth_date_shamsi, v.birth_place, v.gender, v.nationality,
+            v.phone, v.mobile, v.address, v.postal_code, v.email,
+            v.bank_name, v.bank_account, v.iban, v.notes,
+            nowShamsi, nowShamsi
+          )
+        );
+        // درج کاربر
+        stmts.push(
+          env.DB.prepare(
+            `INSERT INTO users
+             (username, password_hash, full_name, role, organization, is_active, mobile)
+             VALUES (?, 'OTP_ONLY', ?, 'viewer', NULL, 1, ?)
+             ON CONFLICT(username) DO NOTHING`
+          ).bind(v.national_id, v.full_name, v.mobile)
+        );
+      }
+
+      try {
+        const results = await env.DB.batch(stmts);
+        // هر دو (person + user) برای هر ردیف اجرا شد
+        for (let j = 0; j < chunk.length; j++) {
+          const personRes = results[j * 2];
+          if (personRes && personRes.success) {
+            // آپدیت user_id روی person
+            const personId = personRes.meta.last_row_id;
+            await env.DB.prepare(
+              "UPDATE persons SET user_id = (SELECT id FROM users WHERE username = ?) WHERE id = ?"
+            ).bind(chunk[j].national_id, personId).run();
+            imported++;
+          } else {
+            errors.push({ row: chunk[j].row_num, name: chunk[j].full_name, reason: "خطای پایگاه داده" });
+          }
+        }
+      } catch (batchErr) {
+        console.error("Batch insert error:", batchErr);
+        for (const v of chunk) {
+          errors.push({ row: v.row_num, name: v.full_name, reason: "خطای پایگاه داده: " + batchErr.message });
+        }
+      }
+    }
+
+    // ----- لاگ -----
+    ctx.waitUntil(logAction(env, request, userData, "persons_import", "persons", parent_id, {
+      imported, failed: errors.length, total: rows.length
+    }));
+
+    // ----- نتیجه -----
+    return new Response(JSON.stringify({
+      success: true,
+      total: rows.length,
+      imported,
+      failed: errors.length,
+      errors,
+    }), { status: 200, headers });
+
+  } catch (error) {
+    console.error("Import error:", error);
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+  }
+}
+
+
       // ========== طبقه‌بندی اقتصادی ==========
 
       // دریافت لیست طبقه‌بندی‌ها (از base_data)
