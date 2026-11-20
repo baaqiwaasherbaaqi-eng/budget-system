@@ -1,8 +1,9 @@
 # پروژه: سامانه بودجه شهرداری
 
-## تاریخ آخرین آپدیت: 1405/08/05
+## تاریخ آخرین آپدیت: 1405/08/29
 
-## وضعیت: بخش ۷ (اشخاص) ✅ + بخش ۸ (Permission) ✅ + ایمپورت اکسل ✅ + Drag & Drop ✅ + جستجو و فیلتر سطح ✅ + Ctrl+S ✅ + نرخ‌های اقتصادی ✅ + عمر مستقل لاستیک و باتری ✅
+## وضعیت: بخش ۷ (اشخاص) ✅ + بخش ۸ (Permission) ✅ + ایمپورت اکسل ✅ + Drag & Drop ✅ + جستجو و فیلتر سطح ✅ + Ctrl+S ✅ + نرخ‌های اقتصادی ✅ + ارتباطات طبقه‌بندی اقتصادی ✅
+
 
 ## کارهای انجام شده:
 - [x] فاز ۰ تا ۱۸
@@ -138,7 +139,70 @@
   - [x] UI: تب «مشخصات خودرو» → بخش لاستیک‌ها + باتری‌ها + کیلومتر فعلی
   - [x] `goods-details.js` → توابع کامل رندر/ویرایش/ذخیره لاستیک و باتری
 
+- [x] **ارتباطات طبقه‌بندی اقتصادی (economic_links) — Migration 059** ✅ (جدید)
+  - [x] جدول `economic_links` با `person` + `inherit` + `is_excluded`
+  - [x] ۴ نوع ارتباط: `goods`، `organization`، `decree_type`، `person`
+  - [x] منطق inherit (اعمال روی همه زیرمجموعه‌ها) برای person
+  - [x] منطق is_excluded (override منفی) برای person
+  - [x] API جدید `GET /api/economic-links/effective/:id`
+  - [x] مدال ارتباطات با ۴ تب + درخت checkbox + باز/بست شاخه
+  - [x] badgeهای batch روی درخت و جدول (📦 🏢 📜 👤)
+  - [x] دکمه 🔗 در هر دو نما (درخت + جدول)
+  - [x] کلیک روی badge → مدال باز می‌شه روی همون تب
+
 ## 🔥 بخش جدید: نرخ‌های اقتصادی (economic_rates)
+
+## 🔥 بخش جدید: ارتباطات طبقه‌بندی اقتصادی (economic_links)
+
+### جدول: `economic_links`
+| ستون | توضیح |
+|---|---|
+| `economic_id` | ردیف اقتصادی (مرکز) — FK به `base_data(id)` |
+| `link_type` | `goods` / `organization` / `decree_type` / `person` |
+| `target_id` | شناسه مقصد |
+| `target_code`, `target_title` | denormalized برای نمایش سریع |
+| `inherit` | 0 = فقط خودش، 1 = خودش + همه زیرمجموعه‌ها (فقط person) |
+| `is_excluded` | 0 = عادی، 1 = از inherit بالاتر حذف شده (فقط person) |
+| `sort_order`, `is_active` | ترتیب و وضعیت |
+
+**کلید یکتا:** `(economic_id, link_type, target_id)`
+
+### منطق inherit (ارثی)
+- کاربر یه شاخه (سطح ۱-۳) تیک می‌زنه + inherit فعال می‌کنه
+- فقط همون ردیف با `inherit=1` ذخیره می‌شه
+- موقع محاسبه (`effective`)، همه سطح ۴های زیردرخت به‌صورت dynamic اضافه می‌شن
+- مزیت: اگه بعداً شخص جدیدی به اون شاخه اضافه بشه، خودکار شامل می‌شه
+
+### منطق is_excluded (override منفی)
+- اگه یه شخص از inherit بالاتر اومده باشه، کاربر می‌تونه تیکش رو برداره
+- یه ردیف با `is_excluded=1` ذخیره می‌شه
+- موقع محاسبه، از نتیجه حذف می‌شه
+
+### APIها:
+- `GET /api/economic-links?economic_id=X&link_type=Y` — لیست خام
+- `POST /api/economic-links` — bulk insert/update (با `items` یا `target_ids`)
+- `DELETE /api/economic-links/:id` — حذف
+- `GET /api/economic-links/summary` — شمارش برای badgeها (batch)
+- `GET /api/economic-links/effective/:economic_id` — **جدید**: لیست نهایی شخص‌ها با احتساب inherit/exclusion
+
+### فایل‌ها:
+- `migrations/059_economic_links_person.sql`
+- `index.js` (بخش economic-links بازنویسی شد)
+- `public/economic-classifications.html` (CSS + HTML مدال + JS)
+
+### نکات UI:
+- **درخت:** دکمه 🔗 کنار ⋮ + badgeها کنار عنوان
+- **جدول:** ستون جدید «ارتباطات» با badgeها + دکمه 🔗
+- **مدال:** ۴ تب (کالا/سازمان/نوع حکم/شخص) + جستجو + درخت با checkbox
+- **درخت مدال:** ایندنت بر اساس عمق + دکمه ▶/▼ + پیش‌فرض همه باز
+- **تیک سرشاخه:** همه زیرمجموعه‌ها تیک می‌خورن (برای هر ۴ نوع)
+- **inherit:** چک‌باکس دوم کنار هر شخص (👥 همه زیرمجموعه)
+- **override:** اگه از inherit اومده، تیک برداشتن → `is_excluded=1`
+
+### کاربرد در آینده:
+- **محاسبه بودجه:** جمع هزینه بر اساس کالاهای متصل به هر ردیف اقتصادی
+- **تخصیص اعتبار:** سازمان مدیریت‌کننده هزینه → محدودیت تخصیص
+- **احکام کارگزینی:** نوع حکم → شخص → ردیف اقتصادی (اتصال زنجیره‌ای)
 
 ### جدول: `economic_rates`
 | ستون | توضیح |
@@ -295,3 +359,6 @@ calcWearStatus(item, currentKm):
   - اگر هر کدام >= limit + tolerance → 🔴 نیاز به تعویض
   - اگر هر کدام >= limit - tolerance → 🟡 نزدیک تعویض
   - در غیر این صورت → 🟢 سالم
+
+ ### آخرین migration
+ - Migration 059 — economic_links با person + inherit + is_excluded ✅

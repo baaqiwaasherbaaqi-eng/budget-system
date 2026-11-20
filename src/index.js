@@ -2344,176 +2344,313 @@ export default {
 // ارتباطات طبقه‌بندی اقتصادی (economic_links)
 // ============================================
 
-// GET: لیست ارتباطات یک ردیف اقتصادی (یا همه)
-if (url.pathname === "/api/economic-links" && request.method === "GET") {
-  try {
-      const authHeader = request.headers.get("Authorization");
-      if (!authHeader) {
-          return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
-      }
-      const token = authHeader.replace("Bearer ", "");
-      const userData = await verifyToken(token, env.JWT_SECRET);
-      if (!userData) {
-          return new Response(JSON.stringify({ error: "توکن نامعتبر" }), { status: 401, headers });
-      }
-
-      const economicId = url.searchParams.get("economic_id");
-      const linkType = url.searchParams.get("link_type");
-
-      let query = "SELECT * FROM economic_links WHERE is_active = 1";
-      const params = [];
-
-      if (economicId) {
-          query += " AND economic_id = ?";
-          params.push(parseInt(economicId));
-      }
-      if (linkType) {
-          query += " AND link_type = ?";
-          params.push(linkType);
-      }
-
-      query += " ORDER BY link_type, sort_order, id";
-
-      const items = await env.DB.prepare(query).bind(...params).all();
-      return new Response(JSON.stringify(items.results), { status: 200, headers });
-  } catch (error) {
-      console.error("economic-links GET error:", error);
-      return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
-  }
+// تابع کمکی: گرفتن اطلاعات denormalized از منبع
+async function getLinkTargetInfo(env, linkType, targetId) {
+    try {
+        if (linkType === 'person') {
+            const p = await env.DB.prepare(
+                "SELECT code, full_name, level FROM persons WHERE id = ?"
+            ).bind(targetId).first();
+            if (p) return { code: p.code, title: p.full_name, level: p.level };
+        } else if (linkType === 'decree_type') {
+            const t = await env.DB.prepare(
+                "SELECT code, title FROM base_data WHERE id = ? AND section = 'decree_type'"
+            ).bind(targetId).first();
+            if (t) return { code: t.code, title: t.title };
+        } else {
+            // goods, organization
+            const t = await env.DB.prepare(
+                "SELECT code, title, level FROM base_data WHERE id = ?"
+            ).bind(targetId).first();
+            if (t) return { code: t.code, title: t.title, level: t.level };
+        }
+    } catch (e) {
+        console.error("getLinkTargetInfo error:", e);
+    }
+    return null;
 }
 
-// POST: افزودن ارتباط (bulk — چند مورد یکجا)
+// تابع کمکی: گرفتن همه سطح ۴های زیر یک شاخه از persons
+async function getPersonDescendantsLevel4(env, personId) {
+    // با CTE بازگشتی — D1/SQLite پشتیبانی می‌کنه
+    const rows = await env.DB.prepare(`
+        WITH RECURSIVE subtree(id) AS (
+            SELECT id FROM persons WHERE id = ?
+            UNION ALL
+            SELECT p.id FROM persons p
+            INNER JOIN subtree s ON p.parent_id = s.id
+        )
+        SELECT id FROM persons
+        WHERE id IN (SELECT id FROM subtree) AND level = 4 AND is_active = 1
+    `).bind(personId).all();
+    return (rows.results || []).map(r => r.id);
+}
+
+// GET: لیست ارتباطات یک ردیف اقتصادی (یا همه)
+if (url.pathname === "/api/economic-links" && request.method === "GET") {
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        }
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), { status: 401, headers });
+        }
+
+        const economicId = url.searchParams.get("economic_id");
+        const linkType = url.searchParams.get("link_type");
+
+        let query = "SELECT * FROM economic_links WHERE is_active = 1";
+        const params = [];
+
+        if (economicId) {
+            query += " AND economic_id = ?";
+            params.push(parseInt(economicId));
+        }
+        if (linkType) {
+            query += " AND link_type = ?";
+            params.push(linkType);
+        }
+
+        query += " ORDER BY link_type, sort_order, id";
+
+        const items = await env.DB.prepare(query).bind(...params).all();
+        return new Response(JSON.stringify(items.results), { status: 200, headers });
+    } catch (error) {
+        console.error("economic-links GET error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
+}
+
+// POST: افزودن ارتباط (bulk)
 if (url.pathname === "/api/economic-links" && request.method === "POST") {
-  try {
-      const authHeader = request.headers.get("Authorization");
-      if (!authHeader) {
-          return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
-      }
-      const token = authHeader.replace("Bearer ", "");
-      const userData = await verifyToken(token, env.JWT_SECRET);
-      if (!userData || !["admin", "manager"].includes(userData.role)) {
-          return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
-      }
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        }
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+        }
 
-      const body = await request.json();
-      const { economic_id, link_type, target_ids } = body;
+        const body = await request.json();
+        // دو حالت:
+        //   1. { economic_id, link_type, target_ids: [...] } → insert ساده
+        //   2. { economic_id, link_type, items: [{target_id, inherit, is_excluded}] } → با inherit
+        const { economic_id, link_type } = body;
 
-      if (!economic_id || !link_type || !Array.isArray(target_ids) || target_ids.length === 0) {
-          return new Response(JSON.stringify({ error: "اطلاعات ناقص است" }), { status: 400, headers });
-      }
+        if (!economic_id || !link_type) {
+            return new Response(JSON.stringify({ error: "economic_id و link_type الزامی است" }), { status: 400, headers });
+        }
 
-      const validTypes = ["goods", "organization", "decree_type"];
-      if (!validTypes.includes(link_type)) {
-          return new Response(JSON.stringify({ error: "نوع ارتباط نامعتبر" }), { status: 400, headers });
-      }
+        const validTypes = ["goods", "organization", "decree_type", "person"];
+        if (!validTypes.includes(link_type)) {
+            return new Response(JSON.stringify({ error: "نوع ارتباط نامعتبر" }), { status: 400, headers });
+        }
 
-      const nowShamsi = toShamsi(new Date());
-      let inserted = 0;
+        // ساخت نرمال‌شده items
+        let items = [];
+        if (Array.isArray(body.items) && body.items.length > 0) {
+            items = body.items;
+        } else if (Array.isArray(body.target_ids) && body.target_ids.length > 0) {
+            items = body.target_ids.map(id => ({ target_id: id, inherit: 0, is_excluded: 0 }));
+        } else {
+            return new Response(JSON.stringify({ error: "اطلاعات ناقص است" }), { status: 400, headers });
+        }
 
-      for (const targetId of target_ids) {
-          try {
-              // گرفتن اطلاعات مقصد برای denormalization
-              let targetCode = null;
-              let targetTitle = null;
+        const nowShamsi = toShamsi(new Date());
+        let inserted = 0, updated = 0;
 
-              if (link_type === "goods" || link_type === "organization") {
-                  const target = await env.DB.prepare(
-                      "SELECT code, title FROM base_data WHERE id = ?"
-                  ).bind(targetId).first();
-                  if (target) {
-                      targetCode = target.code;
-                      targetTitle = target.title;
-                  }
-              } else if (link_type === "decree_type") {
-                  const target = await env.DB.prepare(
-                      "SELECT code, title FROM base_data WHERE id = ? AND section = 'decree_type'"
-                  ).bind(targetId).first();
-                  if (target) {
-                      targetCode = target.code;
-                      targetTitle = target.title;
-                  }
-              }
+        for (const item of items) {
+            try {
+                const targetId = parseInt(item.target_id);
+                if (!targetId) continue;
 
-              await env.DB.prepare(
-                  `INSERT OR IGNORE INTO economic_links
-                   (economic_id, link_type, target_id, target_code, target_title, created_at_shamsi)
-                   VALUES (?, ?, ?, ?, ?, ?)`
-              ).bind(economic_id, link_type, targetId, targetCode, targetTitle, nowShamsi).run();
-              inserted++;
-          } catch (e) {
-              console.error("Insert link error:", e);
-          }
-      }
+                const inherit = (link_type === 'person' && item.inherit) ? 1 : 0;
+                const isExcluded = (link_type === 'person' && item.is_excluded) ? 1 : 0;
 
-      ctx.waitUntil(logAction(env, request, userData, "economic_links_added", "economic_links", economic_id, {
-          link_type,
-          count: inserted
-      }));
+                const info = await getLinkTargetInfo(env, link_type, targetId);
 
-      return new Response(JSON.stringify({ success: true, inserted }), { status: 200, headers });
-  } catch (error) {
-      console.error("economic-links POST error:", error);
-      return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
-  }
+                // چک وجود قبلی
+                const existing = await env.DB.prepare(
+                    "SELECT id FROM economic_links WHERE economic_id = ? AND link_type = ? AND target_id = ?"
+                ).bind(economic_id, link_type, targetId).first();
+
+                if (existing) {
+                    // آپدیت
+                    await env.DB.prepare(
+                        `UPDATE economic_links
+                         SET inherit = ?, is_excluded = ?, is_active = 1,
+                             target_code = ?, target_title = ?
+                         WHERE id = ?`
+                    ).bind(inherit, isExcluded, info?.code || null, info?.title || null, existing.id).run();
+                    updated++;
+                } else {
+                    // درج
+                    await env.DB.prepare(
+                        `INSERT INTO economic_links
+                         (economic_id, link_type, target_id, target_code, target_title,
+                          inherit, is_excluded, created_at_shamsi)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+                    ).bind(
+                        economic_id, link_type, targetId,
+                        info?.code || null, info?.title || null,
+                        inherit, isExcluded, nowShamsi
+                    ).run();
+                    inserted++;
+                }
+            } catch (e) {
+                console.error("Insert link error:", e);
+            }
+        }
+
+        ctx.waitUntil(logAction(env, request, userData, "economic_links_added", "economic_links", economic_id, {
+            link_type, inserted, updated
+        }));
+
+        return new Response(JSON.stringify({ success: true, inserted, updated }), { status: 200, headers });
+    } catch (error) {
+        console.error("economic-links POST error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
 }
 
 // DELETE: حذف یک ارتباط
 if (url.pathname.match(/^\/api\/economic-links\/\d+$/) && request.method === "DELETE") {
-  try {
-      const authHeader = request.headers.get("Authorization");
-      if (!authHeader) {
-          return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
-      }
-      const token = authHeader.replace("Bearer ", "");
-      const userData = await verifyToken(token, env.JWT_SECRET);
-      if (!userData || !["admin", "manager"].includes(userData.role)) {
-          return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
-      }
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        }
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+        }
 
-      const linkId = parseInt(url.pathname.split("/").pop());
-      await env.DB.prepare("DELETE FROM economic_links WHERE id = ?").bind(linkId).run();
-
-      return new Response(JSON.stringify({ success: true }), { status: 200, headers });
-  } catch (error) {
-      console.error("economic-links DELETE error:", error);
-      return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
-  }
+        const linkId = parseInt(url.pathname.split("/").pop());
+        await env.DB.prepare("DELETE FROM economic_links WHERE id = ?").bind(linkId).run();
+        return new Response(JSON.stringify({ success: true }), { status: 200, headers });
+    } catch (error) {
+        console.error("economic-links DELETE error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
 }
 
-// GET: خلاصه ارتباطات برای همه ردیف‌های اقتصادی (برای نمایش در جدول)
+// GET: خلاصه ارتباطات برای همه ردیف‌های اقتصادی
 if (url.pathname === "/api/economic-links/summary" && request.method === "GET") {
-  try {
-      const authHeader = request.headers.get("Authorization");
-      if (!authHeader) {
-          return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
-      }
-      const token = authHeader.replace("Bearer ", "");
-      const userData = await verifyToken(token, env.JWT_SECRET);
-      if (!userData) {
-          return new Response(JSON.stringify({ error: "توکن نامعتبر" }), { status: 401, headers });
-      }
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        }
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), { status: 401, headers });
+        }
 
-      const rows = await env.DB.prepare(
-          `SELECT economic_id, link_type, COUNT(*) as count
-           FROM economic_links
-           WHERE is_active = 1
-           GROUP BY economic_id, link_type`
-      ).all();
+        // شمارش ساده — فقط ردیف‌های is_active=1 و is_excluded=0
+        const rows = await env.DB.prepare(
+            `SELECT economic_id, link_type, COUNT(*) as count
+             FROM economic_links
+             WHERE is_active = 1 AND is_excluded = 0
+             GROUP BY economic_id, link_type`
+        ).all();
 
-      // تبدیل به ساختار: { economic_id: { goods: 2, organization: 1, decree_type: 3 } }
-      const summary = {};
-      for (const row of rows.results) {
-          if (!summary[row.economic_id]) summary[row.economic_id] = {};
-          summary[row.economic_id][row.link_type] = row.count;
-      }
+        const summary = {};
+        for (const row of rows.results) {
+            if (!summary[row.economic_id]) summary[row.economic_id] = {};
+            summary[row.economic_id][row.link_type] = row.count;
+        }
 
-      return new Response(JSON.stringify(summary), { status: 200, headers });
-  } catch (error) {
-      console.error("economic-links summary error:", error);
-      return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
-  }
+        return new Response(JSON.stringify(summary), { status: 200, headers });
+    } catch (error) {
+        console.error("economic-links summary error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
 }
 
+// GET: لیست موثر شخص‌ها (با احتساب inherit و is_excluded)
+if (url.pathname.match(/^\/api\/economic-links\/effective\/\d+$/) && request.method === "GET") {
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        }
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), { status: 401, headers });
+        }
+
+        const economicId = parseInt(url.pathname.split("/").pop());
+
+        // ۱. همه ردیف‌های شخص این economic_id
+        const directRows = await env.DB.prepare(
+            `SELECT * FROM economic_links
+             WHERE economic_id = ? AND link_type = 'person' AND is_active = 1`
+        ).bind(economicId).all();
+
+        const finalSet = new Map(); // person_id → {source, link_id, is_excluded}
+
+        for (const row of directRows.results) {
+            if (row.is_excluded === 1) {
+                // override منفی → حذف از نتیجه
+                finalSet.delete(row.target_id);
+                // ولی خود exclusion رو نگه داریم برای UI
+                finalSet.set(row.target_id, { ...row, _excluded: true });
+                continue;
+            }
+
+            if (row.inherit === 1) {
+                // همه سطح ۴های زیردرخت
+                const descendants = await getPersonDescendantsLevel4(env, row.target_id);
+                for (const did of descendants) {
+                    if (!finalSet.has(did) || finalSet.get(did)._excluded) {
+                        finalSet.set(did, { ...row, target_id: did, _inherited: true });
+                    }
+                }
+            } else {
+                // فقط خودش
+                if (!finalSet.has(row.target_id)) {
+                    finalSet.set(row.target_id, { ...row, _direct: true });
+                }
+            }
+        }
+
+        // ۲. حذف excludedها از خروجی نهایی
+        const effective = [];
+        for (const [pid, item] of finalSet) {
+            if (!item._excluded) {
+                // گرفتن اطلاعات کامل شخص
+                const p = await env.DB.prepare(
+                    "SELECT id, code, full_name, level FROM persons WHERE id = ?"
+                ).bind(pid).first();
+                if (p) {
+                    effective.push({
+                        person_id: p.id,
+                        person_code: p.code,
+                        person_name: p.full_name,
+                        person_level: p.level,
+                        source_link_id: item.id,
+                        inherited: !!item._inherited,
+                        direct: !!item._direct,
+                    });
+                }
+            }
+        }
+
+        return new Response(JSON.stringify(effective), { status: 200, headers });
+    } catch (error) {
+        console.error("economic-links effective error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
+}
 
 // ============================================
 // نرخ‌های کلان اقتصادی (economic_rates)

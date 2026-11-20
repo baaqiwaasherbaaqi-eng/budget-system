@@ -11,6 +11,461 @@
         <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css">
         <style>
 
+.tree-node .link-btn,
+tbody .link-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    opacity: 0.6;
+    transition: all 0.15s;
+}
+
+.tree-node .link-btn:hover,
+tbody .link-btn:hover {
+    background: #e9ecef;
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+body.dark .tree-node .link-btn:hover,
+body.dark tbody .link-btn:hover {
+    background: #4a5568;
+}
+
+/* ============ Link Badges در درخت ============ */
+.tree-link-badges {
+    display: inline-flex;
+    gap: 3px;
+    margin-right: 8px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.tree-link-badges .link-badge {
+    font-size: 10px;
+    padding: 1px 6px;
+}
+
+/* ============ Link Badges در جدول ============ */
+.link-badges {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.link-badges .link-badge {
+    font-size: 11px;
+    padding: 2px 7px;
+}
+
+/* ============ Badge عمومی ============ */
+.link-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: #eef1ff;
+    color: #4c51bf;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.link-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.link-badge.goods { background: #e6f7ff; color: #096dd9; }
+.link-badge.organization { background: #fff7e6; color: #d46b08; }
+.link-badge.decree_type { background: #f6ffed; color: #389e0d; }
+.link-badge.person { background: #fff0f6; color: #c41d7f; }
+
+.link-badge.goods:hover { background: #096dd9; color: white; }
+.link-badge.organization:hover { background: #d46b08; color: white; }
+.link-badge.decree_type:hover { background: #389e0d; color: white; }
+.link-badge.person:hover { background: #c41d7f; color: white; }
+
+body.dark .link-badge { background: #2d3748; color: #90cdf4; }
+
+/* ============ Modal Actions (یکدست با بقیه) ============ */
+#link-modal-overlay .link-items-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0 0 0;
+    margin-top: 15px;
+    border-top: 1px solid #e9ecef;
+    font-size: 12px;
+    color: #666;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+body.dark #link-modal-overlay .link-items-footer {
+    border-color: #4a5568;
+    color: #a0aec0;
+}
+
+#link-modal-overlay .link-modal-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+#link-modal-overlay .link-modal-buttons .btn-cancel,
+#link-modal-overlay .link-modal-buttons .btn-save {
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-family: "Vazirmatn", Tahoma, sans-serif;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+#link-modal-overlay .link-modal-buttons .btn-cancel {
+    background: #e9ecef;
+    color: #333;
+}
+#link-modal-overlay .link-modal-buttons .btn-cancel:hover {
+    background: #dee2e6;
+}
+
+#link-modal-overlay .link-modal-buttons .btn-save {
+    background: #667eea;
+    color: white;
+}
+#link-modal-overlay .link-modal-buttons .btn-save:hover {
+    background: #5a67d8;
+}
+#link-modal-overlay .link-modal-buttons .btn-save:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+body.dark #link-modal-overlay .link-modal-buttons .btn-cancel {
+    background: #4a5568;
+    color: #e2e8f0;
+}
+
+/* ============ Tree در مدال ارتباطات ============ */
+.link-tree {
+    font-size: 13px;
+}
+
+.link-tree-node {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+    user-select: none;
+    flex-wrap: nowrap;
+}
+
+.link-tree-node:hover { background: #eef1ff; }
+body.dark .link-tree-node:hover { background: #2d3748; }
+
+.link-tree-node.inherited { background: #fffbe6; }
+body.dark .link-tree-node.inherited { background: #4a3f1e; }
+
+.link-tree-node.excluded { opacity: 0.55; text-decoration: line-through; }
+
+.link-tree-node .tree-toggle {
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #666;
+    cursor: pointer;
+    border-radius: 3px;
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+}
+.link-tree-node .tree-toggle:hover { background: #d0d4e0; }
+body.dark .link-tree-node .tree-toggle { color: #a0aec0; }
+body.dark .link-tree-node .tree-toggle:hover { background: #4a5568; }
+
+.link-tree-node .tree-toggle.empty {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.link-tree-node input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #667eea;
+    flex-shrink: 0;
+}
+
+.link-tree-node .li-code {
+    font-family: monospace;
+    font-size: 11px;
+    color: #667eea;
+    min-width: 50px;
+    flex-shrink: 0;
+}
+
+.link-tree-node .li-title {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.link-tree-node .li-level {
+    font-size: 10px;
+    padding: 2px 6px;
+    background: #e9ecef;
+    border-radius: 4px;
+    color: #666;
+    flex-shrink: 0;
+}
+body.dark .link-tree-node .li-level { background: #4a5568; color: #cbd5e0; }
+
+.link-tree-node .li-inherit-hint {
+    font-size: 10px;
+    color: #d46b08;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.link-tree-node input.inherit-checkbox {
+    accent-color: #d46b08;
+    margin-right: 4px;
+}
+
+/* ============ پس‌زمینه لیست ============ */
+#link-modal-overlay .link-items {
+    max-height: 420px;
+    overflow-y: auto;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 8px;
+    background: #fafbfc;
+}
+body.dark #link-modal-overlay .link-items {
+    background: #1a202c;
+    border-color: #4a5568;
+}
+
+/* ============ Economic Links ============ */
+.link-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.link-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 8px;
+    background: #eef1ff;
+    color: #4c51bf;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+}
+
+.link-badge:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.link-badge.goods { background: #e6f7ff; color: #096dd9; }
+.link-badge.organization { background: #fff7e6; color: #d46b08; }
+.link-badge.decree_type { background: #f6ffed; color: #389e0d; }
+.link-badge.person { background: #fff0f6; color: #c41d7f; }
+
+body.dark .link-badge { background: #2d3748; color: #90cdf4; }
+
+/* Modal بزرگ‌تر برای ارتباطات */
+.modal.modal-lg {
+    max-width: 750px;
+}
+
+/* تب‌های مدال ارتباطات */
+.link-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.link-tab {
+    padding: 8px 14px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: "Vazirmatn", Tahoma, sans-serif;
+    font-size: 13px;
+    color: #666;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.link-tab:hover {
+    background: #f0f2f5;
+}
+
+.link-tab.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: bold;
+}
+
+body.dark .link-tab { color: #a0aec0; }
+body.dark .link-tab:hover { background: #4a5568; }
+
+/* جستجو در مدال */
+.link-search {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    align-items: center;
+}
+
+.link-search input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-family: "Vazirmatn", Tahoma, sans-serif;
+    font-size: 13px;
+}
+
+/* لیست آیتم‌ها در مدال */
+.link-items {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 8px;
+    background: #fafbfc;
+}
+
+body.dark .link-items { background: #1a202c; border-color: #4a5568; }
+
+.link-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-size: 13px;
+}
+
+.link-item:hover { background: #eef1ff; }
+body.dark .link-item:hover { background: #2d3748; }
+
+.link-item.inherited {
+    opacity: 0.7;
+    background: #fffbe6;
+}
+
+body.dark .link-item.inherited { background: #4a3f1e; }
+
+.link-item.excluded {
+    text-decoration: line-through;
+    opacity: 0.5;
+}
+
+.link-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #667eea;
+}
+
+.link-item .li-code {
+    font-family: monospace;
+    font-size: 11px;
+    color: #667eea;
+    min-width: 60px;
+}
+
+.link-item .li-title { flex: 1; }
+.link-item .li-level {
+    font-size: 10px;
+    padding: 2px 6px;
+    background: #e9ecef;
+    border-radius: 4px;
+    color: #666;
+}
+body.dark .link-item .li-level { background: #4a5568; color: #cbd5e0; }
+
+.link-item .li-inherit-hint {
+    font-size: 10px;
+    color: #d46b08;
+    font-weight: bold;
+}
+
+.link-items-footer {
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #666;
+    border-top: 1px solid #e9ecef;
+    margin-top: 8px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+body.dark .link-items-footer { border-color: #4a5568; color: #a0aec0; }
+
+.link-empty {
+    text-align: center;
+    padding: 30px;
+    color: #999;
+    font-size: 13px;
+}
+
+/* دکمه ارتباطات در درخت */
+.tree-node .link-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    opacity: 0.6;
+}
+
+.tree-node .link-btn:hover {
+    background: #e9ecef;
+    opacity: 1;
+}
+
+body.dark .tree-node .link-btn:hover { background: #4a5568; }
+
+
 /* ============ Drag & Drop ============ */
 .tree-node[draggable="true"] {
     cursor: grab;
@@ -759,6 +1214,7 @@ body.dark tbody tr.dragging {
                             <th style="width: 45%">عنوان</th>
                             <th style="width: 20%">سطح</th>
                             <th style="width: 20%">وضعیت</th>
+              <th style="width: 15%">ارتباطات</th>
                         </tr>
                     </thead>
                     <tbody id="table-body"></tbody>
@@ -826,6 +1282,55 @@ body.dark tbody tr.dragging {
                 </div>
             </div>
         </div>
+
+
+    <!-- ============ Modal: ارتباطات اقتصادی ============ -->
+    <div class="modal-overlay" id="link-modal-overlay">
+      <div class="modal modal-lg">
+        <h3 id="link-modal-title">🔗 ارتباطات اقتصادی</h3>
+        <div class="info-row" id="link-modal-info">
+          <span>عنوان: <b id="link-info-title"></b></span>
+          <span>کد: <b id="link-info-code"></b></span>
+        </div>
+
+        <!-- تب‌ها -->
+        <div class="link-tabs">
+          <button class="link-tab" data-ltype="goods" onclick="switchLinkTab('goods')">
+            📦 کالا و خدمات <span class="tab-count" id="cnt-goods"></span>
+          </button>
+          <button class="link-tab" data-ltype="organization" onclick="switchLinkTab('organization')">
+            🏢 سازمان <span class="tab-count" id="cnt-organization"></span>
+          </button>
+          <button class="link-tab" data-ltype="decree_type" onclick="switchLinkTab('decree_type')">
+            📜 نوع حکم <span class="tab-count" id="cnt-decree_type"></span>
+          </button>
+          <button class="link-tab" data-ltype="person" onclick="switchLinkTab('person')">
+            👤 شخص <span class="tab-count" id="cnt-person"></span>
+          </button>
+        </div>
+
+        <!-- جستجو -->
+        <div class="link-search">
+          <input type="text" id="link-search-input" placeholder="🔍 جستجو در کد یا عنوان..." oninput="filterLinkItems()">
+          <button class="btn-cancel" onclick="document.getElementById('link-search-input').value=''; filterLinkItems();">✕</button>
+        </div>
+
+        <!-- لیست -->
+        <div class="link-items" id="link-items-container">
+          <div class="link-empty">در حال بارگذاری...</div>
+        </div>
+
+        <div class="link-items-footer">
+          <span id="link-selected-count">۰ انتخاب‌شده</span>
+          <div class="link-modal-buttons">
+            <button class="btn-cancel" onclick="closeLinkModal()">انصراف</button>
+            <button class="btn-save" id="link-save-btn" onclick="saveLinkModal()">💾 ذخیره</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
         <!-- Toast -->
         <div class="toast" id="toast"></div>
 
@@ -1025,6 +1530,11 @@ function renderTree(items, isFiltered) {
     tree.forEach((node) => {
         container.appendChild(renderTreeNode(node, 0));
     });
+
+
+// ← اضافه کن: بارگذاری badgeها برای همه نودهای درخت
+loadAllTreeBadges();
+
 }
 
 function renderTreeNode(node, depth) {
@@ -1043,19 +1553,15 @@ function renderTreeNode(node, depth) {
         const collapsedKey = `econ-collapsed-${node.id}`;
         const isCollapsed = localStorage.getItem(collapsedKey) === "1";
 
-        nodeEl.innerHTML = `
-                <span class="drag-handle" title="برای جابجایی بکشید">⋮⋮</span>
-                <span class="toggle ${hasChildren ? "" : "empty"}">${
-          isCollapsed ? "◀" : "▼"
-        }</span>
-                <span class="icon">${hasChildren ? "📁" : "📄"}</span>
-                <span class="title" title="${node.code}">${node.title}${
-          !node.is_active ? " (غیرفعال)" : ""
-        }</span>
-                <button class="menu-btn" onclick="event.stopPropagation(); openContextMenu(event, ${
-                  node.id
-                })">⋮</button>
-            `;
+nodeEl.innerHTML = `
+    <span class="drag-handle" title="برای جابجایی بکشید">⋮⋮</span>
+    <span class="toggle ${hasChildren ? "" : "empty"}">${isCollapsed ? "◀" : "▼"}</span>
+    <span class="icon">${hasChildren ? "📁" : "📄"}</span>
+    <span class="title" title="${node.code}">${node.title}${!node.is_active ? " (غیرفعال)" : ""}</span>
+    <span class="tree-link-badges" id="tree-link-badges-${node.id}"></span>
+    <button class="link-btn" onclick="event.stopPropagation(); openLinkModal(${node.id})" title="ارتباطات">🔗</button>
+    <button class="menu-btn" onclick="event.stopPropagation(); openContextMenu(event, ${node.id})">⋮</button>
+`;
 
         const toggleEl = nodeEl.querySelector(".toggle");
         if (hasChildren) {
@@ -1139,6 +1645,13 @@ function renderTable(items, isFiltered) {
             </td>
             <td><span class="level-badge ${getLevelClass(item.level)}">${item.level_name || getLevelName(item.level)}</span></td>
             <td>${item.is_active ? "✅ فعال" : "❌ غیرفعال"}</td>
+            <td><div class="link-badges" id="link-badges-${item.id}"></div></td>
+            <td>
+    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+        <div class="link-badges" id="link-badges-${item.id}"></div>
+        <button class="link-btn" onclick="event.stopPropagation(); openLinkModal(${item.id})" title="مدیریت ارتباطات">🔗</button>
+    </div>
+</td>
         `;
 
         tr.addEventListener("click", () => {
@@ -1154,7 +1667,10 @@ function renderTable(items, isFiltered) {
         });
 
         tbody.appendChild(tr);
+        
     });
+
+    loadAllTableBadges()
 }
             
 
@@ -1811,6 +2327,631 @@ function hideLoading() {
     document
       .getElementById("tab-expense")
       .classList.toggle("active", currentType === "expense");
+// ============================================
+// ارتباطات اقتصادی — state
+// ============================================
+let linkModalState = {
+    economicId: null,
+    currentTab: 'goods',
+    allData: { goods: [], organization: [], decree_type: [], person: [] },
+    treeData: { goods: [], organization: [], decree_type: [], person: [] },
+    links: { goods: [], organization: [], decree_type: [], person: [] },
+    selected: { goods: new Set(), organization: new Set(), decree_type: new Set(), person: new Map() },
+    collapsedNodes: new Set(), // ← تغییر: نودهای بسته‌شده
+};
+
+// بارگذاری badgeها — برای درخت و جدول
+async function loadLinkBadges(economicId) {
+    try {
+        const res = await fetch(`/api/economic-links?economic_id=${economicId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const links = await res.json();
+
+        // شمارش — is_active=1 و is_excluded=0
+        const counts = { goods: 0, organization: 0, decree_type: 0, person: 0 };
+        links.forEach(l => {
+            if (l.is_active === 1 && l.is_excluded === 0 && counts[l.link_type] !== undefined) {
+                counts[l.link_type]++;
+            }
+        });
+
+        const icons = { goods: '📦', organization: '🏢', decree_type: '📜', person: '👤' };
+        let html = '';
+        for (const [type, count] of Object.entries(counts)) {
+            if (count > 0) {
+                html += `<span class="link-badge ${type}" 
+                    onclick="event.stopPropagation(); openLinkModal(${economicId}, '${type}')"
+                    title="${type === 'goods' ? 'کالا و خدمات' : type === 'organization' ? 'سازمان' : type === 'decree_type' ? 'نوع حکم' : 'شخص'} (${toPersianNumbers(count)})"
+                >${icons[type]} ${toPersianNumbers(count)}</span>`;
+            }
+        }
+        if (!html) {
+            html = `<span style="color:#ccc; font-size:11px;">—</span>`;
+        }
+
+        // برای جدول
+        const tableContainer = document.getElementById(`link-badges-${economicId}`);
+        if (tableContainer) tableContainer.innerHTML = html;
+
+        // برای درخت
+        const treeContainer = document.getElementById(`tree-link-badges-${economicId}`);
+        if (treeContainer) treeContainer.innerHTML = html;
+    } catch (e) {
+        console.error("loadLinkBadges error:", e);
+    }
+}
+// باز کردن مدال
+async function openLinkModal(economicId, initialTab = 'goods') {
+    const node = flatData.find(n => n.id === economicId);
+    if (!node) return;
+
+    linkModalState.economicId = economicId;
+    linkModalState.currentTab = initialTab;
+    
+    document.getElementById('link-info-title').textContent = node.title;
+    document.getElementById('link-info-code').textContent = node.code;
+    document.getElementById('link-modal-overlay').classList.add('open');
+    document.getElementById('link-search-input').value = '';
+
+    // تب فعال
+    document.querySelectorAll('.link-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.ltype === initialTab);
+    });
+
+    await loadAllLinkData(economicId);
+    renderLinkItems();
+}
+
+function closeLinkModal() {
+    document.getElementById('link-modal-overlay').classList.remove('open');
+    linkModalState.economicId = null;
+}
+
+function switchLinkTab(type) {
+    linkModalState.currentTab = type;
+    document.querySelectorAll('.link-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.ltype === type);
+    });
+    document.getElementById('link-search-input').value = '';
+    renderLinkItems();
+}
+
+// بارگذاری همه داده‌ها (منابع + ارتباطات فعلی)
+async function loadAllLinkData(economicId) {
+    try {
+        // ۱. ارتباطات فعلی
+        const linksRes = await fetch(`/api/economic-links?economic_id=${economicId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const links = await linksRes.json();
+
+        // ۲. درخت منابع
+        const [goodsRes, orgRes, decreeRes, personsRes] = await Promise.all([
+            fetch(`/api/base-data/tree?section=goods`, { headers: { Authorization: `Bearer ${token}` } }),
+            fetch(`/api/base-data/tree?section=organization`, { headers: { Authorization: `Bearer ${token}` } }),
+            fetch(`/api/base-data/tree?section=decree_type`, { headers: { Authorization: `Bearer ${token}` } }),
+            fetch(`/api/persons/tree`, { headers: { Authorization: `Bearer ${token}` } }),
+        ]);
+
+        const goodsTree = await goodsRes.json();
+        const orgTree = await orgRes.json();
+        const decreeTree = await decreeRes.json();
+        const personsTree = await personsRes.json();
+
+        linkModalState.treeData.goods = goodsTree || [];
+        linkModalState.treeData.organization = orgTree || [];
+        linkModalState.treeData.decree_type = decreeTree || [];
+        linkModalState.treeData.person = personsTree || [];
+
+        // فلت کردن برای جستجو
+        const flatten = (tree) => {
+            const out = [];
+            const walk = (nodes) => {
+                for (const n of nodes) {
+                    out.push(n);
+                    if (n.children) walk(n.children);
+                }
+            };
+            walk(tree || []);
+            return out;
+        };
+
+        linkModalState.allData.goods = flatten(goodsTree);
+        linkModalState.allData.organization = flatten(orgTree);
+        linkModalState.allData.decree_type = flatten(decreeTree);
+        linkModalState.allData.person = flatten(personsTree);
+
+        // گروه‌بندی ارتباطات فعلی
+        linkModalState.links = { goods: [], organization: [], decree_type: [], person: [] };
+        linkModalState.selected = {
+            goods: new Set(),
+            organization: new Set(),
+            decree_type: new Set(),
+            person: new Map(),
+        };
+        linkModalState.collapsedNodes = new Set();
+
+        links.forEach(l => {
+            if (linkModalState.links[l.link_type]) {
+                linkModalState.links[l.link_type].push(l);
+                if (l.link_type === 'person') {
+                    linkModalState.selected.person.set(l.target_id, {
+                        inherit: l.inherit === 1,
+                        is_excluded: l.is_excluded === 1,
+                    });
+                } else if (l.is_excluded === 0) {
+                    linkModalState.selected[l.link_type].add(l.target_id);
+                }
+            }
+        });
+
+        // تعدادها
+        for (const type of ['goods', 'organization', 'decree_type', 'person']) {
+            const cnt = linkModalState.links[type].filter(l => l.is_excluded === 0).length;
+            const el = document.getElementById(`cnt-${type}`);
+            if (el) el.textContent = cnt > 0 ? `(${toPersianNumbers(cnt)})` : '';
+        }
+    } catch (e) {
+        console.error("loadAllLinkData error:", e);
+        showToast("خطا در بارگذاری داده‌ها", "error");
+    }
+}
+// رندر لیست
+function renderLinkItems() {
+    const container = document.getElementById('link-items-container');
+    const type = linkModalState.currentTab;
+    const search = (document.getElementById('link-search-input').value || '').trim().toLowerCase();
+
+    // ===== حالت ۱: جستجو فعال → فلت نمایش بده =====
+    if (search) {
+        const sourceData = linkModalState.allData[type] || [];
+        let filtered = sourceData.filter(item => {
+            const code = (item.code || '').toLowerCase();
+            const title = (item.title || item.full_name || item.name || '').toLowerCase();
+            return code.includes(search) || title.includes(search);
+        });
+        if (type === 'person') filtered = filtered.filter(p => p.level <= 4);
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="link-empty">نتیجه‌ای یافت نشد</div>';
+            updateSelectedCount();
+            return;
+        }
+
+        container.innerHTML = `<div class="link-tree">${filtered.map(item => renderFlatRow(item, type)).join('')}</div>`;
+        updateSelectedCount();
+        return;
+    }
+
+    // ===== حالت ۲: نمایش درختی =====
+    const tree = linkModalState.treeData[type] || [];
+    if (tree.length === 0) {
+        container.innerHTML = '<div class="link-empty">داده‌ای برای این نوع وجود ندارد</div>';
+        updateSelectedCount();
+        return;
+    }
+
+    // ریشه‌ها رو بر اساس sort_order مرتب کن
+    const sorted = [...tree].sort((a, b) => {
+        if ((a.sort_order || 0) !== (b.sort_order || 0)) {
+            return (a.sort_order || 0) - (b.sort_order || 0);
+        }
+        return (a.code || '').localeCompare(b.code || '');
+    });
+
+    container.innerHTML = `<div class="link-tree">${sorted.map(n => renderTreeNodeRecursive(n, type, 0)).join('')}</div>`;
+    updateSelectedCount();
+}
+
+// رندر یک نود درخت (بازگشتی)
+function renderTreeNodeRecursive(node, type, depth) {
+    const hasChildren = node.children && node.children.length > 0;
+    const nodeKey = `${type}-${node.id}`;
+    
+    // پیش‌فرض: باز. فقط اگه توی collapsedNodes باشه، بسته می‌شه
+    const isOpen = !linkModalState.collapsedNodes.has(nodeKey);
+
+    const code = node.code || '';
+    const title = node.title || node.full_name || node.name || '';
+    const level = node.level || 0;
+
+    let checked = false;
+    let inherited = false;
+    let excluded = false;
+    let inheritFlag = false;
+    let showInherit = false;
+
+    if (type === 'person') {
+        const sel = linkModalState.selected.person.get(node.id);
+        if (sel) {
+            checked = !sel.is_excluded;
+            excluded = sel.is_excluded === true;
+            inheritFlag = sel.inherit === true;
+        }
+        inherited = isInheritedFromParent(node.id, type);
+        showInherit = level <= 3;
+    } else {
+        checked = linkModalState.selected[type].has(node.id);
+    }
+
+    let cls = 'link-tree-node';
+    if (inherited && !checked) cls += ' inherited';
+    if (excluded) cls += ' excluded';
+
+    const indentPx = depth * 22;
+    const toggleIcon = hasChildren ? (isOpen ? '▼' : '◀') : '';
+
+    let html = `<div class="${cls}" style="padding-right:${indentPx + 8}px" 
+        onclick="event.stopPropagation();">
+        <button class="tree-toggle ${hasChildren ? '' : 'empty'}" 
+            onclick="event.stopPropagation(); toggleNodeExpand('${nodeKey}')">${toggleIcon}</button>
+        <input type="checkbox" ${checked ? 'checked' : ''} 
+            onchange="event.stopPropagation(); toggleLinkItem('${type}', ${node.id}, this.checked)">
+        <span class="li-code">${code || '—'}</span>
+        <span class="li-title" title="${title}">${title}</span>
+        <span class="li-level">${toPersianNumbers(level + 1)}</span>`;
+
+    if (type === 'person' && showInherit) {
+        html += `<input type="checkbox" class="inherit-checkbox" 
+            title="اعمال روی همه زیرمجموعه‌ها" 
+            ${inheritFlag ? 'checked' : ''} 
+            onchange="event.stopPropagation(); toggleInherit(${node.id}, this.checked)">`;
+        if (inheritFlag) html += `<span class="li-inherit-hint">👥 همه</span>`;
+    }
+
+    if (inherited) html += `<span class="li-inherit-hint">↳ ارثی</span>`;
+    if (excluded) html += `<span class="li-inherit-hint" style="color:#e74c3c">✕ مستثنی</span>`;
+
+    html += `</div>`;
+
+    if (hasChildren && isOpen) {
+        const sortedChildren = [...node.children].sort((a, b) => {
+            if ((a.sort_order || 0) !== (b.sort_order || 0)) {
+                return (a.sort_order || 0) - (b.sort_order || 0);
+            }
+            return (a.code || '').localeCompare(b.code || '');
+        });
+        html += sortedChildren.map(c => renderTreeNodeRecursive(c, type, depth + 1)).join('');
+    }
+
+    return html;
+}
+// رندر یک ردیف فلت (برای حالت جستجو)
+function renderFlatRow(item, type) {
+    const code = item.code || '';
+    const title = item.title || item.full_name || item.name || '';
+    const level = item.level || 0;
+
+    let checked = false;
+    let inherited = false;
+    let excluded = false;
+    let inheritFlag = false;
+
+    if (type === 'person') {
+        const sel = linkModalState.selected.person.get(item.id);
+        if (sel) {
+            checked = !sel.is_excluded;
+            excluded = sel.is_excluded === true;
+            inheritFlag = sel.inherit === true;
+        }
+        inherited = isInheritedFromParent(item.id, type);
+    } else {
+        checked = linkModalState.selected[type].has(item.id);
+    }
+
+    let cls = 'link-tree-node';
+    if (inherited && !checked) cls += ' inherited';
+    if (excluded) cls += ' excluded';
+
+    let html = `<div class="${cls}" onclick="event.stopPropagation();">
+        <button class="tree-toggle empty"></button>
+        <input type="checkbox" ${checked ? 'checked' : ''} 
+            onchange="event.stopPropagation(); toggleLinkItem('${type}', ${item.id}, this.checked)">
+        <span class="li-code">${code || '—'}</span>
+        <span class="li-title">${title}</span>
+        <span class="li-level">${toPersianNumbers(level + 1)}</span>`;
+
+    if (type === 'person' && level <= 3) {
+        html += `<input type="checkbox" class="inherit-checkbox" 
+            ${inheritFlag ? 'checked' : ''} 
+            onchange="event.stopPropagation(); toggleInherit(${item.id}, this.checked)">`;
+        if (inheritFlag) html += `<span class="li-inherit-hint">👥 همه</span>`;
+    }
+    if (inherited) html += `<span class="li-inherit-hint">↳ ارثی</span>`;
+    if (excluded) html += `<span class="li-inherit-hint" style="color:#e74c3c">✕ مستثنی</span>`;
+
+    html += `</div>`;
+    return html;
+}
+// باز/بستن نود
+function toggleNodeExpand(nodeKey) {
+    if (linkModalState.collapsedNodes.has(nodeKey)) {
+        linkModalState.collapsedNodes.delete(nodeKey); // باز کن
+    } else {
+        linkModalState.collapsedNodes.add(nodeKey); // ببند
+    }
+    renderLinkItems();
+}
+// چک inherit (با پارامتر type)
+function isInheritedFromParent(personId, type) {
+    if (type !== 'person') return false;
+    for (const [targetId, sel] of linkModalState.selected.person) {
+        if (sel.inherit && !sel.is_excluded) {
+            let cur = linkModalState.allData.person.find(p => p.id === personId);
+            while (cur && cur.parent_id) {
+                if (cur.parent_id === targetId) return true;
+                cur = linkModalState.allData.person.find(p => p.id === cur.parent_id);
+            }
+        }
+    }
+    return false;
+}
+// چک کن آیا این شخص از والدش ارثی اومده
+function isInheritedFromParent(personId) {
+    // شخص‌هایی که inherit=1 دارن و این شخص زیرمجموعه‌شونه
+    for (const [targetId, sel] of linkModalState.selected.person) {
+        if (sel.inherit && !sel.is_excluded) {
+            // چک کن آیا personId زیرمجموعه targetId هست
+            const target = linkModalState.allData.person.find(p => p.id === targetId);
+            if (target) {
+                // پیمایش درخت
+                let cur = linkModalState.allData.person.find(p => p.id === personId);
+                while (cur && cur.parent_id) {
+                    if (cur.parent_id === targetId) return true;
+                    cur = linkModalState.allData.person.find(p => p.id === cur.parent_id);
+                }
+            }
+        }
+    }
+    return false;
+}
+
+// تغییر انتخاب
+function toggleLinkItem(type, id, checked) {
+    if (type === 'person') {
+        const subtreeIds = getSubtreeIds(type, id); // خود + همه زیرمجموعه‌ها
+        
+        if (checked) {
+            // تیک زدن → همه زیرمجموعه‌ها هم تیک بخورن
+            for (const sid of subtreeIds) {
+                const existing = linkModalState.selected.person.get(sid);
+                if (existing) {
+                    existing.is_excluded = false;
+                    // inherit رو دست نزن
+                } else {
+                    linkModalState.selected.person.set(sid, { inherit: false, is_excluded: false });
+                }
+            }
+        } else {
+            // تیک برداشتن → همه زیرمجموعه‌ها حذف بشن
+            // ولی اگه از یه inherit بالاتر اومده بودن → is_excluded = 1
+            for (const sid of subtreeIds) {
+                const existing = linkModalState.selected.person.get(sid);
+                if (existing) {
+                    // اگه خودش inherit داشت → کامل حذف کن (چون کاربر داره حذفش می‌کنه)
+                    if (existing.inherit) {
+                        linkModalState.selected.person.delete(sid);
+                    } else if (isInheritedFromParent(sid, type)) {
+                        // از inherit بالاتر اومده → override منفی
+                        existing.is_excluded = true;
+                        existing.inherit = false;
+                    } else {
+                        // خودش مستقیم بود → حذف
+                        linkModalState.selected.person.delete(sid);
+                    }
+                }
+            }
+        }
+    } else {
+        // برای goods, organization, decree_type هم زیرمجموعه‌ها رو بگیر
+        const subtreeIds = getSubtreeIds(type, id);
+        if (checked) {
+            for (const sid of subtreeIds) {
+                linkModalState.selected[type].add(sid);
+            }
+        } else {
+            for (const sid of subtreeIds) {
+                linkModalState.selected[type].delete(sid);
+            }
+        }
+    }
+    renderLinkItems();
+}
+
+// گرفتن همه IDهای زیردرخت (خود + همه فرزندان)
+function getSubtreeIds(type, rootId) {
+    const result = [rootId];
+    const tree = linkModalState.treeData[type] || [];
+    
+    // پیدا کردن نود در درخت
+    const findNode = (nodes, id) => {
+        for (const n of nodes) {
+            if (n.id === id) return n;
+            if (n.children) {
+                const found = findNode(n.children, id);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
+
+    const root = findNode(tree, rootId);
+    if (!root) return result;
+
+    const walk = (node) => {
+        if (node.children) {
+            for (const c of node.children) {
+                result.push(c.id);
+                walk(c);
+            }
+        }
+    };
+    walk(root);
+    
+    return result;
+}
+// تغییر inherit
+function toggleInherit(personId, inherit) {
+    const sel = linkModalState.selected.person.get(personId);
+    if (sel) {
+        sel.inherit = inherit;
+    } else {
+        linkModalState.selected.person.set(personId, { inherit, is_excluded: false });
+    }
+    renderLinkItems();
+}
+
+// فیلتر
+function filterLinkItems() {
+    renderLinkItems();
+}
+
+// شمارش انتخاب‌شده‌ها
+function updateSelectedCount() {
+    const type = linkModalState.currentTab;
+    let count = 0;
+    if (type === 'person') {
+        count = Array.from(linkModalState.selected.person.values()).filter(s => !s.is_excluded).length;
+    } else {
+        count = linkModalState.selected[type].size;
+    }
+    document.getElementById('link-selected-count').textContent = `${toPersianNumbers(count)} انتخاب‌شده`;
+}
+
+// ذخیره
+async function saveLinkModal() {
+    const btn = document.getElementById('link-save-btn');
+    btn.disabled = true;
+    btn.textContent = 'در حال ذخیره...';
+
+    try {
+        const economicId = linkModalState.economicId;
+
+        // برای هر ۴ نوع، همون‌طور که هست ذخیره کن
+        const types = ['goods', 'organization', 'decree_type', 'person'];
+        for (const type of types) {
+            const items = [];
+
+            if (type === 'person') {
+                for (const [targetId, sel] of linkModalState.selected.person) {
+                    items.push({
+                        target_id: targetId,
+                        inherit: sel.inherit ? 1 : 0,
+                        is_excluded: sel.is_excluded ? 1 : 0,
+                    });
+                }
+            } else {
+                for (const targetId of linkModalState.selected[type]) {
+                    items.push({ target_id: targetId, inherit: 0, is_excluded: 0 });
+                }
+            }
+
+            // حذف ردیف‌هایی که از قبل بودن ولی الان توی selected نیستن
+            const existing = linkModalState.links[type] || [];
+            const newIds = new Set(items.map(i => i.target_id));
+            for (const ex of existing) {
+                if (!newIds.has(ex.target_id)) {
+                    await fetch(`/api/economic-links/${ex.id}`, {
+                        method: 'DELETE',
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                }
+            }
+
+            // درج/آپدیت
+            if (items.length > 0) {
+                await fetch('/api/economic-links', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        economic_id: economicId,
+                        link_type: type,
+                        items: items
+                    })
+                });
+            }
+        }
+
+        showToast("ارتباطات با موفقیت ذخیره شد");
+        closeLinkModal();
+        await loadData(); // refresh badgeها
+    } catch (e) {
+        console.error("saveLinkModal error:", e);
+        showToast("خطا در ذخیره", "error");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '💾 ذخیره';
+    }
+}
+
+// بارگذاری badge برای همه نودهای درخت (به‌صورت batch)
+async function loadAllTreeBadges() {
+    try {
+        // یه درخواست summary — همه رو یه جا می‌گیریم
+        const res = await fetch(`/api/economic-links/summary`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const summary = await res.json();
+
+        const icons = { goods: '📦', organization: '🏢', decree_type: '📜', person: '👤' };
+
+        for (const [econId, types] of Object.entries(summary)) {
+            const container = document.getElementById(`tree-link-badges-${econId}`);
+            if (!container) continue;
+
+            let html = '';
+            for (const type of ['goods', 'organization', 'decree_type', 'person']) {
+                const count = types[type] || 0;
+                if (count > 0) {
+                    html += `<span class="link-badge ${type}" 
+                        onclick="event.stopPropagation(); openLinkModal(${econId}, '${type}')"
+                        title="${toPersianNumbers(count)}"
+                    >${icons[type]} ${toPersianNumbers(count)}</span>`;
+                }
+            }
+            container.innerHTML = html;
+        }
+    } catch (e) {
+        console.error("loadAllTreeBadges error:", e);
+    }
+}
+
+// بارگذاری badge برای همه ردیف‌های جدول (batch)
+async function loadAllTableBadges() {
+    try {
+        const res = await fetch(`/api/economic-links/summary`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const summary = await res.json();
+
+        const icons = { goods: '📦', organization: '🏢', decree_type: '📜', person: '👤' };
+
+        for (const [econId, types] of Object.entries(summary)) {
+            const container = document.getElementById(`link-badges-${econId}`);
+            if (!container) continue;
+
+            let html = '';
+            for (const type of ['goods', 'organization', 'decree_type', 'person']) {
+                const count = types[type] || 0;
+                if (count > 0) {
+                    html += `<span class="link-badge ${type}" 
+                        onclick="event.stopPropagation(); openLinkModal(${econId}, '${type}')"
+                    >${icons[type]} ${toPersianNumbers(count)}</span>`;
+                }
+            }
+            if (!html) html = `<span style="color:#ccc; font-size:11px;">—</span>`;
+            container.innerHTML = html;
+        }
+    } catch (e) {
+        console.error("loadAllTableBadges error:", e);
+    }
+}
+
+
     loadData();
         </script>
     </body>
