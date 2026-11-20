@@ -187,35 +187,62 @@ async function selectPersonForGoods(person) {
     document.getElementById('selected-person-box').style.display = 'block';
     document.getElementById('selected-person-name').textContent = person.full_name;
     document.getElementById('selected-person-meta').textContent = `کد ملی: ${person.national_id || '—'} | کد: ${person.code || '—'}`;
-    document.getElementById('task-select-group').style.display = 'block';
     document.getElementById('relation-select-group').style.display = 'block';
     document.getElementById('person-add-btn-group').style.display = 'block';
     await loadPersonTasks(person.id);
 }
 async function loadPersonTasks(personId) {
-    const select = document.getElementById('person-task-select');
-    select.innerHTML = '<option value="">— در حال بارگذاری... —</option>';
+    const container = document.getElementById('tasks-checkbox-list');
+    document.getElementById('tasks-checkbox-group').style.display = 'block';
+    container.innerHTML = '<div style="text-align:center; padding:15px; color:#999;">در حال بارگذاری...</div>';
+
     try {
-        const res = await fetch(`/api/employees/${personId}/tasks`, { headers: { 'Authorization': `Bearer ${token}` } });
-        if (!res.ok) throw new Error();
-        const tasks = await res.json();
-        select.innerHTML = '<option value="">— بدون وظیفه —</option>';
-        tasks.forEach(t => {
-            const opt = document.createElement('option');
-            opt.value = t.id;
-            opt.textContent = `${t.task_title || 'وظیفه'} (${t.task_type})`;
-            select.appendChild(opt);
-        });
-    } catch {
-        select.innerHTML = '<option value="">— خطا در لود وظایف —</option>';
+        let tasks = [];
+        if (selectedPerson && selectedPerson._goods_person_id) {
+            // شخص قبلاً اضافه شده → وظایف با وضعیت انتخاب
+            const res = await fetch(`/api/goods/persons/${selectedPerson._goods_person_id}/tasks`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            tasks = data.tasks || [];
+        } else {
+            // شخص جدید → همه وظایف بدون انتخاب
+            const res = await fetch(`/api/employees/${personId}/tasks`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            tasks = (Array.isArray(data) ? data : (data.tasks || [])).map(t => ({ ...t, is_selected: false }));
+        }
+
+        if (tasks.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:15px; color:#999;">این شخص وظیفه‌ای ندارد</div>';
+            return;
+        }
+
+        container.innerHTML = tasks.map(t => `
+            <label class="task-checkbox-item" style="display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:6px; cursor:pointer; font-size:13px;">
+                <input type="checkbox" value="${t.id}" ${t.is_selected ? 'checked' : ''} style="width:16px; height:16px; accent-color:#667eea;"/>
+                <span style="flex:1;">${t.task_title || 'وظیفه'}</span>
+              <span style="font-size:11px; color:#666; background:#e9ecef; padding:2px 6px; border-radius:4px;">${getTaskTypeLabel(t.task_type)}</span>
+            </label>
+        `).join('');
+    } catch (e) {
+        console.error("loadPersonTasks error:", e);
+        container.innerHTML = '<div style="text-align:center; padding:15px; color:#dc3545;">خطا در لود وظایف</div>';
     }
 }
 function clearSelectedPerson() {
     selectedPerson = null;
     document.getElementById('selected-person-box').style.display = 'none';
-    document.getElementById('task-select-group').style.display = 'none';
+    document.getElementById('tasks-checkbox-group').style.display = 'none';
     document.getElementById('relation-select-group').style.display = 'none';
-    document.getElementById('person-add-btn-group').style.display = 'none';
+    
+    const btnGroup = document.getElementById('person-add-btn-group');
+    btnGroup.style.display = 'none';
+    btnGroup.innerHTML = '<button type="button" class="btn-full-width primary" onclick="addPersonToGoods()">➕ افزودن شخص به این کالا</button>';
+    
+    const tasksContainer = document.getElementById('tasks-checkbox-list');
+    if (tasksContainer) tasksContainer.innerHTML = '';
 }
 
 // ============================================
@@ -229,36 +256,69 @@ function renderGoodsPersonsList() {
         return;
     }
     const relationLabels = { owner: 'مالک', user: 'کاربر', responsible: 'مسئول', custodian: 'امین امانت', other: 'سایر' };
-    container.innerHTML = currentGoodsPersons.map(gp => `
-        <div class="goods-person-item">
-            <div class="goods-person-info">
-                <div class="goods-person-name">${gp.person_full_name || 'شخص'}</div>
-                <div class="goods-person-meta">
-                    <span class="badge-relation">${relationLabels[gp.relation_type] || gp.relation_type}</span>
-                    ${gp.task_title ? `<span class="badge-task">${gp.task_title}</span>` : ''}
+    container.innerHTML = currentGoodsPersons.map(gp => {
+        const tasks = gp.selected_tasks || [];
+        const tasksHtml = tasks.length > 0
+            ? `<div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:4px;">
+                ${tasks.map(t => `<span style="font-size:10px; background:#d1ecf1; color:#0c5460; padding:2px 6px; border-radius:4px;">${t.task_title || 'وظیفه'}</span>`).join('')}
+               </div>`
+            : `<div style="margin-top:4px; font-size:11px; color:#999;">بدون وظیفه</div>`;
+
+        return `
+        <div class="goods-person-item" style="border:1px solid #e9ecef; border-radius:8px; padding:12px; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:start;">
+                <div style="flex:1;">
+                    <div style="font-weight:bold; font-size:13px;">${gp.person_full_name || 'شخص'}</div>
+                    <div style="font-size:11px; color:#666; margin-top:3px;">
+                        <span style="background:#e9ecef; padding:2px 6px; border-radius:4px;">${relationLabels[gp.relation_type] || gp.relation_type}</span>
+                    </div>
+                    ${tasksHtml}
+                </div>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <button type="button" onclick="editPersonTasks(${gp.id})" title="ویرایش وظایف" style="background:#17a2b8; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">📋 وظایف</button>
+                    <button type="button" onclick="removePersonFromGoods(${gp.id})" title="حذف" style="background:#e74c3c; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">✕</button>
                 </div>
             </div>
-            <button type="button" class="btn-remove-person" onclick="removePersonFromGoods(${gp.id})">✕</button>
         </div>
-    `).join('');
+        `;
+    }).join('');
 }
 async function addPersonToGoods() {
     if (!editingGoodsId) { showToast('ابتدا کالا را ذخیره کنید', 'error'); return; }
     if (!selectedPerson) { showToast('شخص را انتخاب کنید', 'error'); return; }
-    const taskId = document.getElementById('person-task-select').value;
+
     const relationType = document.getElementById('person-relation-select').value;
+    const selectedTaskIds = Array.from(
+        document.querySelectorAll('#tasks-checkbox-list input[type="checkbox"]:checked')
+    ).map(cb => parseInt(cb.value));
+
     try {
+        // ۱. اضافه کردن شخص
         const res = await fetch(`/api/goods/${editingGoodsId}/persons`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ person_id: selectedPerson.id, task_id: taskId ? parseInt(taskId) : null, relation_type: relationType })
+            body: JSON.stringify({ person_id: selectedPerson.id, relation_type: relationType })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'خطا');
-        showToast('شخص با موفقیت اضافه شد');
+
+        const gpId = data.id;
+
+        // ۲. ذخیره وظایف
+        if (selectedTaskIds.length > 0) {
+            await fetch(`/api/goods/persons/${gpId}/tasks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ task_ids: selectedTaskIds })
+            });
+        }
+
+        showToast(`شخص با ${toPersianNumbers(selectedTaskIds.length)} وظیفه اضافه شد`);
         clearSelectedPerson();
         await reloadGoodsPersons();
-    } catch (e) { showToast(e.message, 'error'); }
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
 }
 async function removePersonFromGoods(gpId) {
     if (!confirm('مطمئن هستید این شخص حذف شود؟')) return;
@@ -1088,4 +1148,226 @@ function collectBatteriesFromUI() {
         notes: b.notes || null,
         sort_order: b.sort_order
     }));
+}
+
+// ============================================
+// مدال ویرایش وظایف شخص (بعد از اضافه شدن)
+// ============================================
+async function editPersonTasks(gpId) {
+    const gp = currentGoodsPersons.find(p => p.id === gpId);
+    if (!gp) return;
+
+    selectedPerson = {
+        id: gp.person_id,
+        full_name: gp.person_full_name,
+        national_id: gp.person_national_id,
+        code: gp.person_code,
+        _goods_person_id: gpId
+    };
+
+    document.getElementById('selected-person-box').style.display = 'block';
+    document.getElementById('selected-person-name').textContent = gp.person_full_name;
+    document.getElementById('selected-person-meta').textContent = `کد ملی: ${gp.person_national_id || '—'}`;
+    document.getElementById('relation-select-group').style.display = 'block';
+    document.getElementById('person-relation-select').value = gp.relation_type || 'owner';
+
+    // دکمه ذخیره وظایف
+    const saveBtnGroup = document.getElementById('person-add-btn-group');
+    saveBtnGroup.style.display = 'block';
+    saveBtnGroup.innerHTML = `<button type="button" class="btn-full-width info" onclick="savePersonTasks(${gpId})">💾 ذخیره وظایف</button>`;
+
+    await loadPersonTasks(gp.person_id);
+}
+
+async function savePersonTasks(gpId) {
+    const selectedTaskIds = Array.from(
+        document.querySelectorAll('#tasks-checkbox-list input[type="checkbox"]:checked')
+    ).map(cb => parseInt(cb.value));
+
+    try {
+        const res = await fetch(`/api/goods/persons/${gpId}/tasks`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ task_ids: selectedTaskIds })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'خطا');
+
+        showToast(`وظایف با موفقیت ذخیره شد (${toPersianNumbers(selectedTaskIds.length)} مورد)`);
+        clearSelectedPerson();
+        await reloadGoodsPersons();
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+
+// ============================================
+// مدال انتخاب شخص از درخت
+// ============================================
+let personTreeData = [];
+let personTreeExpanded = new Set();
+let personTreeSelectedId = null;
+
+async function openPersonTreeModal() {
+    document.getElementById('person-tree-modal').classList.add('open');
+    document.getElementById('person-tree-search').value = '';
+    personTreeExpanded = new Set();
+    personTreeSelectedId = null;
+
+    const container = document.getElementById('person-tree-container');
+    container.innerHTML = '<div style="text-align:center; padding:30px; color:#999;">در حال بارگذاری...</div>';
+
+    try {
+        const res = await fetch('/api/persons/tree', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        personTreeData = await res.json();
+        // باز کردن سطح ۱
+        (personTreeData || []).forEach(n => personTreeExpanded.add(n.id));
+        renderPersonTree();
+    } catch (e) {
+        container.innerHTML = '<div style="text-align:center; padding:30px; color:#dc3545;">خطا در بارگذاری</div>';
+    }
+}
+
+function renderPersonTree() {
+    const container = document.getElementById('person-tree-container');
+    if (!personTreeData || personTreeData.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:30px; color:#999;">شخصی ثبت نشده</div>';
+        return;
+    }
+
+    const renderNode = (node, depth) => {
+        const hasChildren = node.children && node.children.length > 0;
+        const isExpanded = personTreeExpanded.has(node.id);
+        const isSelected = personTreeSelectedId === node.id;
+        const isLevel4 = node.level === 4;
+
+        const indent = depth * 22;
+        const toggle = hasChildren ? (isExpanded ? '▼' : '◀') : '';
+
+        return `
+            <div class="person-tree-node" style="padding-right:${indent + 8}px; padding-top:6px; padding-bottom:6px; display:flex; align-items:center; gap:6px; border-radius:6px; ${isSelected ? 'background:#d4edda;' : ''} ${isLevel4 ? 'cursor:pointer;' : ''}" 
+                 ${isLevel4 ? `onclick="selectPersonFromTree(${node.id})"` : ''}>
+                <button onclick="event.stopPropagation(); togglePersonTreeNode(${node.id})" 
+                    style="width:18px; height:18px; border:none; background:transparent; cursor:pointer; color:#666; ${hasChildren ? '' : 'visibility:hidden;'}">${toggle}</button>
+                <span style="font-size:${isLevel4 ? '14px' : '12px'}; ${isLevel4 ? 'font-weight:bold;' : ''} color:#333;">
+                    ${isLevel4 ? '👤' : '📁'} ${node.full_name || node.title || ''}
+                </span>
+                ${isLevel4 ? `<span style="font-size:11px; color:#667eea; font-family:monospace;">${node.code || ''}</span>` : ''}
+            </div>
+            ${hasChildren && isExpanded ? node.children.map(c => renderNode(c, depth + 1)).join('') : ''}
+        `;
+    };
+
+    container.innerHTML = personTreeData.map(n => renderNode(n, 0)).join('');
+}
+
+function togglePersonTreeNode(id) {
+    if (personTreeExpanded.has(id)) {
+        personTreeExpanded.delete(id);
+    } else {
+        personTreeExpanded.add(id);
+    }
+    renderPersonTree();
+}
+
+function selectPersonFromTree(id) {
+    personTreeSelectedId = id;
+    renderPersonTree();
+}
+
+function filterPersonTree() {
+    const q = document.getElementById('person-tree-search').value.trim().toLowerCase();
+    const container = document.getElementById('person-tree-container');
+
+    if (!q) {
+        personTreeExpanded = new Set();
+        (personTreeData || []).forEach(n => personTreeExpanded.add(n.id));
+        renderPersonTree();
+        return;
+    }
+
+    const allNodes = [];
+    const walk = (nodes) => {
+        for (const n of nodes) {
+            allNodes.push(n);
+            if (n.children) walk(n.children);
+        }
+    };
+    walk(personTreeData);
+
+    const matched = allNodes.filter(n => {
+        const name = (n.full_name || n.title || '').toLowerCase();
+        const code = (n.code || '').toLowerCase();
+        return name.includes(q) || code.includes(q);
+    });
+
+    if (matched.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:30px; color:#999;">نتیجه‌ای یافت نشد</div>';
+        return;
+    }
+
+    container.innerHTML = matched.map(n => `
+        <div class="person-tree-node" style="padding:8px; display:flex; align-items:center; gap:6px; border-radius:6px; ${n.level === 4 ? 'cursor:pointer; font-weight:bold;' : 'color:#666;'} ${personTreeSelectedId === n.id ? 'background:#d4edda;' : ''}"
+             onclick="${n.level === 4 ? `selectPersonFromTree(${n.id})` : ''}">
+            <span style="margin-right:${(n.level || 0) * 15}px;">${n.level === 4 ? '👤' : '📁'}</span>
+            <span style="flex:1;">${n.full_name || n.title || ''}</span>
+            <span style="font-size:11px; color:#667eea;">${n.code || ''}</span>
+            <span style="font-size:10px; color:#999; background:#e9ecef; padding:1px 5px; border-radius:3px;">سطح ${toPersianNumbers((n.level || 0) + 1)}</span>
+        </div>
+    `).join('');
+}
+
+function closePersonTreeModal() {
+    document.getElementById('person-tree-modal').classList.remove('open');
+    personTreeSelectedId = null;
+}
+
+function confirmPersonTreeSelection() {
+    if (!personTreeSelectedId) {
+        showToast('لطفاً یک شخص (سطح ۴) انتخاب کنید', 'error');
+        return;
+    }
+
+    const findNode = (nodes, targetId) => {
+        for (const n of nodes) {
+            if (n.id === targetId) return n;
+            if (n.children) {
+                const found = findNode(n.children, targetId);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
+    const node = findNode(personTreeData, personTreeSelectedId);
+
+    if (!node) return;
+
+    if (node.level !== 4) {
+        showToast('فقط اشخاص سطح ۴ (شخص واقعی) قابل انتخاب هستند', 'error');
+        return;
+    }
+
+    closePersonTreeModal();
+    selectPersonForGoods(node);
+}
+
+
+function getTaskTypeLabel(taskType) {
+    const labels = {
+        'Program': 'برنامه',
+        'Project': 'پروژه',
+        'Activity': 'فعالیت',
+        'Mission': 'مأموریت',
+        'Service': 'خدمت',
+        'Plan': 'طرح',
+        'program': 'برنامه',
+        'project': 'پروژه',
+        'activity': 'فعالیت',
+        'mission': 'مأموریت',
+        'service': 'خدمت',
+        'plan': 'طرح',
+    };
+    return labels[taskType] || taskType || '—';
 }

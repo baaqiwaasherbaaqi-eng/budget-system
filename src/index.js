@@ -2783,19 +2783,28 @@ if (url.pathname.match(/^\/api\/goods\/\d+\/details$/) && request.method === "GE
             "SELECT * FROM goods_details WHERE base_data_id = ?"
         ).bind(goodsId).first();
 
-        const persons = await env.DB.prepare(
-            `SELECT gp.*, 
-                    p.full_name as person_full_name,
-                    p.national_id as person_national_id,
-                    p.code as person_code,
-                    et.task_type as task_type,
-                    et.task_title as task_title
-             FROM goods_persons gp
-             LEFT JOIN persons p ON gp.person_id = p.id
-             LEFT JOIN employee_tasks et ON gp.task_id = et.id
-             WHERE gp.base_data_id = ?
-             ORDER BY gp.id`
-        ).bind(goodsId).all();
+const persons = await env.DB.prepare(
+    `SELECT gp.*, 
+            p.full_name as person_full_name,
+            p.national_id as person_national_id,
+            p.code as person_code
+     FROM goods_persons gp
+     LEFT JOIN persons p ON gp.person_id = p.id
+     WHERE gp.base_data_id = ?
+     ORDER BY gp.id`
+).bind(goodsId).all();
+
+// برای هر شخص، وظایف انتخاب‌شده رو بگیر
+for (const gp of persons.results) {
+    const tasks = await env.DB.prepare(
+        `SELECT gpt.id as link_id, gpt.task_id, et.task_title, et.task_type
+         FROM goods_person_tasks gpt
+         LEFT JOIN employee_tasks et ON gpt.task_id = et.id
+         WHERE gpt.goods_person_id = ? AND gpt.is_active = 1
+         ORDER BY et.task_title`
+    ).bind(gp.id).all();
+    gp.selected_tasks = tasks.results || [];
+}
 
 
 // 👇👇👇 این را اضافه کنید 👇👇👇
@@ -2902,58 +2911,62 @@ if (url.pathname.match(/^\/api\/goods\/\d+\/details$/) && request.method === "PO
             "SELECT id FROM goods_details WHERE base_data_id = ?"
         ).bind(goodsId).first();
 
-        if (existing) {
-            await env.DB.prepare(
-                `UPDATE goods_details SET
-                    asset_number = ?, purchase_date_shamsi = ?, operation_date_shamsi = ?,
-                    storage_location = ?, purchase_price = ?, custom_fields = ?,
-                    is_vehicle = ?, tire_count = ?, tire_basis = ?,
-                    battery_count = ?, battery_last_replace_shamsi = ?,
-                        current_km = ?,
-    current_km_updated_at_shamsi = ?,
-                    service_vehicle_standard = ?, service_oil_filter_standard = ?,
-                    service_air_filter_standard = ?, service_ac_filter_standard = ?,
-                    service_antifreeze_standard = ?, service_timing_belt_standard = ?,
-                    fuel_standard = ?, vehicle_custom_fields = ?, notes = ?,
-                    updated_at = CURRENT_TIMESTAMP, updated_at_shamsi = ?
-                 WHERE base_data_id = ?`
-            ).bind(
-                asset_number || null, purchase_date_shamsi || null, operation_date_shamsi || null,
-                storage_location || null, purchase_price || null, jsonify(custom_fields),
-                is_vehicle ? 1 : 0, tire_count || null, tire_basis || null,
-                battery_count || null, battery_last_replace_shamsi || null,
-                jsonify(service_vehicle_standard), jsonify(service_oil_filter_standard),
-                jsonify(service_air_filter_standard), jsonify(service_ac_filter_standard),
-                jsonify(service_antifreeze_standard), jsonify(service_timing_belt_standard),
-                jsonify(fuel_standard), jsonify(vehicle_custom_fields), notes || null,
-                nowShamsi, goodsId
-            ).run();
-        } else {
-            await env.DB.prepare(
-                `INSERT INTO goods_details
-                    (base_data_id, asset_number, purchase_date_shamsi, operation_date_shamsi,
-                     storage_location, purchase_price, custom_fields,
-                     is_vehicle, tire_count, tire_basis,
-                     battery_count, battery_last_replace_shamsi, current_km, current_km_updated_at_shamsi,
-                     service_vehicle_standard, service_oil_filter_standard,
-                     service_air_filter_standard, service_ac_filter_standard,
-                     service_antifreeze_standard, service_timing_belt_standard,
-                     fuel_standard, vehicle_custom_fields, notes,
-                     created_at_shamsi, updated_at_shamsi)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-            ).bind(
-                goodsId, asset_number || null, purchase_date_shamsi || null, operation_date_shamsi || null,
-                storage_location || null, purchase_price || null, jsonify(custom_fields),
-                is_vehicle ? 1 : 0, tire_count || null, tire_basis || null,
-                battery_count || null, battery_last_replace_shamsi || null, current_km != null ? parseInt(current_km) : null,
-current_km != null ? nowShamsi : null,   // 
-                jsonify(service_vehicle_standard), jsonify(service_oil_filter_standard),
-                jsonify(service_air_filter_standard), jsonify(service_ac_filter_standard),
-                jsonify(service_antifreeze_standard), jsonify(service_timing_belt_standard),
-                jsonify(fuel_standard), jsonify(vehicle_custom_fields), notes || null,
-                nowShamsi, nowShamsi
-            ).run();
-        }
+ if (existing) {
+    await env.DB.prepare(
+        `UPDATE goods_details SET
+            asset_number = ?, purchase_date_shamsi = ?, operation_date_shamsi = ?,
+            storage_location = ?, purchase_price = ?, custom_fields = ?,
+            is_vehicle = ?, tire_count = ?, tire_basis = ?,
+            battery_count = ?, battery_last_replace_shamsi = ?,
+            service_vehicle_standard = ?, service_oil_filter_standard = ?,
+            service_air_filter_standard = ?, service_ac_filter_standard = ?,
+            service_antifreeze_standard = ?, service_timing_belt_standard = ?,
+            fuel_standard = ?, vehicle_custom_fields = ?,
+            current_km = ?, current_km_updated_at_shamsi = ?,
+            notes = ?,
+            updated_at = CURRENT_TIMESTAMP, updated_at_shamsi = ?
+         WHERE base_data_id = ?`
+    ).bind(
+        asset_number || null, purchase_date_shamsi || null, operation_date_shamsi || null,
+        storage_location || null, purchase_price || null, jsonify(custom_fields),
+        is_vehicle ? 1 : 0, tire_count || null, tire_basis || null,
+        battery_count || null, battery_last_replace_shamsi || null,
+        jsonify(service_vehicle_standard), jsonify(service_oil_filter_standard),
+        jsonify(service_air_filter_standard), jsonify(service_ac_filter_standard),
+        jsonify(service_antifreeze_standard), jsonify(service_timing_belt_standard),
+        jsonify(fuel_standard), jsonify(vehicle_custom_fields),
+        current_km || null, current_km ? nowShamsi : null,   // ← این دو خط جدید
+        notes || null,
+        nowShamsi, goodsId
+    ).run();
+} else {
+    await env.DB.prepare(
+        `INSERT INTO goods_details
+            (base_data_id, asset_number, purchase_date_shamsi, operation_date_shamsi,
+             storage_location, purchase_price, custom_fields,
+             is_vehicle, tire_count, tire_basis,
+             battery_count, battery_last_replace_shamsi,
+             service_vehicle_standard, service_oil_filter_standard,
+             service_air_filter_standard, service_ac_filter_standard,
+             service_antifreeze_standard, service_timing_belt_standard,
+             fuel_standard, vehicle_custom_fields,
+             current_km, current_km_updated_at_shamsi, notes,
+             created_at_shamsi, updated_at_shamsi)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(
+        goodsId, asset_number || null, purchase_date_shamsi || null, operation_date_shamsi || null,
+        storage_location || null, purchase_price || null, jsonify(custom_fields),
+        is_vehicle ? 1 : 0, tire_count || null, tire_basis || null,
+        battery_count || null, battery_last_replace_shamsi || null,
+        jsonify(service_vehicle_standard), jsonify(service_oil_filter_standard),
+        jsonify(service_air_filter_standard), jsonify(service_ac_filter_standard),
+        jsonify(service_antifreeze_standard), jsonify(service_timing_belt_standard),
+        jsonify(fuel_standard), jsonify(vehicle_custom_fields),
+        current_km || null, current_km ? nowShamsi : null,   // ← این دو خط جدید
+        notes || null,
+        nowShamsi, nowShamsi
+    ).run();
+}
 
         ctx.waitUntil(logAction(env, request, userData, "goods_details_saved", "goods", goodsId, { asset_number }));
         return new Response(JSON.stringify({ success: true }), { status: 200, headers });
@@ -2977,7 +2990,7 @@ if (url.pathname.match(/^\/api\/goods\/\d+\/persons$/) && request.method === "PO
         }
 
         const goodsId = parseInt(url.pathname.split("/")[3]);
-        const { person_id, task_id, relation_type, notes } = await request.json();
+        const { person_id, relation_type, notes } = await request.json();
 
         if (!person_id) {
             return new Response(JSON.stringify({ error: "شخص الزامی است" }), { status: 400, headers });
@@ -2986,10 +2999,10 @@ if (url.pathname.match(/^\/api\/goods\/\d+\/persons$/) && request.method === "PO
         const nowShamsi = toShamsi(new Date());
         const result = await env.DB.prepare(
             `INSERT INTO goods_persons
-                (base_data_id, person_id, task_id, relation_type, notes, created_at_shamsi)
-             VALUES (?, ?, ?, ?, ?, ?)`
+                (base_data_id, person_id, relation_type, notes, created_at_shamsi)
+             VALUES (?, ?, ?, ?, ?)`
         ).bind(
-            goodsId, person_id, task_id || null,
+            goodsId, person_id,
             relation_type || "owner", notes || null, nowShamsi
         ).run();
 
@@ -3205,6 +3218,120 @@ if (url.pathname.match(/^\/api\/goods\/\d+\/batteries$/) && request.method === "
     }
 }
 
+
+// ============================================
+// GET: لیست وظایف یک شخص در یک کالا + وضعیت انتخاب
+// ============================================
+if (url.pathname.match(/^\/api\/goods\/persons\/\d+\/tasks$/) && request.method === "GET") {
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        }
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData) {
+            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), { status: 401, headers });
+        }
+
+        const gpId = parseInt(url.pathname.split("/")[4]);
+
+        // گرفتن person_id از goods_persons
+        const gp = await env.DB.prepare(
+            "SELECT person_id FROM goods_persons WHERE id = ?"
+        ).bind(gpId).first();
+
+        if (!gp) {
+            return new Response(JSON.stringify({ error: "شخص یافت نشد" }), { status: 404, headers });
+        }
+
+        // همه وظایف این شخص از employee_tasks
+        const allTasks = await env.DB.prepare(
+            `SELECT id, task_type, task_title, percentage
+             FROM employee_tasks
+             WHERE person_id = ? AND is_active = 1
+             ORDER BY task_title`
+        ).bind(gp.person_id).all();
+
+        // وظایف انتخاب‌شده (از goods_person_tasks)
+        const selected = await env.DB.prepare(
+            `SELECT task_id FROM goods_person_tasks
+             WHERE goods_person_id = ? AND is_active = 1`
+        ).bind(gpId).all();
+        const selectedIds = new Set((selected.results || []).map(r => r.task_id));
+
+        const tasks = (allTasks.results || []).map(t => ({
+            ...t,
+            is_selected: selectedIds.has(t.id)
+        }));
+
+        return new Response(JSON.stringify({
+            person_id: gp.person_id,
+            tasks: tasks
+        }), { status: 200, headers });
+    } catch (error) {
+        console.error("goods person tasks GET error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
+}
+
+// ============================================
+// POST: ذخیره وظایف انتخاب‌شده برای یک شخص در کالا (bulk)
+// ============================================
+if (url.pathname.match(/^\/api\/goods\/persons\/\d+\/tasks$/) && request.method === "POST") {
+    try {
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader) {
+            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+        }
+        const token = authHeader.replace("Bearer ", "");
+        const userData = await verifyToken(token, env.JWT_SECRET);
+        if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+        }
+
+        const gpId = parseInt(url.pathname.split("/")[4]);
+        const { task_ids } = await request.json();
+
+        if (!Array.isArray(task_ids)) {
+            return new Response(JSON.stringify({ error: "task_ids باید آرایه باشد" }), { status: 400, headers });
+        }
+
+        // چک وجود goods_person
+        const gp = await env.DB.prepare("SELECT id FROM goods_persons WHERE id = ?").bind(gpId).first();
+        if (!gp) {
+            return new Response(JSON.stringify({ error: "شخص یافت نشد" }), { status: 404, headers });
+        }
+
+        // حذف قبلی‌ها
+        await env.DB.prepare("DELETE FROM goods_person_tasks WHERE goods_person_id = ?").bind(gpId).run();
+
+        // درج جدیدها
+        const nowShamsi = toShamsi(new Date());
+        let inserted = 0;
+        for (const taskId of task_ids) {
+            try {
+                await env.DB.prepare(
+                    `INSERT OR IGNORE INTO goods_person_tasks
+                        (goods_person_id, task_id, is_active, created_at_shamsi)
+                     VALUES (?, ?, 1, ?)`
+                ).bind(gpId, taskId, nowShamsi).run();
+                inserted++;
+            } catch (e) {
+                console.error("insert task error:", e);
+            }
+        }
+
+        ctx.waitUntil(logAction(env, request, userData, "goods_person_tasks_saved", "goods_persons", gpId, {
+            task_count: inserted
+        }));
+
+        return new Response(JSON.stringify({ success: true, inserted }), { status: 200, headers });
+    } catch (error) {
+        console.error("goods person tasks POST error:", error);
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    }
+}
 
       // ========== Permissions ==========
 

@@ -15,6 +15,76 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css"/>
     <style>
 
+
+/* دکمه تمام‌عرض توی مدال */
+.btn-full-width {
+    width: 100%;
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    font-size: 13px;
+    font-weight: bold;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: white;
+}
+.btn-full-width.primary { background: #667eea; }
+.btn-full-width.primary:hover { background: #5a67d8; }
+.btn-full-width.info { background: #17a2b8; }
+.btn-full-width.info:hover { background: #138496; }
+body.dark .btn-full-width.primary { background: #5a67d8; }
+body.dark .btn-full-width.info { background: #138496; }
+
+.btn-full-width {
+    width: 100%;
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    font-size: 13px;
+    font-weight: bold;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.btn-full-width.primary {
+    background: #667eea;
+    color: white;
+}
+.btn-full-width.primary:hover { background: #5a67d8; }
+
+.btn-full-width.info {
+    background: #17a2b8;
+    color: white;
+}
+.btn-full-width.info:hover { background: #138496; }
+
+body.dark .btn-full-width.primary { background: #5a67d8; }
+body.dark .btn-full-width.info { background: #138496; }
+
+.btn-tree-select {
+    background: #17a2b8;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    font-size: 13px;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+.btn-tree-select:hover { background: #138496; }
+
 /* ============ Tire & Battery Rows ============ */
 .tire-row, .battery-row {
     background: #f8f9fa;
@@ -890,14 +960,24 @@ body.dark tbody tr.dragging {
 
                 <!-- تب ۴: اشخاص مربوط -->
                 <div class="modal-tab-panel" id="panel-persons">
+
+                    <!-- لیست اشخاص اضافه‌شده -->
                     <div id="goods-persons-list" class="goods-persons-list">
                         <div style="text-align:center; padding:20px; color:#999;">هنوز شخصی اضافه نشده</div>
                     </div>
 
                     <hr style="margin: 20px 0; border: none; border-top: 1px dashed #ddd;"/>
 
+                    <!-- دکمه انتخاب از درخت -->
+                    <div style="display:flex; gap:10px; margin-bottom:15px;">
+                        <button type="button" class="btn-tree-select" onclick="openPersonTreeModal()" style="flex:1;">
+                            🌳 انتخاب شخص از درخت
+                        </button>
+                    </div>
+
+                    <!-- جستجوی مستقیم (اختیاری) -->
                     <div class="form-group">
-                        <label>جستجوی شخص (کد ملی یا نام)</label>
+                        <label>یا جستجو با کد ملی / نام</label>
                         <input type="text" id="person-search-input" placeholder="کد ملی یا نام..." oninput="searchPersonsDebounced()"/>
                         <div id="person-search-results" class="person-search-results" style="display:none;"></div>
                     </div>
@@ -912,9 +992,13 @@ body.dark tbody tr.dragging {
                         </div>
                     </div>
 
-                    <div class="form-group" id="task-select-group" style="display:none;">
-                        <label>وظیفه‌ی این شخص (اختیاری)</label>
-                        <select id="person-task-select"><option value="">— بدون وظیفه —</option></select>
+                    <!-- وظایف شخص — checkbox list -->
+                    <div class="form-group" id="tasks-checkbox-group" style="display:none;">
+                        <label>📋 وظایف این شخص (چندتایی)</label>
+                        <div id="tasks-checkbox-list" style="max-height:250px; overflow-y:auto; border:1px solid #e9ecef; border-radius:6px; padding:8px; background:#fafbfc;"></div>
+                        <small style="color:#666; font-size:11px; display:block; margin-top:6px;">
+                            هر تعداد که بخوای می‌تونی انتخاب کنی. وظایف انتخاب‌شده با این کالا مرتبط می‌شن.
+                        </small>
                     </div>
 
                     <div class="form-group" id="relation-select-group" style="display:none;">
@@ -929,16 +1013,34 @@ body.dark tbody tr.dragging {
                     </div>
 
                     <div class="form-group" id="person-add-btn-group" style="display:none;">
-                        <button type="button" class="btn-save" onclick="addPersonToGoods()" style="width:100%;">➕ افزودن شخص به این کالا</button>
+                        <button type="button" class="btn-full-width primary" onclick="addPersonToGoods()">➕ افزودن شخص به این کالا</button>
                     </div>
-
-             
-
                 </div>
 
                 <div class="modal-actions">
                     <button class="btn-cancel" onclick="closeModal()">انصراف</button>
                     <button class="btn-save" id="btn-save" onclick="saveModal()">ذخیره</button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- ============ Modal: انتخاب شخص از درخت ============ -->
+        <div class="modal-overlay" id="person-tree-modal">
+            <div class="modal" style="max-width:700px;">
+                <h3>🌳 انتخاب شخص از درخت</h3>
+
+                <div class="form-group">
+                    <input type="text" id="person-tree-search" placeholder="🔍 جستجو در کد یا نام..." oninput="filterPersonTree()"/>
+                </div>
+
+                <div id="person-tree-container" style="max-height:450px; overflow-y:auto; border:1px solid #e9ecef; border-radius:8px; padding:8px; background:#fafbfc;">
+                    <div style="text-align:center; padding:30px; color:#999;">در حال بارگذاری...</div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-cancel" onclick="closePersonTreeModal()">انصراف</button>
+                    <button class="btn-save" onclick="confirmPersonTreeSelection()">✓ انتخاب</button>
                 </div>
             </div>
         </div>
