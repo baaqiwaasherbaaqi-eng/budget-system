@@ -164,6 +164,80 @@ function generateRandomPassword(length = 8) {
   return pass;
 }
 
+
+
+      // helper
+      async function upsertBudgetLine(env, data) {
+        const existing = await env.DB.prepare(
+          `SELECT id, description_edited FROM budget_lines WHERE unique_hash = ?`
+        )
+          .bind(data.unique_hash)
+          .first();
+
+        if (existing) {
+          if (!existing.description_edited) {
+            await env.DB.prepare(
+              `UPDATE budget_lines SET 
+                description = ?, 
+                organization_id = COALESCE(organization_id, ?),
+                operational_id = COALESCE(operational_id, ?),
+                is_active = 1,
+                updated_at_shamsi = ?
+               WHERE id = ?`
+            )
+              .bind(
+                data.description,
+                data.organization_id,
+                data.operational_id || null,
+                data.nowShamsi,
+                existing.id
+              )
+              .run();
+            return "updated";
+          }
+          // اگه description ویرایش شده، فقط is_active رو برگردون
+          if (existing.description_edited) {
+            await env.DB.prepare(
+              `UPDATE budget_lines SET is_active = 1 WHERE id = ?`
+            )
+              .bind(existing.id)
+              .run();
+            return "updated";
+          }
+          return null;
+        }
+
+        await env.DB.prepare(
+          `INSERT INTO budget_lines
+           (fiscal_year_id, unique_hash, link_type, link_target_id, task_id,
+            decree_item_code, organization_id, person_id, goods_id, operational_id,
+            description, description_edited, is_auto_generated,
+            priority, quantity, unit_price_current, inflation_rate,
+            unit_price_adjusted, total_amount, status, is_active,
+            created_by, created_at_shamsi, updated_at_shamsi)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1,
+                   1, 1, 0, 0, 0, 0, 'draft', 1, ?, ?, ?)`
+        )
+          .bind(
+            data.fiscal_year_id,
+            data.unique_hash,
+            data.link_type,
+            data.link_target_id,
+            data.task_id || null,
+            data.decree_item_code || null,
+            data.organization_id || null,
+            data.person_id || null,
+            data.goods_id || null,
+            data.operational_id || null,
+            data.description,
+            data.created_by,
+            data.nowShamsi,
+            data.nowShamsi
+          )
+          .run();
+        return "created";
+      }
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -1719,6 +1793,772 @@ if (url.pathname === "/api/persons/import-excel" && request.method === "POST") {
     return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
   }
 }
+
+      // ============================================
+      // بودجه پیشنهادی (budget_lines) — نسخه جدید
+      // ============================================
+
+      // GET: لیست ردیف‌های بودجه
+      if (url.pathname === "/api/budget-lines" && request.method === "GET") {
+        try {
+          const fiscalYearId = url.searchParams.get("fiscal_year_id");
+          const status = url.searchParams.get("status");
+
+          let query = `
+            SELECT bl.*,
+                   org.code as organization_code,
+                   org.title as organization_title,
+                   p.full_name as person_name,
+                   p.code as person_code,
+                   op.code as operational_code,
+                   op.title as operational_title,
+                   g.code as goods_code,
+                   g.title as goods_title,
+                   dt.title as decree_type_title,
+                   e.code as economic_code,
+                   e.title as economic_title,
+                   u.full_name as creator_name
+            FROM budget_lines bl
+            LEFT JOIN base_data org ON bl.organization_id = org.id
+            LEFT JOIN persons p ON bl.person_id = p.id
+            LEFT JOIN base_data op ON bl.operational_id = op.id
+            LEFT JOIN base_data g ON bl.goods_id = g.id
+            LEFT JOIN base_data dt ON bl.decree_type_id = dt.id
+            LEFT JOIN base_data e ON bl.economic_id = e.id
+            LEFT JOIN users u ON bl.created_by = u.id
+            WHERE bl.is_active = 1
+          `;
+          const params = [];
+
+          if (fiscalYearId) {
+            query += " AND bl.fiscal_year_id = ?";
+            params.push(parseInt(fiscalYearId));
+          }
+          if (status) {
+            query += " AND bl.status = ?";
+            params.push(status);
+          }
+
+          query += " ORDER BY bl.sort_order, bl.id";
+
+          const items = await env.DB.prepare(query).bind(...params).all();
+
+          return new Response(JSON.stringify(items.results), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("budget-lines GET error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // GET: نرخ تورم جاری برای یه سال مالی
+      if (
+        url.pathname === "/api/budget-lines/inflation-rate" &&
+        request.method === "GET"
+      ) {
+        try {
+          const fiscalYearId = url.searchParams.get("fiscal_year_id");
+
+          let query = `
+            SELECT rate_value, rate_type, unit, title
+            FROM economic_rates
+            WHERE rate_key = 'inflation' AND is_active = 1
+          `;
+          const params = [];
+
+          if (fiscalYearId) {
+            query += " AND (fiscal_year_id = ? OR fiscal_year_id IS NULL)";
+            params.push(parseInt(fiscalYearId));
+          } else {
+            query += " AND fiscal_year_id IS NULL";
+          }
+
+          // اولویت: سال مالی خاص > نرخ جاری
+          query += " ORDER BY CASE WHEN fiscal_year_id = ? THEN 0 ELSE 1 END LIMIT 1";
+          if (fiscalYearId) params.push(parseInt(fiscalYearId));
+          else params.push(-1);
+
+          const rate = await env.DB.prepare(query).bind(...params).first();
+
+          return new Response(
+            JSON.stringify({
+              inflation_rate: rate ? rate.rate_value : 0,
+              rate_type: rate ? rate.rate_type : "percent",
+              unit: rate ? rate.unit : "٪",
+              title: rate ? rate.title : "نرخ تورم",
+            }),
+            { status: 200, headers }
+          );
+        } catch (error) {
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // GET: ارتباطات مؤثر (سازمان/شخص/کالا/حکم) برای یه ردیف اقتصادی
+      if (
+        url.pathname === "/api/budget-lines/effective-links" &&
+        request.method === "GET"
+      ) {
+        try {
+          const economicId = url.searchParams.get("economic_id");
+          if (!economicId) {
+            return new Response(
+              JSON.stringify({ error: "economic_id الزامی است" }),
+              { status: 400, headers }
+            );
+          }
+
+          // ارتباطات خام این ردیف اقتصادی
+          const links = await env.DB.prepare(
+            `SELECT * FROM economic_links 
+             WHERE economic_id = ? AND is_active = 1`
+          )
+            .bind(parseInt(economicId))
+            .all();
+
+          // برای شخص، inherit/exclusion باید اعمال بشه
+          // از API موجود effective استفاده می‌کنیم — ولی اینجا مستقیم هم می‌شه
+          const result = {
+            organizations: [],
+            persons: [],
+            goods: [],
+            decree_types: [],
+          };
+
+          for (const link of links.results) {
+            if (link.is_excluded === 1) continue;
+
+            if (link.link_type === "organization" && link.is_excluded === 0) {
+              result.organizations.push({
+                id: link.target_id,
+                code: link.target_code,
+                title: link.target_title,
+              });
+            } else if (link.link_type === "goods" && link.is_excluded === 0) {
+              result.goods.push({
+                id: link.target_id,
+                code: link.target_code,
+                title: link.target_title,
+              });
+            } else if (
+              link.link_type === "decree_type" &&
+              link.is_excluded === 0
+            ) {
+              result.decree_types.push({
+                id: link.target_id,
+                code: link.target_code,
+                title: link.target_title,
+              });
+            } else if (link.link_type === "person" && link.is_excluded === 0) {
+              result.persons.push({
+                id: link.target_id,
+                code: link.target_code,
+                title: link.target_title,
+                inherit: link.inherit,
+              });
+            }
+          }
+
+          // برای شخص: اگه inherit داریم، همه زیرمجموعه‌ها رو هم اضافه کن
+          const personsWithInherit = result.persons.filter(
+            (p) => p.inherit === 1
+          );
+          if (personsWithInherit.length > 0) {
+            const existingIds = new Set(result.persons.map((p) => p.id));
+            for (const parent of personsWithInherit) {
+              // گرفتن همه زیرمجموعه‌های سطح ۴ این والد
+              const descendants = await env.DB.prepare(
+                `WITH RECURSIVE subtree(id) AS (
+                  SELECT id FROM persons WHERE id = ?
+                  UNION ALL
+                  SELECT p.id FROM persons p
+                  INNER JOIN subtree s ON p.parent_id = s.id
+                )
+                SELECT p.id, p.code, p.full_name as title
+                FROM persons p
+                INNER JOIN subtree s ON p.id = s.id
+                WHERE p.level = 4 AND p.is_active = 1`
+              )
+                .bind(parent.id)
+                .all();
+
+              for (const d of descendants.results) {
+                if (!existingIds.has(d.id)) {
+                  result.persons.push({
+                    id: d.id,
+                    code: d.code,
+                    title: d.title,
+                    inherit: 0,
+                    inherited_from: parent.id,
+                  });
+                  existingIds.add(d.id);
+                }
+              }
+            }
+          }
+
+          return new Response(JSON.stringify(result), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("effective-links error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // POST: ایجاد ردیف بودجه
+      if (url.pathname === "/api/budget-lines" && request.method === "POST") {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              { status: 401, headers }
+            );
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(
+              JSON.stringify({ error: "دسترسی غیرمجاز" }),
+              { status: 403, headers }
+            );
+          }
+
+          const body = await request.json();
+          const {
+            fiscal_year_id,
+            organization_id,
+            person_id,
+            operational_id,
+            goods_id,
+            decree_type_id,
+            economic_id,
+            description,
+            priority,
+            target_date_shamsi,
+            neighborhood,
+            consumption_type,
+            quantity,
+            unit,
+            unit_price_current,
+            inflation_rate,
+            quantity_approved,
+            amount_final_municipality,
+            amount_approved_1405,
+            amount_approved_council,
+            amount_approved_1404,
+            notes,
+          } = body;
+
+          if (!fiscal_year_id || !organization_id || !description) {
+            return new Response(
+              JSON.stringify({
+                error: "سال مالی، سازمان و شرح مصرف الزامی است",
+              }),
+              { status: 400, headers }
+            );
+          }
+
+          // محاسبات
+          const qty = parseFloat(quantity) || 1;
+          const unitPrice = parseFloat(unit_price_current) || 0;
+          const infl = parseFloat(inflation_rate) || 0;
+          const unitPriceAdjusted = unitPrice * (1 + infl / 100);
+          const totalAmount = qty * unitPriceAdjusted;
+
+          const nowShamsi = toShamsi(new Date());
+
+          const result = await env.DB.prepare(
+            `INSERT INTO budget_lines
+             (fiscal_year_id, organization_id, person_id, operational_id,
+              goods_id, decree_type_id, economic_id,
+              description, priority, target_date_shamsi, neighborhood, consumption_type,
+              quantity, unit, unit_price_current, inflation_rate, unit_price_adjusted, total_amount,
+              quantity_approved, amount_final_municipality, amount_approved_1405,
+              amount_approved_council, amount_approved_1404,
+              status, notes, created_by, created_at_shamsi, updated_at_shamsi)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?)`
+          )
+            .bind(
+              parseInt(fiscal_year_id),
+              parseInt(organization_id),
+              person_id ? parseInt(person_id) : null,
+              operational_id ? parseInt(operational_id) : null,
+              goods_id ? parseInt(goods_id) : null,
+              decree_type_id ? parseInt(decree_type_id) : null,
+              economic_id ? parseInt(economic_id) : null,
+              description,
+              parseInt(priority) || 1,
+              target_date_shamsi || null,
+              neighborhood || null,
+              consumption_type || null,
+              qty,
+              unit || null,
+              unitPrice,
+              infl,
+              unitPriceAdjusted,
+              totalAmount,
+              quantity_approved ? parseFloat(quantity_approved) : null,
+              amount_final_municipality ? parseFloat(amount_final_municipality) : null,
+              amount_approved_1405 ? parseFloat(amount_approved_1405) : null,
+              amount_approved_council ? parseFloat(amount_approved_council) : null,
+              amount_approved_1404 ? parseFloat(amount_approved_1404) : null,
+              notes || null,
+              userData.userId,
+              nowShamsi,
+              nowShamsi
+            )
+            .run();
+
+          return new Response(
+            JSON.stringify({
+              success: true,
+              id: result.meta.last_row_id,
+            }),
+            { status: 201, headers }
+          );
+        } catch (error) {
+          console.error("budget-lines POST error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // PUT: ویرایش ردیف بودجه
+      if (
+        url.pathname.match(/^\/api\/budget-lines\/\d+$/) &&
+        request.method === "PUT"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              { status: 401, headers }
+            );
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(
+              JSON.stringify({ error: "دسترسی غیرمجاز" }),
+              { status: 403, headers }
+            );
+          }
+
+          const id = url.pathname.split("/").pop();
+          const body = await request.json();
+          const {
+            organization_id,
+            person_id,
+            operational_id,
+            goods_id,
+            decree_type_id,
+            economic_id,
+            description,
+            priority,
+            target_date_shamsi,
+            neighborhood,
+            consumption_type,
+            quantity,
+            unit,
+            unit_price_current,
+            inflation_rate,
+            quantity_approved,
+            amount_final_municipality,
+            amount_approved_1405,
+            amount_approved_council,
+            amount_approved_1404,
+            status,
+            notes,
+          } = body;
+
+          const qty = parseFloat(quantity) || 1;
+          const unitPrice = parseFloat(unit_price_current) || 0;
+          const infl = parseFloat(inflation_rate) || 0;
+          const unitPriceAdjusted = unitPrice * (1 + infl / 100);
+          const totalAmount = qty * unitPriceAdjusted;
+
+          const nowShamsi = toShamsi(new Date());
+
+          const result = await env.DB.prepare(
+            `UPDATE budget_lines SET
+              organization_id = ?, person_id = ?, operational_id = ?,
+              goods_id = ?, decree_type_id = ?, economic_id = ?,
+              description = ?, priority = ?, target_date_shamsi = ?,
+              neighborhood = ?, consumption_type = ?,
+              quantity = ?, unit = ?, unit_price_current = ?,
+              inflation_rate = ?, unit_price_adjusted = ?, total_amount = ?,
+              quantity_approved = ?, amount_final_municipality = ?,
+              amount_approved_1405 = ?, amount_approved_council = ?,
+              amount_approved_1404 = ?,
+              status = ?, notes = ?,
+              updated_at = CURRENT_TIMESTAMP, updated_at_shamsi = ?
+             WHERE id = ?`
+          )
+            .bind(
+              parseInt(organization_id),
+              person_id ? parseInt(person_id) : null,
+              operational_id ? parseInt(operational_id) : null,
+              goods_id ? parseInt(goods_id) : null,
+              decree_type_id ? parseInt(decree_type_id) : null,
+              economic_id ? parseInt(economic_id) : null,
+              description,
+              parseInt(priority) || 1,
+              target_date_shamsi || null,
+              neighborhood || null,
+              consumption_type || null,
+              qty,
+              unit || null,
+              unitPrice,
+              infl,
+              unitPriceAdjusted,
+              totalAmount,
+              quantity_approved ? parseFloat(quantity_approved) : null,
+              amount_final_municipality ? parseFloat(amount_final_municipality) : null,
+              amount_approved_1405 ? parseFloat(amount_approved_1405) : null,
+              amount_approved_council ? parseFloat(amount_approved_council) : null,
+              amount_approved_1404 ? parseFloat(amount_approved_1404) : null,
+              status || "draft",
+              notes || null,
+              nowShamsi,
+              id
+            )
+            .run();
+
+          if (result.meta.changes === 0) {
+            return new Response(
+              JSON.stringify({ error: "ردیف یافت نشد" }),
+              { status: 404, headers }
+            );
+          }
+
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("budget-lines PUT error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // DELETE: حذف ردیف بودجه
+      if (
+        url.pathname.match(/^\/api\/budget-lines\/\d+$/) &&
+        request.method === "DELETE"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              { status: 401, headers }
+            );
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(
+              JSON.stringify({ error: "دسترسی غیرمجاز" }),
+              { status: 403, headers }
+            );
+          }
+
+          const id = url.pathname.split("/").pop();
+
+          await env.DB.prepare(
+            "UPDATE budget_lines SET is_active = 0 WHERE id = ?"
+          )
+            .bind(id)
+            .run();
+
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // GET: وظائف یه شخص (برای cascade انتخاب عملیاتی)
+      if (
+        url.pathname.match(/^\/api\/budget-lines\/person-tasks\/\d+$/) &&
+        request.method === "GET"
+      ) {
+        try {
+          const personId = url.pathname.split("/").pop();
+
+          const tasks = await env.DB.prepare(
+            `SELECT et.id, et.task_id, et.task_type, et.percentage,
+                    bd.code, bd.title, bd.type
+             FROM employee_tasks et
+             LEFT JOIN base_data bd ON et.task_id = bd.id
+             WHERE et.person_id = ? AND (et.is_active IS NULL OR et.is_active = 1)
+             ORDER BY et.id`
+          )
+            .bind(personId)
+            .all();
+
+          return new Response(JSON.stringify(tasks.results), {
+            status: 200,
+            headers,
+          });
+        } catch (error) {
+          console.error("person-tasks error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+      // ============================================
+      // POST: sync خودکار budget_lines از economic_links
+      // ============================================
+      if (
+        url.pathname === "/api/budget-lines/sync" &&
+        request.method === "POST"
+      ) {
+        try {
+          const authHeader = request.headers.get("Authorization");
+          if (!authHeader) {
+            return new Response(
+              JSON.stringify({ error: "احراز هویت لازم است" }),
+              { status: 401, headers }
+            );
+          }
+          const token = authHeader.replace("Bearer ", "");
+          const userData = await verifyToken(token, env.JWT_SECRET);
+          if (!userData || !["admin", "manager"].includes(userData.role)) {
+            return new Response(
+              JSON.stringify({ error: "دسترسی غیرمجاز" }),
+              { status: 403, headers }
+            );
+          }
+
+          const body = await request.json();
+          const { fiscal_year_id } = body;
+          if (!fiscal_year_id) {
+            return new Response(
+              JSON.stringify({ error: "سال مالی الزامی است" }),
+              { status: 400, headers }
+            );
+          }
+
+          const nowShamsi = toShamsi(new Date());
+          let created = 0;
+          let updated = 0;
+          let deactivated = 0;
+
+          // همه ردیف‌های اقتصادی
+          const econRows = await env.DB.prepare(
+            `SELECT id, code, title FROM base_data 
+             WHERE section = 'economic' AND is_active = 1`
+          ).all();
+
+          const seenHashes = new Set();
+
+          for (const econ of econRows.results) {
+            // ارتباطات این economic
+            const links = await env.DB.prepare(
+              `SELECT * FROM economic_links 
+               WHERE economic_id = ? AND is_active = 1`
+            )
+              .bind(econ.id)
+              .all();
+
+            if (links.results.length === 0) continue;
+
+            // سازمان پایه (اولین organization)
+            const orgLink = links.results.find(
+              (l) => l.link_type === "organization" && l.is_excluded === 0
+            );
+            const baseOrgId = orgLink ? orgLink.target_id : null;
+
+            // ۱. اشخاص + وظائف
+            const personLinks = links.results.filter(
+              (l) => l.link_type === "person" && l.is_excluded === 0
+            );
+            for (const pLink of personLinks) {
+              const tasks = await env.DB.prepare(
+                `SELECT et.task_id, bd.code, bd.title
+                 FROM employee_tasks et
+                 LEFT JOIN base_data bd ON et.task_id = bd.id
+                 WHERE et.person_id = ? AND (et.is_active IS NULL OR et.is_active = 1)`
+              )
+                .bind(pLink.target_id)
+                .all();
+
+              if (tasks.results.length === 0) {
+                // بدون وظیفه
+                const hash = `${econ.id}-person-${pLink.target_id}`;
+                seenHashes.add(hash);
+                const r = await upsertBudgetLine(env, {
+                  fiscal_year_id,
+                  unique_hash: hash,
+                  link_type: "person",
+                  link_target_id: pLink.target_id,
+                  organization_id: baseOrgId,
+                  description: `${econ.title} - ${pLink.target_title}`,
+                  description_edited: 0,
+                  created_by: userData.userId,
+                  nowShamsi,
+                });
+                if (r === "created") created++;
+                else if (r === "updated") updated++;
+              } else {
+                for (const task of tasks.results) {
+                  const hash = `${econ.id}-person-${pLink.target_id}-task-${task.task_id}`;
+                  seenHashes.add(hash);
+                  const r = await upsertBudgetLine(env, {
+                    fiscal_year_id,
+                    unique_hash: hash,
+                    link_type: "person",
+                    link_target_id: pLink.target_id,
+                    task_id: task.task_id,
+                    operational_id: task.task_id,
+                    organization_id: baseOrgId,
+                    description: `${econ.title} - ${pLink.target_title} - ${task.title || ""}`,
+                    description_edited: 0,
+                    created_by: userData.userId,
+                    nowShamsi,
+                  });
+                  if (r === "created") created++;
+                  else if (r === "updated") updated++;
+                }
+              }
+            }
+
+            // ۲. کالا / خدمات
+            const goodsLinks = links.results.filter(
+              (l) => l.link_type === "goods" && l.is_excluded === 0
+            );
+            for (const gLink of goodsLinks) {
+              const hash = `${econ.id}-goods-${gLink.target_id}`;
+              seenHashes.add(hash);
+              const r = await upsertBudgetLine(env, {
+                fiscal_year_id,
+                unique_hash: hash,
+                link_type: "goods",
+                link_target_id: gLink.target_id,
+                goods_id: gLink.target_id,
+                organization_id: baseOrgId,
+                description: `${econ.title} - ${gLink.target_title}`,
+                description_edited: 0,
+                created_by: userData.userId,
+                nowShamsi,
+              });
+              if (r === "created") created++;
+              else if (r === "updated") updated++;
+            }
+
+            // ۳. احکام → همه decree ها از این نوع → همه items با amount > 0
+            const decreeLinks = links.results.filter(
+              (l) => l.link_type === "decree_type" && l.is_excluded === 0
+            );
+            for (const dLink of decreeLinks) {
+              // همه احکام این نوع (فعال)
+              const decrees = await env.DB.prepare(
+                `SELECT id, employee_person_id, items 
+                 FROM decrees 
+                 WHERE decree_type = ? AND is_active = 1`
+              )
+                .bind(dLink.target_code)
+                .all();
+
+              for (const decree of decrees.results) {
+                let items = [];
+                try {
+                  items = JSON.parse(decree.items || "[]");
+                } catch (e) {}
+
+                for (const item of items) {
+                  if (!item.amount || item.amount <= 0) continue;
+                  const hash = `${econ.id}-decree-${dLink.target_id}-d${decree.id}-item-${item.code}`;
+                  seenHashes.add(hash);
+                  const r = await upsertBudgetLine(env, {
+                    fiscal_year_id,
+                    unique_hash: hash,
+                    link_type: "decree_type",
+                    link_target_id: dLink.target_id,
+                    decree_item_code: item.code,
+                    person_id: decree.employee_person_id,
+                    organization_id: baseOrgId,
+                    description: `${econ.title} - ${item.title}`,
+                    description_edited: 0,
+                    created_by: userData.userId,
+                    nowShamsi,
+                  });
+                  if (r === "created") created++;
+                  else if (r === "updated") updated++;
+                }
+              }
+            }
+          }
+
+          // ردیف‌های auto_generated که دیگه توی seenHashes نیستن → is_active=0
+          const existing = await env.DB.prepare(
+            `SELECT id, unique_hash FROM budget_lines
+             WHERE fiscal_year_id = ? AND is_auto_generated = 1 AND is_active = 1`
+          )
+            .bind(fiscal_year_id)
+            .all();
+
+          for (const ex of existing.results) {
+            if (!seenHashes.has(ex.unique_hash)) {
+              await env.DB.prepare(
+                `UPDATE budget_lines SET is_active = 0, updated_at_shamsi = ? WHERE id = ?`
+              )
+                .bind(nowShamsi, ex.id)
+                .run();
+              deactivated++;
+            }
+          }
+
+          return new Response(
+            JSON.stringify({
+              success: true,
+              created,
+              updated,
+              deactivated,
+              total_hashes: seenHashes.size,
+            }),
+            { status: 200, headers }
+          );
+        } catch (error) {
+          console.error("sync error:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers,
+          });
+        }
+      }
+
+
+
 
 
       // ========== طبقه‌بندی اقتصادی ==========

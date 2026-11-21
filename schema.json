@@ -1,0 +1,16 @@
+[
+  {
+    "results": [
+      {
+        "sql": "CREATE TABLE decrees (\r\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\r\n    employee_person_id INTEGER NOT NULL,\r\n    \r\n    \n    decree_type TEXT NOT NULL,  \n    \r\n    \n    decree_number TEXT,\r\n    decree_date_shamsi TEXT,\r\n    execution_date_shamsi TEXT,\r\n    contract_start_shamsi TEXT,\r\n    contract_end_shamsi TEXT,\r\n    \r\n    \n    description TEXT,\r\n    \r\n    \n    organization_unit TEXT,\r\n    service_location TEXT,\r\n    position_title TEXT,\r\n    job_group TEXT,\r\n    job_rank TEXT,\r\n    job_class TEXT,\r\n    employment_type TEXT,\r\n    employment_duration TEXT,\r\n    \r\n    \n    person_first_name TEXT,\r\n    person_last_name TEXT,\r\n    person_father_name TEXT,\r\n    person_national_id TEXT,\r\n    person_id_number TEXT,\r\n    person_birth_date_shamsi TEXT,\r\n    person_birth_place TEXT,\r\n    person_education_level TEXT,\r\n    person_education_field TEXT,\r\n    person_marital_status TEXT,\r\n    person_children_count INTEGER DEFAULT 0,\r\n    person_military_status TEXT,\r\n    person_employment_date_shamsi TEXT,\r\n    \r\n    \n    service_history_years INTEGER DEFAULT 0,\r\n    service_history_months INTEGER DEFAULT 0,\r\n    service_history_days INTEGER DEFAULT 0,\r\n    experience_years INTEGER DEFAULT 0,\r\n    experience_months INTEGER DEFAULT 0,\r\n    experience_days INTEGER DEFAULT 0,\r\n    \r\n    \n    items TEXT,                 \n    total_amount DECIMAL(15,2) DEFAULT 0,\r\n    total_in_words TEXT,\r\n    currency TEXT DEFAULT 'ریال',\r\n    \r\n    \n    extra_data TEXT,            \n    \r\n    \n    status TEXT DEFAULT 'draft',  \n    issued_by TEXT,               \n    signed_at DATETIME,\r\n    signed_by_employee BOOLEAN DEFAULT 0,\r\n    signed_by_manager BOOLEAN DEFAULT 0,\r\n    \r\n    \n    pdf_file TEXT,\r\n    signed_pdf_file TEXT,\r\n    \r\n    \n    notes TEXT,\r\n    is_active BOOLEAN DEFAULT 1,\r\n    \r\n    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\r\n    created_at_shamsi TEXT,\r\n    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,\r\n    updated_at_shamsi TEXT, signed_by_mayor BOOLEAN DEFAULT 0,\r\n    \r\n    FOREIGN KEY (employee_person_id) REFERENCES persons(id) ON DELETE CASCADE\r\n)"
+      },
+      {
+        "sql": "CREATE TABLE decree_items (\r\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\r\n    decree_type TEXT NOT NULL,\r\n    code TEXT NOT NULL,\r\n    title TEXT NOT NULL,\r\n    sort_order INTEGER DEFAULT 0,\r\n    is_active BOOLEAN DEFAULT 1,\r\n    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\r\n    UNIQUE(decree_type, code)\r\n)"
+      }
+    ],
+    "success": true,
+    "meta": {
+      "duration": 0
+    }
+  }
+]

@@ -1,596 +1,505 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>بودجه پیشنهادی</title>
-    <link rel="stylesheet" href="/sidebar.css">
-<script src="/sidebar.js"></script>
-    <link
-      href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css"
-      rel="stylesheet"
-      type="text/css"
-    />
-    <style>
-      body {
-        font-family: "Vazirmatn", Tahoma, sans-serif;
-        background: #f5f5f5;
-        margin: 0;
-        padding: 20px;
-      }
-      .header {
-        background: #667eea;
-        color: white;
-        padding: 20px;
-        border-radius: 10px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
-        gap: 15px;
-      }
-      .header h1 {
-        margin: 0;
-        font-size: 20px;
-      }
-      .header a {
-        color: white;
-        text-decoration: none;
-        background: rgba(255, 255, 255, 0.2);
-        padding: 10px 20px;
-        border-radius: 5px;
-      }
-      .container {
-        background: white;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      }
-      .form-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-        margin-bottom: 20px;
-      }
-      .form-group {
-        margin-bottom: 15px;
-      }
-      label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-        color: #333;
-        font-size: 13px;
-      }
-      input,
-      select,
-      textarea {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        box-sizing: border-box;
-        font-family: "Vazirmatn", Tahoma, sans-serif;
-        font-size: 13px;
-      }
-      textarea {
-        resize: vertical;
-        min-height: 60px;
-      }
-      button {
-        padding: 12px 30px;
-        background: #667eea;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-family: "Vazirmatn", Tahoma, sans-serif;
-        font-size: 14px;
-      }
-      button:hover {
-        background: #5a67d8;
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-        font-size: 13px;
-      }
-      th,
-      td {
-        padding: 10px;
-        text-align: right;
-        border-bottom: 1px solid #ddd;
-      }
-      th {
-        background: #f8f9fa;
-        font-weight: bold;
-      }
-      .delete-btn {
-        background: #e74c3c;
-        color: white;
-        border: none;
-        padding: 5px 12px;
-        border-radius: 3px;
-        cursor: pointer;
-        font-family: "Vazirmatn", Tahoma, sans-serif;
-        font-size: 11px;
-      }
-      .delete-btn:hover {
-        background: #c0392b;
-      }
-      .error {
-        color: red;
-        margin-top: 10px;
-      }
-      .status-badge {
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 11px;
-        color: white;
-      }
-      .status-draft {
-        background: #6c757d;
-      }
-      .status-submitted {
-        background: #17a2b8;
-      }
-      .status-approved {
-        background: #28a745;
-      }
-      .status-rejected {
-        background: #dc3545;
-      }
-      .status-manager-approved {
-        background: #6f42c1;
-      }
-      .status-finance-approved {
-        background: #fd7e14;
-      }
-      .submit-btn {
-        background: #17a2b8;
-        color: white;
-        border: none;
-        padding: 5px 12px;
-        border-radius: 3px;
-        cursor: pointer;
-        font-family: "Vazirmatn", Tahoma, sans-serif;
-        font-size: 11px;
-        margin-left: 3px;
-      }
-      .submit-btn:hover {
-        background: #138496;
-      }
-      .approve-btn {
-        background: #28a745;
-        color: white;
-        border: none;
-        padding: 5px 12px;
-        border-radius: 3px;
-        cursor: pointer;
-        font-family: "Vazirmatn", Tahoma, sans-serif;
-        font-size: 11px;
-        margin-left: 3px;
-      }
-      .approve-btn:hover {
-        background: #218838;
-      }
-      .reject-btn {
-        background: #e74c3c;
-        color: white;
-        border: none;
-        padding: 5px 12px;
-        border-radius: 3px;
-        cursor: pointer;
-        font-family: "Vazirmatn", Tahoma, sans-serif;
-        font-size: 11px;
-        margin-left: 3px;
-      }
-      .reject-btn:hover {
-        background: #c0392b;
-      }
-      .history-btn {
-        background: #6c757d;
-        color: white;
-        border: none;
-        padding: 5px 12px;
-        border-radius: 3px;
-        cursor: pointer;
-        font-family: "Vazirmatn", Tahoma, sans-serif;
-        font-size: 11px;
-        margin-left: 3px;
-      }
-      .history-btn:hover {
-        background: #5a6268;
-      }
-    </style>
-  </head>
-  <body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>بودجه پیشنهادی</title>
+  <link rel="stylesheet" href="/sidebar.css" />
+  <script src="/sidebar.js"></script>
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/persian-date@1.1.0/dist/persian-date.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: "Vazirmatn", Tahoma, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+    .container { max-width: 1800px; margin: 0 auto; }
+
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 30px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+    .header h1 { margin: 0; font-size: 20px; }
+    .header a { color: white; text-decoration: none; background: rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 5px; font-size: 13px; }
+
+    .toolbar { background: white; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .toolbar-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .toolbar label { font-size: 13px; font-weight: bold; color: #444; }
+    .toolbar select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-family: "Vazirmatn", Tahoma, sans-serif; font-size: 13px; background: white; }
+
+    .btn { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-family: "Vazirmatn", Tahoma, sans-serif; font-size: 13px; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary { background: #667eea; color: white; }
+    .btn-primary:hover { background: #5a67d8; }
+    .btn-success { background: #28a745; color: white; }
+    .btn-success:hover { background: #218838; }
+    .btn-warning { background: #fd7e14; color: white; }
+    .btn-warning:hover { background: #e8690b; }
+    .btn-cancel { background: #e9ecef; color: #333; }
+    .btn-cancel:hover { background: #dee2e6; }
+    .btn-danger { background: #dc3545; color: white; }
+    .btn-danger:hover { background: #c82333; }
+    .btn-sm { padding: 5px 10px; font-size: 11px; }
+    .btn:disabled { background: #ccc; cursor: not-allowed; }
+
+    .info-banner { background: #e7f3ff; border-right: 4px solid #17a2b8; padding: 12px 18px; border-radius: 6px; margin-bottom: 15px; font-size: 13px; color: #0c5460; line-height: 1.7; }
+
+    .table-wrap { background: white; border-radius: 10px; overflow-x: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1750px; }
+    th { background: #f8f9fa; padding: 10px 8px; text-align: right; font-weight: bold; color: #333; border-bottom: 2px solid #e9ecef; position: sticky; top: 0; z-index: 10; white-space: nowrap; font-size: 11px; }
+    td { padding: 6px; border-bottom: 1px solid #e9ecef; vertical-align: middle; }
+    tr:hover td { background: #fafbff; }
+    tr.draft td { background: #fff; }
+    tr.submitted td { background: #e7f5f8; }
+    tr.manager_approved td { background: #f3e8ff; }
+    tr.finance_approved td { background: #fff3e0; }
+    tr.approved td { background: #e8f5e9; }
+    tr.rejected td { background: #fdecea; }
+
+    .cell-input { width: 100%; padding: 6px 8px; border: 1px solid transparent; border-radius: 4px; font-family: "Vazirmatn", Tahoma, sans-serif; font-size: 12px; background: transparent; }
+    .cell-input:hover { border-color: #ddd; background: white; }
+    .cell-input:focus { outline: none; border-color: #667eea; background: white; }
+    .cell-input[readonly] { background: #f8f9fa; color: #666; cursor: not-allowed; }
+    .cell-input.num { text-align: left; direction: ltr; }
+    .cell-select { width: 100%; padding: 6px 8px; border: 1px solid transparent; border-radius: 4px; font-family: "Vazirmatn", Tahoma, sans-serif; font-size: 12px; background: transparent; }
+    .cell-select:hover { border-color: #ddd; background: white; }
+    .cell-select:focus { outline: none; border-color: #667eea; background: white; }
+
+    .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 10px; color: white; white-space: nowrap; }
+    .st-draft { background: #6c757d; }
+    .st-submitted { background: #17a2b8; }
+    .st-manager_approved { background: #6f42c1; }
+    .st-finance_approved { background: #fd7e14; }
+    .st-approved { background: #28a745; }
+    .st-rejected { background: #dc3545; }
+
+    .auto-badge { display: inline-block; background: #e9ecef; color: #666; font-size: 9px; padding: 2px 6px; border-radius: 8px; margin-right: 4px; }
+    .edited-badge { background: #fff3cd; color: #856404; }
+
+    .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #333; color: white; padding: 12px 24px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 10002; transition: transform 0.3s; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { background: #28a745; }
+    .toast.error { background: #dc3545; }
+    .toast.info { background: #17a2b8; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: #999; }
+    .empty-state .icon { font-size: 50px; margin-bottom: 15px; }
+
+    .actions-cell { display: flex; gap: 4px; flex-wrap: wrap; }
+
+    .summary-bar { display: flex; gap: 20px; flex-wrap: wrap; padding: 12px 20px; background: white; border-radius: 10px; margin-bottom: 15px; font-size: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .summary-item { display: flex; gap: 6px; align-items: center; }
+    .summary-item b { color: #667eea; }
+
+    body.dark { background: #1a202c; color: #e2e8f0; }
+    body.dark .toolbar, body.dark .table-wrap, body.dark .summary-bar { background: #2d3748; }
+    body.dark .toolbar label { color: #cbd5e0; }
+    body.dark table th { background: #374151; color: #e2e8f0; border-bottom-color: #4a5568; }
+    body.dark td { border-bottom-color: #4a5568; }
+    body.dark tr:hover td { background: #374151; }
+    body.dark .cell-input, body.dark .cell-select { color: #e2e8f0; }
+    body.dark .cell-input:hover, body.dark .cell-select:hover { background: #1a202c; }
+    body.dark .cell-input[readonly] { background: #1a202c; }
+    body.dark .info-banner { background: #1a202c; color: #90cdf4; }
+  </style>
+</head>
+<body>
+  <div class="container">
     <div class="header">
       <h1>💰 بودجه پیشنهادی</h1>
       <a href="/dashboard.html">بازگشت به داشبورد</a>
     </div>
 
-    <div class="container">
-      <h2>ثبت بودجه جدید</h2>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>سال مالی:</label>
-          <select id="fiscal_year_id"></select>
-        </div>
-        <div class="form-group">
-          <label>سازمان:</label>
-          <select id="organization_id"></select>
-        </div>
-        <div class="form-group">
-          <label>طبقه‌بندی اقتصادی:</label>
-          <select id="economic_class_id"></select>
-        </div>
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <label>سال مالی:</label>
+        <select id="fiscal-year-select" onchange="onFiscalYearChange()"></select>
+        <span style="font-size:12px; color:#666;" id="inflation-info"></span>
       </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>عنوان بودجه:</label>
-          <input
-            type="text"
-            id="title"
-            placeholder=""
-          />
-        </div>
-        <div class="form-group">
-          <label>مبلغ (ریال):</label>
-          <input type="text" id="amount" placeholder="" />
-        </div>
+      <div class="toolbar-group">
+        <button class="btn btn-warning" onclick="syncBudgetLines()" id="btn-sync" title="تولید/همگام‌سازی ردیف‌ها از ارتباطات اقتصادی">
+          🔄 همگام‌سازی با ارتباطات
+        </button>
+        <button class="btn btn-primary" onclick="loadBudgetLines()">🔄 بارگذاری مجدد</button>
       </div>
+    </div>
 
-      <div class="form-group">
-        <label>توضیحات:</label>
-        <textarea id="description" placeholder="توضیحات اختیاری"></textarea>
-      </div>
+    <div class="info-banner">
+      💡 <b>راهنما:</b> ردیف‌های این جدول به صورت <b>خودکار</b> از ارتباطات «طبقه‌بندی اقتصادی» (اشخاص + کالا/خدمات + احکام + سازمان) تولید می‌شوند.
+      برای به‌روزرسانی بعد از تغییر ارتباطات، دکمه <b>🔄 همگام‌سازی</b> را بزنید.
+      فیلدهای قابل ویرایش: اولویت، زمان انجام، محله، نوع مصرف، تعداد، مبلغ واحد، مقادیر تأیید.
+    </div>
 
-      <button onclick="addProposal()">ثبت بودجه</button>
-      <div class="error" id="error"></div>
+    <div class="summary-bar" id="summary-bar"></div>
 
-      <h2>لیست بودجه‌های پیشنهادی</h2>
-      <table class="table-standard">
+    <div class="table-wrap">
+      <table>
         <thead>
           <tr>
-            <th>عنوان</th>
-            <th>سازمان</th>
-            <th>طبقه‌بندی</th>
-            <th>مبلغ (ریال)</th>
-            <th>وضعیت</th>
-            <th>ثبت‌کننده</th>
-            <th>عملیات</th>
+            <th style="width: 40px;">ردیف</th>
+            <th style="width: 150px;">واحد (سازمان)</th>
+            <th style="width: 220px;">شرح مصرف (هزینه)</th>
+            <th style="width: 110px;">کد عملیاتی</th>
+            <th style="width: 150px;">شرح خدمت / پروژه</th>
+            <th style="width: 70px;">اولویت (۱-۳)</th>
+            <th style="width: 115px;">زمان انجام</th>
+            <th style="width: 110px;">محله هدف</th>
+            <th style="width: 130px;">نوع مصرف</th>
+            <th style="width: 80px;">تعداد</th>
+            <th style="width: 80px;">واحد</th>
+            <th style="width: 110px;">مبلغ واحد فعلی</th>
+            <th style="width: 70px;">نرخ تورم</th>
+            <th style="width: 120px;">مبلغ واحد با تورم</th>
+            <th style="width: 130px;">مبلغ کل</th>
+            <th style="width: 90px;">تعداد تأیید</th>
+            <th style="width: 130px;">مبلغ نهایی شهرداری</th>
+            <th style="width: 120px;">مصوب ۱۴۰۵</th>
+            <th style="width: 130px;">تأیید شورا</th>
+            <th style="width: 120px;">مصوب ۱۴۰۴</th>
+            <th style="width: 100px;">وضعیت</th>
+            <th style="width: 130px;">عملیات</th>
           </tr>
         </thead>
         <tbody id="table-body"></tbody>
       </table>
     </div>
+  </div>
 
-    <script src="/common.js"></script>
+  <div class="toast" id="toast"></div>
 
-    <script>
-      if (!localStorage.getItem("token")) {
-        window.location.href = "/login.html";
+  <script src="/common.js"></script>
+  <script>
+    if (!isTokenValid()) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login.html";
+    }
+    const token = localStorage.getItem("token");
+    const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+    let currentFiscalYearId = null;
+    let currentInflationRate = 0;
+    let budgetLines = [];
+
+    function showToast(msg, type = "success") {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.className = `toast ${type} show`;
+      setTimeout(() => t.classList.remove("show"), 3500);
+    }
+
+    function formatNum(n) {
+      if (n === null || n === undefined || n === "") return "—";
+      const num = parseFloat(n);
+      if (isNaN(num)) return "—";
+      return toPersianNumbers(num.toLocaleString("en-US", { maximumFractionDigits: 0 }));
+    }
+    function formatAmount(n) { return formatNum(n) + " ریال"; }
+    function parseNum(v) {
+      if (!v) return 0;
+      return parseFloat(toEnglishNumbers(String(v)).replace(/,/g, "")) || 0;
+    }
+    function escapeHtml(s) {
+      if (!s) return "";
+      return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    // ============ INIT ============
+    async function init() {
+      await loadFiscalYears();
+      await loadBudgetLines();
+    }
+
+    async function loadFiscalYears() {
+      const res = await fetch("/api/fiscal-years", { headers: { Authorization: `Bearer ${token}` } });
+      const years = await res.json();
+      const sel = document.getElementById("fiscal-year-select");
+      sel.innerHTML = "";
+      if (years.length === 0) {
+        sel.innerHTML = '<option value="">— سال مالی ثبت نشده —</option>';
+        return;
       }
+      years.forEach((y) => {
+        const opt = document.createElement("option");
+        opt.value = y.id;
+        opt.textContent = toPersianNumbers(y.year) + (y.is_active ? " ✅" : "");
+        if (y.is_active) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      currentFiscalYearId = years.find((y) => y.is_active)?.id || years[0]?.id;
+      await onFiscalYearChange(true);
+    }
 
-      const token = localStorage.getItem("token");
+    async function onFiscalYearChange(skipReload) {
+      const sel = document.getElementById("fiscal-year-select");
+      currentFiscalYearId = sel.value ? parseInt(sel.value) : null;
+      if (!currentFiscalYearId) return;
 
-
-      // لود سال‌های مالی
-      async function loadFiscalYears() {
-        const response = await fetch("/api/fiscal-years", {
+      try {
+        const res = await fetch(`/api/budget-lines/inflation-rate?fiscal_year_id=${currentFiscalYearId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const years = await response.json();
-
-        const select = document.getElementById("fiscal_year_id");
-        select.innerHTML = '<option value="">انتخاب کنید</option>';
-
-        years.forEach((year) => {
-          const option = document.createElement("option");
-          option.value = year.id;
-          option.textContent = toPersianNumbers(year.year);
-          select.appendChild(option);
-        });
+        const data = await res.json();
+        currentInflationRate = data.inflation_rate || 0;
+        document.getElementById("inflation-info").textContent =
+          `📊 نرخ تورم: ${toPersianNumbers(currentInflationRate)}٪`;
+      } catch (e) {
+        currentInflationRate = 0;
       }
 
-      // لود سازمان‌ها
-      async function loadOrganizations() {
-        const response = await fetch("/api/organizations", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const items = await response.json();
+      if (!skipReload) await loadBudgetLines();
+    }
 
-        const select = document.getElementById("organization_id");
-        select.innerHTML = '<option value="">انتخاب کنید</option>';
+    async function loadBudgetLines() {
+      if (!currentFiscalYearId) return;
+      const res = await fetch(`/api/budget-lines?fiscal_year_id=${currentFiscalYearId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      budgetLines = await res.json();
+      renderTable();
+      renderSummary();
+    }
 
-        items.forEach((item) => {
-          const option = document.createElement("option");
-          option.value = item.id;
-          option.textContent = item.title;
-          select.appendChild(option);
-        });
+    // ============ SYNC ============
+    async function syncBudgetLines() {
+      if (!currentFiscalYearId) {
+        showToast("ابتدا سال مالی را انتخاب کنید", "error");
+        return;
       }
+      if (!confirm("این عملیات ردیف‌های جدید را از ارتباطات اقتصادی تولید می‌کند.\nمقادیر ویرایش‌شده‌ی شما حفظ می‌شود.\n\nادامه می‌دهید؟")) return;
 
-      // لود طبقه‌بندی‌های اقتصادی
-      async function loadEconomicClassifications() {
-        const response = await fetch("/api/economic-classifications", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const items = await response.json();
+      const btn = document.getElementById("btn-sync");
+      btn.disabled = true;
+      btn.textContent = "⏳ در حال همگام‌سازی...";
 
-        const select = document.getElementById("economic_class_id");
-        select.innerHTML = '<option value="">انتخاب کنید</option>';
-
-        items.forEach((item) => {
-          const option = document.createElement("option");
-          option.value = item.id;
-          option.textContent = `${item.code} - ${item.title}`;
-          select.appendChild(option);
-        });
-      }
-
-      // لود بودجه‌ها
-      async function loadProposals() {
-        const response = await fetch("/api/budget-proposals", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const items = await response.json();
-
-        const tbody = document.getElementById("table-body");
-        tbody.innerHTML = "";
-
-        items.forEach((item) => {
-          const row = document.createElement("tr");
-
-          const tdTitle = document.createElement("td");
-          tdTitle.textContent = item.title;
-
-          const tdOrg = document.createElement("td");
-          tdOrg.textContent = item.organization_name || "-";
-
-          const tdEconomic = document.createElement("td");
-          tdEconomic.textContent = item.economic_title
-            ? `${item.economic_sub_code} - ${item.economic_title}`
-            : "-";
-
-          const tdAmount = document.createElement("td");
-          tdAmount.textContent = formatAmount(item.amount);
-
-          const tdStatus = document.createElement("td");
-          const statusMap = {
-            draft: { class: "status-draft", label: "پیش‌نویس" },
-            submitted: { class: "status-submitted", label: "ارسال شده" },
-            manager_approved: {
-              class: "status-manager-approved",
-              label: "تایید مدیر",
-            },
-            finance_approved: {
-              class: "status-finance-approved",
-              label: "تایید مالی",
-            },
-            approved: { class: "status-approved", label: "تصویب نهایی" },
-            rejected: { class: "status-rejected", label: "رد شده" },
-          };
-          const status = statusMap[item.status] || statusMap.draft;
-          tdStatus.innerHTML = `<span class="status-badge ${status.class}">${status.label}</span>`;
-
-          const tdProposer = document.createElement("td");
-          tdProposer.textContent = item.proposer_name || "-";
-
-          const tdActions = document.createElement("td");
-
-          // دکمه عملیات بر اساس وضعیت
-          if (item.status === "draft") {
-            const submitBtn = document.createElement("button");
-            submitBtn.className = "submit-btn";
-            submitBtn.textContent = "ارسال";
-            submitBtn.onclick = () => changeStatus(item.id, "submitted");
-            tdActions.appendChild(submitBtn);
-
-            const deleteBtn = document.createElement("button");
-            deleteBtn.className = "delete-btn";
-            deleteBtn.textContent = "حذف";
-            deleteBtn.onclick = () => deleteProposal(item.id);
-            tdActions.appendChild(deleteBtn);
-          } else if (item.status === "submitted") {
-            const approveBtn = document.createElement("button");
-            approveBtn.className = "approve-btn";
-            approveBtn.textContent = "تایید مدیر";
-            approveBtn.onclick = () =>
-              changeStatus(item.id, "manager_approved");
-            tdActions.appendChild(approveBtn);
-
-            const rejectBtn = document.createElement("button");
-            rejectBtn.className = "reject-btn";
-            rejectBtn.textContent = "رد";
-            rejectBtn.onclick = () => changeStatus(item.id, "rejected");
-            tdActions.appendChild(rejectBtn);
-          } else if (item.status === "manager_approved") {
-            const financeApproveBtn = document.createElement("button");
-            financeApproveBtn.className = "approve-btn";
-            financeApproveBtn.textContent = "تایید مالی";
-            financeApproveBtn.onclick = () =>
-              changeStatus(item.id, "finance_approved");
-            tdActions.appendChild(financeApproveBtn);
-
-            const rejectBtn2 = document.createElement("button");
-            rejectBtn2.className = "reject-btn";
-            rejectBtn2.textContent = "رد";
-            rejectBtn2.onclick = () => changeStatus(item.id, "rejected");
-            tdActions.appendChild(rejectBtn2);
-          } else if (item.status === "finance_approved") {
-            const finalApproveBtn = document.createElement("button");
-            finalApproveBtn.className = "approve-btn";
-            finalApproveBtn.textContent = "تصویب نهایی";
-            finalApproveBtn.onclick = () => changeStatus(item.id, "approved");
-            tdActions.appendChild(finalApproveBtn);
-
-            const rejectBtn3 = document.createElement("button");
-            rejectBtn3.className = "reject-btn";
-            rejectBtn3.textContent = "رد";
-            rejectBtn3.onclick = () => changeStatus(item.id, "rejected");
-            tdActions.appendChild(rejectBtn3);
-          } else if (item.status === "approved" || item.status === "rejected") {
-            const historyBtn = document.createElement("button");
-            historyBtn.className = "history-btn";
-            historyBtn.textContent = "تاریخچه";
-            historyBtn.onclick = () => showHistory(item.id);
-            tdActions.appendChild(historyBtn);
-          }
-
-          row.appendChild(tdTitle);
-          row.appendChild(tdOrg);
-          row.appendChild(tdEconomic);
-          row.appendChild(tdAmount);
-          row.appendChild(tdStatus);
-          row.appendChild(tdProposer);
-          row.appendChild(tdActions);
-
-          tbody.appendChild(row);
-        });
-      }
-
-      // ثبت بودجه
-      async function addProposal() {
-        const fiscal_year_id = document.getElementById("fiscal_year_id").value;
-        const organization_id =
-          document.getElementById("organization_id").value;
-        const economic_class_id =
-          document.getElementById("economic_class_id").value;
-        const title = document.getElementById("title").value;
-        const amount = getAmountValue("amount");
-        const description = document.getElementById("description").value;
-
-        if (
-          !fiscal_year_id ||
-          !organization_id ||
-          !economic_class_id ||
-          !title ||
-          !amount
-        ) {
-          document.getElementById("error").textContent =
-            "همه فیلدهای الزامی را پر کنید";
-          return;
-        }
-
-        const response = await fetch("/api/budget-proposals", {
+      try {
+        const res = await fetch("/api/budget-lines/sync", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            fiscal_year_id: parseInt(fiscal_year_id),
-            organization_id: parseInt(organization_id),
-            economic_class_id: parseInt(economic_class_id),
-            title,
-            amount: amount,
-            description,
-          }),
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ fiscal_year_id: currentFiscalYearId }),
         });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "خطا");
+        showToast(`همگام‌سازی شد — جدید: ${toPersianNumbers(data.created)} | به‌روز: ${toPersianNumbers(data.updated)} | غیرفعال: ${toPersianNumbers(data.deactivated)}`, "success");
+        await loadBudgetLines();
+      } catch (e) {
+        showToast(e.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "🔄 همگام‌سازی با ارتباطات";
+      }
+    }
 
-        const data = await response.json();
+    // ============ SUMMARY ============
+    function renderSummary() {
+      const sb = document.getElementById("summary-bar");
+      if (budgetLines.length === 0) {
+        sb.innerHTML = `<div class="summary-item">هیچ ردیفی وجود ندارد</div>`;
+        return;
+      }
+      const total = budgetLines.reduce((s, l) => s + (parseFloat(l.total_amount) || 0), 0);
+      const totalFinal = budgetLines.reduce((s, l) => s + (parseFloat(l.amount_final_municipality) || 0), 0);
+      const total1405 = budgetLines.reduce((s, l) => s + (parseFloat(l.amount_approved_1405) || 0), 0);
+      const total1404 = budgetLines.reduce((s, l) => s + (parseFloat(l.amount_approved_1404) || 0), 0);
+      const auto = budgetLines.filter((l) => l.is_auto_generated === 1).length;
+      const manual = budgetLines.length - auto;
 
-            if (response.ok) {
-                document.getElementById('error').textContent = '';
-                document.getElementById('title').value = '';
-                clearAmountInput('amount');
-                document.getElementById('description').value = '';
-                                await loadProposals();
-            } else {
-          document.getElementById("error").textContent = data.error;
-        }
+      sb.innerHTML = `
+        <div class="summary-item">📋 تعداد ردیف: <b>${toPersianNumbers(budgetLines.length)}</b></div>
+        <div class="summary-item">🤖 خودکار: <b>${toPersianNumbers(auto)}</b></div>
+        <div class="summary-item">✏️ دستی: <b>${toPersianNumbers(manual)}</b></div>
+        <div class="summary-item">💵 مبلغ کل: <b>${formatAmount(total)}</b></div>
+        <div class="summary-item">🏛️ مبلغ نهایی: <b>${formatAmount(totalFinal)}</b></div>
+        <div class="summary-item">📅 مصوب ۱۴۰۵: <b>${formatAmount(total1405)}</b></div>
+        <div class="summary-item">📅 مصوب ۱۴۰۴: <b>${formatAmount(total1404)}</b></div>
+      `;
+    }
+
+    // ============ TABLE ============
+    function renderTable() {
+      const tbody = document.getElementById("table-body");
+      if (budgetLines.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="22"><div class="empty-state"><div class="icon">📋</div><div>هنوز ردیف بودجه‌ای وجود ندارد</div><div style="margin-top:15px;"><button class="btn btn-warning" onclick="syncBudgetLines()">🔄 همگام‌سازی از ارتباطات</button></div></div></td></tr>`;
+        return;
       }
 
-      // حذف بودجه
-      async function deleteProposal(id) {
-        if (!confirm("مطمئن هستید؟")) return;
+      const statusLabels = {
+        draft: { label: "پیش‌نویس", cls: "st-draft" },
+        submitted: { label: "ارسال شده", cls: "st-submitted" },
+        manager_approved: { label: "تایید مدیر", cls: "st-manager_approved" },
+        finance_approved: { label: "تایید مالی", cls: "st-finance_approved" },
+        approved: { label: "تصویب نهایی", cls: "st-approved" },
+        rejected: { label: "رد شده", cls: "st-rejected" },
+      };
+      const consumptionLabels = {
+        current: "جاری",
+        compensation: "جبران خدمات",
+        capital_asset: "تملک دارایی سرمایه‌ای",
+        financial_asset: "تملک دارایی مالی",
+      };
+      const canEdit = ["admin", "manager"].includes(currentUser.role);
 
-        const response = await fetch(`/api/budget-proposals/${id}`, {
+      tbody.innerHTML = budgetLines.map((line, idx) => {
+        const st = statusLabels[line.status] || statusLabels.draft;
+        const editable = canEdit && ["draft", "rejected"].includes(line.status);
+        const editAttr = editable ? "" : "readonly";
+        const descEdited = line.description_edited === 1;
+        const descBadge = descEdited
+          ? '<span class="auto-badge edited-badge">✏️ ویرایش‌شده</span>'
+          : (line.is_auto_generated ? '<span class="auto-badge">🤖 خودکار</span>' : "");
+
+        return `
+          <tr class="${line.status}" data-id="${line.id}">
+            <td style="text-align:center; font-weight:bold;">${toPersianNumbers(idx + 1)}</td>
+            <td>${escapeHtml(line.organization_title) || "—"}</td>
+            <td>${descBadge}${escapeHtml(line.description)}</td>
+            <td>${escapeHtml(line.operational_code) || "—"}</td>
+            <td>${escapeHtml(line.operational_title) || "—"}</td>
+            <td style="text-align:center;">
+              <select class="cell-select" ${editAttr} onchange="inlineUpdate(${line.id}, 'priority', this.value)">
+                <option value="1" ${line.priority == 1 ? "selected" : ""}>۱</option>
+                <option value="2" ${line.priority == 2 ? "selected" : ""}>۲</option>
+                <option value="3" ${line.priority == 3 ? "selected" : ""}>۳</option>
+              </select>
+            </td>
+            <td>
+              <input type="text" class="cell-input" value="${line.target_date_shamsi || ""}" ${editAttr}
+                onchange="inlineUpdate(${line.id}, 'target_date_shamsi', this.value)" placeholder="۱۴۰۵/۰۳/۱۵" />
+            </td>
+            <td>
+              <input type="text" class="cell-input" value="${escapeHtml(line.neighborhood)}" ${editAttr}
+                onchange="inlineUpdate(${line.id}, 'neighborhood', this.value)" placeholder="محله" />
+            </td>
+            <td>
+              <select class="cell-select" ${editAttr} onchange="inlineUpdate(${line.id}, 'consumption_type', this.value)">
+                <option value="">—</option>
+                <option value="current" ${line.consumption_type === "current" ? "selected" : ""}>جاری</option>
+                <option value="compensation" ${line.consumption_type === "compensation" ? "selected" : ""}>جبران خدمات</option>
+                <option value="capital_asset" ${line.consumption_type === "capital_asset" ? "selected" : ""}>تملک دارایی سرمایه‌ای</option>
+                <option value="financial_asset" ${line.consumption_type === "financial_asset" ? "selected" : ""}>تملک دارایی مالی</option>
+              </select>
+            </td>
+            <td>
+              <input type="number" class="cell-input num" value="${line.quantity || 1}" ${editAttr}
+                onchange="inlineUpdate(${line.id}, 'quantity', this.value)" step="0.01" />
+            </td>
+            <td>
+              <input type="text" class="cell-input" value="${escapeHtml(line.unit)}" ${editAttr}
+                onchange="inlineUpdate(${line.id}, 'unit', this.value)" placeholder="ماه/عدد" />
+            </td>
+            <td>
+              <input type="text" class="cell-input num" value="${line.unit_price_current || 0}" ${editAttr}
+                onchange="inlineUpdate(${line.id}, 'unit_price_current', this.value)" />
+            </td>
+            <td style="text-align:center;">${toPersianNumbers(line.inflation_rate || 0)}٪</td>
+            <td class="num">${formatAmount(line.unit_price_adjusted)}</td>
+            <td class="num" style="font-weight:bold; color:#28a745;">${formatAmount(line.total_amount)}</td>
+            <td>
+              <input type="number" class="cell-input num" value="${line.quantity_approved || ""}" ${editAttr}
+                onchange="inlineUpdate(${line.id}, 'quantity_approved', this.value)" step="0.01" />
+            </td>
+            <td>
+              <input type="text" class="cell-input num" value="${line.amount_final_municipality || ""}" ${editAttr}
+                onchange="inlineUpdate(${line.id}, 'amount_final_municipality', this.value)" />
+            </td>
+            <td>
+              <input type="text" class="cell-input num" value="${line.amount_approved_1405 || ""}" ${editAttr}
+                onchange="inlineUpdate(${line.id}, 'amount_approved_1405', this.value)" />
+            </td>
+            <td>
+              <input type="text" class="cell-input num" value="${line.amount_approved_council || ""}" ${editAttr}
+                onchange="inlineUpdate(${line.id}, 'amount_approved_council', this.value)" />
+            </td>
+            <td>
+              <input type="text" class="cell-input num" value="${line.amount_approved_1404 || ""}" ${editAttr}
+                onchange="inlineUpdate(${line.id}, 'amount_approved_1404', this.value)" />
+            </td>
+            <td><span class="status-badge ${st.cls}">${st.label}</span></td>
+            <td>
+              <div class="actions-cell">
+                ${canEdit && line.status === "draft" ? `<button class="btn btn-success btn-sm" onclick="changeStatus(${line.id}, 'submitted')" title="ارسال">📤</button>` : ""}
+                ${canEdit && line.status === "submitted" ? `<button class="btn btn-success btn-sm" onclick="changeStatus(${line.id}, 'manager_approved')" title="تایید مدیر">✅</button>` : ""}
+                ${canEdit && line.status === "submitted" ? `<button class="btn btn-danger btn-sm" onclick="changeStatus(${line.id}, 'rejected')" title="رد">❌</button>` : ""}
+                ${canEdit && line.status === "manager_approved" ? `<button class="btn btn-success btn-sm" onclick="changeStatus(${line.id}, 'finance_approved')" title="تایید مالی">💰</button>` : ""}
+                ${canEdit && line.status === "manager_approved" ? `<button class="btn btn-danger btn-sm" onclick="changeStatus(${line.id}, 'rejected')" title="رد">❌</button>` : ""}
+                ${canEdit && line.status === "finance_approved" ? `<button class="btn btn-success btn-sm" onclick="changeStatus(${line.id}, 'approved')" title="تصویب">🏛️</button>` : ""}
+                ${canEdit && line.status === "finance_approved" ? `<button class="btn btn-danger btn-sm" onclick="changeStatus(${line.id}, 'rejected')" title="رد">❌</button>` : ""}
+                ${canEdit && ["draft", "rejected"].includes(line.status) ? `<button class="btn btn-danger btn-sm" onclick="deleteLine(${line.id})" title="حذف">🗑️</button>` : ""}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    // ============ INLINE UPDATE ============
+    async function inlineUpdate(id, field, value) {
+      const line = budgetLines.find((l) => l.id === id);
+      if (!line) return;
+      const payload = { ...line };
+      const numFields = ["priority", "quantity", "unit_price_current", "quantity_approved",
+                          "amount_final_municipality", "amount_approved_1405",
+                          "amount_approved_council", "amount_approved_1404"];
+      if (numFields.includes(field)) {
+        payload[field] = value ? parseNum(value) : null;
+      } else {
+        payload[field] = value || null;
+      }
+      // اگه description رو ویرایش کرد → description_edited=1
+      if (field === "description") payload.description_edited = 1;
+
+      try {
+        const res = await fetch(`/api/budget-lines/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error("خطا در ذخیره");
+        line[field] = payload[field];
+        showToast("ذخیره شد");
+      } catch (e) {
+        showToast(e.message, "error");
+        await loadBudgetLines();
+      }
+    }
+
+    // ============ تغییر وضعیت ============
+    async function changeStatus(id, newStatus) {
+      const labels = { submitted: "ارسال", manager_approved: "تایید مدیر", finance_approved: "تایید مالی", approved: "تصویب نهایی", rejected: "رد" };
+      if (!confirm(`آیا از «${labels[newStatus]}» این ردیف مطمئن هستید؟`)) return;
+
+      const line = budgetLines.find((l) => l.id === id);
+      if (!line) return;
+      const payload = { ...line, status: newStatus };
+
+      try {
+        const res = await fetch(`/api/budget-lines/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error("خطا");
+        showToast("وضعیت تغییر کرد");
+        await loadBudgetLines();
+      } catch (e) {
+        showToast(e.message, "error");
+      }
+    }
+
+    async function deleteLine(id) {
+      if (!confirm("آیا از حذف این ردیف مطمئن هستید؟")) return;
+      try {
+        const res = await fetch(`/api/budget-lines/${id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });
-
-        if (response.ok) {
-          loadProposals();
-        }
+        if (!res.ok) throw new Error("خطا");
+        showToast("حذف شد");
+        await loadBudgetLines();
+      } catch (e) {
+        showToast(e.message, "error");
       }
+    }
 
-      // تغییر وضعیت بودجه
-      async function changeStatus(id, newStatus) {
-        const statusLabels = {
-          submitted: "ارسال به مدیر",
-          manager_approved: "تایید مدیر",
-          finance_approved: "تایید مالی",
-          approved: "تصویب نهایی",
-          rejected: "رد",
-        };
-
-        const comment = prompt(`توضیحات ${statusLabels[newStatus]} (اختیاری):`);
-        if (comment === null) return;
-
-        const response = await fetch("/api/budget-proposals/change-status", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            id,
-            new_status: newStatus,
-            comment,
-          }),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          alert("وضعیت با موفقیت تغییر کرد");
-          loadProposals();
-        } else {
-          alert("خطا: " + data.error);
-        }
-      }
-
-      // نمایش تاریخچه
-      async function showHistory(id) {
-        const response = await fetch(`/api/approval-history/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const history = await response.json();
-
-        if (history.length === 0) {
-          alert("تاریخچه‌ای ثبت نشده");
-          return;
-        }
-
-        let message = "تاریخچه تغییرات:\n\n";
-        history.forEach((item) => {
-          message += `از: ${item.from_status} → به: ${item.to_status}\n`;
-          message += `توسط: ${item.action_by_name}\n`;
-          message += `تاریخ: ${item.action_at}\n`;
-          if (item.comment) {
-            message += `توضیح: ${item.comment}\n`;
-          }
-          message += "---\n";
-        });
-
-        alert(message);
-      }
-
-        // راه‌اندازی فیلد مبلغ
-        setupAmountInput('amount');
-        
-        // لود اولیه
-        loadFiscalYears();
-        loadOrganizations();
-        loadEconomicClassifications();
-        loadProposals();
-    </script>
-  </body>
+    // ============ START ============
+    init();
+  </script>
+</body>
 </html>
