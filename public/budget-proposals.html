@@ -12,6 +12,47 @@
   <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css" />
   <style>
+
+
+    /* ============ Loading Overlay ============ */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 99999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .loading-overlay.show { display: flex; }
+
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      border: 5px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .loading-text .sub {
+      font-size: 13px;
+      font-weight: normal;
+      opacity: 0.8;
+      margin-top: 8px;
+    }
+
     * { box-sizing: border-box; }
     body { font-family: "Vazirmatn", Tahoma, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
     .container { max-width: 1800px; margin: 0 auto; }
@@ -162,6 +203,15 @@
     </div>
   </div>
 
+
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">
+      ⏳ در حال پردازش...
+      <div class="sub" id="loading-sub">لطفاً صبر کنید، صفحه را نبندید</div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script src="/common.js"></script>
@@ -183,6 +233,19 @@
       t.textContent = msg;
       t.className = `toast ${type} show`;
       setTimeout(() => t.classList.remove("show"), 3500);
+    }
+
+
+    function showLoading(msg = "لطفاً صبر کنید، صفحه را نبندید") {
+      const overlay = document.getElementById("loading-overlay");
+      const sub = document.getElementById("loading-sub");
+      if (sub) sub.textContent = msg;
+      if (overlay) overlay.classList.add("show");
+    }
+
+    function hideLoading() {
+      const overlay = document.getElementById("loading-overlay");
+      if (overlay) overlay.classList.remove("show");
     }
 
     function formatNum(n) {
@@ -249,14 +312,20 @@
 
     async function loadBudgetLines() {
       if (!currentFiscalYearId) return;
-      const res = await fetch(`/api/budget-lines?fiscal_year_id=${currentFiscalYearId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      budgetLines = await res.json();
-      renderTable();
-      renderSummary();
+      showLoading("در حال بارگذاری ردیف‌های بودجه...");
+      try {
+        const res = await fetch(`/api/budget-lines?fiscal_year_id=${currentFiscalYearId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        budgetLines = await res.json();
+        renderTable();
+        renderSummary();
+      } catch (e) {
+        showToast(e.message, "error");
+      } finally {
+        hideLoading();
+      }
     }
-
     // ============ SYNC ============
     async function syncBudgetLines() {
       if (!currentFiscalYearId) {
@@ -265,9 +334,7 @@
       }
       if (!confirm("این عملیات ردیف‌های جدید را از ارتباطات اقتصادی تولید می‌کند.\nمقادیر ویرایش‌شده‌ی شما حفظ می‌شود.\n\nادامه می‌دهید؟")) return;
 
-      const btn = document.getElementById("btn-sync");
-      btn.disabled = true;
-      btn.textContent = "⏳ در حال همگام‌سازی...";
+      showLoading("در حال همگام‌سازی ردیف‌ها از ارتباطات اقتصادی...");
 
       try {
         const res = await fetch("/api/budget-lines/sync", {
@@ -282,11 +349,9 @@
       } catch (e) {
         showToast(e.message, "error");
       } finally {
-        btn.disabled = false;
-        btn.textContent = "🔄 همگام‌سازی با ارتباطات";
+        hideLoading();
       }
     }
-
     // ============ SUMMARY ============
     function renderSummary() {
       const sb = document.getElementById("summary-bar");
