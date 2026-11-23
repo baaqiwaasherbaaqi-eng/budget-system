@@ -804,12 +804,19 @@
 
                 <!-- همه دکمه‌های عملیاتی با هم -->
                 <div class="toolbar-actions">
+
+                    <button class="add-btn" id="btn-bulk-delete" style="background:#dc3545; display:none;" onclick="bulkDeleteSelected()">
+                        🗑️ حذف انتخاب‌شده‌ها (<span id="selected-count">0</span>)
+                    </button>
+
                     <button class="add-btn" onclick="openAddModal(null)">
                         ➕ افزودن گروه اصلی
                     </button>
                     <button class="add-btn" onclick="openImportModal()">
                         📥 ایمپورت از اکسل
                     </button>
+
+ 
                 </div>
             </div>
 
@@ -823,13 +830,16 @@
         <div id="table-view" class="table-container" style="display:none;">
             <table>
                 <thead>
-                        <tr>
-                            <th style="width: 15%;">کد</th>
-                            <th style="width: 30%;">نام</th>
-                            <th style="width: 12%;">سطح</th>
-                            <th style="width: 15%;">اطلاعات</th>
-                            <th style="width: 13%;">وضعیت</th>
-                        </tr>
+                    <tr>
+                        <th style="width: 40px;">
+                            <input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAll(this.checked)" />
+                        </th>
+                        <th style="width: 15%;">کد</th>
+                        <th style="width: 30%;">نام</th>
+                        <th style="width: 12%;">سطح</th>
+                        <th style="width: 15%;">اطلاعات</th>
+                        <th style="width: 13%;">وضعیت</th>
+                    </tr>
                 </thead>
                 <tbody id="table-body"></tbody>
             </table>
@@ -1181,12 +1191,15 @@
         }
 
         function showToast(message, type = 'success') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.className = `toast ${type} show`;
-            setTimeout(() => toast.classList.remove('show'), 3000);
-        }
-
+    const toast = document.getElementById('toast');
+    if (!toast) {
+        console.warn('Toast element not found:', message);
+        return;
+    }
+    toast.textContent = message;
+    toast.className = `toast ${type} show`;
+    setTimeout(() => toast.classList.remove('show'), 3000);
+}
 
 // ============================================
 // جستجوی اشخاص (کد ملی یا نام)
@@ -1360,7 +1373,24 @@ async function loadData() {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
-        flatData = await res.json();
+        // ✅ چک وضعیت HTTP
+        if (!res.ok) {
+            const errText = await res.text();
+            console.error('loadData HTTP error:', res.status, errText);
+            showToast(`خطا در بارگذاری (${res.status})`, 'error');
+            return;
+        }
+
+        const data = await res.json();
+
+        // ✅ چک کن آرایه باشد
+        if (!Array.isArray(data)) {
+            console.error('loadData: response is not an array:', data);
+            showToast('خطا در بارگذاری: پاسخ نامعتبر', 'error');
+            return;
+        }
+
+        flatData = data;
 
         if (expandedNodes.size === 0) {
             flatData.filter(n => n.level === 1).forEach(n => expandedNodes.add(n.id));
@@ -1370,10 +1400,9 @@ async function loadData() {
         renderTable();
     } catch (error) {
         console.error('Load error:', error);
-        showToast('خطا در بارگذاری', 'error');
+        showToast('خطا در بارگذاری: ' + error.message, 'error');
     }
-}
-      
+}      
       
         // ============================================
         // رندر درخت
@@ -1485,8 +1514,14 @@ async function loadData() {
         // ============================================
         // رندر جدول
         // ============================================
-function renderTable() {
+        function renderTable() {
     const tbody = document.getElementById('table-body');
+
+    // ✅ چک null
+    if (!tbody) {
+        console.warn('renderTable: table-body not found');
+        return;
+    }
 
     if (!flatData || flatData.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:40px; color:#999;">موردی ثبت نشده</td></tr>`;
@@ -1494,8 +1529,8 @@ function renderTable() {
     }
 
     const sorted = [...flatData].sort((a, b) => a.code.localeCompare(b.code));
-
     tbody.innerHTML = '';
+
     sorted.forEach(item => {
         let info = '-';
         if (item.level === 4) {
@@ -1505,18 +1540,19 @@ function renderTable() {
         }
 
         const indent = '　'.repeat(Math.max(0, item.level - 1));
-
         const tr = document.createElement('tr');
         tr.style.cursor = 'pointer';
-
         if (!item.is_active) tr.style.opacity = '0.5';
 
         const profileBtn = (item.level === 4 && item.person_type === 'employee')
             ? `<a href="/employee-profile.html?id=${item.id}" style="color:#667eea;text-decoration:none;font-size:12px;margin-right:8px;" onclick="event.stopPropagation();">📁 پرونده</a>`
             : '';
 
-     
         tr.innerHTML = `
+            <td onclick="event.stopPropagation();">
+                <input type="checkbox" class="row-checkbox" data-id="${item.id}" 
+                       onchange="toggleRowCheckbox(this)" />
+            </td>
             <td class="code-cell">${item.code}</td>
             <td>
                 <span>${indent}</span>
@@ -1525,11 +1561,11 @@ function renderTable() {
             </td>
             <td><span class="badge">${getLevelName(item.level)}</span></td>
             <td style="font-size:12px; color:#666;">${info}</td>
-         
             <td>${item.is_active ? '✅ فعال' : '❌ غیرفعال'}</td>
         `;
 
-        tr.addEventListener('click', () => {
+        tr.addEventListener('click', (e) => {
+            if (e.target.type === 'checkbox') return;
             selectedNode = item;
             renderTable();
         });
@@ -1543,9 +1579,23 @@ function renderTable() {
 
         tbody.appendChild(tr);
     });
-}
-        
-                // ============================================
+
+    // ریست چک‌باکس هدر
+    const selectAll = document.getElementById('select-all-checkbox');
+    if (selectAll) {
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+    }
+
+    // ✅ چک null برای updateSelectedCount
+    if (typeof updateSelectedCount === 'function') {
+        updateSelectedCount();
+    }
+}          
+
+
+
+// ============================================
         // فعال‌سازی Drag & Drop
         // ============================================
         function enableDragAndDrop() {
@@ -2052,41 +2102,35 @@ if (node.level === 4 && node.person_type === 'employee') {
         // حذف
         // ============================================
         async function deleteNode(node) {
-    // شمارش زیرمجموعه‌ها
-    const descendants = flatData.filter(n => {
-        let p = n;
-        while (p && p.parent_id) {
-            if (p.parent_id === node.id) return true;
-            p = flatData.find(x => x.id === p.parent_id);
-        }
-        return false;
-    });
-    
-    const count = descendants.length;
-    let msg = `مطمئن هستید "${node.full_name}" حذف شود؟`;
-    
-    if (count > 0) {
-        msg = `⚠️ هشدار!\n\n"${node.full_name}" دارای ${count} زیرمجموعه است.\n\nبا تأیید، همه زیرمجموعه‌ها هم حذف می‌شوند.\n\nآیا مطمئن هستید؟`;
-    }
-    
-    if (!confirm(msg)) return;
+    if (!confirm(`مطمئن هستید "${node.full_name}" حذف شود؟`)) return;
 
     try {
-        const res = await fetch(`/api/persons/${node.id}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
+        const res = await fetch('/api/persons/bulk-delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ ids: [node.id] })
         });
 
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "خطا");
+        if (!res.ok) throw new Error(data.error || 'خطا');
 
-        showToast(`✅ ${data.deleted_count || 1} ردیف حذف شد`);
+        // اگر خطا داشت (مثلاً فرزند دارد)
+        if (data.errors && data.errors.length > 0) {
+            alert('⚠️ ' + data.errors[0].reason);
+            return;
+        }
+
+        showToast(`✅ ${data.deleted_count} مورد حذف شد`);
         await loadData();
     } catch (error) {
-        showToast(error.message, "error");
+        showToast(error.message, 'error');
     }
 }
-        // ============================================
+
+// ============================================
         // تغییر وضعیت
         // ============================================
         async function toggleNode(node) {
@@ -2493,6 +2537,112 @@ function closeResultModal() {
 
 
 
+// ============================================
+// حذف چندتایی
+// ============================================
+function toggleSelectAll(checked) {
+    document.querySelectorAll('.row-checkbox').forEach(cb => {
+        cb.checked = checked;
+    });
+    updateSelectedCount();
+}
+
+// ✅ تابع جدید: وقتی یک والد تیک می‌خورد، همه فرزندانش هم تیک بخورند
+function toggleRowCheckbox(checkbox) {
+    const personId = parseInt(checkbox.dataset.id);
+    const isChecked = checkbox.checked;
+
+    // گرفتن همه فرزندان (به صورت بازگشتی)
+    const getDescendants = (parentId) => {
+        const children = flatData.filter(n => n.parent_id === parentId);
+        let result = [...children];
+        children.forEach(c => {
+            result = result.concat(getDescendants(c.id));
+        });
+        return result;
+    };
+
+    const descendants = getDescendants(personId);
+
+    // فقط فرزندان را تیک بزن / بردار
+    descendants.forEach(d => {
+        const cb = document.querySelector(`.row-checkbox[data-id="${d.id}"]`);
+        if (cb) cb.checked = isChecked;
+    });
+
+    // ❌ والدها را تیک نزن (این بخش حذف شد)
+
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const selected = document.querySelectorAll('.row-checkbox:checked');
+    const count = selected.length;
+
+    const countEl = document.getElementById('selected-count');
+    if (countEl) countEl.textContent = count;
+
+    const btn = document.getElementById('btn-bulk-delete');
+    if (btn) btn.style.display = count > 0 ? 'inline-block' : 'none';
+
+    const all = document.querySelectorAll('.row-checkbox');
+    const selectAll = document.getElementById('select-all-checkbox');
+    if (selectAll) {
+        selectAll.checked = all.length > 0 && count === all.length;
+        selectAll.indeterminate = count > 0 && count < all.length;
+    }
+}
+
+
+async function bulkDeleteSelected() {
+    const selected = Array.from(document.querySelectorAll('.row-checkbox:checked'))
+        .map(cb => parseInt(cb.dataset.id));
+
+    if (selected.length === 0) {
+        showToast('هیچ موردی انتخاب نشده', 'error');
+        return;
+    }
+
+    if (!confirm(`آیا مطمئن هستید ${selected.length} مورد حذف شود؟`)) return;
+
+    const btn = document.getElementById('btn-bulk-delete');
+    btn.disabled = true;
+    btn.textContent = 'در حال حذف...';
+
+    try {
+        const res = await fetch('/api/persons/bulk-delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ ids: selected })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'خطا در حذف');
+
+        // پیام موفقیت
+        if (data.deleted_count > 0) {
+            showToast(`✅ ${data.deleted_count} مورد حذف شد`);
+        }
+
+        // نمایش خطاها (مثل داشتن فرزند)
+        if (data.errors && data.errors.length > 0) {
+            const errorMsg = data.errors
+                .map(e => `ID ${e.id}: ${e.reason}`)
+                .join('\n');
+            alert(`⚠️ ${data.errors.length} مورد حذف نشد:\n\n${errorMsg}`);
+        }
+
+        await loadData();
+    } catch (error) {
+        showToast(error.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = `🗑️ حذف انتخاب‌شده‌ها (${selected.length})`;
+    }
+}
         // ============================================
         // شروع
         // ============================================

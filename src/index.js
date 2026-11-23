@@ -241,6 +241,8 @@ function generateRandomPassword(length = 8) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    console.log("REQ:", request.method, url.pathname);
     const headers = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -4322,103 +4324,6 @@ if (url.pathname.match(/^\/api\/goods\/\d+\/persons$/) && request.method === "PO
 }
 
 
-// DELETE: حذف شخص (با حذف آبشاری زیرمجموعه‌ها)
-if (
-  url.pathname.match(/^\/api\/persons\/\d+$/) &&
-  request.method === "DELETE"
-) {
-  try {
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "احراز هویت لازم است" }),
-        { status: 401, headers }
-      );
-    }
-
-    const token = authHeader.replace("Bearer ", "");
-    const userData = await verifyToken(token, env.JWT_SECRET);
-
-    if (!userData || !["admin", "manager"].includes(userData.role)) {
-      return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
-        status: 403,
-        headers,
-      });
-    }
-
-    const id = url.pathname.split("/").pop();
-
-    // ✅ گرفتن همه زیرمجموعه‌ها + level (برای ترتیب حذف)
-    const descendants = await env.DB.prepare(
-      `WITH RECURSIVE subtree(id, level) AS (
-        SELECT id, level FROM persons WHERE id = ?
-        UNION ALL
-        SELECT p.id, p.level FROM persons p
-        INNER JOIN subtree s ON p.parent_id = s.id
-      )
-      SELECT id FROM subtree
-      ORDER BY level DESC`
-    )
-      .bind(id)
-      .all();
-
-    const allIds = descendants.results.map((r) => r.id);
-
-    if (allIds.length === 0) {
-      return new Response(JSON.stringify({ error: "شخص یافت نشد" }), {
-        status: 404,
-        headers,
-      });
-    }
-
-    // ✅ حذف کاربران مرتبط
-    await env.DB.prepare(
-      `DELETE FROM users
-       WHERE id IN (
-         SELECT user_id FROM persons
-         WHERE id IN (${allIds.map(() => "?").join(",")})
-           AND user_id IS NOT NULL
-       )`
-    )
-      .bind(...allIds)
-      .run();
-
-    // ✅ حذف اشخاص به ترتیب: فرزندان اول، والدین آخر
-    for (const personId of allIds) {
-      await env.DB.prepare("DELETE FROM persons WHERE id = ?")
-        .bind(personId)
-        .run();
-    }
-
-    // لاگ
-    ctx.waitUntil(
-      logAction(
-        env,
-        request,
-        { userId: userData.userId, username: userData.username },
-        "persons_cascade_delete",
-        "person",
-        id,
-        { deleted_count: allIds.length, deleted_ids: allIds }
-      )
-    );
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        deleted_count: allIds.length,
-      }),
-      { status: 200, headers }
-    );
-  } catch (error) {
-    console.error("Person DELETE error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers,
-    });
-  }
-}
-
 
 // ============================================
 // لاستیک‌ها (goods_tires)
@@ -5955,6 +5860,112 @@ if (
       }
 
 
+// ============================================
+// POST: حذف چندتایی اشخاص (chunked + چک فرزند)
+// ============================================
+if (url.pathname === "/api/persons/bulk-delete" && request.method === "POST") {
+  try {
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), {
+        status: 401, headers,
+      });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const userData = await verifyToken(token, env.JWT_SECRET);
+    if (!userData || !["admin", "manager"].includes(userData.role)) {
+      return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+        status: 403, headers,
+      });
+    }
+
+    const body = await request.json();
+    const { ids } = body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return new Response(JSON.stringify({ error: "لیست شناسه‌ها خالی است" }), {
+        status: 400, headers,
+      });
+    }
+
+    let deletedCount = 0;
+    const errors = [];
+    const CHUNK_SIZE = 50; // زیر سقف ۱۰۰ D1
+
+    // ============================================
+    // ۱. چک فرزند به صورت chunked
+    // ============================================
+    const idsWithChildren = new Set();
+
+    for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+      const chunk = ids.slice(i, i + CHUNK_SIZE);
+      const placeholders = chunk.map(() => "?").join(",");
+
+      const childRows = await env.DB.prepare(
+        `SELECT DISTINCT parent_id FROM persons WHERE parent_id IN (${placeholders})`
+      ).bind(...chunk).all();
+
+      for (const row of childRows.results) {
+        idsWithChildren.add(row.parent_id);
+      }
+    }
+
+    // ============================================
+    // ۲. حذف به صورت chunked (فقط آن‌هایی که فرزند ندارند)
+    // ============================================
+    const deletableIds = ids.filter(id => !idsWithChildren.has(id));
+
+    // ثبت خطا برای آن‌هایی که فرزند دارند
+    for (const id of ids) {
+      if (idsWithChildren.has(id)) {
+        errors.push({
+          id,
+          reason: "دارای زیرمجموعه است. ابتدا زیرمجموعه‌ها را حذف کنید.",
+        });
+      }
+    }
+
+    for (let i = 0; i < deletableIds.length; i += CHUNK_SIZE) {
+      const chunk = deletableIds.slice(i, i + CHUNK_SIZE);
+      const placeholders = chunk.map(() => "?").join(",");
+
+      // ۲-۱. budget_lines را NULL کن
+      await env.DB.prepare(
+        `UPDATE budget_lines SET person_id = NULL WHERE person_id IN (${placeholders})`
+      ).bind(...chunk).run();
+
+      // ۲-۲. persons را حذف کن (بقیه CASCADE می‌شوند)
+      const result = await env.DB.prepare(
+        `DELETE FROM persons WHERE id IN (${placeholders})`
+      ).bind(...chunk).run();
+
+      deletedCount += result.meta.changes || 0;
+    }
+
+    ctx.waitUntil(logAction(
+      env, request,
+      { userId: userData.userId, username: userData.username },
+      "persons_bulk_delete", "persons", null,
+      { requested: ids.length, deleted: deletedCount, errors }
+    ));
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        requested: ids.length,
+        deleted_count: deletedCount,
+        errors: errors.length > 0 ? errors : undefined,
+      }),
+      { status: 200, headers }
+    );
+  } catch (error) {
+    console.error("bulk-delete error:", error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500, headers,
+    });
+  }
+}
 
 // ============================================
 // PUT: تایید یا رد فرد تحت تکفل (مدیر)
