@@ -1699,24 +1699,40 @@ function switchView(view) {
       // حذف
       // ============================================
       async function deleteNode(node) {
-        if (!confirm(`مطمئن هستید "${node.title}" حذف شود؟`)) return;
+    // شمارش زیرمجموعه‌ها
+    const descendants = flatData.filter(n => {
+        let p = n;
+        while (p && p.parent_id) {
+            if (p.parent_id === node.id) return true;
+            p = flatData.find(x => x.id === p.parent_id);
+        }
+        return false;
+    });
+    
+    const count = descendants.length;
+    let msg = `مطمئن هستید "${node.title}" حذف شود؟`;
+    
+    if (count > 0) {
+        msg = `⚠️ هشدار!\n\n"${node.title}" دارای ${count} زیرمجموعه است.\n\nبا تأیید، همه زیرمجموعه‌ها هم حذف می‌شوند.\n\nآیا مطمئن هستید؟`;
+    }
+    
+    if (!confirm(msg)) return;
 
-        try {
-          const res = await fetch(`/api/base-data/${node.id}`, {
+    try {
+        const res = await fetch(`/api/base-data/${node.id}`, {
             method: "DELETE",
             headers: { Authorization: `Bearer ${token}` },
-          });
+        });
 
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || "خطا");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "خطا");
 
-          showToast("با موفقیت حذف شد");
-          await loadData();
-        } catch (error) {
-          showToast(error.message, "error");
-        }
-      }
-
+        showToast(`✅ ${data.deleted_count || 1} ردیف حذف شد`);
+        await loadData();
+    } catch (error) {
+        showToast(error.message, "error");
+    }
+}
       // ============================================
       // تغییر وضعیت
       // ============================================

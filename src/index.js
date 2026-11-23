@@ -1279,76 +1279,98 @@ export default {
         }
       }
 
-      // DELETE: حذف شخص
-      if (
-        url.pathname.match(/^\/api\/persons\/\d+$/) &&
-        request.method === "DELETE"
-      ) {
-        try {
-          const authHeader = request.headers.get("Authorization");
-          if (!authHeader) {
-            return new Response(
-              JSON.stringify({ error: "احراز هویت لازم است" }),
-              {
-                status: 401,
-                headers,
-              },
-            );
-          }
 
-          const token = authHeader.replace("Bearer ", "");
-          const userData = await verifyToken(token, env.JWT_SECRET);
 
-          if (!userData || !["admin", "manager"].includes(userData.role)) {
-            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
-              status: 403,
-              headers,
-            });
-          }
 
-          const id = url.pathname.split("/").pop();
+// ============================================
+// DELETE: حذف base_data (با حذف آبشاری زیرمجموعه‌ها)
+// ============================================
+if (
+  url.pathname.match(/^\/api\/base-data\/\d+$/) &&
+  request.method === "DELETE"
+) {
+  try {
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "احراز هویت لازم است" }),
+        { status: 401, headers }
+      );
+    }
 
-          // چک فرزندان
-          const children = await env.DB.prepare(
-            "SELECT COUNT(*) as count FROM persons WHERE parent_id = ?",
-          )
-            .bind(id)
-            .first();
+    const token = authHeader.replace("Bearer ", "");
+    const userData = await verifyToken(token, env.JWT_SECRET);
 
-          if (children.count > 0) {
-            return new Response(
-              JSON.stringify({
-                error: `این شخص ${children.count} زیرمجموعه دارد. ابتدا آن‌ها را حذف کنید.`,
-              }),
-              { status: 400, headers },
-            );
-          }
+    if (!userData || !["admin", "manager"].includes(userData.role)) {
+      return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+        status: 403,
+        headers,
+      });
+    }
 
-          const result = await env.DB.prepare(
-            "DELETE FROM persons WHERE id = ?",
-          )
-            .bind(id)
-            .run();
+    const id = url.pathname.split("/").pop();
 
-          if (result.meta.changes === 0) {
-            return new Response(JSON.stringify({ error: "شخص یافت نشد" }), {
-              status: 404,
-              headers,
-            });
-          }
+    // ✅ گرفتن همه زیرمجموعه‌ها (recursive CTE)
+    const descendants = await env.DB.prepare(
+      `WITH RECURSIVE subtree(id) AS (
+        SELECT id FROM base_data WHERE id = ?
+        UNION ALL
+        SELECT b.id FROM base_data b
+        INNER JOIN subtree s ON b.parent_id = s.id
+      )
+      SELECT id FROM subtree`
+    )
+      .bind(id)
+      .all();
 
-          return new Response(JSON.stringify({ success: true }), {
-            status: 200,
-            headers,
-          });
-        } catch (error) {
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 500,
-            headers,
-          });
-        }
-      }
+    const allIds = descendants.results.map((r) => r.id);
 
+    if (allIds.length === 0) {
+      return new Response(JSON.stringify({ error: "ردیف یافت نشد" }), {
+        status: 404,
+        headers,
+      });
+    }
+
+    // ✅ حذف آبشاری (chunk شده)
+    const CHUNK_SIZE = 50;
+    for (let i = 0; i < allIds.length; i += CHUNK_SIZE) {
+      const chunk = allIds.slice(i, i + CHUNK_SIZE);
+      await env.DB.prepare(
+        `DELETE FROM base_data WHERE id IN (${chunk.map(() => "?").join(",")})`
+      )
+        .bind(...chunk)
+        .run();
+    }
+
+    // لاگ
+    ctx.waitUntil(
+      logAction(
+        env,
+        request,
+        { userId: userData.userId, username: userData.username },
+        "base_data_cascade_delete",
+        "base_data",
+        id,
+        { deleted_count: allIds.length, deleted_ids: allIds }
+      )
+    );
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        deleted_count: allIds.length,
+      }),
+      { status: 200, headers }
+    );
+  } catch (error) {
+    console.error("base-data DELETE error:", error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers,
+    });
+  }
+}
 
 
 // ============================================
@@ -4299,29 +4321,103 @@ if (url.pathname.match(/^\/api\/goods\/\d+\/persons$/) && request.method === "PO
     }
 }
 
-// DELETE: حذف شخص از کالا
-if (url.pathname.match(/^\/api\/goods\/persons\/\d+$/) && request.method === "DELETE") {
-    try {
-        const authHeader = request.headers.get("Authorization");
-        if (!authHeader) {
-            return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
-        }
-        const token = authHeader.replace("Bearer ", "");
-        const userData = await verifyToken(token, env.JWT_SECRET);
-        if (!userData || !["admin", "manager"].includes(userData.role)) {
-            return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
-        }
 
-        const gpId = parseInt(url.pathname.split("/")[4]);
-        await env.DB.prepare("DELETE FROM goods_persons WHERE id = ?").bind(gpId).run();
-        return new Response(JSON.stringify({ success: true }), { status: 200, headers });
-    } catch (error) {
-        console.error("goods persons DELETE error:", error);
-        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+// DELETE: حذف شخص (با حذف آبشاری زیرمجموعه‌ها)
+if (
+  url.pathname.match(/^\/api\/persons\/\d+$/) &&
+  request.method === "DELETE"
+) {
+  try {
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "احراز هویت لازم است" }),
+        { status: 401, headers }
+      );
     }
+
+    const token = authHeader.replace("Bearer ", "");
+    const userData = await verifyToken(token, env.JWT_SECRET);
+
+    if (!userData || !["admin", "manager"].includes(userData.role)) {
+      return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), {
+        status: 403,
+        headers,
+      });
+    }
+
+    const id = url.pathname.split("/").pop();
+
+    // ✅ گرفتن همه زیرمجموعه‌ها + level (برای ترتیب حذف)
+    const descendants = await env.DB.prepare(
+      `WITH RECURSIVE subtree(id, level) AS (
+        SELECT id, level FROM persons WHERE id = ?
+        UNION ALL
+        SELECT p.id, p.level FROM persons p
+        INNER JOIN subtree s ON p.parent_id = s.id
+      )
+      SELECT id FROM subtree
+      ORDER BY level DESC`
+    )
+      .bind(id)
+      .all();
+
+    const allIds = descendants.results.map((r) => r.id);
+
+    if (allIds.length === 0) {
+      return new Response(JSON.stringify({ error: "شخص یافت نشد" }), {
+        status: 404,
+        headers,
+      });
+    }
+
+    // ✅ حذف کاربران مرتبط
+    await env.DB.prepare(
+      `DELETE FROM users
+       WHERE id IN (
+         SELECT user_id FROM persons
+         WHERE id IN (${allIds.map(() => "?").join(",")})
+           AND user_id IS NOT NULL
+       )`
+    )
+      .bind(...allIds)
+      .run();
+
+    // ✅ حذف اشخاص به ترتیب: فرزندان اول، والدین آخر
+    for (const personId of allIds) {
+      await env.DB.prepare("DELETE FROM persons WHERE id = ?")
+        .bind(personId)
+        .run();
+    }
+
+    // لاگ
+    ctx.waitUntil(
+      logAction(
+        env,
+        request,
+        { userId: userData.userId, username: userData.username },
+        "persons_cascade_delete",
+        "person",
+        id,
+        { deleted_count: allIds.length, deleted_ids: allIds }
+      )
+    );
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        deleted_count: allIds.length,
+      }),
+      { status: 200, headers }
+    );
+  } catch (error) {
+    console.error("Person DELETE error:", error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers,
+    });
+  }
 }
-
-
 
 
 // ============================================
@@ -5000,85 +5096,140 @@ if (url.pathname === "/api/me/person" && request.method === "GET") {
 }
 
 
-      // ============================================
-      // جستجوی شخص بر اساس کد ملی
-      // ============================================
-      if (url.pathname === "/api/persons/search" && request.method === "GET") {
-        try {
-          const authHeader = request.headers.get("Authorization");
-          if (!authHeader) {
-            return new Response(
-              JSON.stringify({ error: "احراز هویت لازم است" }),
-              {
-                status: 401,
-                headers,
-              },
-            );
-          }
+// ============================================
+// جستجوی شخص (کد ملی یا نام)
+// ============================================
+if (url.pathname === "/api/persons/search" && request.method === "GET") {
+  try {
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "احراز هویت لازم است" }),
+        { status: 401, headers }
+      );
+    }
 
-          const token = authHeader.replace("Bearer ", "");
-          const userData = await verifyToken(token, env.JWT_SECRET);
+    const token = authHeader.replace("Bearer ", "");
+    const userData = await verifyToken(token, env.JWT_SECRET);
 
-          if (!userData) {
-            return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
-              status: 401,
-              headers,
-            });
-          }
+    if (!userData) {
+      return new Response(JSON.stringify({ error: "توکن نامعتبر" }), {
+        status: 401,
+        headers,
+      });
+    }
 
-          const nationalId = url.searchParams.get("national_id");
+    // پشتیبانی از هر دو پارامتر: q (عمومی) و national_id (سازگاری با کد قبلی)
+    let query = (url.searchParams.get("q") || "").trim();
+    const nationalIdParam = (url.searchParams.get("national_id") || "").trim();
 
-          if (!nationalId) {
-            return new Response(
-              JSON.stringify({ error: "کد ملی الزامی است" }),
-              {
-                status: 400,
-                headers,
-              },
-            );
-          }
+    // اگه national_id اومده بود، از همون استفاده کن
+    if (!query && nationalIdParam) {
+      query = nationalIdParam;
+    }
 
-          // جستجو در همه انواع اشخاص
-          const person = await env.DB.prepare(
-            `SELECT id, national_id, code, full_name, first_name, last_name, 
-                    person_type, level, parent_id, is_active, mobile
-             FROM persons 
-             WHERE national_id = ? AND level = 4`,
-          )
-            .bind(nationalId)
-            .first();
+    if (!query) {
+      return new Response(
+        JSON.stringify({ error: "عبارت جستجو الزامی است", found: false }),
+        { status: 400, headers }
+      );
+    }
 
-          if (!person) {
-            return new Response(
-              JSON.stringify({
-                error: "شخصی با این کد ملی یافت نشد",
-                found: false,
-              }),
-              {
-                status: 404,
-                headers,
-              },
-            );
-          }
+    // نرمال‌سازی: تبدیل اعداد فارسی به انگلیسی
+    query = query.replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
 
-          return new Response(
-            JSON.stringify({
-              found: true,
-              person: person,
-            }),
-            {
-              status: 200,
-              headers,
-            },
-          );
-        } catch (error) {
-          console.error("Search error:", error);
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 500,
-            headers,
-          });
-        }
+    // نرمال‌سازی حروف عربی → فارسی
+    query = query.replace(/ي/g, "ی").replace(/ك/g, "ک");
+
+    // تشخیص: آیا ورودی عددی است؟
+    const isNumeric = /^\d+$/.test(query);
+
+    let items = [];
+
+    if (isNumeric) {
+      // ورودی عددی → جستجوی کد ملی (دقیق یا شروع با)
+      if (query.length === 10) {
+        // کد ملی کامل → جستجوی دقیق
+        const r = await env.DB.prepare(
+          `SELECT id, national_id, code, full_name, first_name, last_name,
+                  person_type, level, parent_id, is_active, mobile
+           FROM persons
+           WHERE national_id = ? AND level = 4`
+        )
+          .bind(query)
+          .all();
+        items = r.results;
+      } else {
+        // کد ملی ناقص → جستجوی شروع با
+        const r = await env.DB.prepare(
+          `SELECT id, national_id, code, full_name, first_name, last_name,
+                  person_type, level, parent_id, is_active, mobile
+           FROM persons
+           WHERE national_id LIKE ? AND level = 4
+           ORDER BY code
+           LIMIT 30`
+        )
+          .bind(query + "%")
+          .all();
+        items = r.results;
       }
+    } else {
+      // ورودی متنی → جستجوی نام کامل / نام / نام خانوادگی
+      const like = "%" + query + "%";
+      const r = await env.DB.prepare(
+        `SELECT id, national_id, code, full_name, first_name, last_name,
+                person_type, level, parent_id, is_active, mobile
+         FROM persons
+         WHERE level = 4
+           AND (full_name LIKE ? OR first_name LIKE ? OR last_name LIKE ?)
+         ORDER BY code
+         LIMIT 30`
+      )
+        .bind(like, like, like)
+        .all();
+      items = r.results;
+    }
+
+    if (!items || items.length === 0) {
+      return new Response(
+        JSON.stringify({
+          error: "شخصی با این مشخصات یافت نشد",
+          found: false,
+          results: [],
+        }),
+        { status: 200, headers }
+      );
+    }
+
+    // اگه یک نتیجه بود → سازگاری با ساختار قبلی (person)
+    if (items.length === 1) {
+      return new Response(
+        JSON.stringify({
+          found: true,
+          person: items[0],
+          results: items,
+        }),
+        { status: 200, headers }
+      );
+    }
+
+    // چند نتیجه → لیست
+    return new Response(
+      JSON.stringify({
+        found: true,
+        results: items,
+        count: items.length,
+      }),
+      { status: 200, headers }
+    );
+  } catch (error) {
+    console.error("Search error:", error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers,
+    });
+  }
+}
 
       // ============================================
       // Employees API

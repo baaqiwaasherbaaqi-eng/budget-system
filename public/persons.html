@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>اشخاص</title>
     <link rel="stylesheet" href="/sidebar.css">
+
     <script src="/sidebar.js"></script>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     
@@ -602,12 +603,19 @@
 
         /* ============ Search Box ============ */
         .search-box {
-            background: white;
-            border-radius: 10px;
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
+    background: white;
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+
+    /* ✅ اضافه کن */
+    position: sticky;
+    top: 80px;       /* ✅ بیشتر کن تا از زیر هدر دربیاد */
+    z-index: 100;
+    /* برای اینکه موقع اسکرول پس‌زمینه شفاف نشه */
+    backdrop-filter: blur(4px);
+}
 
         .search-box-input {
             display: flex;
@@ -763,12 +771,11 @@
                 <span class="search-icon">🔍</span>
                 <input 
                     type="text" 
-                    id="search-national-id" 
-                    placeholder="جستجو بر اساس کد ملی..."
-                    maxlength="10"
-                    onkeydown="if(event.key === 'Enter') searchByNationalId()"
+                    id="search-input" 
+                    placeholder="جستجو بر اساس کد ملی، نام یا نام خانوادگی..."
+                    onkeydown="if(event.key === 'Enter') searchPersons()"
                 />
-                <button onclick="searchByNationalId()">جستجو</button>
+                <button onclick="searchPersons()">جستجو</button>
             </div>
             <div class="search-result" id="search-result" style="display: none;"></div>
         </div>
@@ -1181,73 +1188,101 @@
         }
 
 
-        // ============================================
-        // جستجوی کد ملی
-        // ============================================
-        async function searchByNationalId() {
-            const input = document.getElementById('search-national-id');
-            const resultBox = document.getElementById('search-result');
-            
-            let nationalId = input.value.trim();
-            nationalId = toEnglishNumbers(nationalId);
-            
-            if (!nationalId) {
-                resultBox.style.display = 'none';
-                return;
-            }
-            
-            if (nationalId.length !== 10) {
-                resultBox.className = 'search-result error';
-                resultBox.textContent = 'کد ملی باید ۱۰ رقم باشد';
-                resultBox.style.display = 'block';
-                return;
-            }
-            
-            try {
-                const res = await fetch(`/api/persons/search?national_id=${nationalId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                const data = await res.json();
-                
-                if (!res.ok || !data.found) {
-                    resultBox.className = 'search-result error';
-                    resultBox.textContent = '❌ ' + (data.error || 'شخصی با این کد ملی یافت نشد');
-                    resultBox.style.display = 'block';
-                    return;
-                }
-                
-                const person = data.person;
-                
-                const typeLabels = {
-                    employee: 'کارکنان',
-                    citizen: 'شهروندان',
-                    legal: 'اشخاص حقوقی',
-                    foreigner: 'خارج شهروندان'
-                };
-                
-                resultBox.className = 'search-result success';
-                resultBox.innerHTML = `
-                    <div class="person-info">
-                        <span>✅ یافت شد:</span>
-                        <span class="person-name">${person.full_name}</span>
-                        <span class="person-code">${person.code}</span>
-                        <span class="person-type">${typeLabels[person.person_type] || person.person_type}</span>
-                        <button onclick="goToPerson(${person.id}, '${person.person_type}')">
-                            مشاهده پرونده →
-                        </button>
-                    </div>
-                `;
-                resultBox.style.display = 'block';
-                
-            } catch (error) {
-                console.error('Search error:', error);
-                resultBox.className = 'search-result error';
-                resultBox.textContent = 'خطا در جستجو';
-                resultBox.style.display = 'block';
-            }
+// ============================================
+// جستجوی اشخاص (کد ملی یا نام)
+// ============================================
+async function searchPersons() {
+    const input = document.getElementById('search-input');
+    const resultBox = document.getElementById('search-result');
+    
+    let query = input.value.trim();
+    query = toEnglishNumbers(query);
+    
+    if (!query) {
+        resultBox.style.display = 'none';
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/persons/search?q=${encodeURIComponent(query)}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+            resultBox.className = 'search-result error';
+            resultBox.textContent = '❌ ' + (data.error || 'خطا در جستجو');
+            resultBox.style.display = 'block';
+            return;
         }
-
+        
+        if (!data.found || !data.results || data.results.length === 0) {
+            resultBox.className = 'search-result error';
+            resultBox.textContent = '❌ ' + (data.error || 'شخصی با این مشخصات یافت نشد');
+            resultBox.style.display = 'block';
+            return;
+        }
+        
+        const typeLabels = {
+            employee: 'کارکنان',
+            citizen: 'شهروندان',
+            legal: 'اشخاص حقوقی',
+            foreigner: 'خارج شهروندان'
+        };
+        
+        const results = data.results;
+        
+        // یک نتیجه
+        if (results.length === 1) {
+            const person = results[0];
+            resultBox.className = 'search-result success';
+            resultBox.innerHTML = `
+                <div class="person-info">
+                    <span>✅ یافت شد:</span>
+                    <span class="person-name">${person.full_name}</span>
+                    <span class="person-code">${person.code}</span>
+                    <span class="person-type">${typeLabels[person.person_type] || person.person_type}</span>
+                    <button onclick="goToPerson(${person.id}, '${person.person_type}')">
+                        مشاهده پرونده →
+                    </button>
+                </div>
+            `;
+            resultBox.style.display = 'block';
+            return;
+        }
+        
+        // چند نتیجه
+        let html = `<div style="margin-bottom:10px; font-weight:bold; color:#1e40af;">
+            🔎 ${results.length} نتیجه یافت شد:
+        </div>`;
+        html += `<div style="display:flex; flex-direction:column; gap:8px; max-height:320px; overflow-y:auto;">`;
+        results.forEach(person => {
+            html += `
+                <div style="display:flex; align-items:center; gap:10px; padding:10px; background:white; border-radius:6px; flex-wrap:wrap; border:1px solid #e5e7eb;">
+                    <span class="person-name">${person.full_name}</span>
+                    <span class="person-code">${person.code}</span>
+                    ${person.national_id ? `<span style="font-size:11px; color:#666;">کد ملی: ${person.national_id}</span>` : ''}
+                    <span class="person-type">${typeLabels[person.person_type] || person.person_type}</span>
+                    <button style="margin-right:auto;" onclick="goToPerson(${person.id}, '${person.person_type}')">
+                        مشاهده →
+                    </button>
+                </div>
+            `;
+        });
+        html += `</div>`;
+        
+        resultBox.className = 'search-result success';
+        resultBox.innerHTML = html;
+        resultBox.style.display = 'block';
+        
+    } catch (error) {
+        console.error('Search error:', error);
+        resultBox.className = 'search-result error';
+        resultBox.textContent = 'خطا در جستجو';
+        resultBox.style.display = 'block';
+    }
+}
         // ============================================
         // رفتن به پرونده شخص
         // ============================================
@@ -1292,6 +1327,32 @@
         // لود دیتا
         // ============================================
 let linkCounts = {};
+
+// ============================================
+// جستجوی زنده با debounce
+// ============================================
+let searchTimeout = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('search-input');
+    if (!input) return;
+
+    input.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        const val = input.value.trim();
+        
+        if (val.length < 2) {
+            document.getElementById('search-result').style.display = 'none';
+            return;
+        }
+        
+        // اگه عددی بود، فقط وقتی ۱۰ رقم کامل شد سرچ کن
+        const isNumeric = /^\d+$/.test(val);
+        if (isNumeric && val.length < 10) return;
+        
+        searchTimeout = setTimeout(searchPersons, 400);
+    });
+});
 
 async function loadData() {
     try {
@@ -1991,24 +2052,40 @@ if (node.level === 4 && node.person_type === 'employee') {
         // حذف
         // ============================================
         async function deleteNode(node) {
-            if (!confirm(`مطمئن هستید "${node.full_name}" حذف شود؟`)) return;
-
-            try {
-                const res = await fetch(`/api/persons/${node.id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'خطا');
-
-                showToast('با موفقیت حذف شد');
-                await loadData();
-            } catch (error) {
-                showToast(error.message, 'error');
-            }
+    // شمارش زیرمجموعه‌ها
+    const descendants = flatData.filter(n => {
+        let p = n;
+        while (p && p.parent_id) {
+            if (p.parent_id === node.id) return true;
+            p = flatData.find(x => x.id === p.parent_id);
         }
+        return false;
+    });
+    
+    const count = descendants.length;
+    let msg = `مطمئن هستید "${node.full_name}" حذف شود؟`;
+    
+    if (count > 0) {
+        msg = `⚠️ هشدار!\n\n"${node.full_name}" دارای ${count} زیرمجموعه است.\n\nبا تأیید، همه زیرمجموعه‌ها هم حذف می‌شوند.\n\nآیا مطمئن هستید؟`;
+    }
+    
+    if (!confirm(msg)) return;
 
+    try {
+        const res = await fetch(`/api/persons/${node.id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "خطا");
+
+        showToast(`✅ ${data.deleted_count || 1} ردیف حذف شد`);
+        await loadData();
+    } catch (error) {
+        showToast(error.message, "error");
+    }
+}
         // ============================================
         // تغییر وضعیت
         // ============================================
