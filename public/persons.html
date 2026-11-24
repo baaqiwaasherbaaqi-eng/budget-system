@@ -2610,6 +2610,10 @@ async function submitImport() {
     return alert("همه ردیف‌ها نمونه بودند. لطفاً فایل را با اطلاعات واقعی پر کنید.");
   }
 
+  // ✅ اول مدال ایمپورت را ببند (به‌جای این‌که فقط loading روی آن بیاید)
+  closeImportModal();
+
+  // ✅ بعد loading را نشان بده
   document.getElementById("importLoading").style.display = "flex";
   document.getElementById("importProgressText").textContent =
     `در حال ارسال ${cleanRows.length} ردیف...`;
@@ -2633,13 +2637,11 @@ async function submitImport() {
     }
 
     showImportResult(result);
-    closeImportModal();
   } catch (e) {
     document.getElementById("importLoading").style.display = "none";
     alert("خطای شبکه: " + e.message);
   }
 }
-
 function showImportResult(result) {
   const title = document.getElementById("importResultTitle");
   const body = document.getElementById("importResultBody");
