@@ -1314,6 +1314,9 @@ export default {
 // ============================================
 // DELETE: حذف base_data (با حذف آبشاری زیرمجموعه‌ها)
 // ============================================
+// ============================================
+// DELETE: حذف base_data (با حذف آبشاری زیرمجموعه‌ها)
+// ============================================
 if (
   url.pathname.match(/^\/api\/base-data\/\d+$/) &&
   request.method === "DELETE"
@@ -1361,6 +1364,28 @@ if (
       });
     }
 
+    // ============================================
+    // ✅ جدید: پاک‌سازی ارتباطات اقتصادی
+    // (قبل از حذف base_data)
+    // ============================================
+    const record = await env.DB.prepare(
+      `SELECT section, type FROM base_data WHERE id = ?`
+    ).bind(id).first();
+
+    if (record && ['goods', 'organization', 'decree_type'].includes(record.type)) {
+      const CLEAN_CHUNK = 500;
+      for (let i = 0; i < allIds.length; i += CLEAN_CHUNK) {
+        const chunk = allIds.slice(i, i + CLEAN_CHUNK);
+        const ph = chunk.map(() => '?').join(',');
+        await env.DB.prepare(
+          `DELETE FROM economic_links WHERE link_type = ? AND target_id IN (${ph})`
+        ).bind(record.type, ...chunk).run();
+      }
+    }
+    // ============================================
+    // پایان بخش جدید
+    // ============================================
+
     // ✅ حذف آبشاری (chunk شده)
     const CHUNK_SIZE = 50;
     for (let i = 0; i < allIds.length; i += CHUNK_SIZE) {
@@ -1390,14 +1415,14 @@ if (
         success: true,
         deleted_count: allIds.length,
       }),
-      { status: 200, headers }
+      { headers }
     );
   } catch (error) {
-    console.error("base-data DELETE error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers,
-    });
+    console.error("base-data delete error:", error);
+    return new Response(
+      JSON.stringify({ error: "خطا در حذف: " + error.message }),
+      { status: 500, headers }
+    );
   }
 }
 
@@ -6191,6 +6216,34 @@ if (url.pathname === "/api/persons/bulk-delete" && request.method === "POST") {
         `UPDATE budget_lines SET person_id = NULL WHERE person_id IN (${placeholders})`
       ).bind(...chunk).run();
 
+      // ✅ پاک‌سازی ارتباطات اقتصادی این اشخاص (و زیرمجموعه‌هایشان)
+const collectAllPersonIds = async (rootIds) => {
+  const allIds = new Set(rootIds);
+  const queue = [...rootIds];
+  while (queue.length > 0) {
+    const current = queue.shift();
+    const children = await env.DB.prepare(
+      `SELECT id FROM persons WHERE parent_id = ?`
+    ).bind(current).all();
+    for (const c of (children.results || [])) {
+      if (!allIds.has(c.id)) {
+        allIds.add(c.id);
+        queue.push(c.id);
+      }
+    }
+  }
+  return Array.from(allIds);
+};
+
+const allIdsToClean = await collectAllPersonIds(ids);
+if (allIdsToClean.length > 0) {
+  const ph = allIdsToClean.map(() => '?').join(',');
+  await env.DB.prepare(
+    `DELETE FROM economic_links WHERE link_type = 'person' AND target_id IN (${ph})`
+  ).bind(...allIdsToClean).run();
+}
+      
+      
       // ۲-۲. persons را حذف کن (بقیه CASCADE می‌شوند)
       const result = await env.DB.prepare(
         `DELETE FROM persons WHERE id IN (${placeholders})`
