@@ -166,6 +166,33 @@ function generateRandomPassword(length = 8) {
 
 
 
+// ============================================
+// ثابت‌های انواع شخص (person_types)
+// ============================================
+const TAB_ICONS = {
+  employee:  "👷",
+  citizen:   "👤",
+  legal:     "🏢",
+  foreigner: "🌍",
+};
+
+const TAB_COLORS = {
+  employee:  "#667eea",
+  citizen:   "#28a745",
+  legal:     "#6f42c1",
+  foreigner: "#fd7e14",
+};
+
+const TAB_LABELS = {
+  employee:  "کارکنان",
+  citizen:   "شهروندان",
+  legal:     "اشخاص حقوقی",
+  foreigner: "خارج شهروندان",
+};
+
+const BASE_PERSON_TYPES = ["employee", "citizen", "legal", "foreigner"];
+
+
       // helper
       async function upsertBudgetLine(env, data) {
         const existing = await env.DB.prepare(
@@ -1390,6 +1417,14 @@ if (url.pathname === "/api/persons/import-template" && request.method === "GET")
       return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
     }
 
+    // ✅ داینامیک کردن نوع شخص در فایل نمونه
+    const personTypesForTemplate = await env.DB.prepare(
+      "SELECT code, label_fa FROM person_types WHERE is_active = 1 ORDER BY sort_order"
+    ).all();
+
+    const typeLabels = personTypesForTemplate.results.map(t => t.label_fa).join(" / ");
+    const typeCodes = personTypesForTemplate.results.map(t => t.code).join(" / ");
+
     // ===== شیت ۱: داده‌ها =====
     const dataSheet = [
       [
@@ -1421,6 +1456,9 @@ if (url.pathname === "/api/persons/import-template" && request.method === "GET")
       { wch: 14 }, { wch: 16 }, { wch: 12 }, { wch: 30 },
     ];
 
+
+
+
     // ===== شیت ۲: راهنما =====
     const helpSheet = [
       ["📖 راهنمای تکمیل فایل ایمپورت اشخاص", "", "", ""],
@@ -1429,7 +1467,7 @@ if (url.pathname === "/api/persons/import-template" && request.method === "GET")
       ["full_name", "✅ بله", "متن", "نام کامل شخص"],
       ["national_id", "✅ بله", "۱۰ رقم عددی", "کد ملی — باید یکتا باشد"],
       ["mobile", "✅ بله", "۰۹xxxxxxxxx (۱۱ رقم)", "شماره موبایل — با 09 شروع شود"],
-      ["person_type", "✅ بله", "کارمند / شهروند / حقوقی / اتباع", "نوع شخص (انگلیسی هم قبول: employee, citizen, legal, foreigner)"],
+      ["person_type", "✅ بله", typeLabels, `نوع شخص (انگلیسی هم قبول: ${typeCodes})`],
       ["first_name", "❌ خیر", "متن", "نام"],
       ["last_name", "❌ خیر", "متن", "نام خانوادگی"],
       ["father_name", "❌ خیر", "متن", "نام پدر"],
@@ -1519,7 +1557,7 @@ if (url.pathname === "/api/persons/import-excel" && request.method === "POST") {
     }
 
     const parent = await env.DB.prepare(
-      "SELECT id, level, code, full_name FROM persons WHERE id = ? AND is_active = 1"
+      "SELECT id, level, code, full_name, person_type FROM persons WHERE id = ? AND is_active = 1"
     ).bind(parent_id).first();
 
     if (!parent) {
@@ -1532,12 +1570,25 @@ if (url.pathname === "/api/persons/import-excel" && request.method === "POST") {
     }
 
     // ----- نگاشت نوع شخص -----
-    const PERSON_TYPE_MAP = {
-      employee: "employee", citizen: "citizen", legal: "legal", foreigner: "foreigner",
-      "کارمند": "employee", "شهروند": "citizen", "حقوقی": "legal",
-      "شخص حقوقی": "legal", "اتباع": "foreigner", "اتباع خارجی": "foreigner",
-      "خارجی": "foreigner",
-    };
+   // ----- نگاشت نوع شخص (داینامیک از دیتابیس) -----
+const personTypesRaw = await env.DB.prepare(
+  "SELECT id, code, label_fa, tab_group FROM person_types WHERE is_active = 1"
+).all();
+
+// ✅ map: label/code → { id, code, label_fa, tab_group }
+const PERSON_TYPE_MAP = {};
+for (const pt of personTypesRaw.results) {
+  const entry = {
+    id: pt.id,
+    code: pt.code,
+    label_fa: pt.label_fa,
+    tab_group: pt.tab_group, // employee / citizen / legal / foreigner
+  };
+  PERSON_TYPE_MAP[pt.code] = entry;
+  PERSON_TYPE_MAP[pt.label_fa] = entry;
+  PERSON_TYPE_MAP[pt.label_fa.trim()] = entry;
+}
+
     const GENDER_MAP = {
   "مرد": "male", "male": "male", "M": "male", "m": "male",
   "زن": "female", "female": "female", "F": "female", "f": "female",
@@ -1578,22 +1629,26 @@ if (url.pathname === "/api/persons/import-excel" && request.method === "POST") {
     const seenInFile = new Set();
     const nowShamsi = toShamsi(new Date());
 
-    // کد بعدی برای سطح ۴ زیر این parent
-    // (کد بر اساس الگوی generatePersonCode ساخته می‌شه، ولی برای bulk خودمون می‌سازیم)
-    const lastChild = await env.DB.prepare(
-      "SELECT code FROM persons WHERE parent_id = ? ORDER BY code DESC LIMIT 1"
-    ).bind(parent_id).first();
+        // ✅ شمارنده داخلی برای سطح ۴ — هم‌راستا با generatePersonCode
+    // الگو: [7 رقم والد][3 رقم شماره] = 10 رقم
+    const basePrefix = parent.code.substring(0, 7); // 7 رقم اول والد
 
-    let nextSeq = 1;
-    if (lastChild && lastChild.code) {
-      // فرض: کد ۴ رقمی سطح ۴ مثل "001-002-003-004"
-      const parts = lastChild.code.split("-");
-      const lastPart = parseInt(parts[parts.length - 1]);
-      if (!isNaN(lastPart)) nextSeq = lastPart + 1;
+    // بیشترین شماره موجود (3 رقم آخر) رو پیدا کن
+    const existingChildren = await env.DB.prepare(
+      "SELECT code FROM persons WHERE parent_id = ?"
+    ).bind(parent_id).all();
+
+    let maxSuffix = 0;
+    for (const row of existingChildren.results) {
+      const c = row.code;
+      // کدهای سطح ۴ = 10 رقم — 3 رقم آخر رو بگیر
+      if (c.length === 10) {
+        const suffix = parseInt(c.substring(7, 10), 10);
+        if (!isNaN(suffix) && suffix > maxSuffix) maxSuffix = suffix;
+      }
     }
-
-    const seqWidth = 4; // عرض ثابت شماره آخر
-    const basePrefix = parent.code; // مثل "001-002-003"
+    let nextSeq = maxSuffix + 1;
+    const seqWidth = 3; // ← حتماً 3 رقم (نه 4)
 
     for (let idx = 0; idx < rows.length; idx++) {
       const r = rows[idx];
@@ -1654,13 +1709,26 @@ if (url.pathname === "/api/persons/import-excel" && request.method === "POST") {
         continue;
       }
 
-      // ۴. نوع شخص
-      const rawType = clean(r.person_type);
-      const personType = PERSON_TYPE_MAP[rawType];
-      if (!personType) {
-        fail(`نوع شخص نامعتبر (${rawType || "خالی"}). مقادیر مجاز: کارمند / شهروند / حقوقی / اتباع`);
-        continue;
-      }
+// ۴. نوع شخص
+const rawType = clean(r.person_type);
+const ptEntry = PERSON_TYPE_MAP[rawType];
+if (!ptEntry) {
+  const allowedTypesList = Object.keys(PERSON_TYPE_MAP)
+    .filter(k => PERSON_TYPE_MAP[k] && k !== PERSON_TYPE_MAP[k].code)
+    .join(" / ");
+  fail(`نوع شخص نامعتبر (${rawType || "خالی"}). مقادیر مجاز: ${allowedTypesList}`);
+  continue;
+}
+
+// ✅ ستون person_type در persons همیشه tab_group است (employee/citizen/legal/foreigner)
+const personType = ptEntry.tab_group;
+
+// اطلاعات دقیق نوع سفارشی برای حفظ در extra_data
+const personTypeMeta = {
+  person_type_id: ptEntry.id,
+  person_type_code: ptEntry.code,        // "type_6"
+  person_type_label: ptEntry.label_fa,   // "کارگر شرکتی"
+};
 
       // ۵. تاریخ تولد
       const birthDate = clean(r.birth_date_shamsi);
@@ -1698,10 +1766,15 @@ if (url.pathname === "/api/persons/import-excel" && request.method === "POST") {
         continue;
       }
 
-      // ✅ ردیف معتبر
+      // ✅ ردیف معتبر — کد 10 رقمی خالص (بدون خط تیره)
       seenInFile.add(nationalId);
-      const codeSuffix = String(nextSeq).padStart(seqWidth, "0");
-      const code = `${basePrefix}-${codeSuffix}`;
+
+      if (nextSeq > 999) {
+        fail("حداکثر ۹۹۹ شخص برای هر دسته مجاز است");
+        continue;
+      }
+
+      const code = basePrefix + String(nextSeq).padStart(seqWidth, "0");
       nextSeq++;
 
       validRows.push({
@@ -1709,7 +1782,8 @@ if (url.pathname === "/api/persons/import-excel" && request.method === "POST") {
         full_name: fullName,
         national_id: nationalId,
         mobile,
-        person_type: personType,
+        person_type: personType,                    // ← tab_group
+        extra_data: JSON.stringify(personTypeMeta), // ← حفظ نوع دقیق
         first_name: clean(r.first_name) || null,
         last_name: clean(r.last_name) || null,
         father_name: clean(r.father_name) || null,
@@ -1749,9 +1823,9 @@ if (url.pathname === "/api/persons/import-excel" && request.method === "POST") {
               first_name, last_name, national_id, economic_code, registration_number,
               father_name, mother_name, id_number, birth_date_shamsi, birth_place, gender, nationality,
               phone, mobile, address, postal_code, email,
-              bank_name, bank_account, iban, notes,
+              bank_name, bank_account, iban, notes, extra_data,
               created_at_shamsi, updated_at_shamsi)
-             VALUES (?, ?, ?, 4, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+             VALUES (?, ?, ?, 4, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
           ).bind(
             v.person_type, v.code, parent_id, v.level_name,
             v.full_name, v.first_name, v.last_name, v.national_id,
@@ -1759,11 +1833,11 @@ if (url.pathname === "/api/persons/import-excel" && request.method === "POST") {
             v.father_name, v.mother_name, v.id_number,
             v.birth_date_shamsi, v.birth_place, v.gender, v.nationality,
             v.phone, v.mobile, v.address, v.postal_code, v.email,
-            v.bank_name, v.bank_account, v.iban, v.notes,
+            v.bank_name, v.bank_account, v.iban, v.notes, v.extra_data,
             nowShamsi, nowShamsi
           )
         );
-        // درج کاربر
+        // درج کاربر (دست نزن)
         stmts.push(
           env.DB.prepare(
             `INSERT INTO users
@@ -1814,6 +1888,188 @@ if (url.pathname === "/api/persons/import-excel" && request.method === "POST") {
 
   } catch (error) {
     console.error("Import error:", error);
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+  }
+}
+
+
+
+// ============================================
+// GET: لیست انواع شخص
+// ============================================
+if (url.pathname === "/api/person-types" && request.method === "GET") {
+  try {
+    const parentGroup = url.searchParams.get("parent_group");
+    const activeOnly = url.searchParams.get("active_only") !== "0";
+
+    let query = "SELECT * FROM person_types WHERE 1=1";
+    const params = [];
+
+    if (parentGroup) {
+      query += " AND parent_group = ?";
+      params.push(parentGroup);
+    }
+    if (activeOnly) {
+      query += " AND is_active = 1";
+    }
+    query += " ORDER BY sort_order, id";
+
+    const items = await env.DB.prepare(query).bind(...params).all();
+    return new Response(JSON.stringify(items.results), { status: 200, headers });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+  }
+}
+
+// ============================================
+// POST: افزودن نوع شخص (کد/آیکون/رنگ خودکار)
+// ============================================
+if (url.pathname === "/api/person-types" && request.method === "POST") {
+  try {
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+    }
+    const userData = await verifyToken(authHeader.replace("Bearer ", ""), env.JWT_SECRET);
+    if (!userData || !["admin", "manager"].includes(userData.role)) {
+      return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+    }
+
+    const body = await request.json();
+    const { label_fa, tab_group, sort_order } = body;
+
+    // ✅ فقط label_fa اجباریه (کد خودکار ساخته می‌شه)
+    if (!label_fa || !label_fa.trim()) {
+      return new Response(JSON.stringify({ error: "عنوان فارسی الزامی است" }), { status: 400, headers });
+    }
+
+    const validTabs = ["employee", "citizen", "legal", "foreigner"];
+    const finalTab = tab_group && validTabs.includes(tab_group) ? tab_group : "employee";
+
+    // ✅ آیکون و رنگ خودکار بر اساس tab_group
+    const icon = TAB_ICONS[finalTab] || "👤";
+    const color = TAB_COLORS[finalTab] || "#667eea";
+
+    const nowShamsi = toShamsi(new Date());
+
+    // ۱) INSERT با کد موقت
+    const tempCode = `tmp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const result = await env.DB.prepare(
+      `INSERT INTO person_types
+       (code, label_fa, label_en, color, icon, tab_group, sort_order, is_active, created_at_shamsi, updated_at_shamsi)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`
+    ).bind(
+      tempCode,
+      label_fa.trim(),
+      label_fa.trim(),
+      color,
+      icon,
+      finalTab,
+      parseInt(sort_order) || 0,
+      nowShamsi,
+      nowShamsi
+    ).run();
+
+    // ۲) UPDATE کد با id واقعی (خوانا + یکتا)
+    const newId = result.meta.last_row_id;
+    const finalCode = `type_${newId}`;
+    await env.DB.prepare(
+      `UPDATE person_types SET code = ? WHERE id = ?`
+    ).bind(finalCode, newId).run();
+
+    return new Response(JSON.stringify({
+      success: true,
+      id: newId,
+      code: finalCode,
+      icon,
+      color,
+    }), { status: 201, headers });
+
+  } catch (error) {
+    console.error("person-types POST error:", error);
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+  }
+}
+// ============================================
+// PUT: ویرایش نوع شخص
+// ============================================
+if (url.pathname.match(/^\/api\/person-types\/\d+$/) && request.method === "PUT") {
+  try {
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+    const userData = await verifyToken(authHeader.replace("Bearer ", ""), env.JWT_SECRET);
+    if (!userData || !["admin", "manager"].includes(userData.role)) {
+      return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+    }
+
+    const id = url.pathname.split("/").pop();
+    const body = await request.json();
+    const { label_fa, label_en, color, icon, sort_order, is_active } = body;
+
+    if (!label_fa) {
+      return new Response(JSON.stringify({ error: "عنوان الزامی است" }), { status: 400, headers });
+    }
+
+    const nowShamsi = toShamsi(new Date());
+    await env.DB.prepare(
+      `UPDATE person_types SET label_fa = ?, label_en = ?, color = ?, icon = ?, sort_order = ?, is_active = ?, updated_at_shamsi = ? WHERE id = ?`
+    ).bind(
+      label_fa, label_en || null, color || "#667eea", icon || "👤",
+      parseInt(sort_order) || 0, is_active ? 1 : 0, nowShamsi, id
+    ).run();
+
+    return new Response(JSON.stringify({ success: true }), { status: 200, headers });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+  }
+}
+
+// ============================================
+// DELETE: حذف نوع شخص (فقط اگه استفاده نشده باشه)
+// ============================================
+if (url.pathname.match(/^\/api\/person-types\/\d+$/) && request.method === "DELETE") {
+  try {
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "احراز هویت لازم است" }), { status: 401, headers });
+    }
+    const userData = await verifyToken(authHeader.replace("Bearer ", ""), env.JWT_SECRET);
+    if (!userData || !["admin", "manager"].includes(userData.role)) {
+      return new Response(JSON.stringify({ error: "دسترسی غیرمجاز" }), { status: 403, headers });
+    }
+
+    const id = url.pathname.split("/").pop();
+    const pt = await env.DB.prepare(
+      "SELECT code, label_fa FROM person_types WHERE id = ?"
+    ).bind(id).first();
+
+    if (!pt) {
+      return new Response(JSON.stringify({ error: "نوع شخص یافت نشد" }), { status: 404, headers });
+    }
+
+    // ✅ ۴ نوع پایه قابل حذف نیستن (از ثابت بالای فایل استفاده می‌کنیم)
+    if (BASE_PERSON_TYPES.includes(pt.code)) {
+      return new Response(JSON.stringify({
+        error: "۴ نوع پایه (کارمند، شهروند، حقوقی، اتباع) قابل حذف نیستند. می‌توانید غیرفعالشان کنید."
+      }), { status: 400, headers });
+    }
+
+    // چک: آیا در persons استفاده شده؟
+    const used = await env.DB.prepare(
+      "SELECT COUNT(*) as count FROM persons WHERE person_type = ?"
+    ).bind(pt.code).first();
+
+    if (used.count > 0) {
+      return new Response(JSON.stringify({
+        error: `این نوع شخص در ${used.count} رکورد استفاده شده و قابل حذف نیست. ابتدا آن‌ها را ویرایش کنید یا نوع را غیرفعال کنید.`
+      }), { status: 400, headers });
+    }
+
+    await env.DB.prepare("DELETE FROM person_types WHERE id = ?").bind(id).run();
+    return new Response(JSON.stringify({ success: true }), { status: 200, headers });
+
+  } catch (error) {
+    console.error("person-types DELETE error:", error);
     return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
   }
 }

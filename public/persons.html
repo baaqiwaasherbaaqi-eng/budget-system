@@ -809,6 +809,10 @@
                         🗑️ حذف انتخاب‌شده‌ها (<span id="selected-count">0</span>)
                     </button>
 
+                    <button class="add-btn" style="background:#6f42c1;" onclick="openPersonTypesModal()">
+                        ⚙️ مدیریت انواع شخص
+                    </button>
+
                     <button class="add-btn" onclick="openAddModal(null)">
                         ➕ افزودن گروه اصلی
                     </button>
@@ -1023,6 +1027,8 @@
 
 
 
+
+
         <!-- مدال ایمپورت اشخاص -->
         <div id="importPersonsModal" class="modal-overlay" style="display:none;">
             <div class="modal-content" style="max-width:800px;">
@@ -1094,6 +1100,88 @@
                 </div>
             </div>
         </div>
+
+
+
+        <!-- ============================================ -->
+        <!-- مدال مدیریت انواع شخص -->
+        <!-- ============================================ -->
+        <div class="modal-overlay" id="person-types-modal">
+            <div class="modal" style="max-width:850px;">
+                <h3>⚙️ مدیریت انواع شخص</h3>
+
+                <div style="margin-bottom:15px;">
+                    <button class="add-btn" onclick="openPersonTypeForm(null)">➕ افزودن نوع جدید</button>
+                </div>
+
+                <div id="person-types-list">
+                    <div style="text-align:center; padding:20px;">در حال بارگذاری...</div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-cancel" onclick="closePersonTypesModal()">بستن</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- مدال فرم نوع شخص -->
+        <!-- ============================================ -->
+        <div class="modal-overlay" id="person-type-form-modal">
+            <div class="modal" style="max-width:520px;">
+                <h3 id="person-type-form-title">افزودن نوع شخص</h3>
+
+                <div class="form-group">
+                    <label>عنوان نوع شخص <span class="required">*</span></label>
+                    <input type="text" id="pt-input-label" placeholder="مثال: کارگر رسمی" />
+                    <small style="color:#6b7280; font-size:11px; margin-top:4px; display:block;">
+                        این عنوان در ایمپورت اکسل، جدول و فرم‌ها نمایش داده می‌شود
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label>گروه پایه <span class="required">*</span></label>
+                    <select id="pt-input-group">
+                        <option value="employee">👷 کارکنان</option>
+                        <option value="citizen">👤 شهروندان</option>
+                        <option value="legal">🏢 اشخاص حقوقی</option>
+                        <option value="foreigner">🌍 خارج شهروندان</option>
+                    </select>
+                    <small style="color:#6b7280; font-size:11px; margin-top:4px; display:block;">
+                        نوع جدید در کدام تب نمایش داده شود
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label>ترتیب نمایش</label>
+                    <input type="number" id="pt-input-sort" value="0" />
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>کد خودکار</label>
+                        <input type="text" id="pt-input-code" dir="ltr" readonly
+                               style="background:#f3f4f6; color:#6b7280; cursor:not-allowed;"
+                               placeholder="(خودکار)" />
+                    </div>
+                    <div class="form-group">
+                        <label>آیکون خودکار</label>
+                        <input type="text" id="pt-input-icon" readonly
+                               style="background:#f3f4f6; color:#6b7280; cursor:not-allowed; text-align:center; font-size:20px;"
+                               value="👷" />
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-cancel" onclick="closePersonTypeForm()">انصراف</button>
+                    <button class="btn-save" onclick="savePersonType()">ذخیره</button>
+                </div>
+            </div>
+        </div>
+
+
+
+
 
         <!-- مدال نتیجه -->
         <div id="importResultModal" class="modal-overlay" style="display:none;">
@@ -2204,7 +2292,7 @@ if (node.level === 4 && node.person_type === 'employee') {
 let importSelectedParentId = null;
 let importParsedRows = null;
 
-function openImportModal() {
+async function openImportModal() {
   importSelectedParentId = null;
   importParsedRows = null;
   document.getElementById("importFileInput").value = "";
@@ -2212,6 +2300,19 @@ function openImportModal() {
   document.getElementById("importPreview").style.display = "none";
   document.getElementById("importSubmitBtn").disabled = true;
   document.getElementById("selectedBranchInfo").style.display = "none";
+
+  // ✅ اول انواع شخص
+  try {
+    const res = await fetch("/api/person-types?active_only=1", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    importPersonTypesCache = res.ok ? await res.json() : [];
+    console.log("person-types loaded:", importPersonTypesCache.length);
+  } catch (e) {
+    console.error(e);
+    importPersonTypesCache = [];
+  }
+
   document.getElementById("importPersonsModal").style.display = "flex";
   renderImportTree();
 }
@@ -2328,11 +2429,43 @@ function showImportPreview(rows) {
   const preview = document.getElementById("importPreview");
   const content = document.getElementById("importPreviewContent");
 
-  // اعتبارسنجی سریع سمت کلاینت
-  const PERSON_TYPES = [
-    "کارمند", "شهروند", "حقوقی", "اتباع",
-    "employee", "citizen", "legal", "foreigner",
-  ];
+  // ✅ اگر کش انواع شخص خالی است، خطا بده (به‌جای fallback گمراه‌کننده)
+  if (!importPersonTypesCache || importPersonTypesCache.length === 0) {
+    content.innerHTML = `
+      <div style="color:#dc2626; padding:12px 16px; background:#fef2f2;
+                  border:1px solid #dc2626; border-radius:8px; line-height:1.8;">
+        ⚠️ لیست انواع شخص بارگذاری نشد.
+        <br>لطفاً مدال را ببندید و دوباره باز کنید.
+        <br><small>اگر مشکل ادامه داشت، به «⚙️ مدیریت انواع شخص» بروید و مطمئن شوید
+        نوع موردنظر (مثلاً «کارگر شرکتی») تعریف و فعال است.</small>
+      </div>`;
+    preview.style.display = "block";
+    return;
+  }
+
+  // ✅ ساخت لیست معتبر از کش (code + label_fa + نسخه normalize شده)
+  const PERSON_TYPES = new Set();
+  for (const pt of importPersonTypesCache) {
+    if (!pt) continue;
+    if (pt.code) PERSON_TYPES.add(String(pt.code).trim());
+    if (pt.label_fa) {
+      const raw = String(pt.label_fa);
+      PERSON_TYPES.add(raw);
+      PERSON_TYPES.add(raw.trim());
+      // حذف نیم‌فاصله و فاصله‌های اضافی برای مقایسه مقاوم‌تر
+      PERSON_TYPES.add(raw.replace(/\u200c/g, "").replace(/\s+/g, "").trim());
+    }
+  }
+
+  // ✅ normalize کردن مقدار سلول برای مقایسه
+  const normalizeType = (v) => {
+    if (v == null) return "";
+    return String(v)
+      .replace(/\u200c/g, "") // نیم‌فاصله
+      .replace(/\s+/g, " ")   // فاصله‌های چندتایی → یکی
+      .trim();
+  };
+
   const GENDERS = ["مرد", "زن", "male", "female", "M", "F", "m", "f"];
 
   const validateRow = (r) => {
@@ -2362,40 +2495,50 @@ function showImportPreview(rows) {
       issues.push("موبایل نامعتبر");
     }
 
-    // نوع شخص
-    const pt = String(r.person_type || "").trim();
-    if (!PERSON_TYPES.includes(pt)) {
-      issues.push("نوع شخص");
+    // ✅ نوع شخص — مقایسه مقاوم (raw، trim شده، و normalize شده)
+    const ptRaw = String(r.person_type || "");
+    const ptTrim = ptRaw.trim();
+    const ptNorm = normalizeType(ptRaw);
+
+    const validType =
+      PERSON_TYPES.has(ptRaw) ||
+      PERSON_TYPES.has(ptTrim) ||
+      PERSON_TYPES.has(ptNorm);
+
+    if (!ptTrim) {
+      issues.push("نوع شخص خالی");
+    } else if (!validType) {
+      issues.push(`نوع شخص نامعتبر: "${ptTrim}"`);
     }
 
     // تاریخ تولد
     const bd = String(r.birth_date_shamsi || "").trim();
     if (bd && !/^\d{4}\/\d{2}\/\d{2}$/.test(bd)) {
-      issues.push("تاریخ تولد");
+      issues.push("تاریخ تولد نامعتبر");
     }
 
     // جنسیت
     const g = String(r.gender || "").trim();
     if (g && !GENDERS.includes(g)) {
-      issues.push("جنسیت");
+      issues.push("جنسیت نامعتبر");
     }
 
     // ایمیل
     const em = String(r.email || "").trim();
     if (em && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
-      issues.push("ایمیل");
+      issues.push("ایمیل نامعتبر");
     }
 
     // کد پستی
     const pc = String(r.postal_code || "").trim();
     if (pc && !/^\d{10}$/.test(pc)) {
-      issues.push("کد پستی");
+      issues.push("کد پستی نامعتبر");
     }
 
     // شبا
     const ib = String(r.iban || "").trim();
     if (ib && !/^IR\d{24}$/i.test(ib)) {
-      issues.push("شبا");
+      issues.push("شبا نامعتبر");
     }
 
     return { issues, warnings };
@@ -2432,7 +2575,7 @@ function showImportPreview(rows) {
   // شمارش کل
   let totalInvalid = 0;
   let totalWarning = 0;
-  rows.forEach(r => {
+  rows.forEach((r) => {
     const { issues, warnings } = validateRow(r);
     if (issues.length > 0) totalInvalid++;
     else if (warnings.length > 0) totalWarning++;
@@ -2451,6 +2594,8 @@ function showImportPreview(rows) {
   content.innerHTML = html;
   preview.style.display = "block";
 }
+
+
 async function submitImport() {
   if (!importSelectedParentId) return alert("شاخه انتخاب نشده");
   if (!importParsedRows || importParsedRows.length === 0) return alert("فایل خالی است");
@@ -2643,6 +2788,213 @@ async function bulkDeleteSelected() {
         btn.textContent = `🗑️ حذف انتخاب‌شده‌ها (${selected.length})`;
     }
 }
+
+
+// ============================================
+// مدیریت انواع شخص
+// ============================================
+let personTypesCache = [];
+let editingPersonTypeId = null;
+
+const TAB_ICONS = {
+    employee: "👷",
+    citizen: "👤",
+    legal: "🏢",
+    foreigner: "🌍",
+};
+const TAB_LABELS = {
+    employee: "👷 کارکنان",
+    citizen: "👤 شهروندان",
+    legal: "🏢 حقوقی",
+    foreigner: "🌍 خارجی",
+};
+
+async function loadPersonTypes() {
+    const res = await fetch('/api/person-types', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) return [];
+    personTypesCache = await res.json();
+    return personTypesCache;
+}
+
+async function openPersonTypesModal() {
+    document.getElementById('person-types-modal').classList.add('open');
+    await renderPersonTypesList();
+}
+
+function closePersonTypesModal() {
+    document.getElementById('person-types-modal').classList.remove('open');
+}
+
+async function renderPersonTypesList() {
+    const list = document.getElementById('person-types-list');
+    list.innerHTML = '<div style="text-align:center; padding:20px;">در حال بارگذاری...</div>';
+
+    await loadPersonTypes();
+
+    let html = '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+    html += '<thead><tr style="background:#f8f9fa;">';
+    html += '<th style="padding:8px; text-align:right; width:40px;">آیکون</th>';
+    html += '<th style="padding:8px; text-align:right;">عنوان</th>';
+    html += '<th style="padding:8px; text-align:right;">کد</th>';
+    html += '<th style="padding:8px; text-align:right;">گروه</th>';
+    html += '<th style="padding:8px; text-align:center;">وضعیت</th>';
+    html += '<th style="padding:8px; text-align:center;">عملیات</th>';
+    html += '</tr></thead><tbody>';
+
+    for (const pt of personTypesCache) {
+        const isBase = ["employee", "citizen", "legal", "foreigner"].includes(pt.code);
+        html += `<tr style="border-bottom:1px solid #eee;">
+            <td style="padding:8px; font-size:20px; text-align:center;">${pt.icon || '👤'}</td>
+            <td style="padding:8px;">
+                <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:${pt.color}; margin-left:6px;"></span>
+                <b>${pt.label_fa}</b>
+                ${isBase ? '<span style="font-size:10px; background:#e5e7eb; color:#374151; padding:1px 6px; border-radius:8px; margin-right:4px;">پایه</span>' : ''}
+            </td>
+            <td style="padding:8px; font-family:monospace; font-size:11px; color:#6b7280;">${pt.code}</td>
+            <td style="padding:8px;">${TAB_LABELS[pt.tab_group] || pt.tab_group}</td>
+            <td style="padding:8px; text-align:center;">${pt.is_active ? '✅' : '❌'}</td>
+            <td style="padding:8px; text-align:center; white-space:nowrap;">
+                <button onclick="openPersonTypeForm(${pt.id})" style="background:#3b82f6; color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:12px;">✏️</button>
+                <button onclick="togglePersonType(${pt.id}, ${pt.is_active})" style="background:#f59e0b; color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:12px;">${pt.is_active ? 'غیرفعال' : 'فعال'}</button>
+                ${!isBase ? `<button onclick="deletePersonType(${pt.id}, '${pt.label_fa}')" style="background:#dc3545; color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:12px;">🗑️</button>` : ''}
+            </td>
+        </tr>`;
+    }
+    html += '</tbody></table>';
+    list.innerHTML = html;
+}
+
+function openPersonTypeForm(id) {
+    editingPersonTypeId = id;
+
+    if (id) {
+        const pt = personTypesCache.find(x => x.id === id);
+        if (!pt) return;
+        document.getElementById('person-type-form-title').textContent = '✏️ ویرایش نوع شخص';
+        document.getElementById('pt-input-label').value = pt.label_fa;
+        document.getElementById('pt-input-group').value = pt.tab_group || 'employee';
+        document.getElementById('pt-input-group').disabled = true;
+        document.getElementById('pt-input-sort').value = pt.sort_order;
+        document.getElementById('pt-input-code').value = pt.code;
+        document.getElementById('pt-input-icon').value = pt.icon || '👤';
+    } else {
+        document.getElementById('person-type-form-title').textContent = '➕ افزودن نوع شخص';
+        document.getElementById('pt-input-label').value = '';
+        document.getElementById('pt-input-group').value = 'employee';
+        document.getElementById('pt-input-group').disabled = false;
+        document.getElementById('pt-input-sort').value = '0';
+        document.getElementById('pt-input-code').value = '(خودکار ساخته می‌شود)';
+        document.getElementById('pt-input-icon').value = '👷';
+    }
+
+    document.getElementById('person-type-form-modal').classList.add('open');
+}
+
+function closePersonTypeForm() {
+    document.getElementById('person-type-form-modal').classList.remove('open');
+    editingPersonTypeId = null;
+}
+
+async function savePersonType() {
+    const label_fa = document.getElementById('pt-input-label').value.trim();
+    const tab_group = document.getElementById('pt-input-group').value;
+    const sort_order = parseInt(document.getElementById('pt-input-sort').value) || 0;
+
+    if (!label_fa) {
+        showToast('عنوان فارسی الزامی است', 'error');
+        return;
+    }
+
+    const btn = document.querySelector('#person-type-form-modal .btn-save');
+    btn.disabled = true;
+    btn.textContent = 'در حال ذخیره...';
+
+    try {
+        const url = editingPersonTypeId
+            ? `/api/person-types/${editingPersonTypeId}`
+            : '/api/person-types';
+        const method = editingPersonTypeId ? 'PUT' : 'POST';
+
+        const body = editingPersonTypeId
+            ? { label_fa, sort_order, is_active: true }
+            : { label_fa, tab_group, sort_order };
+
+        const res = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'خطا');
+
+        showToast(editingPersonTypeId ? 'ویرایش شد' : `با موفقیت ثبت شد (کد: ${data.code})`);
+        closePersonTypeForm();
+        await renderPersonTypesList();
+    } catch (e) {
+        showToast(e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'ذخیره';
+    }
+}
+
+async function togglePersonType(id, currentActive) {
+    try {
+        const pt = personTypesCache.find(x => x.id === id);
+        if (!pt) return;
+
+        const res = await fetch(`/api/person-types/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                label_fa: pt.label_fa,
+                sort_order: pt.sort_order,
+                is_active: !currentActive
+            })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'خطا');
+        await renderPersonTypesList();
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+
+async function deletePersonType(id, label) {
+    if (!confirm(`مطمئنید "${label}" حذف شود؟`)) return;
+    try {
+        const res = await fetch(`/api/person-types/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'خطا');
+        showToast('حذف شد');
+        await renderPersonTypesList();
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+
+// آپدیت آیکون پیش‌نمایش هنگام تغییر گروه
+document.addEventListener('DOMContentLoaded', () => {
+    const groupSelect = document.getElementById('pt-input-group');
+    if (groupSelect) {
+        groupSelect.addEventListener('change', function() {
+            document.getElementById('pt-input-icon').value = TAB_ICONS[this.value] || '👤';
+        });
+    }
+});
+
         // ============================================
         // شروع
         // ============================================
@@ -2654,5 +3006,7 @@ async function bulkDeleteSelected() {
         
         loadData();
     </script>
+
+
 </body>
 </html>
