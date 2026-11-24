@@ -420,3 +420,54 @@ calcWearStatus(item, currentKm):
 - برای هر شخص، خودکار `user` با نقش `viewer` ساخته می‌شود
 - فایل XLSX سمت کلاینت با `<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">` لود می‌شود
 - گزارش نهایی همه خطاها را با شماره ردیف، نام شخص و دلیل دقیق نشان می‌دهد
+
+
+
+
+---
+
+## 🔥 بخش جدید: پاک‌سازی خودکار `economic_links` هنگام حذف موجودیت‌ها (Cascade Delete)
+
+### مشکل:
+وقتی یک موجودیت (شخص / کالا / سازمان / نوع حکم) که به یک ردیف اقتصادی لینک شده بود حذف می‌شد، ردیف‌های جدول `economic_links` مرتبط باقی می‌ماندند و badge مربوطه (📦 🏢 📜 👤) همچنان روی ردیف اقتصادی در `economic-classifications.html` نمایش داده می‌شد — در حالی که موجودیت مقصد دیگر وجود نداشت (لینک یتیم).
+
+### راه‌حل:
+پاک‌سازی آبشاری (cascade) `economic_links` در همان endpointهایی که موجودیت اصلی را حذف می‌کنند، **قبل از** حذف موجودیت اصلی.
+
+---
+
+### ۱. `POST /api/persons/bulk-delete` (در `index.js`)
+
+**قبل از** `DELETE FROM persons WHERE id IN (...)`:
+
+```javascript
+// ✅ پاک‌سازی ارتباطات اقتصادی این اشخاص (و زیرمجموعه‌هایشان)
+const collectAllPersonIds = async (rootIds) => {
+  const allIds = new Set(rootIds);
+  const queue = [...rootIds];
+  while (queue.length > 0) {
+    const current = queue.shift();
+    const children = await env.DB.prepare(
+      `SELECT id FROM persons WHERE parent_id = ?`
+    ).bind(current).all();
+    for (const c of (children.results || [])) {
+      if (!allIds.has(c.id)) {
+        allIds.add(c.id);
+        queue.push(c.id);
+      }
+    }
+  }
+  return Array.from(allIds);
+};
+
+const allIdsToClean = await collectAllPersonIds(ids);
+if (allIdsToClean.length > 0) {
+  const CLEAN_CHUNK = 500;
+  for (let i = 0; i < allIdsToClean.length; i += CLEAN_CHUNK) {
+    const chunk = allIdsToClean.slice(i, i + CLEAN_CHUNK);
+    const ph = chunk.map(() => '?').join(',');
+    await env.DB.prepare(
+      `DELETE FROM economic_links WHERE link_type = 'person' AND target_id IN (${ph})`
+    ).bind(...chunk).run();
+  }
+}
