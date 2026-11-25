@@ -289,6 +289,11 @@ body.dark .form-group textarea:disabled {
         @page { size: A4; margin: 10mm; }
     }
   </style>
+
+
+<link rel="stylesheet" href="/tree-picker.css">
+<script src="/tree-picker.js"></script>
+
 </head>
 
 <body>
@@ -1002,9 +1007,18 @@ tasksHtml += `
       let cascadeHtml = "";
       if (canEdit) {
         cascadeHtml = `
-          <div class="task-cascade" style="border: 2px dashed #ddd; border-radius: 10px; padding: 15px; margin-top: 15px; background: #fafbff;">
-            <div style="font-size: 13px; font-weight: bold; color: #667eea; margin-bottom: 10px;">➕ افزودن وظیفه جدید</div>
-            <div id="cascade-container"></div>
+    <div class="task-cascade" style="border: 2px dashed #ddd; border-radius: 10px; padding: 15px; margin-top: 15px; background: #fafbff;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="font-size: 13px; font-weight: bold; color: #667eea;">➕ افزودن وظیفه جدید</div>
+            <button type="button" class="btn-tree-select" 
+                onclick="openTaskTreePicker()" 
+                style="background:#17a2b8; color:white; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-family:inherit; font-size:12px;">
+                🌳 انتخاب از درخت
+            </button>
+        </div>
+        <div style="font-size:11px; color:#999; margin-bottom:8px;">می‌تونید از کشوها انتخاب کنید یا از درخت (برای CRUD)</div>
+        <div id="cascade-container"></div>
+        ...
             <div style="margin-top: 12px;">
               <div class="form-group"><label>درصد زمانی <span style="color:#e74c3c;">*</span></label><input type="number" id="new-task-percentage" class="task-percentage" min="0" max="100" value="0" /></div>
               <div class="form-group"><label>یادداشت</label><input type="text" id="new-task-notes" class="task-notes" placeholder="اختیاری" /></div>
@@ -1115,6 +1129,7 @@ tasksHtml += `
     `;
 }
     async function openOrgModal(poId = null) {
+      
       const po = poId ? personOrganizations.find((o) => o.id === poId) : null;
       const isEdit = !!po;
       const title = isEdit ? "✏️ ویرایش سازمان" : "➕ افزودن سازمان";
@@ -1125,7 +1140,18 @@ tasksHtml += `
           <div class="dependent-modal" style="max-width:600px;">
             <div class="dependent-modal-header"><h3>${title}</h3><button class="dep-modal-close" onclick="closeOrgModal()">✕</button></div>
             <div class="dependent-modal-body">
-              <div class="form-group"><label>سازمان <span class="required">*</span></label><select id="org-organization-id"><option value="">— انتخاب کنید —</option>${orgOptions}</select></div>
+              <div class="form-group">
+    <label>سازمان <span class="required">*</span></label>
+    <div style="display:flex; gap:8px;">
+        <select id="org-organization-id" style="flex:1;">
+            <option value="">— انتخاب کنید —</option>
+            ${orgOptions}
+        </select>
+        <button type="button" class="btn-tree-select" onclick="openOrgTreePicker()" style="background:#17a2b8; color:white; border:none; padding:0 15px; border-radius:6px; cursor:pointer; font-family:inherit; font-size:13px; white-space:nowrap;">
+            🌳 انتخاب از درخت
+        </button>
+    </div>
+</div>
               <div class="form-row">
                 <div class="form-group"><label>پست سازمانی</label><select id="org-position-id" onchange="onOrgPositionChange()"><option value="">— ابتدا سازمان را انتخاب کنید —</option></select><input type="hidden" id="org-role" value="${po?.role || ''}" /></div>
                 <div class="form-group"><label>سازمان اصلی؟</label><select id="org-is-primary"><option value="0" ${!po?.is_primary ? 'selected' : ''}>خیر</option><option value="1" ${po?.is_primary ? 'selected' : ''}>بله</option></select></div>
@@ -1167,6 +1193,70 @@ tasksHtml += `
         });
       }, 100);
     }
+
+
+
+// ============================================
+// انتخاب سازمان از درخت (TreePicker)
+// ============================================
+function openOrgTreePicker() {
+    const currentOrgId = document.getElementById('org-organization-id')?.value;
+    
+    TreePicker.open({
+        title: '🏢 انتخاب سازمان',
+        source: 'base-data',
+        mode: 'single',
+        section: 'organization',
+        type: 'general',
+        params: { section: 'organization' },
+        levelNames: { 0: 'حوزه', 1: 'معاونت', 2: 'سازمان', 3: 'اداره', 4: 'واحد' },
+        levelIcons: { 0: '🏛️', 1: '🏢', 2: '🏭', 3: '🏠', 4: '📍' },
+        selectableLevels: [4],   // فقط سطح ۴ (واحد) قابل انتخابه
+        addableLevels: [0, 1, 2, 3],
+        canAdd: true,
+        canEdit: true,
+        canDelete: true,
+        selectedIds: currentOrgId ? [parseInt(currentOrgId)] : [],
+        onConfirm: async (selected) => {
+            if (!selected.length) return;
+            const org = selected[0];
+            
+            // آپدیت select
+            const select = document.getElementById('org-organization-id');
+            if (select) {
+                // چک کن آیا این org توی select هست
+                let found = false;
+                for (const opt of select.options) {
+                    if (parseInt(opt.value) === org.id) {
+                        select.value = org.id;
+                        found = true;
+                        break;
+                    }
+                }
+                // اگه نبود، اضافه کن
+                if (!found) {
+                    const newOpt = document.createElement('option');
+                    newOpt.value = org.id;
+                    newOpt.textContent = `${org.code} - ${org.title}`;
+                    select.appendChild(newOpt);
+                    select.value = org.id;
+                }
+                
+                // trigger change برای لود پوزیشن‌ها
+                select.dispatchEvent(new Event('change'));
+            }
+            
+            // رفرش allOrganizations (چون ممکنه کاربر سازمان جدید ساخته باشه)
+            try {
+                const res = await fetch('/api/base-data?section=organization', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (res.ok) allOrganizations = await res.json();
+            } catch (e) {}
+        },
+    });
+}
+
 
     function closeOrgModal() { const modal = document.getElementById("org-modal"); if (modal) modal.remove(); }
 
@@ -1234,6 +1324,78 @@ tasksHtml += `
       await loadCascadeLevel(null, 0);
       renderCascade();
     }
+
+
+// ============================================
+// انتخاب وظیفه از درخت (TreePicker)
+// ============================================
+function openTaskTreePicker() {
+    TreePicker.open({
+        title: '🎯 انتخاب وظیفه از طبقه‌بندی عملیاتی',
+        source: 'base-data',
+        mode: 'single',
+        section: 'operational',
+        type: 'activity',  // ← پیش‌فرض، ولی کاربر می‌تونه هر سطحی رو ببینه
+        params: { section: 'operational' },  // ← همه types
+        levelNames: {
+            0: 'مأموریت', 1: 'برنامه', 2: 'خدمت',
+            3: 'طرح', 4: 'فعالیت', 5: 'پروژه',
+        },
+        levelIcons: {
+            0: '🎯', 1: '📋', 2: '⚙️',
+            3: '📐', 4: '🔧', 5: '🏗️',
+        },
+        // کدوم سطح‌ها وظیفه محسوب می‌شن؟ (می‌تونه فعالیت، پروژه باشه)
+        selectableLevels: [4, 5],   // فعالیت و پروژه
+        addableLevels: [0, 1, 2, 3, 4],
+        canAdd: true,
+        canEdit: true,
+        canDelete: true,
+        selectedIds: cascadeState.selectedTask?.id ? [cascadeState.selectedTask.id] : [],
+        onConfirm: async (selected) => {
+            if (!selected.length) return;
+            const task = selected[0];
+            
+            // پر کردن cascade با این وظیفه
+            await selectTaskInCascade(task);
+        },
+    });
+}
+
+// ============================================
+// پر کردن cascade با یه وظیفه (بعد از انتخاب از TreePicker)
+// ============================================
+async function selectTaskInCascade(task) {
+    // ریست cascade
+    cascadeState = { levels: [], selectedTask: null };
+    
+    // ۱. پیدا کردن مسیر (breadcrumb) این task
+    const path = [];
+    let current = task;
+    while (current) {
+        path.unshift(current);
+        if (!current.parent_id) break;
+        // parent رو از operationalItems پیدا کن (اگه توی همه آیتم‌ها هست)
+        const parent = operationalItems.find(x => x.id === current.parent_id);
+        if (!parent) break;
+        current = parent;
+    }
+    
+    // ۲. برای هر سطح، گزینه‌ها رو لود کن
+    for (let i = 0; i < path.length; i++) {
+        const parentId = i === 0 ? null : path[i - 1].id;
+        await loadCascadeLevel(parentId, i);
+        cascadeState.levels[i].selected = path[i].id;
+    }
+    
+    cascadeState.selectedTask = task;
+    renderCascade();
+    
+    // ۳. اسکرول به cascade
+    const container = document.getElementById('cascade-container');
+    if (container) container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 
     function detectLockedType() {
       if (employeeTasks.length > 0) {
