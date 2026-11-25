@@ -1372,14 +1372,26 @@ if (
       `SELECT section, type FROM base_data WHERE id = ?`
     ).bind(id).first();
 
-    if (record && ['goods', 'organization', 'decree_type'].includes(record.type)) {
-      const CLEAN_CHUNK = 500;
-      for (let i = 0; i < allIds.length; i += CLEAN_CHUNK) {
-        const chunk = allIds.slice(i, i + CLEAN_CHUNK);
-        const ph = chunk.map(() => '?').join(',');
-        await env.DB.prepare(
-          `DELETE FROM economic_links WHERE link_type = ? AND target_id IN (${ph})`
-        ).bind(record.type, ...chunk).run();
+    if (record) {
+      // ✅ نقشه‌برداری (section, type) → link_type در economic_links
+      let linkType = null;
+      if (record.section === 'goods' && record.type === 'goods') {
+        linkType = 'goods';
+      } else if (record.section === 'organization' && record.type === 'general') {
+        linkType = 'organization';
+      } else if (record.section === 'decree_type' && record.type === 'decree') {
+        linkType = 'decree_type';
+      }
+    
+      if (linkType && allIds.length > 0) {
+        const CLEAN_CHUNK = 500;
+        for (let i = 0; i < allIds.length; i += CLEAN_CHUNK) {
+          const chunk = allIds.slice(i, i + CLEAN_CHUNK);
+          const ph = chunk.map(() => '?').join(',');
+          await env.DB.prepare(
+            `DELETE FROM economic_links WHERE link_type = ? AND target_id IN (${ph})`
+          ).bind(linkType, ...chunk).run();
+        }
       }
     }
     // ============================================
