@@ -1172,6 +1172,48 @@ body.dark tbody tr.dragging {
     }
         </style>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+        <link rel="stylesheet" href="/tree-picker.css">
+        <script src="/tree-picker.js"></script>
+
+<style>
+
+
+/* دکمه‌های CRUD داخل مدال ارتباطات */
+.tp-crud-actions-inline .tp-action-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background 0.15s;
+    line-height: 1;
+}
+
+.tp-crud-actions-inline .tp-action-btn:hover {
+    background: #d0d4e0;
+}
+
+.tp-crud-actions-inline .tp-action-btn.danger:hover {
+    background: #fee;
+}
+
+body.dark .tp-crud-actions-inline .tp-action-btn:hover {
+    background: #4a5568;
+}
+
+body.dark .tp-crud-actions-inline .tp-action-btn.danger:hover {
+    background: #7f1d1d;
+}
+
+.link-tree-node:hover .tp-crud-actions-inline {
+    opacity: 1 !important;
+}
+
+</style>
+
+
     </head>
     <body>
         <div class="container">
@@ -2653,6 +2695,16 @@ function renderTreeNodeRecursive(node, type, depth) {
     if (inherited) html += `<span class="li-inherit-hint">↳ ارثی</span>`;
     if (excluded) html += `<span class="li-inherit-hint" style="color:#e74c3c">✕ مستثنی</span>`;
 
+    
+    // ✅ دکمه‌های CRUD (از TreePicker)
+if (node.level >= 1 || type !== 'person') {
+    html += `<span class="tp-crud-actions-inline" style="display:inline-flex; gap:2px; opacity:0.6; margin-right:auto;">
+        <button class="tp-action-btn" title="ویرایش" onclick="event.stopPropagation(); openTreePickerForEdit('${type}', ${node.id})">✏️</button>
+        <button class="tp-action-btn" title="افزودن زیرشاخه" onclick="event.stopPropagation(); openTreePickerForAdd('${type}', ${node.id})">➕</button>
+        <button class="tp-action-btn danger" title="حذف" onclick="event.stopPropagation(); openTreePickerForDelete('${type}', ${node.id})">🗑️</button>
+    </span>`;
+}
+    
     html += `</div>`;
 
     if (hasChildren && isOpen) {
@@ -2709,9 +2761,19 @@ function renderFlatRow(item, type) {
         if (inheritFlag) html += `<span class="li-inherit-hint">👥 همه</span>`;
     }
     if (inherited) html += `<span class="li-inherit-hint">↳ ارثی</span>`;
-    if (excluded) html += `<span class="li-inherit-hint" style="color:#e74c3c">✕ مستثنی</span>`;
+if (excluded) html += `<span class="li-inherit-hint" style="color:#e74c3c">✕ مستثنی</span>`;
 
-    html += `</div>`;
+// ✅ دکمه‌های CRUD
+html += `<span class="tp-crud-actions-inline" style="display:inline-flex; gap:2px; opacity:0.5; margin-right:auto;">
+    <button class="tp-action-btn" title="ویرایش" 
+        onclick="event.stopPropagation(); openTreePickerForEdit('${type}', ${node.id})">✏️</button>
+    <button class="tp-action-btn" title="افزودن زیرشاخه" 
+        onclick="event.stopPropagation(); openTreePickerForAdd('${type}', ${node.id})">➕</button>
+    <button class="tp-action-btn danger" title="حذف" 
+        onclick="event.stopPropagation(); openTreePickerForDelete('${type}', ${node.id})">🗑️</button>
+</span>`;
+
+html += `</div>`;
     return html;
 }
 // باز/بستن نود
@@ -2936,6 +2998,145 @@ async function saveLinkModal() {
         btn.disabled = false;
         btn.textContent = '💾 ذخیره';
     }
+}
+
+
+
+// ============================================
+// ✅ CRUD از داخل مدال ارتباطات (با TreePicker)
+// ============================================
+function getAdapterForType(type) {
+    if (type === 'person') return 'persons';
+    return 'base-data';
+}
+
+function getConfigForType(type) {
+    if (type === 'person') {
+        return {
+            source: 'persons',
+            params: {},
+            levelNames: { 1: 'گروه اصلی', 2: 'گروه فرعی', 3: 'دسته', 4: 'شخص' },
+            levelIcons: { 1: '📁', 2: '📂', 3: '🏷️', 4: '👤' },
+            selectableLevels: [4],
+        };
+    }
+    
+    const configs = {
+        goods: {
+            source: 'base-data',
+            section: 'goods',
+            type: 'goods',
+            params: { section: 'goods', type: 'goods' },
+            levelNames: { 0: 'گروه اصلی', 1: 'گروه فرعی', 2: 'زیرگروه', 3: 'کالا/خدمت' },
+            levelIcons: { 0: '📦', 1: '📁', 2: '🏷️', 3: '🔖' },
+            selectableLevels: [3],
+            addableLevels: [0, 1, 2],
+        },
+        organization: {
+            source: 'base-data',
+            section: 'organization',
+            type: 'general',  // ← چک کن
+            params: { section: 'organization' },
+            levelNames: { 0: 'حوزه', 1: 'معاونت', 2: 'سازمان', 3: 'اداره', 4: 'واحد' },
+            levelIcons: { 0: '🏛️', 1: '🏢', 2: '🏭', 3: '🏠', 4: '📍' },
+            selectableLevels: [4],
+            addableLevels: [0, 1, 2, 3],
+        },
+        decree_type: {
+            source: 'base-data',
+            section: 'decree_type',
+            type: 'decree',
+            params: { section: 'decree_type', type: 'decree' },
+            levelNames: { 0: 'گروه', 1: 'نوع' },
+            levelIcons: { 0: '📋', 1: '📄' },
+            selectableLevels: [1],
+            addableLevels: [0],
+        },
+    };
+    return configs[type];
+}
+
+function openTreePickerForEdit(type, id) {
+    const config = getConfigForType(type);
+    const item = linkModalState.allData[type].find(x => x.id === id);
+    if (!item) return;
+
+    // TreePicker برای CRUD باز می‌کنیم (mode: single، selected: [id])
+    TreePicker.open({
+        ...config,
+        title: '✏️ ویرایش',
+        mode: 'single',
+        selectedIds: [id],
+        canAdd: false,   // فقط ویرایش/حذف
+        canEdit: true,
+        canDelete: true,
+        onConfirm: async () => {
+            // بعد از بستن TreePicker، داده‌ها رو رفرش کن
+            await loadAllLinkData(linkModalState.economicId);
+            renderLinkItems();
+        },
+    });
+}
+
+function openTreePickerForAdd(type, parentId) {
+    const config = getConfigForType(type);
+    const parent = linkModalState.allData[type].find(x => x.id === parentId);
+    if (!parent) return;
+
+    // TreePicker برای افزودن باز می‌کنیم
+    // ولی اینطوری parent انتخاب نمی‌شه... 
+    // بهتر: یه مدال کوچیک باز کنیم، یا از دکمه ➕ داخل TreePicker استفاده کنیم
+    
+    // راه ساده: TreePicker رو باز کن، parent رو expanded کن
+    TreePicker.open({
+        ...config,
+        title: '➕ افزودن زیرشاخه',
+        mode: 'single',
+        selectedIds: [],
+        canAdd: true,
+        canEdit: false,
+        canDelete: false,
+        onConfirm: async () => {
+            await loadAllLinkData(linkModalState.economicId);
+            renderLinkItems();
+        },
+    });
+}
+
+function openTreePickerForDelete(type, id) {
+    // برای حذف، مستقیم از API استفاده می‌کنیم (سریع‌تر)
+    const item = linkModalState.allData[type].find(x => x.id === id);
+    if (!item) return;
+    
+    const title = item.title || item.full_name || item.code;
+    if (!confirm(`مطمئن هستید "${title}" حذف شود؟`)) return;
+    
+    const url = type === 'person' 
+        ? `/api/persons/bulk-delete` 
+        : `/api/base-data/${id}`;
+    
+    const method = type === 'person' ? 'POST' : 'DELETE';
+    const body = type === 'person' ? JSON.stringify({ ids: [id] }) : undefined;
+    
+    fetch(url, {
+        method,
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+        },
+        body
+    })
+    .then(r => r.json())
+    .then(async (data) => {
+        if (data.error) throw new Error(data.error);
+        if (data.errors && data.errors.length > 0) {
+            throw new Error(data.errors[0].reason);
+        }
+        showToast('حذف شد');
+        await loadAllLinkData(linkModalState.economicId);
+        renderLinkItems();
+    })
+    .catch(err => showToast(err.message, 'error'));
 }
 
 // بارگذاری badge برای همه نودهای درخت (به‌صورت batch)

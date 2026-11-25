@@ -167,6 +167,114 @@
                 };
             },
         },
+
+
+        // ============================================
+        // ✅ Adapter جدید: base-data
+        // ============================================
+        'base-data': {
+            tree: async (params) => {
+                const qs = new URLSearchParams(params || {}).toString();
+                const res = await fetch(`/api/base-data${qs ? '?' + qs : ''}`, {
+                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (!res.ok) throw new Error('خطا در بارگذاری');
+                return await res.json();
+            },
+
+            create: async (data) => {
+                const res = await fetch('/api/base-data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.error || 'خطا در افزودن');
+                return result;
+            },
+
+            update: async (id, data) => {
+                const res = await fetch(`/api/base-data/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.error || 'خطا در ویرایش');
+                return result;
+            },
+
+            remove: async (id) => {
+                const res = await fetch(`/api/base-data/${id}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                });
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.error || 'خطا در حذف');
+                return result;
+            },
+
+            getId: (n) => n.id,
+            getParentId: (n) => n.parent_id,
+            getCode: (n) => n.code,
+            getTitle: (n) => n.title,
+            getLevel: (n) => n.level,
+            getIsActive: (n) => n.is_active,
+
+            levelNames: null,
+            levelIcons: null,
+
+            isSelectable: (n, config) => {
+                const levels = config.selectableLevels || [];
+                if (levels.length === 0) return true;
+                return levels.includes(n.level);
+            },
+
+            isAddable: (n, config) => {
+                const addable = config.addableLevels;
+                if (!addable || addable.length === 0) return true;
+                return addable.includes(n.level);
+            },
+
+            buildForm: ({ item, level, isEdit, parent, config }) => {
+                const levelName = (config.levelNames && config.levelNames[level]) || `سطح ${level + 1}`;
+                return {
+                    title: isEdit
+                        ? `✏️ ویرایش: ${item.title}`
+                        : `➕ افزودن ${levelName}`,
+                    info: !isEdit && parent
+                        ? `زیر مجموعه: <b>${parent.title}</b> (${parent.code})`
+                        : isEdit ? `کد: <b>${item.code}</b>` : '',
+                    fields: [
+                        { name: 'title', label: 'عنوان', type: 'text', required: true, value: item?.title || '' },
+                        { name: 'description', label: 'توضیحات', type: 'textarea', required: false, value: item?.description || '' },
+                    ],
+                };
+            },
+
+            buildPayload: ({ formData, item, level, parent, config }) => {
+                let levelName = 'سطح';
+                if (config.levelNames && config.levelNames[level]) {
+                    levelName = config.levelNames[level];
+                }
+                return {
+                    section: config.section,
+                    type: config.type,
+                    title: formData.title,
+                    description: formData.description || null,
+                    parent_id: item?.parent_id || parent?.id || null,
+                    level_name: levelName,
+                    sort_order: item?.sort_order || 999,
+                };
+            },
+        },
+
     };
 
     // ============================================
@@ -267,7 +375,7 @@
             const isActive = state.adapter.getIsActive(node) !== 0;
             const isSelected = state.selectedIds.has(id);
             const isSelectable = state.adapter.isSelectable(node, state.config);
-            const isAddable = state.config.canAdd && state.adapter.isAddable(node);
+            const isAddable = state.config.canAdd && state.adapter.isAddable(node, state.config);
 
             // فیلتر جستجو
             if (term) {
@@ -284,8 +392,12 @@
                 }
             }
 
-            const icon = (state.adapter.levelIcons && state.adapter.levelIcons[level]) || '•';
-            const levelName = (state.adapter.levelNames && state.adapter.levelNames[level]) || `سطح ${level}`;
+// ✅ اول از config، اگه نبود از adapter، اگه نبود پیش‌فرض
+const icons = state.config.levelIcons || state.adapter.levelIcons || {};
+const names = state.config.levelNames || state.adapter.levelNames || {};
+const icon = icons[level] || '•';
+const levelName = names[level] || `سطح ${level + 1}`;
+
 
             const nodeEl = document.createElement('div');
             nodeEl.className = 'tp-node';
@@ -413,7 +525,7 @@
             ? state.adapter.getLevel(item)
             : (parent ? state.adapter.getLevel(parent) + 1 : 1);
 
-        const form = state.adapter.buildForm({ item, parent, level, isEdit: mode === 'edit' });
+            const form = state.adapter.buildForm({ item, parent, level, isEdit: mode === 'edit', config: state.config });
 
         const overlay = document.createElement('div');
         overlay.className = 'tp-crud-overlay open';
@@ -487,7 +599,7 @@
 
             try {
                 const payload = state.adapter.buildPayload({
-                    formData, item, parent, level, extraParams: state.config.params
+                    formData, item, parent, level, extraParams: state.config.params, config: state.config
                 });
 
                 if (mode === 'edit') {
@@ -579,7 +691,9 @@ console.log('  - person_types:', [...new Set(state.allItems.map(x => x.person_ty
         }
 
         config.mode = config.mode || 'single';
-        config.selectableLevels = config.selectableLevels || [4];
+        // اگه base-data بود، پیش‌فرض [3]، وگرنه [4]
+        const defaultLevels = config.source === 'base-data' ? [3] : [4];
+        config.selectableLevels = config.selectableLevels || defaultLevels;
         config.canAdd = config.canAdd !== false;
         config.canEdit = config.canEdit !== false;
         config.canDelete = config.canDelete !== false;
