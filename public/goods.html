@@ -7,12 +7,17 @@
     <link rel="stylesheet" href="/sidebar.css">
     <script src="/sidebar.js"></script>
         <link rel="stylesheet" href="/base-data-search.css">
+        <link rel="stylesheet" href="/tree-picker.css">
+        <script src="/tree-picker.js"></script>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
         <link rel="stylesheet" href="/goods-details.css">
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/persian-date@1.1.0/dist/persian-date.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css"/>
+    
+
+    
     <style>
 
 
@@ -1025,25 +1030,7 @@ body.dark tbody tr.dragging {
         </div>
 
 
-        <!-- ============ Modal: انتخاب شخص از درخت ============ -->
-        <div class="modal-overlay" id="person-tree-modal">
-            <div class="modal" style="max-width:700px;">
-                <h3>🌳 انتخاب شخص از درخت</h3>
 
-                <div class="form-group">
-                    <input type="text" id="person-tree-search" placeholder="🔍 جستجو در کد یا نام..." oninput="filterPersonTree()"/>
-                </div>
-
-                <div id="person-tree-container" style="max-height:450px; overflow-y:auto; border:1px solid #e9ecef; border-radius:8px; padding:8px; background:#fafbfc;">
-                    <div style="text-align:center; padding:30px; color:#999;">در حال بارگذاری...</div>
-                </div>
-
-                <div class="modal-actions">
-                    <button class="btn-cancel" onclick="closePersonTreeModal()">انصراف</button>
-                    <button class="btn-save" onclick="confirmPersonTreeSelection()">✓ انتخاب</button>
-                </div>
-            </div>
-        </div>
 
     <div class="toast" id="toast"></div>
 
@@ -2121,7 +2108,36 @@ async function deleteUnit(id) {
     }
 }
 
+// حذف مدال قدیمی #person-tree-modal از HTML (اختیاری)
 
+// جایگزینی openPersonTreeModal:
+function openPersonTreeModal() {
+    TreePicker.open({
+        title: 'انتخاب شخص',
+        source: 'persons',
+        mode: 'multi',
+        selectableLevels: [4],
+        canAdd: true,
+        canEdit: true,
+        canDelete: true,
+        params: { person_type: 'employee' }, // یا هر نوع دیگه
+        selectedIds: selectedPerson ? [selectedPerson.id] : [],
+        onConfirm: (selected) => {
+            if (selected.length === 0) return;
+            const person = selected[0];
+            // همون منطق قدیمی confirmPersonTreeSelection
+            selectedPerson = person;
+            document.getElementById('selected-person-name').textContent = person.full_name;
+            document.getElementById('selected-person-meta').textContent =
+                `کد: ${person.code} | کد ملی: ${person.national_id || '-'}`;
+            document.getElementById('selected-person-box').style.display = 'block';
+            document.getElementById('tasks-checkbox-group').style.display = 'block';
+            document.getElementById('relation-select-group').style.display = 'block';
+            document.getElementById('person-add-btn-group').style.display = 'block';
+            loadTasksForPerson(person.id);
+        },
+    });
+}
 
 
         // ============================================
@@ -2150,5 +2166,87 @@ async function deleteUnit(id) {
         </div>
     </div>
         <script src="/goods-details.js"></script>
+        <script>
+            // ============================================
+            // Override openPersonTreeModal با TreePicker
+            // ============================================
+            window.openPersonTreeModal = function() {
+                if (!window.TreePicker) {
+                    showToast('TreePicker بارگذاری نشده', 'error');
+                    return;
+                }
+            
+                // گرفتن شخص فعلی (اگه از قبل انتخاب شده)
+                let currentSelectedIds = [];
+                if (typeof selectedPerson !== 'undefined' && selectedPerson && selectedPerson.id) {
+                    currentSelectedIds = [selectedPerson.id];
+                } else if (window.selectedPerson && window.selectedPerson.id) {
+                    currentSelectedIds = [window.selectedPerson.id];
+                }
+            
+                TreePicker.open({
+                    title: '👥 انتخاب شخص از درخت',
+                    source: 'persons',
+                    mode: 'multi',              // ✅ چندانتخابی
+                    selectableLevels: [4],
+                    canAdd: true,
+                    canEdit: true,
+                    canDelete: true,
+                    params: {},                  // ✅ بدون فیلتر (همه انواع)
+                    selectedIds: currentSelectedIds,
+                    onConfirm: function(selected) {
+                        if (!selected.length) return;
+                        
+                        // چند نفر انتخاب شدن → همه رو اضافه کن
+                        selected.forEach(function(person) {
+                            // چک کن قبلاً اضافه نشده
+                            var alreadyExists = false;
+                            if (typeof currentGoodsPersons !== 'undefined' && Array.isArray(currentGoodsPersons)) {
+                                alreadyExists = currentGoodsPersons.some(function(p) {
+                                    return p.person_id === person.id;
+                                });
+                            }
+                            
+                            if (alreadyExists) {
+                                console.log('قبلاً اضافه شده:', person.full_name);
+                                return;
+                            }
+                            
+                            // اضافه به لیست
+                            if (typeof currentGoodsPersons !== 'undefined') {
+                                currentGoodsPersons.push({
+                                    id: null,
+                                    person_id: person.id,
+                                    person_name: person.full_name,
+                                    person_code: person.code,
+                                    person_national_id: person.national_id,
+                                    relation_type: 'owner',
+                                    task_id: null,
+                                });
+                            }
+                        });
+                        
+                        // رندر مجدد لیست
+                        if (typeof renderGoodsPersonsList === 'function') {
+                            renderGoodsPersonsList();
+                        } else if (typeof window.renderGoodsPersonsList === 'function') {
+                            window.renderGoodsPersonsList();
+                        }
+                        
+                        if (typeof showToast === 'function') {
+                            showToast(selected.length + ' شخص اضافه شد');
+                        }
+                        
+                        // ریست انتخاب
+                        if (typeof selectedPerson !== 'undefined') {
+                            selectedPerson = null;
+                        }
+                        window.selectedPerson = null;
+                    },
+                });
+            };
+            
+            console.log('✅ TreePicker override loaded (multi mode)');
+            </script>
 </body>
 </html>

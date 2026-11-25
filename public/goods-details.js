@@ -1204,64 +1204,48 @@ async function savePersonTasks(gpId) {
 // ============================================
 // مدال انتخاب شخص از درخت
 // ============================================
-let personTreeData = [];
-let personTreeExpanded = new Set();
-let personTreeSelectedId = null;
 
-async function openPersonTreeModal() {
-    document.getElementById('person-tree-modal').classList.add('open');
-    document.getElementById('person-tree-search').value = '';
-    personTreeExpanded = new Set();
-    personTreeSelectedId = null;
 
-    const container = document.getElementById('person-tree-container');
-    container.innerHTML = '<div style="text-align:center; padding:30px; color:#999;">در حال بارگذاری...</div>';
-
-    try {
-        const res = await fetch('/api/persons/tree', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        personTreeData = await res.json();
-        // باز کردن سطح ۱
-        (personTreeData || []).forEach(n => personTreeExpanded.add(n.id));
-        renderPersonTree();
-    } catch (e) {
-        container.innerHTML = '<div style="text-align:center; padding:30px; color:#dc3545;">خطا در بارگذاری</div>';
-    }
-}
-
-function renderPersonTree() {
-    const container = document.getElementById('person-tree-container');
-    if (!personTreeData || personTreeData.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:30px; color:#999;">شخصی ثبت نشده</div>';
+// ============================================
+// ✅ انتخاب شخص از درخت با TreePicker (نسخه جدید)
+// ============================================
+function openPersonTreeModal() {
+    if (!window.TreePicker) {
+        showToast('کامپوننت TreePicker بارگذاری نشده', 'error');
         return;
     }
 
-    const renderNode = (node, depth) => {
-        const hasChildren = node.children && node.children.length > 0;
-        const isExpanded = personTreeExpanded.has(node.id);
-        const isSelected = personTreeSelectedId === node.id;
-        const isLevel4 = node.level === 4;
+    TreePicker.open({
+        title: '👥 انتخاب شخص از درخت',
+        source: 'persons',
+        mode: 'single',
+        selectableLevels: [4],
+        canAdd: true,
+        canEdit: true,
+        canDelete: true,
+        params: { person_type: 'employee' },
+        selectedIds: selectedPerson ? [selectedPerson.id] : [],
+        onConfirm: (selected) => {
+            if (!selected.length) return;
+            const person = selected[0];
+            selectedPerson = person;
 
-        const indent = depth * 22;
-        const toggle = hasChildren ? (isExpanded ? '▼' : '◀') : '';
+            document.getElementById('selected-person-name').textContent = person.full_name;
+            document.getElementById('selected-person-meta').textContent =
+                `کد: ${person.code} | کد ملی: ${person.national_id || '-'}`;
+            document.getElementById('selected-person-box').style.display = 'block';
+            document.getElementById('tasks-checkbox-group').style.display = 'block';
+            document.getElementById('relation-select-group').style.display = 'block';
+            document.getElementById('person-add-btn-group').style.display = 'block';
 
-        return `
-            <div class="person-tree-node" style="padding-right:${indent + 8}px; padding-top:6px; padding-bottom:6px; display:flex; align-items:center; gap:6px; border-radius:6px; ${isSelected ? 'background:#d4edda;' : ''} ${isLevel4 ? 'cursor:pointer;' : ''}" 
-                 ${isLevel4 ? `onclick="selectPersonFromTree(${node.id})"` : ''}>
-                <button onclick="event.stopPropagation(); togglePersonTreeNode(${node.id})" 
-                    style="width:18px; height:18px; border:none; background:transparent; cursor:pointer; color:#666; ${hasChildren ? '' : 'visibility:hidden;'}">${toggle}</button>
-                <span style="font-size:${isLevel4 ? '14px' : '12px'}; ${isLevel4 ? 'font-weight:bold;' : ''} color:#333;">
-                    ${isLevel4 ? '👤' : '📁'} ${node.full_name || node.title || ''}
-                </span>
-                ${isLevel4 ? `<span style="font-size:11px; color:#667eea; font-family:monospace;">${node.code || ''}</span>` : ''}
-            </div>
-            ${hasChildren && isExpanded ? node.children.map(c => renderNode(c, depth + 1)).join('') : ''}
-        `;
-    };
-
-    container.innerHTML = personTreeData.map(n => renderNode(n, 0)).join('');
+            if (typeof loadTasksForPerson === 'function') {
+                loadTasksForPerson(person.id);
+            }
+        },
+    });
 }
+
+
 
 function togglePersonTreeNode(id) {
     if (personTreeExpanded.has(id)) {
@@ -1277,81 +1261,6 @@ function selectPersonFromTree(id) {
     renderPersonTree();
 }
 
-function filterPersonTree() {
-    const q = document.getElementById('person-tree-search').value.trim().toLowerCase();
-    const container = document.getElementById('person-tree-container');
-
-    if (!q) {
-        personTreeExpanded = new Set();
-        (personTreeData || []).forEach(n => personTreeExpanded.add(n.id));
-        renderPersonTree();
-        return;
-    }
-
-    const allNodes = [];
-    const walk = (nodes) => {
-        for (const n of nodes) {
-            allNodes.push(n);
-            if (n.children) walk(n.children);
-        }
-    };
-    walk(personTreeData);
-
-    const matched = allNodes.filter(n => {
-        const name = (n.full_name || n.title || '').toLowerCase();
-        const code = (n.code || '').toLowerCase();
-        return name.includes(q) || code.includes(q);
-    });
-
-    if (matched.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:30px; color:#999;">نتیجه‌ای یافت نشد</div>';
-        return;
-    }
-
-    container.innerHTML = matched.map(n => `
-        <div class="person-tree-node" style="padding:8px; display:flex; align-items:center; gap:6px; border-radius:6px; ${n.level === 4 ? 'cursor:pointer; font-weight:bold;' : 'color:#666;'} ${personTreeSelectedId === n.id ? 'background:#d4edda;' : ''}"
-             onclick="${n.level === 4 ? `selectPersonFromTree(${n.id})` : ''}">
-            <span style="margin-right:${(n.level || 0) * 15}px;">${n.level === 4 ? '👤' : '📁'}</span>
-            <span style="flex:1;">${n.full_name || n.title || ''}</span>
-            <span style="font-size:11px; color:#667eea;">${n.code || ''}</span>
-            <span style="font-size:10px; color:#999; background:#e9ecef; padding:1px 5px; border-radius:3px;">سطح ${toPersianNumbers((n.level || 0) + 1)}</span>
-        </div>
-    `).join('');
-}
-
-function closePersonTreeModal() {
-    document.getElementById('person-tree-modal').classList.remove('open');
-    personTreeSelectedId = null;
-}
-
-function confirmPersonTreeSelection() {
-    if (!personTreeSelectedId) {
-        showToast('لطفاً یک شخص (سطح ۴) انتخاب کنید', 'error');
-        return;
-    }
-
-    const findNode = (nodes, targetId) => {
-        for (const n of nodes) {
-            if (n.id === targetId) return n;
-            if (n.children) {
-                const found = findNode(n.children, targetId);
-                if (found) return found;
-            }
-        }
-        return null;
-    };
-    const node = findNode(personTreeData, personTreeSelectedId);
-
-    if (!node) return;
-
-    if (node.level !== 4) {
-        showToast('فقط اشخاص سطح ۴ (شخص واقعی) قابل انتخاب هستند', 'error');
-        return;
-    }
-
-    closePersonTreeModal();
-    selectPersonForGoods(node);
-}
 
 
 function getTaskTypeLabel(taskType) {
